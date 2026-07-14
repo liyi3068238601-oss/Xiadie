@@ -15,6 +15,10 @@ DATA_DIR = os.environ.get(
 DB_PATH = os.path.join(DATA_DIR, "xiadie.db")
 
 SCHEMA = """
+CREATE TABLE IF NOT EXISTS schema_meta (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS sessions (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL DEFAULT '新对话',
@@ -75,6 +79,23 @@ CREATE TABLE IF NOT EXISTS tool_logs (
 );
 """
 
+MIGRATIONS = [
+    (
+        1,
+        """
+        CREATE TABLE IF NOT EXISTS companion_state (
+            id INTEGER PRIMARY KEY CHECK(id = 1),
+            connection REAL NOT NULL CHECK(connection BETWEEN 0 AND 1),
+            pride REAL NOT NULL CHECK(pride BETWEEN -1 AND 1),
+            valence REAL NOT NULL CHECK(valence BETWEEN -1 AND 1),
+            arousal REAL NOT NULL CHECK(arousal BETWEEN -1 AND 1),
+            immersion REAL NOT NULL CHECK(immersion BETWEEN 0 AND 1),
+            updated_at REAL NOT NULL
+        );
+        """,
+    ),
+]
+
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
 # 正式版迁移到系统安全存储（见需求 MODEL-005）。
 DEFAULT_PROVIDERS = [
@@ -111,6 +132,7 @@ def init_db() -> None:
     conn = connect()
     try:
         conn.executescript(SCHEMA)
+        _apply_migrations(conn)
         for i, (pid, name, base_url, models, enabled) in enumerate(DEFAULT_PROVIDERS):
             conn.execute(
                 "INSERT OR IGNORE INTO providers(id, name, base_url, models, enabled, sort)"
@@ -127,6 +149,24 @@ def init_db() -> None:
         conn.commit()
     finally:
         conn.close()
+
+
+def _apply_migrations(conn: sqlite3.Connection) -> None:
+    """按版本顺序执行幂等迁移；未版本化的开发库从 0 开始。"""
+    row = conn.execute(
+        "SELECT value FROM schema_meta WHERE key = 'schema_version'"
+    ).fetchone()
+    version = int(row["value"]) if row else 0
+    for target, sql in MIGRATIONS:
+        if target <= version:
+            continue
+        conn.executescript(sql)
+        conn.execute(
+            "INSERT INTO schema_meta(key, value) VALUES('schema_version', ?)"
+            " ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            (str(target),),
+        )
+        version = target
 
 
 def get_setting(key: str, default: str = "") -> str:

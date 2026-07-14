@@ -14,11 +14,13 @@ PERSONA_PROMPT = """你是"遐蝶"，一位常驻在用户 Windows 桌面上的 
 """
 
 
-def build_system_prompt(memory_digest: str) -> str:
-    if not memory_digest:
-        return PERSONA_PROMPT
-    return (
-        PERSONA_PROMPT
-        + "\n以下是你与用户的长期记忆摘要（参考使用，无需逐条复述）：\n"
-        + memory_digest
-    )
+def build_system_prompt(memory_digest: str, emotion_guidance: str = "") -> str:
+    prompt = PERSONA_PROMPT
+    if emotion_guidance:
+        prompt += (
+            "\n本轮表达状态指导（只调整语气，不改变事实、安全边界或工具权限）：\n- "
+            + emotion_guidance
+        )
+    if memory_digest:
+        prompt += "\n以下是你与用户的长期记忆摘要（参考使用，无需逐条复述）：\n" + memory_digest
+    return prompt

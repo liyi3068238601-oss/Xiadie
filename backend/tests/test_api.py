@@ -206,3 +206,47 @@ def test_invalid_enum_values_return_400():
     assert client.patch(f"/api/memories/{m['id']}", json={"layer": "L9"}).status_code == 400
     t = client.post("/api/tasks", json={"title": "y"}).json()
     assert client.patch(f"/api/tasks/{t['id']}", json={"status": "bogus"}).status_code == 400
+
+
+def test_companion_state_changes_after_successful_chat_and_resets():
+    initial = client.post("/api/companion-state/reset").json()
+    assert set(("connection", "pride", "valence", "arousal", "immersion")) <= set(initial)
+    assert initial["style_guidance"]
+
+    session = client.post("/api/sessions", json={}).json()
+    with client.stream(
+        "POST",
+        "/api/chat",
+        json={"session_id": session["id"], "content": "谢谢你，继续专注完成这个功能"},
+    ) as response:
+        assert response.status_code == 200
+        "".join(response.iter_text())
+
+    changed = client.get("/api/companion-state").json()
+    assert changed["connection"] > initial["connection"]
+    assert changed["pride"] > initial["pride"]
+    assert changed["immersion"] > initial["immersion"]
+    for key in ("connection", "immersion"):
+        assert 0 <= changed[key] <= 1
+    for key in ("pride", "valence", "arousal"):
+        assert -1 <= changed[key] <= 1
+
+    reset = client.post("/api/companion-state/reset").json()
+    assert reset["connection"] == initial["connection"]
+    assert reset["pride"] == initial["pride"]
+
+
+def test_schema_migration_is_idempotent():
+    from app import db
+
+    db.init_db()
+    db.init_db()
+    conn = db.connect()
+    try:
+        version = conn.execute(
+            "SELECT value FROM schema_meta WHERE key = 'schema_version'"
+        ).fetchone()["value"]
+        assert version == "1"
+        assert conn.execute("SELECT COUNT(*) c FROM companion_state").fetchone()["c"] <= 1
+    finally:
+        conn.close()

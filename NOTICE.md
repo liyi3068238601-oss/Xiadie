@@ -23,3 +23,8 @@
 
 ## 前端/后端依赖
 各 npm、PyPI 依赖遵循其各自的开源许可证，见 `frontend/package.json`、`backend/requirements.txt`。
+
+## 设计参考项目
+
+- [jiwen](https://github.com/ClaraShafiq/jiwen)，Copyright (c) 2026 Clara Shafiq，MIT License。遐蝶参考其五维连续情绪状态与语气指导思路，并在现有 Python 后端中重新实现。
+- [MemoryConstellations](https://github.com/ClaraShafiq/MemoryConstellations)，Copyright (c) 2026 Clara Shafiq & Draco Malfoy。仓库 `LICENSE` 为 MIT，但 `package.json` 标注 ISC；当前只进行概念级架构参考，直接复用实质代码前须进一步确认并保留适用许可文本。

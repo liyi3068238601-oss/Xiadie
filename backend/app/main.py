@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from . import db, llm, memory
+from . import companion_state, db, llm, memory
 from .persona import build_system_prompt
 from .security import ALLOWED_ORIGINS, TOKEN_HEADER, local_api_guard
 
@@ -206,7 +206,14 @@ async def chat(body: ChatIn) -> StreamingResponse:
             "SELECT role, content FROM messages WHERE session_id = ? ORDER BY created_at",
             (body.session_id,),
         ).fetchall()
-        messages = [{"role": "system", "content": build_system_prompt(digest)}]
+        current_state = companion_state.get_state()
+        next_state = (
+            current_state
+            if body.regenerate
+            else companion_state.preview_interaction(body.content, current_state)
+        )
+        style = companion_state.get_style_guidance(next_state)
+        messages = [{"role": "system", "content": build_system_prompt(digest, style)}]
         messages += [{"role": r["role"], "content": r["content"]} for r in history]
     finally:
         conn.close()
@@ -240,11 +247,28 @@ async def chat(body: ChatIn) -> StreamingResponse:
             c2.commit()
         finally:
             c2.close()
+        if not body.regenerate:
+            companion_state.save_state(next_state)
         # 轻量自动记忆抽取（保守，标注 auto）
         auto = memory.maybe_auto_extract(body.content) if not body.regenerate else None
         yield _sse("done", {"message_id": aid, "auto_memory": auto})
 
     return StreamingResponse(gen(), media_type="text/event-stream")
+
+
+# ---------------------------------------------------------------- 伴侣状态
+@app.get("/api/companion-state")
+def read_companion_state() -> dict:
+    state = companion_state.get_state()
+    state["style_guidance"] = companion_state.get_style_guidance(state)
+    return state
+
+
+@app.post("/api/companion-state/reset")
+def reset_companion_state() -> dict:
+    state = companion_state.reset_state()
+    state["style_guidance"] = companion_state.get_style_guidance(state)
+    return state
 
 
 # ---------------------------------------------------------------- 记忆
