@@ -303,6 +303,66 @@ def test_new_entity_and_alias_backfill_existing_fragments():
         f"/api/entities/{entity['id']}", json={"aliases": ["Project Polaris"]}
     ).json()
     assert alias_memory["id"] in {fragment["id"] for fragment in updated["fragments"]}
+
+
+def test_episode_candidate_generation_acceptance_and_audit():
+    first = client.post(
+        "/api/memories",
+        json={"layer": "L1", "content": "项目名为晨曦计划，完成模型配置界面"},
+    ).json()
+    second = client.post(
+        "/api/memories",
+        json={"layer": "L1", "content": "晨曦计划完成模型列表自动获取"},
+    ).json()
+    candidates = client.get("/api/episode-candidates").json()
+    candidate = next(
+        item for item in candidates
+        if {fragment["id"] for fragment in item["fragments"]} == {first["id"], second["id"]}
+    )
+    assert 1 <= candidate["significance"] <= 10
+    assert candidate["confidence"] >= 0.68
+
+    episode = client.post(
+        f"/api/episode-candidates/{candidate['id']}/accept",
+        json={
+            "title": "晨曦计划模型配置阶段",
+            "summary": "完成模型配置界面和模型列表自动获取。",
+            "significance": 5,
+            "fragment_ids": [first["id"], second["id"]],
+        },
+    ).json()
+    assert episode["title"] == "晨曦计划模型配置阶段"
+    assert episode["significance"] == 5
+    assert {fragment["id"] for fragment in episode["fragments"]} == {first["id"], second["id"]}
+    assert any(entity["name"] == "晨曦计划" for entity in episode["entities"])
+    assert client.post(
+        f"/api/episode-candidates/{candidate['id']}/accept", json={}
+    ).status_code == 409
+    events = client.get(f"/api/memory-events/episode/{episode['id']}").json()
+    assert [event["action"] for event in events] == ["created"]
+
+
+def test_episode_candidate_rejects_and_requires_two_fragments():
+    first = client.post(
+        "/api/memories", json={"layer": "L1", "content": "项目名为晚风计划，开始整理文档"}
+    ).json()
+    second = client.post(
+        "/api/memories", json={"layer": "L1", "content": "晚风计划继续整理文档目录"}
+    ).json()
+    candidate = next(
+        item for item in client.get("/api/episode-candidates").json()
+        if {fragment["id"] for fragment in item["fragments"]} == {first["id"], second["id"]}
+    )
+    assert client.post(
+        f"/api/episode-candidates/{candidate['id']}/accept",
+        json={"fragment_ids": [first["id"]]},
+    ).status_code == 400
+    rejected = client.post(
+        f"/api/episode-candidates/{candidate['id']}/reject",
+        json={"note": "它们不是同一次经历"},
+    ).json()
+    assert rejected["status"] == "rejected"
+    assert rejected["resolution_note"] == "它们不是同一次经历"
 def test_task_flow_from_chat():
     s = client.post("/api/sessions", json={}).json()
     t = client.post("/api/tasks",
@@ -395,7 +455,7 @@ def test_schema_migration_is_idempotent():
         version = conn.execute(
             "SELECT value FROM schema_meta WHERE key = 'schema_version'"
         ).fetchone()["value"]
-        assert version == "4"
+        assert version == "5"
         assert conn.execute("SELECT COUNT(*) c FROM companion_state").fetchone()["c"] <= 1
         tables = {
             row["name"] for row in conn.execute(

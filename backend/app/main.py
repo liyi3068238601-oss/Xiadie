@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from . import companion_state, db, entities, llm, memory
+from . import companion_state, db, entities, episodes, llm, memory
 from .persona import build_system_prompt
 from .security import ALLOWED_ORIGINS, TOKEN_HEADER, local_api_guard
 
@@ -378,9 +378,71 @@ def reject_memory_candidate(cid: str, body: CandidateDecisionIn) -> dict:
 
 @app.get("/api/memory-events/{object_type}/{object_id}")
 def get_memory_events(object_type: str, object_id: str) -> list[dict]:
-    if object_type not in ("candidate", "fragment", "entity"):
+    if object_type not in ("candidate", "fragment", "entity", "episode_candidate", "episode"):
         raise HTTPException(400, "非法的记忆对象类型")
     return memory.list_events(object_type, object_id)
+
+
+# ---------------------------------------------------------------- Episode
+class EpisodeDecisionIn(BaseModel):
+    title: Optional[str] = None
+    summary: Optional[str] = None
+    significance: Optional[int] = None
+    fragment_ids: Optional[list[str]] = None
+    note: str = ""
+
+
+@app.get("/api/episode-candidates")
+def get_episode_candidates(status: str = "pending") -> list[dict]:
+    if status not in ("pending", "accepted", "rejected"):
+        raise HTTPException(400, "非法的 Episode 候选状态")
+    return episodes.list_candidates(status)
+
+
+@app.post("/api/episode-candidates/generate")
+def generate_episode_candidates() -> dict:
+    created = episodes.generate_candidates()
+    return {"created": len(created), "candidates": created}
+
+
+@app.post("/api/episode-candidates/{candidate_id}/accept")
+def accept_episode_candidate(candidate_id: str, body: EpisodeDecisionIn) -> dict:
+    if body.title is not None and not body.title.strip():
+        raise HTTPException(400, "Episode 标题不能为空")
+    if body.summary is not None and not body.summary.strip():
+        raise HTTPException(400, "Episode 摘要不能为空")
+    if body.significance is not None and not 1 <= body.significance <= 10:
+        raise HTTPException(400, "重要度必须在 1 到 10 之间")
+    try:
+        episode = episodes.accept_candidate(
+            candidate_id, body.title, body.summary, body.significance, body.fragment_ids
+        )
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
+    if not episode:
+        raise HTTPException(409, "候选不存在或已处理")
+    return episode
+
+
+@app.post("/api/episode-candidates/{candidate_id}/reject")
+def reject_episode_candidate(candidate_id: str, body: EpisodeDecisionIn) -> dict:
+    candidate = episodes.reject_candidate(candidate_id, body.note)
+    if not candidate:
+        raise HTTPException(409, "候选不存在或已处理")
+    return candidate
+
+
+@app.get("/api/episodes")
+def get_episodes() -> list[dict]:
+    return episodes.list_episodes()
+
+
+@app.get("/api/episodes/{episode_id}")
+def get_episode(episode_id: str) -> dict:
+    episode = episodes.get_episode(episode_id)
+    if not episode or episode["status"] != "active":
+        raise HTTPException(404, "Episode 不存在")
+    return episode
 
 
 # ---------------------------------------------------------------- 记忆实体

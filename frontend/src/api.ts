@@ -94,6 +94,36 @@ export interface MemoryEntity {
   fragments?: EntityFragment[];
   updated_at: number;
 }
+export interface EpisodeFragment extends Memory {
+  position: number;
+}
+export interface EpisodeCandidate {
+  id: string;
+  title: string;
+  summary: string;
+  start_at: number;
+  end_at: number;
+  significance: number;
+  confidence: number;
+  status: "pending" | "accepted" | "rejected";
+  resolution_note: string;
+  fragments: EpisodeFragment[];
+  created_at: number;
+}
+export interface MemoryEpisode {
+  id: string;
+  title: string;
+  summary: string;
+  start_at: number;
+  end_at: number;
+  significance: number;
+  confidence: number;
+  status: "active" | "archived" | "tombstone";
+  fragment_count: number;
+  fragments?: EpisodeFragment[];
+  entities?: Array<{ id: string; name: string; entity_type: string }>;
+  updated_at: number;
+}
 export interface Task {
   id: string;
   title: string;
@@ -190,6 +220,28 @@ export const mergeEntity = (targetId: string, source_entity_id: string) =>
     method: "POST",
     body: JSON.stringify({ source_entity_id }),
   });
+
+// ---- Episode ----
+export const listEpisodeCandidates = () =>
+  j<EpisodeCandidate[]>("/api/episode-candidates?status=pending");
+export const generateEpisodeCandidates = () =>
+  j<{ created: number; candidates: EpisodeCandidate[] }>("/api/episode-candidates/generate", {
+    method: "POST",
+  });
+export const acceptEpisodeCandidate = (
+  id: string,
+  body: { title: string; summary: string; significance: number; fragment_ids: string[] }
+) => j<MemoryEpisode>(`/api/episode-candidates/${id}/accept`, {
+  method: "POST",
+  body: JSON.stringify(body),
+});
+export const rejectEpisodeCandidate = (id: string, note = "") =>
+  j<EpisodeCandidate>(`/api/episode-candidates/${id}/reject`, {
+    method: "POST",
+    body: JSON.stringify({ note }),
+  });
+export const listEpisodes = () => j<MemoryEpisode[]>("/api/episodes");
+export const getEpisode = (id: string) => j<MemoryEpisode>(`/api/episodes/${id}`);
 
 // ---- 任务 ----
 export const listTasks = (today = false) =>

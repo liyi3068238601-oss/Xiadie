@@ -105,14 +105,19 @@
 4. [x] 支持手动关联、解除关联、归档和人工合并，所有操作写入实体事件。
 5. [x] 实体详情界面显示关联记忆、来源、关系和置信度，并可直接修正。
 6. [ ] 对无法确定的代词或隐式指称提供可选模型消解，但不得自动接受低置信度结果。
-7. [ ] 将相邻片段整理为 Episode。
-8. [ ] 将长期相关 Episode 聚合为 Saga。
-9. [ ] 归档任务只在空闲且预算允许时运行，所有模型调用可审计、可取消。
-10. [ ] 情绪模块可以读取有限的 Saga 倾向，但不得反向改写事实记忆。
+7. [x] 建立 Episode、EpisodeCandidate、Fragment 和 Entity 关联结构。
+8. [x] 使用共同实体、7 天窗口和文本重合生成 2~20 条 Fragment 的确定性候选。
+9. [x] 候选界面支持修改标题、摘要、重要度和所含 Fragment，并接受或拒绝。
+10. [x] Episode 继承 Fragment 来源与实体；同一 Fragment 不会进入多个正式 Episode。
+11. [ ] 将长期相关 Episode 聚合为 Saga。
+12. [ ] 归档任务只在空闲且预算允许时运行，所有模型调用可审计、可取消。
+13. [ ] 情绪模块可以读取有限的 Saga 倾向，但不得反向改写事实记忆。
 
 验收：重复实体不会无限增长；归档失败可重试；自动合并可撤销。
 
 本阶段参考了 MemoryConstellations 的 [`entityResolver.js`](https://github.com/ClaraShafiq/MemoryConstellations/blob/main/services/entityResolver.js)、[`entityProfile.js`](https://github.com/ClaraShafiq/MemoryConstellations/blob/main/services/entityProfile.js) 和实体详情面板：保留“名称/别名优先、不确定不强绑、关联可解除、合并需人工裁决”的原则。遐蝶采用 Python/SQLite 原生重构，没有复制其 LLM、Express 或 ChromaDB 管线。
+
+Episode 部分参考了 [`consolidator.js`](https://github.com/ClaraShafiq/MemoryConstellations/blob/main/services/consolidator.js) 的最小/最大分组、来源继承、时间校正和 significance 独立评估。当前版本不调用 LLM、不推断相对日期，也不把碎片自动标记为已整合；候选摘要只是原 Fragment 的可编辑拼接，避免在人工确认前生成新事实。
 
 ### 阶段 D：混合召回
 

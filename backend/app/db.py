@@ -215,6 +215,94 @@ MIGRATIONS = [
             ON memory_entities(status, entity_type, updated_at);
         """,
     ),
+    (
+        5,
+        """
+        CREATE TABLE IF NOT EXISTS memory_episodes (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            summary TEXT NOT NULL,
+            start_at REAL NOT NULL,
+            end_at REAL NOT NULL,
+            significance INTEGER NOT NULL DEFAULT 4 CHECK(significance BETWEEN 1 AND 10),
+            confidence REAL NOT NULL DEFAULT 0.7 CHECK(confidence BETWEEN 0 AND 1),
+            status TEXT NOT NULL DEFAULT 'active'
+                CHECK(status IN ('active','archived','tombstone')),
+            source TEXT NOT NULL DEFAULT 'candidate_confirmed',
+            candidate_id TEXT,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_memory_episodes_status_time
+            ON memory_episodes(status, end_at DESC);
+
+        CREATE TABLE IF NOT EXISTS memory_episode_fragments (
+            episode_id TEXT NOT NULL REFERENCES memory_episodes(id) ON DELETE CASCADE,
+            fragment_id TEXT NOT NULL REFERENCES memory_fragments(id) ON DELETE CASCADE,
+            position INTEGER NOT NULL DEFAULT 0,
+            created_at REAL NOT NULL,
+            PRIMARY KEY(episode_id, fragment_id)
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_episode_fragment_single_active
+            ON memory_episode_fragments(fragment_id);
+
+        CREATE TABLE IF NOT EXISTS memory_episode_entities (
+            episode_id TEXT NOT NULL REFERENCES memory_episodes(id) ON DELETE CASCADE,
+            entity_id TEXT NOT NULL REFERENCES memory_entities(id) ON DELETE CASCADE,
+            relation TEXT NOT NULL DEFAULT 'involves',
+            created_at REAL NOT NULL,
+            PRIMARY KEY(episode_id, entity_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS memory_episode_candidates (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            summary TEXT NOT NULL,
+            start_at REAL NOT NULL,
+            end_at REAL NOT NULL,
+            significance INTEGER NOT NULL DEFAULT 4 CHECK(significance BETWEEN 1 AND 10),
+            confidence REAL NOT NULL CHECK(confidence BETWEEN 0 AND 1),
+            status TEXT NOT NULL DEFAULT 'pending'
+                CHECK(status IN ('pending','accepted','rejected')),
+            grouping_key TEXT NOT NULL UNIQUE,
+            resolved_episode_id TEXT REFERENCES memory_episodes(id) ON DELETE SET NULL,
+            resolution_note TEXT NOT NULL DEFAULT '',
+            created_at REAL NOT NULL,
+            resolved_at REAL
+        );
+        CREATE INDEX IF NOT EXISTS idx_episode_candidates_status
+            ON memory_episode_candidates(status, created_at DESC);
+
+        CREATE TABLE IF NOT EXISTS memory_episode_candidate_fragments (
+            candidate_id TEXT NOT NULL REFERENCES memory_episode_candidates(id) ON DELETE CASCADE,
+            fragment_id TEXT NOT NULL REFERENCES memory_fragments(id) ON DELETE CASCADE,
+            position INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY(candidate_id, fragment_id)
+        );
+
+        DROP INDEX IF EXISTS idx_memory_events_object;
+        ALTER TABLE memory_events RENAME TO memory_events_v4;
+        CREATE TABLE memory_events (
+            id TEXT PRIMARY KEY,
+            object_type TEXT NOT NULL CHECK(object_type IN (
+                'candidate','fragment','entity','episode_candidate','episode'
+            )),
+            object_id TEXT NOT NULL,
+            action TEXT NOT NULL,
+            before_json TEXT,
+            after_json TEXT,
+            source TEXT NOT NULL DEFAULT 'system',
+            created_at REAL NOT NULL
+        );
+        INSERT INTO memory_events
+            (id, object_type, object_id, action, before_json, after_json, source, created_at)
+        SELECT id, object_type, object_id, action, before_json, after_json, source, created_at
+        FROM memory_events_v4;
+        DROP TABLE memory_events_v4;
+        CREATE INDEX idx_memory_events_object
+            ON memory_events(object_type, object_id, created_at);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

@@ -65,6 +65,9 @@ def create_memory(
         from . import entities
 
         entities.auto_link_fragment(memory["id"], memory["content"], conn=conn)
+        from . import episodes
+
+        episodes.maybe_generate_for_fragment(memory["id"], conn=conn)
         _event(conn, "fragment", memory["id"], "created", None, memory, source)
         conn.commit()
         return memory
@@ -280,6 +283,9 @@ def accept_candidate(
         from . import entities
 
         entities.auto_link_fragment(memory["id"], memory["content"], conn=conn)
+        from . import episodes
+
+        episodes.maybe_generate_for_fragment(memory["id"], conn=conn)
         resolved_at = db.now()
         conn.execute(
             "UPDATE memory_candidates SET status='accepted', resolved_memory_id=?, resolved_at=?"

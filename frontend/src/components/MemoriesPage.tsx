@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import * as api from "./../api";
 import { toast } from "./../store";
 import { EntitiesSection } from "./EntitiesSection";
+import { EpisodesSection } from "./EpisodesSection";
 
 type Layer = "L0" | "L1" | "L2";
 
@@ -152,6 +153,7 @@ export function MemoriesPage({ onOpenSource }: Props) {
       </div>
 
       <EntitiesSection memories={memories} onOpenSource={onOpenSource} />
+      <EpisodesSection onOpenSource={onOpenSource} />
 
       {candidates.length > 0 && (
         <div style={{ marginTop: 20, marginBottom: 24 }}>
