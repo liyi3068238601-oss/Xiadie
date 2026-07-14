@@ -711,3 +711,15 @@ textarea {
   z-index: 100;
   font-size: 13px;
 }
+
+.msg.source-highlight .bubble {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 2px rgba(113, 220, 224, 0.18), 0 0 24px rgba(113, 220, 224, 0.16);
+  animation: source-highlight-pulse 1.4s ease-out;
+}
+
+@keyframes source-highlight-pulse {
+  0% { transform: scale(0.985); }
+  45% { transform: scale(1.012); }
+  100% { transform: scale(1); }
+}

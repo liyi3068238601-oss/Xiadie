@@ -191,6 +191,61 @@ def test_memory_candidate_can_be_rejected_and_not_reprocessed():
     ).status_code == 409
 
 
+def test_memory_source_becomes_unavailable_after_session_deleted():
+    session = client.post("/api/sessions", json={}).json()
+    with client.stream(
+        "POST", "/api/chat",
+        json={"session_id": session["id"], "content": "记住我喜欢观察星星"},
+    ) as response:
+        "".join(response.iter_text())
+    candidate = next(
+        item for item in client.get("/api/memory-candidates").json()
+        if item["source_session_id"] == session["id"]
+    )
+    assert candidate["source_available"] is True
+    assert candidate["source_session_title"]
+    client.delete(f"/api/sessions/{session['id']}")
+    after = client.get(f"/api/memory-candidates/{candidate['id']}").json()
+    assert after["source_available"] is False
+    assert after["source_session_id"] is None
+    assert after["source_message_id"] is None
+
+
+def test_fts_retrieval_only_returns_relevant_active_enabled_memories():
+    from app import memory
+
+    relevant = client.post(
+        "/api/memories", json={"layer": "L1", "content": "用户的猫叫月光，喜欢趴在窗边"}
+    ).json()
+    unrelated = client.post(
+        "/api/memories", json={"layer": "L2", "content": "用户曾经学习过水彩画"}
+    ).json()
+
+    found = memory.search_memories("那只猫叫月光吗")
+    assert relevant["id"] in {item["id"] for item in found}
+    assert unrelated["id"] not in {item["id"] for item in found}
+
+    session = client.post("/api/sessions", json={}).json()
+    with client.stream(
+        "POST", "/api/chat",
+        json={"session_id": session["id"], "content": "那只猫叫月光吗"},
+    ) as response:
+        stream_body = "".join(response.iter_text())
+    assert '"memory_count": 1' in stream_body
+    assert relevant["id"] in stream_body
+
+    client.patch(f"/api/memories/{relevant['id']}", json={"enabled": False})
+    assert relevant["id"] not in {
+        item["id"] for item in memory.search_memories("猫叫月光")
+    }
+    client.patch(
+        f"/api/memories/{relevant['id']}", json={"enabled": True, "status": "frozen"}
+    )
+    assert relevant["id"] not in {
+        item["id"] for item in memory.search_memories("猫叫月光")
+    }
+
+
 def test_task_flow_from_chat():
     s = client.post("/api/sessions", json={}).json()
     t = client.post("/api/tasks",
@@ -283,7 +338,7 @@ def test_schema_migration_is_idempotent():
         version = conn.execute(
             "SELECT value FROM schema_meta WHERE key = 'schema_version'"
         ).fetchone()["value"]
-        assert version == "2"
+        assert version == "3"
         assert conn.execute("SELECT COUNT(*) c FROM companion_state").fetchone()["c"] <= 1
         tables = {
             row["name"] for row in conn.execute(

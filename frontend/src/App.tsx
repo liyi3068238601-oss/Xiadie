@@ -30,6 +30,7 @@ export default function App() {
   const [mode, setMode] = useState<Mode>("companion");
   const [sessions, setSessions] = useState<api.Session[]>([]);
   const [activeSession, setActiveSession] = useState<string | null>(null);
+  const [focusMessageId, setFocusMessageId] = useState<string | null>(null);
   const { model, refresh: refreshModel } = useCurrentModel();
   const toastMsg = useToast();
 
@@ -66,7 +67,14 @@ export default function App() {
   };
 
   const openSession = (id: string) => {
+    setFocusMessageId(null);
     setActiveSession(id);
+    setView("chat");
+  };
+
+  const openMemorySource = (sessionId: string, messageId: string) => {
+    setActiveSession(sessionId);
+    setFocusMessageId(messageId);
     setView("chat");
   };
 
@@ -179,13 +187,14 @@ export default function App() {
             <ChatView
               key={activeSession ?? "none"}
               sessionId={activeSession}
+              focusMessageId={focusMessageId}
               onMode={setMode}
               onSessionsChanged={refreshSessions}
             />
           )}
           {view === "settings" && <SettingsPage onModelChanged={refreshModel} />}
           {view === "tasks" && <TasksPage />}
-          {view === "memories" && <MemoriesPage />}
+          {view === "memories" && <MemoriesPage onOpenSource={openMemorySource} />}
           {view === "files" && <FilesPage />}
           {view === "tools" && <ToolLogsPage />}
         </div>

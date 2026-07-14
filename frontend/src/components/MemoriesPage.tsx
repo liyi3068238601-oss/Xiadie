@@ -15,7 +15,11 @@ function layerChipClass(layer: Layer): string {
   return layer === "L0" ? "chip L0" : layer === "L1" ? "chip L1" : "chip";
 }
 
-export function MemoriesPage() {
+interface Props {
+  onOpenSource: (sessionId: string, messageId: string) => void;
+}
+
+export function MemoriesPage({ onOpenSource }: Props) {
   const [memories, setMemories] = useState<api.Memory[]>([]);
   const [candidates, setCandidates] = useState<api.MemoryCandidate[]>([]);
   const [candidateEdits, setCandidateEdits] = useState<
@@ -190,6 +194,17 @@ export function MemoriesPage() {
                 {candidate.sensitivity === "sensitive" && (
                   <span className="chip" style={{ color: "var(--danger)" }}>可能敏感</span>
                 )}
+                {candidate.source_available && candidate.source_session_id && candidate.source_message_id ? (
+                  <button
+                    className="btn ghost"
+                    title={candidate.source_session_title || "来源对话"}
+                    onClick={() => onOpenSource(candidate.source_session_id!, candidate.source_message_id!)}
+                  >
+                    来源：{candidate.source_session_title || "原对话"}
+                  </button>
+                ) : (
+                  <span className="chip">来源已不存在</span>
+                )}
                 <button className="btn" onClick={() => onAcceptCandidate(candidate)}>
                   接受
                 </button>
@@ -307,6 +322,20 @@ export function MemoriesPage() {
                     )}
 
                     {isAuto && <span className="chip auto">自动</span>}
+
+                    {m.source_message_id && (
+                      m.source_available && m.source_session_id ? (
+                        <button
+                          className="btn ghost"
+                          title={m.source_session_title || "来源对话"}
+                          onClick={() => onOpenSource(m.source_session_id!, m.source_message_id!)}
+                        >
+                          来源：{m.source_session_title || "原对话"}
+                        </button>
+                      ) : (
+                        <span className="chip">来源已不存在</span>
+                      )
+                    )}
 
                     {isEditing ? (
                       <>

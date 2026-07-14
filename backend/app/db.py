@@ -167,6 +167,40 @@ MIGRATIONS = [
             ON memory_events(object_type, object_id, created_at);
         """,
     ),
+    (
+        3,
+        """
+        CREATE VIRTUAL TABLE IF NOT EXISTS memory_fragments_fts USING fts5(
+            content,
+            tags,
+            content='memory_fragments',
+            content_rowid='rowid',
+            tokenize='trigram'
+        );
+
+        CREATE TRIGGER IF NOT EXISTS memory_fragments_fts_insert
+        AFTER INSERT ON memory_fragments BEGIN
+            INSERT INTO memory_fragments_fts(rowid, content, tags)
+            VALUES (new.rowid, new.content, new.tags);
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS memory_fragments_fts_delete
+        AFTER DELETE ON memory_fragments BEGIN
+            INSERT INTO memory_fragments_fts(memory_fragments_fts, rowid, content, tags)
+            VALUES ('delete', old.rowid, old.content, old.tags);
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS memory_fragments_fts_update
+        AFTER UPDATE OF content, tags ON memory_fragments BEGIN
+            INSERT INTO memory_fragments_fts(memory_fragments_fts, rowid, content, tags)
+            VALUES ('delete', old.rowid, old.content, old.tags);
+            INSERT INTO memory_fragments_fts(rowid, content, tags)
+            VALUES (new.rowid, new.content, new.tags);
+        END;
+
+        INSERT INTO memory_fragments_fts(memory_fragments_fts) VALUES('rebuild');
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

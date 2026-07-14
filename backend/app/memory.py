@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import json
+import re
 
 from . import db
 
 MAX_INJECT = 12
+MAX_INJECT_CHARS = 2400
 AUTO_HINTS = ("我叫", "我喜欢", "我在做", "我正在", "我的项目", "记住", "我偏好", "以后")
 SENSITIVE_HINTS = (
     "密码", "密钥", "验证码", "身份证", "银行卡", "住址", "病历", "诊断", "收入", "账号",
@@ -15,14 +17,21 @@ SENSITIVE_HINTS = (
 def list_memories(layer: str | None = None, only_enabled: bool = False) -> list[dict]:
     conn = db.connect()
     try:
-        sql = "SELECT * FROM memory_fragments WHERE status != 'tombstone'"
+        sql = (
+            "SELECT f.*, s.title AS source_session_title,"
+            " CASE WHEN m.id IS NULL THEN 0 ELSE 1 END AS source_available"
+            " FROM memory_fragments f"
+            " LEFT JOIN sessions s ON s.id = f.source_session_id"
+            " LEFT JOIN messages m ON m.id = f.source_message_id"
+            " WHERE f.status != 'tombstone'"
+        )
         params: list = []
         if layer:
-            sql += " AND layer = ?"
+            sql += " AND f.layer = ?"
             params.append(layer)
         if only_enabled:
-            sql += " AND enabled = 1 AND status = 'active'"
-        sql += " ORDER BY CASE layer WHEN 'L0' THEN 0 WHEN 'L1' THEN 1 ELSE 2 END, updated_at DESC"
+            sql += " AND f.enabled = 1 AND f.status = 'active'"
+        sql += " ORDER BY CASE f.layer WHEN 'L0' THEN 0 WHEN 'L1' THEN 1 ELSE 2 END, f.updated_at DESC"
         return [_fragment_row(row) for row in conn.execute(sql, params).fetchall()]
     finally:
         conn.close()
@@ -110,17 +119,68 @@ def get_memory(mid: str) -> dict | None:
         conn.close()
 
 
-def build_digest() -> tuple[str, bool]:
+def search_memories(query: str, limit: int = MAX_INJECT) -> list[dict]:
+    """FTS5 优先的相关记忆召回；短查询使用 LIKE 回退。"""
     if db.get_setting("memory_enabled", "1") != "1":
-        return "", False
-    memories = list_memories(only_enabled=True)[:MAX_INJECT]
+        return []
+    match_query = _fts_query(query)
+    conn = db.connect()
+    try:
+        if match_query:
+            rows = conn.execute(
+                "SELECT f.*, s.title AS source_session_title,"
+                " CASE WHEN m.id IS NULL THEN 0 ELSE 1 END AS source_available,"
+                " bm25(memory_fragments_fts, 1.0, 0.35) AS text_rank"
+                " FROM memory_fragments_fts"
+                " JOIN memory_fragments f ON f.rowid = memory_fragments_fts.rowid"
+                " LEFT JOIN sessions s ON s.id = f.source_session_id"
+                " LEFT JOIN messages m ON m.id = f.source_message_id"
+                " WHERE memory_fragments_fts MATCH ?"
+                " AND f.enabled = 1 AND f.status = 'active'"
+                " ORDER BY text_rank LIMIT ?",
+                (match_query, max(limit * 3, limit)),
+            ).fetchall()
+        else:
+            terms = _fallback_terms(query)
+            if not terms:
+                return []
+            clauses = " OR ".join("(f.content LIKE ? OR f.tags LIKE ?)" for _ in terms)
+            params = [value for term in terms for value in (f"%{term}%", f"%{term}%")]
+            rows = conn.execute(
+                "SELECT f.*, s.title AS source_session_title,"
+                " CASE WHEN m.id IS NULL THEN 0 ELSE 1 END AS source_available, 0 AS text_rank"
+                " FROM memory_fragments f"
+                " LEFT JOIN sessions s ON s.id = f.source_session_id"
+                " LEFT JOIN messages m ON m.id = f.source_message_id"
+                f" WHERE f.enabled = 1 AND f.status = 'active' AND ({clauses})"
+                " ORDER BY f.updated_at DESC LIMIT ?",
+                (*params, limit),
+            ).fetchall()
+        memories = [_fragment_row(row) for row in rows]
+        memories.sort(key=_retrieval_score, reverse=True)
+        return memories[:limit]
+    finally:
+        conn.close()
+
+
+def build_digest(query: str) -> tuple[str, list[dict]]:
+    if db.get_setting("memory_enabled", "1") != "1":
+        return "", []
+    memories = search_memories(query, MAX_INJECT)
     if not memories:
-        return "", False
+        return "", []
     lines = []
+    used: list[dict] = []
+    total_chars = 0
     for memory in memories:
         prefix = {"L0": "[核心]", "L1": "[近期]", "L2": "[长期]"}.get(memory["layer"], "")
-        lines.append(f"- {prefix} {memory['content']}")
-    return "\n".join(lines), True
+        line = f"- {prefix} {memory['content']}"
+        if lines and total_chars + len(line) > MAX_INJECT_CHARS:
+            break
+        lines.append(line)
+        total_chars += len(line)
+        used.append(memory)
+    return "\n".join(lines), used
 
 
 def maybe_create_candidate(
@@ -164,12 +224,18 @@ def maybe_create_candidate(
 def list_candidates(status: str | None = "pending") -> list[dict]:
     conn = db.connect()
     try:
-        sql = "SELECT * FROM memory_candidates"
+        sql = (
+            "SELECT c.*, s.title AS source_session_title,"
+            " CASE WHEN m.id IS NULL THEN 0 ELSE 1 END AS source_available"
+            " FROM memory_candidates c"
+            " LEFT JOIN sessions s ON s.id = c.source_session_id"
+            " LEFT JOIN messages m ON m.id = c.source_message_id"
+        )
         params: list = []
         if status:
-            sql += " WHERE status = ?"
+            sql += " WHERE c.status = ?"
             params.append(status)
-        sql += " ORDER BY created_at DESC"
+        sql += " ORDER BY c.created_at DESC"
         return [_candidate_row(row) for row in conn.execute(sql, params).fetchall()]
     finally:
         conn.close()
@@ -280,23 +346,65 @@ def _create_fragment(conn, **values) -> dict:
 
 
 def _get_fragment(conn, mid: str) -> dict | None:
-    row = conn.execute("SELECT * FROM memory_fragments WHERE id = ?", (mid,)).fetchone()
+    row = conn.execute(
+        "SELECT f.*, s.title AS source_session_title,"
+        " CASE WHEN m.id IS NULL THEN 0 ELSE 1 END AS source_available"
+        " FROM memory_fragments f"
+        " LEFT JOIN sessions s ON s.id = f.source_session_id"
+        " LEFT JOIN messages m ON m.id = f.source_message_id"
+        " WHERE f.id = ?",
+        (mid,),
+    ).fetchone()
     return _fragment_row(row) if row else None
 
 
 def _get_candidate(conn, cid: str) -> dict | None:
-    row = conn.execute("SELECT * FROM memory_candidates WHERE id = ?", (cid,)).fetchone()
+    row = conn.execute(
+        "SELECT c.*, s.title AS source_session_title,"
+        " CASE WHEN m.id IS NULL THEN 0 ELSE 1 END AS source_available"
+        " FROM memory_candidates c"
+        " LEFT JOIN sessions s ON s.id = c.source_session_id"
+        " LEFT JOIN messages m ON m.id = c.source_message_id"
+        " WHERE c.id = ?",
+        (cid,),
+    ).fetchone()
     return _candidate_row(row) if row else None
 
 
 def _fragment_row(row) -> dict:
     result = dict(row)
     result["enabled"] = bool(result["enabled"])
+    result["source_available"] = bool(result.get("source_available", False))
     return result
 
 
 def _candidate_row(row) -> dict:
-    return dict(row)
+    result = dict(row)
+    result["source_available"] = bool(result.get("source_available", False))
+    return result
+
+
+def _fts_query(query: str) -> str:
+    terms = re.findall(r"[\u4e00-\u9fff]{3,}|[A-Za-z0-9_\-]{3,}", query)
+    chunks: list[str] = []
+    for term in terms:
+        if re.fullmatch(r"[\u4e00-\u9fff]+", term):
+            chunks.extend(term[index:index + 3] for index in range(len(term) - 2))
+        else:
+            chunks.append(term)
+    unique = list(dict.fromkeys(chunks))[:16]
+    return " OR ".join(f'"{term.replace(chr(34), chr(34) * 2)}"' for term in unique)
+
+
+def _fallback_terms(query: str) -> list[str]:
+    return list(dict.fromkeys(re.findall(r"[\u4e00-\u9fff]{1,2}|[A-Za-z0-9_\-]{2,}", query)))[:8]
+
+
+def _retrieval_score(memory: dict) -> float:
+    layer_bonus = {"L0": 0.22, "L1": 0.12, "L2": 0.06}.get(memory["layer"], 0)
+    confidence_bonus = float(memory.get("confidence", 0)) * 0.08
+    text_rank = -float(memory.get("text_rank", 0) or 0)
+    return text_rank + layer_bonus + confidence_bonus
 
 
 def _event(conn, object_type: str, object_id: str, action: str, before, after, source: str) -> None:

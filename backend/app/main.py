@@ -201,7 +201,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 conn.commit()
 
         # 构造上下文：人设 + 记忆摘要 + 历史
-        digest, hit = memory.build_digest()
+        digest, recalled_memories = memory.build_digest(body.content)
         history = conn.execute(
             "SELECT role, content FROM messages WHERE session_id = ? ORDER BY created_at",
             (body.session_id,),
@@ -222,7 +222,23 @@ async def chat(body: ChatIn) -> StreamingResponse:
 
     async def gen():
         # 先发一个元事件：模型信息 + 是否命中记忆（前端展示"已参考记忆"）
-        yield _sse("meta", {"model": model, "memory_used": hit})
+        yield _sse(
+            "meta",
+            {
+                "model": model,
+                "memory_used": bool(recalled_memories),
+                "memory_count": len(recalled_memories),
+                "memory_refs": [
+                    {
+                        "id": item["id"],
+                        "layer": item["layer"],
+                        "source_session_id": item.get("source_session_id"),
+                        "source_message_id": item.get("source_message_id"),
+                    }
+                    for item in recalled_memories
+                ],
+            },
+        )
         collected: list[str] = []
         try:
             async for chunk in llm.stream_chat(provider, model, messages):

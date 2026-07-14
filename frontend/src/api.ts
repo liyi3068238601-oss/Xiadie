@@ -50,8 +50,10 @@ export interface Memory {
   content: string;
   tags: string;
   source: string;
-  source_session_id?: string;
-  source_message_id?: string;
+  source_session_id?: string | null;
+  source_message_id?: string | null;
+  source_session_title?: string | null;
+  source_available?: boolean;
   confidence?: number;
   sensitivity?: "normal" | "sensitive";
   status?: "active" | "cooling" | "frozen" | "tombstone";
@@ -63,8 +65,10 @@ export interface MemoryCandidate {
   content: string;
   proposed_layer: "L0" | "L1" | "L2";
   tags: string;
-  source_session_id?: string;
-  source_message_id?: string;
+  source_session_id?: string | null;
+  source_message_id?: string | null;
+  source_session_title?: string | null;
+  source_available: boolean;
   confidence: number;
   sensitivity: "normal" | "sensitive";
   status: "pending" | "accepted" | "rejected";
@@ -177,7 +181,17 @@ export const listToolLogs = () => j<ToolLog[]>("/api/tool-logs");
 
 // ---- 聊天（SSE 流式）----
 export interface ChatCallbacks {
-  onMeta?: (m: { model: string; memory_used: boolean }) => void;
+  onMeta?: (m: {
+    model: string;
+    memory_used: boolean;
+    memory_count: number;
+    memory_refs: Array<{
+      id: string;
+      layer: string;
+      source_session_id?: string | null;
+      source_message_id?: string | null;
+    }>;
+  }) => void;
   onDelta?: (text: string) => void;
   onError?: (message: string, hint: string) => void;
   onDone?: (d: {

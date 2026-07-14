@@ -5,16 +5,17 @@ import { inferEmotion } from "./../emotion";
 
 interface Props {
   sessionId: string | null;
+  focusMessageId?: string | null;
   onMode: (m: Mode) => void;
   onSessionsChanged: () => void;
 }
 
 interface Streaming {
   text: string;
-  memoryUsed: boolean;
+  memoryCount: number;
 }
 
-export function ChatView({ sessionId, onMode, onSessionsChanged }: Props) {
+export function ChatView({ sessionId, focusMessageId, onMode, onSessionsChanged }: Props) {
   const [messages, setMessages] = useState<api.Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState<Streaming | null>(null);
@@ -34,6 +35,16 @@ export function ChatView({ sessionId, onMode, onSessionsChanged }: Props) {
   }, [sessionId]);
 
   useEffect(() => {
+    if (!focusMessageId || !messages.some((message) => message.id === focusMessageId)) return;
+    requestAnimationFrame(() => {
+      document.getElementById(`message-${focusMessageId}`)?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    });
+  }, [focusMessageId, messages]);
+
+  useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, streaming]);
 
@@ -47,7 +58,7 @@ export function ChatView({ sessionId, onMode, onSessionsChanged }: Props) {
     }
     setErrorCard(null);
     setAutoMemory(null);
-    setStreaming({ text: "", memoryUsed: false });
+    setStreaming({ text: "", memoryCount: 0 });
     onMode("thinking");
     api.desktop?.setPetState?.("thinking", "让我想想…", "confused");
 
@@ -56,10 +67,10 @@ export function ChatView({ sessionId, onMode, onSessionsChanged }: Props) {
       sessionId,
       content,
       {
-        onMeta: (m) => setStreaming((s) => (s ? { ...s, memoryUsed: m.memory_used } : s)),
+        onMeta: (m) => setStreaming((s) => (s ? { ...s, memoryCount: m.memory_count } : s)),
         onDelta: (t) => {
           reply += t;
-          setStreaming((s) => (s ? { ...s, text: s.text + t } : { text: t, memoryUsed: false }));
+          setStreaming((s) => (s ? { ...s, text: s.text + t } : { text: t, memoryCount: 0 }));
         },
         onError: (msg, hint) => {
           setStreaming(null);
@@ -106,7 +117,12 @@ export function ChatView({ sessionId, onMode, onSessionsChanged }: Props) {
           </div>
         )}
         {messages.map((m) => (
-          <MessageRow key={m.id} m={m} onFavorite={() => favorite(m, setMessages)} />
+          <MessageRow
+            key={m.id}
+            m={m}
+            highlighted={m.id === focusMessageId}
+            onFavorite={() => favorite(m, setMessages)}
+          />
         ))}
 
         {streaming && (
@@ -122,9 +138,11 @@ export function ChatView({ sessionId, onMode, onSessionsChanged }: Props) {
                   </span>
                 )}
               </div>
-              {streaming.memoryUsed && (
+              {streaming.memoryCount > 0 && (
                 <div className="msg-meta">
-                  <span className="memory-hint">✦ 已参考近期记忆</span>
+                  <span className="memory-hint">
+                    ✦ 本轮参考了 {streaming.memoryCount} 条相关记忆
+                  </span>
                 </div>
               )}
             </div>
@@ -186,9 +204,20 @@ export function ChatView({ sessionId, onMode, onSessionsChanged }: Props) {
   );
 }
 
-function MessageRow({ m, onFavorite }: { m: api.Message; onFavorite: () => void }) {
+function MessageRow({
+  m,
+  highlighted,
+  onFavorite,
+}: {
+  m: api.Message;
+  highlighted?: boolean;
+  onFavorite: () => void;
+}) {
   return (
-    <div className={"msg " + m.role}>
+    <div
+      id={`message-${m.id}`}
+      className={`msg ${m.role}${highlighted ? " source-highlight" : ""}`}
+    >
       <div className="avatar">{m.role === "user" ? "你" : "蝶"}</div>
       <div>
         <div className="bubble">{m.content}</div>
