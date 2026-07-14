@@ -54,9 +54,9 @@
 2. 在需要时启动后端与 Vite 前端；
 3. 等待两个本地服务就绪；
 4. 启动 Electron；
-5. Electron 退出后清理本次启动的子进程。
+5. Electron 退出后清理本次启动的子进程；后端在启动器异常消失时也会自行退出。
 
-开发日志写入 `%LOCALAPPDATA%\Xiadie\dev-logs`，包括后端、前端、桌面端日志和不含令牌的 `launcher.err.log`。启动器已在 Windows 上完成一次端到端实机验证。
+BAT 通过 Windows Script Host 无窗口拉起启动器，不保留黑色终端。开发日志写入 `%LOCALAPPDATA%\Xiadie\dev-logs`，包括后端、前端、桌面端日志和不含令牌的 `launcher.err.log`。启动器已在 Windows 上完成端到端实机验证，包括异常结束 Electron 后释放 8756/5173 端口。
 
 ### 分进程启动
 

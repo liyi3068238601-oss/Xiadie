@@ -12,6 +12,7 @@ $logRoot = if ($env:LOCALAPPDATA) {
 }
 
 New-Item -ItemType Directory -Force -Path $logRoot | Out-Null
+Remove-Item -LiteralPath (Join-Path $logRoot "launcher.err.log") -Force -ErrorAction SilentlyContinue
 
 function Show-LaunchError([string]$message) {
   try {
@@ -40,8 +41,21 @@ function Stop-ProcessTree([System.Diagnostics.Process]$process) {
   & taskkill.exe /PID $process.Id /T /F 2>$null | Out-Null
 }
 
+function Get-ListenerProcess([int]$port) {
+  try {
+    $listener = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction Stop |
+      Select-Object -First 1
+    if ($listener) {
+      return Get-Process -Id $listener.OwningProcess -ErrorAction Stop
+    }
+  } catch {}
+  return $null
+}
+
 $startedBackend = $null
 $startedFrontend = $null
+$backendListener = $null
+$frontendListener = $null
 
 try {
   if (-not (Test-Path -LiteralPath $backendPython)) {
@@ -57,6 +71,7 @@ try {
   $tokenPart1 = [Guid]::NewGuid().ToString("N")
   $tokenPart2 = [Guid]::NewGuid().ToString("N")
   $env:XIADIE_API_TOKEN = [string]::Concat($tokenPart1, $tokenPart2)
+  $env:XIADIE_PARENT_PID = [string]$PID
 
   $existingElectron = Get-CimInstance Win32_Process -Filter "Name = 'electron.exe'" -ErrorAction SilentlyContinue |
     Where-Object { $_.ExecutablePath -eq $electronExe } |
@@ -113,6 +128,11 @@ try {
     throw "Local services did not start. Logs:`n$logRoot"
   }
 
+  # npm.cmd 和虚拟环境 Python 都可能再派生真正监听端口的子进程。
+  # 单独保留监听进程对象，退出时与外层启动进程一起清理。
+  $backendListener = Get-ListenerProcess 8756
+  $frontendListener = Get-ListenerProcess 5173
+
   $desktop = Start-Process `
     -FilePath $electronExe `
     -ArgumentList "." `
@@ -130,6 +150,8 @@ try {
   Add-Content -LiteralPath (Join-Path $logRoot "launcher.err.log") -Value $launcherError -Encoding UTF8
   Show-LaunchError $_.Exception.Message
 } finally {
+  Stop-ProcessTree $frontendListener
+  Stop-ProcessTree $backendListener
   Stop-ProcessTree $startedFrontend
   Stop-ProcessTree $startedBackend
 }
