@@ -127,6 +127,11 @@ export const testProvider = (provider_id: string, model: string) =>
     method: "POST",
     body: JSON.stringify({ provider_id, model }),
   });
+export const discoverProviderModels = (provider_id: string, base_url: string, api_key = "") =>
+  j<{ ok: boolean; models: string[]; message: string }>("/api/providers/discover-models", {
+    method: "POST",
+    body: JSON.stringify({ provider_id, base_url, api_key }),
+  });
 export const getCurrentModel = () => j<CurrentModel>("/api/current-model");
 export const setCurrentModel = (provider_id: string, model: string) =>
   j<CurrentModel>("/api/current-model", {

@@ -23,21 +23,6 @@ const CAP_DESC: { key: string; label: string }[] = [
   { key: "local", label: "本地模型，离线可用" },
 ];
 
-// 模型列表文本框样式（styles.css 未提供 textarea 类，用内联对齐 .field input 观感）
-const textareaStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "9px 12px",
-  borderRadius: 10,
-  background: "var(--glass-strong)",
-  border: "1px solid var(--glass-border)",
-  color: "var(--text)",
-  outline: "none",
-  resize: "vertical",
-  minHeight: 56,
-  fontSize: 13,
-  lineHeight: 1.5,
-};
-
 interface EditForm {
   base_url: string;
   api_key: string;
@@ -59,6 +44,9 @@ export function SettingsPage({ onModelChanged }: { onModelChanged: () => void })
   const [edits, setEdits] = useState<Record<string, EditForm>>({});
   const [tests, setTests] = useState<Record<string, { ok: boolean; message: string }>>({});
   const [testing, setTesting] = useState<string | null>(null);
+  const [discovering, setDiscovering] = useState<string | null>(null);
+  const [discoveries, setDiscoveries] = useState<Record<string, { ok: boolean; message: string }>>({});
+  const [modelDrafts, setModelDrafts] = useState<Record<string, string>>({});
 
   const loadProviders = () => {
     setLoading(true);
@@ -125,6 +113,23 @@ export function SettingsPage({ onModelChanged }: { onModelChanged: () => void })
   const patchEdit = (id: string, patch: Partial<EditForm>) =>
     setEdits((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
 
+  const editModels = (id: string) =>
+    (edits[id]?.models || "")
+      .split(",")
+      .map((model) => model.trim())
+      .filter(Boolean);
+
+  const addModel = (id: string) => {
+    const model = (modelDrafts[id] || "").trim();
+    if (!model) return;
+    const models = editModels(id);
+    if (!models.includes(model)) patchEdit(id, { models: [...models, model].join(", ") });
+    setModelDrafts((prev) => ({ ...prev, [id]: "" }));
+  };
+
+  const removeModel = (id: string, model: string) =>
+    patchEdit(id, { models: editModels(id).filter((item) => item !== model).join(", ") });
+
   const saveProvider = (p: api.Provider) => {
     const f = edits[p.id];
     if (!f) return;
@@ -148,6 +153,35 @@ export function SettingsPage({ onModelChanged }: { onModelChanged: () => void })
         loadProviders();
       })
       .catch((e) => toast(e.message || "保存失败"));
+  };
+
+  const discoverModels = (p: api.Provider) => {
+    const f = edits[p.id];
+    if (!f?.base_url.trim() && p.id !== "mock") {
+      toast("请先填写 Base URL");
+      return;
+    }
+    setDiscovering(p.id);
+    setDiscoveries((prev) => {
+      const next = { ...prev };
+      delete next[p.id];
+      return next;
+    });
+    api
+      .discoverProviderModels(p.id, f?.base_url.trim() || "", f?.api_key.trim() || "")
+      .then((result) => {
+        setDiscoveries((prev) => ({ ...prev, [p.id]: { ok: result.ok, message: result.message } }));
+        if (!result.ok) return;
+        patchEdit(p.id, { models: result.models.join(", ") });
+        toast(result.message);
+      })
+      .catch((e) =>
+        setDiscoveries((prev) => ({
+          ...prev,
+          [p.id]: { ok: false, message: e.message || "获取模型失败" },
+        }))
+      )
+      .finally(() => setDiscovering(null));
   };
 
   const runTest = (p: api.Provider) => {
@@ -316,6 +350,7 @@ export function SettingsPage({ onModelChanged }: { onModelChanged: () => void })
                 const isOpen = expanded === p.id;
                 const f = edits[p.id];
                 const t = tests[p.id];
+                const discovery = discoveries[p.id];
                 return (
                   <div key={p.id}>
                     <div className="provider-row">
@@ -357,13 +392,52 @@ export function SettingsPage({ onModelChanged }: { onModelChanged: () => void })
                           />
                         </div>
                         <div className="field">
-                          <label>模型列表（英文逗号分隔）</label>
-                          <textarea
-                            style={textareaStyle}
-                            value={f.models}
-                            onChange={(e) => patchEdit(p.id, { models: e.target.value })}
-                            placeholder="gpt-4o, gpt-4o-mini"
-                          />
+                          <div className="row" style={{ marginBottom: 6 }}>
+                            <label style={{ marginBottom: 0, flex: 1 }}>模型列表</label>
+                            <button
+                              className="btn ghost"
+                              onClick={() => discoverModels(p)}
+                              disabled={discovering === p.id}
+                            >
+                              {discovering === p.id ? "正在获取…" : "自动获取模型"}
+                            </button>
+                          </div>
+                          <div className="model-list-editor">
+                            {editModels(p.id).map((model) => (
+                              <span className="model-name-chip" key={model}>
+                                <span>{model}</span>
+                                <button
+                                  type="button"
+                                  aria-label={`移除 ${model}`}
+                                  title="移除模型"
+                                  onClick={() => removeModel(p.id, model)}
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            ))}
+                            <input
+                              className="model-add-input"
+                              value={modelDrafts[p.id] || ""}
+                              onChange={(e) => setModelDrafts((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  addModel(p.id);
+                                }
+                              }}
+                              placeholder={editModels(p.id).length ? "添加模型，按 Enter" : "输入模型名，按 Enter 添加"}
+                            />
+                          </div>
+                          <div className="card-hint" style={{ marginTop: 6 }}>
+                            {discovery ? (
+                              <span style={{ color: discovery.ok ? "var(--ok)" : "var(--danger)" }}>
+                                {discovery.message}
+                              </span>
+                            ) : (
+                              "从 Base URL 的 /models 接口读取；也可以手动输入模型名并按 Enter 添加。"
+                            )}
+                          </div>
                         </div>
                         <div className="field">
                           <label style={{ display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer" }}>

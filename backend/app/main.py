@@ -432,6 +432,33 @@ async def test_provider(body: TestIn) -> dict:
     return await llm.test_connection(prov["base_url"], prov["api_key"], body.model)
 
 
+class DiscoverModelsIn(BaseModel):
+    provider_id: str
+    base_url: Optional[str] = None
+    api_key: Optional[str] = None
+
+
+@app.post("/api/providers/discover-models")
+async def discover_provider_models(body: DiscoverModelsIn) -> dict:
+    conn = db.connect()
+    try:
+        row = conn.execute(
+            "SELECT id, base_url, api_key FROM providers WHERE id = ?", (body.provider_id,)
+        ).fetchone()
+        if not row:
+            raise HTTPException(404, "供应商不存在")
+        provider = dict(row)
+    finally:
+        conn.close()
+
+    if provider["id"] == "mock":
+        return {"ok": True, "models": ["xiadie-mock"], "message": "内置演示模型"}
+    base_url = body.base_url.strip() if body.base_url is not None else provider["base_url"]
+    # 输入框留空时沿用已保存密钥；临时输入的密钥不会出现在响应中。
+    api_key = body.api_key.strip() if body.api_key else provider["api_key"]
+    return await llm.discover_models(base_url, api_key)
+
+
 @app.get("/api/current-model")
 def current_model() -> dict:
     prov, model = _current_model()

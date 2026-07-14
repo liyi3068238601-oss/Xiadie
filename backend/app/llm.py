@@ -7,6 +7,7 @@
 import asyncio
 import json
 from typing import AsyncIterator, Optional
+from urllib.parse import urlsplit
 
 import httpx
 
@@ -118,3 +119,58 @@ async def test_connection(base_url: str, api_key: str, model: str) -> dict:
         return {"ok": False, "message": "连接超时"}
     except Exception as e:  # noqa: BLE001
         return {"ok": False, "message": f"测试失败：{e}"}
+
+
+async def discover_models(base_url: str, api_key: str) -> dict:
+    """Read an OpenAI-compatible /models endpoint without persisting credentials."""
+    base_url = base_url.strip().rstrip("/")
+    parsed = urlsplit(base_url)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        return {"ok": False, "models": [], "message": "Base URL 必须是有效的 http/https 地址"}
+
+    url = base_url + "/models"
+    headers = {"Accept": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+
+    try:
+        async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
+            resp = await client.get(url, headers=headers)
+        if resp.status_code in (401, 403):
+            return {"ok": False, "models": [], "message": "鉴权失败：请检查 API Key"}
+        if resp.status_code == 404:
+            return {"ok": False, "models": [], "message": "没有找到 /models 接口，请检查 Base URL"}
+        if resp.status_code >= 400:
+            return {"ok": False, "models": [], "message": f"模型列表接口返回 HTTP {resp.status_code}"}
+        try:
+            payload = resp.json()
+        except ValueError:
+            return {"ok": False, "models": [], "message": "模型列表接口没有返回有效 JSON"}
+
+        raw_models = payload.get("data") if isinstance(payload, dict) else None
+        if not isinstance(raw_models, list) and isinstance(payload, dict):
+            raw_models = payload.get("models")
+        if not isinstance(raw_models, list):
+            return {"ok": False, "models": [], "message": "无法识别模型列表返回格式"}
+
+        model_ids: list[str] = []
+        for item in raw_models:
+            if isinstance(item, str):
+                model_id = item
+            elif isinstance(item, dict):
+                model_id = item.get("id") or item.get("name") or item.get("model")
+            else:
+                continue
+            if isinstance(model_id, str) and 0 < len(model_id.strip()) <= 200:
+                model_ids.append(model_id.strip())
+
+        models = sorted(set(model_ids), key=str.casefold)[:500]
+        if not models:
+            return {"ok": False, "models": [], "message": "接口可访问，但没有发现可用模型"}
+        return {"ok": True, "models": models, "message": f"发现 {len(models)} 个可用模型"}
+    except httpx.ConnectError:
+        return {"ok": False, "models": [], "message": f"无法连接到 {base_url}"}
+    except httpx.TimeoutException:
+        return {"ok": False, "models": [], "message": "获取模型列表超时"}
+    except httpx.HTTPError:
+        return {"ok": False, "models": [], "message": "获取模型列表时连接中断"}

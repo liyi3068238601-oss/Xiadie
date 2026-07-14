@@ -83,6 +83,35 @@ def test_api_key_not_leaked():
             assert p["has_key"] is True
 
 
+def test_discover_models_uses_unsaved_config_without_leaking_key(monkeypatch):
+    captured = {}
+
+    async def fake_discover(base_url, api_key):
+        captured.update(base_url=base_url, api_key=api_key)
+        return {"ok": True, "models": ["model-a", "model-b"], "message": "发现 2 个可用模型"}
+
+    monkeypatch.setattr("app.llm.discover_models", fake_discover)
+    response = client.post(
+        "/api/providers/discover-models",
+        json={
+            "provider_id": "custom",
+            "base_url": "https://example.com/v1/",
+            "api_key": "temporary-secret",
+        },
+    )
+    assert response.status_code == 200
+    assert response.json() == {
+        "ok": True,
+        "models": ["model-a", "model-b"],
+        "message": "发现 2 个可用模型",
+    }
+    assert captured == {
+        "base_url": "https://example.com/v1/",
+        "api_key": "temporary-secret",
+    }
+    assert "temporary-secret" not in response.text
+
+
 def test_session_and_chat_flow():
     s = client.post("/api/sessions", json={}).json()
     sid = s["id"]

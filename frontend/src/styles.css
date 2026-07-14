@@ -595,6 +595,67 @@ textarea {
   font-weight: 600;
   flex: 1;
 }
+.model-list-editor {
+  display: flex;
+  align-items: center;
+  align-content: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 72px;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-border);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.model-list-editor:focus-within {
+  border-color: var(--glass-border-lit);
+  box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.08);
+}
+.model-name-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+  padding: 6px 8px 6px 11px;
+  border: 1px solid rgba(139, 113, 255, 0.36);
+  border-radius: 9px;
+  background: rgba(124, 92, 255, 0.13);
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.25;
+}
+.model-name-chip > span {
+  overflow-wrap: anywhere;
+}
+.model-name-chip button {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-dim);
+  cursor: pointer;
+  font: inherit;
+}
+.model-name-chip button:hover {
+  background: rgba(255, 107, 138, 0.16);
+  color: var(--danger);
+}
+.model-add-input {
+  flex: 1 1 190px;
+  width: auto !important;
+  min-width: 150px;
+  padding: 6px 4px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: 12px;
+}
 .tag-ok {
   color: var(--ok);
   font-size: 12px;
