@@ -1,0 +1,43 @@
+appId: com.xiadie.agent
+productName: 遐蝶
+copyright: © 2026 遐蝶 Agent
+
+directories:
+  output: ../dist-installer      # 安装器输出到仓库根 dist-installer/
+  buildResources: build          # 图标等构建资源
+
+# 打进 asar 的应用代码（桌面壳本身）
+files:
+  - main.js
+  - preload.js
+  - assets/**/*
+  - package.json
+
+# 随应用一起分发、但不进 asar 的外部资源
+extraResources:
+  - from: ../frontend/dist        # 前端静态产物 → resources/frontend/
+    to: frontend
+  - from: ../backend/dist/xiadie-backend   # PyInstaller 冻结的后端 → resources/backend/
+    to: backend
+
+asar: true
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.ico
+  # 无需代码签名也能装（首次运行 SmartScreen 可能提示；正式发布建议签名）
+
+nsis:
+  oneClick: false                       # 走安装向导，可选安装目录
+  perMachine: false                     # 当前用户安装，免管理员
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: 遐蝶
+  artifactName: 遐蝶-Setup-${version}.${ext}
+
+# 说明：Live2D 模型为个人自用授权，禁止再分发（见 NOTICE.md）。
+# 对外发布前须替换为可再分发的模型。

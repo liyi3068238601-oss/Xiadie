@@ -1,0 +1,112 @@
+/* 桌宠页样式：透明窗口，模型/占位居中，气泡在上方。 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+html,
+body,
+#pet-root {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+}
+.pet-body {
+  font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+.pet {
+  position: relative;
+  width: 280px;
+  height: 380px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  cursor: grab;
+}
+.pet:active {
+  cursor: grabbing;
+}
+.canvas-wrap {
+  position: absolute;
+  inset: 0;
+}
+
+/* 状态气泡 */
+.bubble {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 220px;
+  padding: 8px 14px;
+  border-radius: 16px;
+  background: rgba(40, 26, 74, 0.82);
+  color: #ece9fb;
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: center;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(150, 120, 255, 0.35);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4), 0 0 20px rgba(124, 92, 255, 0.25);
+  animation: pop 0.3s ease;
+  z-index: 5;
+}
+.bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 12px;
+  height: 12px;
+  background: rgba(40, 26, 74, 0.82);
+  border-right: 1px solid rgba(150, 120, 255, 0.35);
+  border-bottom: 1px solid rgba(150, 120, 255, 0.35);
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(6px);
+  }
+}
+
+/* 占位（模型缺失兜底，需求 11.2） */
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 40px;
+  text-align: center;
+}
+.butterfly {
+  font-size: 76px;
+  filter: drop-shadow(0 4px 18px rgba(124, 92, 255, 0.6));
+  animation: float 3.2s ease-in-out infinite;
+}
+@keyframes float {
+  50% {
+    transform: translateY(-10px) rotate(-4deg);
+  }
+}
+.pname {
+  font-weight: 700;
+  letter-spacing: 3px;
+  font-size: 18px;
+  background: linear-gradient(90deg, #9d84ff, #45c7ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.phint {
+  font-size: 11px;
+  color: #a49dc4;
+  line-height: 1.5;
+  background: rgba(20, 11, 38, 0.6);
+  padding: 6px 10px;
+  border-radius: 10px;
+  backdrop-filter: blur(8px);
+}
