@@ -33,6 +33,7 @@ export function EpisodesSection({ onOpenSource }: Props) {
       significance: candidate.significance,
       fragmentIds: candidate.fragments.map((fragment) => fragment.id),
     }])));
+    return { pending, existing };
   };
 
   useEffect(() => {
@@ -43,8 +44,14 @@ export function EpisodesSection({ onOpenSource }: Props) {
     setGenerating(true);
     try {
       const result = await api.generateEpisodeCandidates();
-      await refresh();
-      toast(result.created ? `发现 ${result.created} 个 Episode 候选` : "暂时没有新的可合并经历");
+      const current = await refresh();
+      if (result.created) {
+        toast(`发现 ${result.created} 个新的 Episode 候选`);
+      } else if (current.pending.length) {
+        toast(`分析完成，已有 ${current.pending.length} 个候选等待确认`);
+      } else {
+        toast("分析完成，暂时没有可合并的经历");
+      }
     } catch (error: any) {
       toast(error.message || "候选生成失败");
     } finally {
