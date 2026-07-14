@@ -108,6 +108,8 @@ try {
     -FilePath $electronExe `
     -ArgumentList "." `
     -WorkingDirectory $desktopDir `
+    -RedirectStandardOutput (Join-Path $logRoot "desktop.out.log") `
+    -RedirectStandardError (Join-Path $logRoot "desktop.err.log") `
     -PassThru
 
   Wait-Process -Id $desktop.Id
