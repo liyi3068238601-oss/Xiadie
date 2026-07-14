@@ -97,13 +97,22 @@
 
 ### 阶段 C：实体、事件与 Saga
 
-1. 建立实体归一化与人工合并/拆分。
-2. 将相邻片段整理为 Episode。
-3. 将长期相关 Episode 聚合为 Saga。
-4. 归档任务只在空闲且预算允许时运行，所有模型调用可审计、可取消。
-5. 情绪模块可以读取有限的 Saga 倾向，但不得反向改写事实记忆。
+当前进度（2026-07-14）：实体档案与人工校正闭环已完成。
+
+1. [x] 建立实体档案：规范名称、类型、别名、标签、概述、当前状态和状态起始时间。
+2. [x] 新正式记忆先按已知名称/别名确定性匹配，再识别少量高置信度句式。
+3. [x] 新建实体或新增别名时，对既有正式记忆执行字面回补。
+4. [x] 支持手动关联、解除关联、归档和人工合并，所有操作写入实体事件。
+5. [x] 实体详情界面显示关联记忆、来源、关系和置信度，并可直接修正。
+6. [ ] 对无法确定的代词或隐式指称提供可选模型消解，但不得自动接受低置信度结果。
+7. [ ] 将相邻片段整理为 Episode。
+8. [ ] 将长期相关 Episode 聚合为 Saga。
+9. [ ] 归档任务只在空闲且预算允许时运行，所有模型调用可审计、可取消。
+10. [ ] 情绪模块可以读取有限的 Saga 倾向，但不得反向改写事实记忆。
 
 验收：重复实体不会无限增长；归档失败可重试；自动合并可撤销。
+
+本阶段参考了 MemoryConstellations 的 [`entityResolver.js`](https://github.com/ClaraShafiq/MemoryConstellations/blob/main/services/entityResolver.js)、[`entityProfile.js`](https://github.com/ClaraShafiq/MemoryConstellations/blob/main/services/entityProfile.js) 和实体详情面板：保留“名称/别名优先、不确定不强绑、关联可解除、合并需人工裁决”的原则。遐蝶采用 Python/SQLite 原生重构，没有复制其 LLM、Express 或 ChromaDB 管线。
 
 ### 阶段 D：混合召回
 

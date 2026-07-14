@@ -35,7 +35,7 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; python -m pytest tests` | 通过：20 passed，1 warning |
+| 后端 | `cd backend; python -m pytest tests` | 通过：22 passed，1 warning |
 | 前端 | `cd frontend; npm.cmd run build` | 通过：TypeScript 检查及 Vite 生产构建成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 
@@ -83,7 +83,9 @@ npm.cmd start
 - 记忆页可以修改候选内容和层级，并接受或拒绝。
 - 候选和正式记忆可以跳回来源会话并高亮原消息，来源删除后明确显示不可用。
 - SQLite FTS5 trigram 已用于相关记忆召回，并限制为 active、enabled、12 条和 2400 字符。
-- 已建立 Entity、Fragment-Entity 和 Event 基础表；实体归档尚未实现。
+- 实体档案支持类型、别名、标签、概述和当前状态；正式记忆按名称/别名及高置信度句式自动关联。
+- 新建实体或新增别名会回补既有明确提及；用户可以手动关联、解除、归档和合并实体。
+- 记忆页已有实体列表与详情管理；Episode、Saga 和星图尚未实现。
 
 - Electron：透明置顶桌宠、主窗口、托盘、右键菜单及基础 IPC 联动。
 - Live2D：固定模型加载、动作和状态气泡；资源缺失时有占位降级。

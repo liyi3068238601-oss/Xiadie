@@ -75,6 +75,25 @@ export interface MemoryCandidate {
   resolution_note: string;
   created_at: number;
 }
+export interface EntityFragment extends Memory {
+  relation: string;
+  confidence: number;
+}
+export interface MemoryEntity {
+  id: string;
+  name: string;
+  entity_type: string;
+  summary: string;
+  aliases: string[];
+  tags: string[];
+  current_status: string;
+  status_since: string;
+  status: string;
+  source: string;
+  fragment_count: number;
+  fragments?: EntityFragment[];
+  updated_at: number;
+}
 export interface Task {
   id: string;
   title: string;
@@ -143,6 +162,33 @@ export const rejectMemoryCandidate = (id: string, note = "") =>
   j<MemoryCandidate>(`/api/memory-candidates/${id}/reject`, {
     method: "POST",
     body: JSON.stringify({ note }),
+  });
+
+// ---- 记忆实体 ----
+export const listEntities = () => j<MemoryEntity[]>("/api/entities");
+export const getEntity = (id: string) => j<MemoryEntity>(`/api/entities/${id}`);
+export const addEntity = (body: {
+  name: string;
+  entity_type: string;
+  aliases?: string[];
+  summary?: string;
+  tags?: string[];
+}) => j<MemoryEntity>("/api/entities", { method: "POST", body: JSON.stringify(body) });
+export const updateEntity = (id: string, body: Partial<MemoryEntity>) =>
+  j<MemoryEntity>(`/api/entities/${id}`, { method: "PATCH", body: JSON.stringify(body) });
+export const deleteEntity = (id: string) =>
+  j<{ ok: boolean }>(`/api/entities/${id}`, { method: "DELETE" });
+export const linkEntityFragment = (id: string, fragment_id: string, relation = "mentions") =>
+  j<MemoryEntity>(`/api/entities/${id}/links`, {
+    method: "POST",
+    body: JSON.stringify({ fragment_id, relation }),
+  });
+export const unlinkEntityFragment = (id: string, fragmentId: string) =>
+  j<MemoryEntity>(`/api/entities/${id}/links/${fragmentId}`, { method: "DELETE" });
+export const mergeEntity = (targetId: string, source_entity_id: string) =>
+  j<MemoryEntity>(`/api/entities/${targetId}/merge`, {
+    method: "POST",
+    body: JSON.stringify({ source_entity_id }),
   });
 
 // ---- 任务 ----

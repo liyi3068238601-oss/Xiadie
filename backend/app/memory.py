@@ -62,6 +62,9 @@ def create_memory(
             confidence=confidence,
             sensitivity=sensitivity,
         )
+        from . import entities
+
+        entities.auto_link_fragment(memory["id"], memory["content"], conn=conn)
         _event(conn, "fragment", memory["id"], "created", None, memory, source)
         conn.commit()
         return memory
@@ -274,6 +277,9 @@ def accept_candidate(
             confidence=candidate["confidence"],
             sensitivity=candidate["sensitivity"],
         )
+        from . import entities
+
+        entities.auto_link_fragment(memory["id"], memory["content"], conn=conn)
         resolved_at = db.now()
         conn.execute(
             "UPDATE memory_candidates SET status='accepted', resolved_memory_id=?, resolved_at=?"

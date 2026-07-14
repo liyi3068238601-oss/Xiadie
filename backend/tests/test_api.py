@@ -246,6 +246,63 @@ def test_fts_retrieval_only_returns_relevant_active_enabled_memories():
     }
 
 
+def test_entity_auto_link_alias_update_unlink_and_merge():
+    first = client.post(
+        "/api/memories", json={"layer": "L1", "content": "我的猫叫星澜，喜欢趴在窗边"}
+    ).json()
+    entities_list = client.get("/api/entities").json()
+    moon = next(entity for entity in entities_list if entity["name"] == "星澜")
+    assert moon["entity_type"] == "pet"
+    assert moon["fragment_count"] == 1
+
+    second = client.post(
+        "/api/memories", json={"layer": "L2", "content": "星澜今天很安静"}
+    ).json()
+    detail = client.get(f"/api/entities/{moon['id']}").json()
+    assert {fragment["id"] for fragment in detail["fragments"]} == {first["id"], second["id"]}
+
+    updated = client.patch(
+        f"/api/entities/{moon['id']}",
+        json={"aliases": ["小星澜"], "summary": "用户的猫", "current_status": "喜欢窗边"},
+    ).json()
+    assert updated["aliases"] == ["小星澜"]
+    assert updated["summary"] == "用户的猫"
+
+    unlinked = client.delete(f"/api/entities/{moon['id']}/links/{second['id']}").json()
+    assert {fragment["id"] for fragment in unlinked["fragments"]} == {first["id"]}
+
+    duplicate = client.post(
+        "/api/entities",
+        json={"name": "星澜猫", "entity_type": "pet", "aliases": ["Starlight"]},
+    ).json()
+    merged = client.post(
+        f"/api/entities/{moon['id']}/merge",
+        json={"source_entity_id": duplicate["id"]},
+    ).json()
+    assert "星澜猫" in merged["aliases"]
+    assert client.get(f"/api/entities/{duplicate['id']}").status_code == 404
+    events = client.get(f"/api/memory-events/entity/{moon['id']}").json()
+    assert {event["action"] for event in events} >= {
+        "created", "fragment_linked", "updated", "fragment_unlinked", "merged_in"
+    }
+
+
+def test_new_entity_and_alias_backfill_existing_fragments():
+    old_memory = client.post(
+        "/api/memories", json={"layer": "L2", "content": "今天继续整理北辰计划的资料"}
+    ).json()
+    entity = client.post(
+        "/api/entities", json={"name": "北辰计划", "entity_type": "project"}
+    ).json()
+    assert old_memory["id"] in {fragment["id"] for fragment in entity["fragments"]}
+
+    alias_memory = client.post(
+        "/api/memories", json={"layer": "L2", "content": "Project Polaris 已进入下一阶段"}
+    ).json()
+    updated = client.patch(
+        f"/api/entities/{entity['id']}", json={"aliases": ["Project Polaris"]}
+    ).json()
+    assert alias_memory["id"] in {fragment["id"] for fragment in updated["fragments"]}
 def test_task_flow_from_chat():
     s = client.post("/api/sessions", json={}).json()
     t = client.post("/api/tasks",
@@ -338,7 +395,7 @@ def test_schema_migration_is_idempotent():
         version = conn.execute(
             "SELECT value FROM schema_meta WHERE key = 'schema_version'"
         ).fetchone()["value"]
-        assert version == "3"
+        assert version == "4"
         assert conn.execute("SELECT COUNT(*) c FROM companion_state").fetchone()["c"] <= 1
         tables = {
             row["name"] for row in conn.execute(

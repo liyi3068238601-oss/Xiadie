@@ -10,9 +10,9 @@ from typing import Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from . import companion_state, db, llm, memory
+from . import companion_state, db, entities, llm, memory
 from .persona import build_system_prompt
 from .security import ALLOWED_ORIGINS, TOKEN_HEADER, local_api_guard
 
@@ -381,6 +381,92 @@ def get_memory_events(object_type: str, object_id: str) -> list[dict]:
     if object_type not in ("candidate", "fragment", "entity"):
         raise HTTPException(400, "非法的记忆对象类型")
     return memory.list_events(object_type, object_id)
+
+
+# ---------------------------------------------------------------- 记忆实体
+class EntityIn(BaseModel):
+    name: str
+    entity_type: str = "concept"
+    aliases: list[str] = Field(default_factory=list)
+    summary: str = ""
+    tags: list[str] = Field(default_factory=list)
+
+
+class EntityLinkIn(BaseModel):
+    fragment_id: str
+    relation: str = "mentions"
+
+
+class EntityMergeIn(BaseModel):
+    source_entity_id: str
+
+
+@app.get("/api/entities")
+def get_entities() -> list[dict]:
+    return entities.list_entities()
+
+
+@app.post("/api/entities")
+def add_entity(body: EntityIn) -> dict:
+    if body.entity_type not in entities.ENTITY_TYPES:
+        raise HTTPException(400, "非法的实体类型")
+    try:
+        entity = entities.create_entity(
+            body.name, body.entity_type, body.aliases, body.summary, body.tags
+        )
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
+    return entities.get_entity(entity["id"])
+
+
+@app.get("/api/entities/{eid}")
+def get_entity(eid: str) -> dict:
+    entity = entities.get_entity(eid)
+    if not entity or entity["status"] != "active":
+        raise HTTPException(404, "实体不存在")
+    return entity
+
+
+@app.patch("/api/entities/{eid}")
+def patch_entity(eid: str, body: dict) -> dict:
+    if body.get("entity_type") is not None and body["entity_type"] not in entities.ENTITY_TYPES:
+        raise HTTPException(400, "非法的实体类型")
+    try:
+        entity = entities.update_entity(eid, **body)
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
+    if not entity:
+        raise HTTPException(404, "实体不存在")
+    return entity
+
+
+@app.delete("/api/entities/{eid}")
+def remove_entity(eid: str) -> dict:
+    if not entities.archive_entity(eid):
+        raise HTTPException(404, "实体不存在")
+    return {"ok": True}
+
+
+@app.post("/api/entities/{eid}/links")
+def add_entity_link(eid: str, body: EntityLinkIn) -> dict:
+    if not entities.link_fragment(eid, body.fragment_id, body.relation):
+        raise HTTPException(404, "实体或记忆不存在")
+    return get_entity(eid)
+
+
+@app.delete("/api/entities/{eid}/links/{fragment_id}")
+def remove_entity_link(eid: str, fragment_id: str) -> dict:
+    if not entities.unlink_fragment(eid, fragment_id):
+        raise HTTPException(404, "关联不存在")
+    return get_entity(eid)
+
+
+@app.post("/api/entities/{eid}/merge")
+def merge_entity(eid: str, body: EntityMergeIn) -> dict:
+    entity = entities.merge_entities(eid, body.source_entity_id)
+    if not entity:
+        raise HTTPException(409, "实体不存在、已处理或不能与自身合并")
+    return entity
 
 
 # ---------------------------------------------------------------- 任务

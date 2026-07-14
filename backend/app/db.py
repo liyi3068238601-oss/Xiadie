@@ -201,6 +201,20 @@ MIGRATIONS = [
         INSERT INTO memory_fragments_fts(memory_fragments_fts) VALUES('rebuild');
         """,
     ),
+    (
+        4,
+        """
+        ALTER TABLE memory_entities ADD COLUMN tags TEXT NOT NULL DEFAULT '[]';
+        ALTER TABLE memory_entities ADD COLUMN current_status TEXT NOT NULL DEFAULT '';
+        ALTER TABLE memory_entities ADD COLUMN status_since TEXT NOT NULL DEFAULT '';
+        ALTER TABLE memory_entities ADD COLUMN status TEXT NOT NULL DEFAULT 'active';
+        ALTER TABLE memory_entities ADD COLUMN source TEXT NOT NULL DEFAULT 'manual';
+        ALTER TABLE memory_entities ADD COLUMN merged_into_id TEXT;
+        ALTER TABLE memory_fragment_entities ADD COLUMN confidence REAL NOT NULL DEFAULT 1.0;
+        CREATE INDEX IF NOT EXISTS idx_memory_entities_status_type
+            ON memory_entities(status, entity_type, updated_at);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

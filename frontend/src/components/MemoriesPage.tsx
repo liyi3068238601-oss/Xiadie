@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import * as api from "./../api";
 import { toast } from "./../store";
+import { EntitiesSection } from "./EntitiesSection";
 
 type Layer = "L0" | "L1" | "L2";
 
@@ -149,6 +150,8 @@ export function MemoriesPage({ onOpenSource }: Props) {
       <div className="sub">
         遐蝶只会参考已启用的正式记忆；对话中识别到的内容会先等待你确认。
       </div>
+
+      <EntitiesSection memories={memories} onOpenSource={onOpenSource} />
 
       {candidates.length > 0 && (
         <div style={{ marginTop: 20, marginBottom: 24 }}>
