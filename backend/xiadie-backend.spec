@@ -6,6 +6,10 @@ from PyInstaller.utils.hooks import collect_all, collect_submodules
 
 datas, binaries, hiddenimports = [], [], []
 
+# Built-in character lore is a runtime knowledge source, not Python code, so it
+# must be copied explicitly into the frozen application.
+datas += [("app/knowledge/xiadie_lore.md", "app/knowledge")]
+
 # 尽量把这些包整包收进来，避免动态导入缺失。缺某个包（如 Windows 无 uvloop）时跳过。
 for pkg in (
     "uvicorn", "fastapi", "starlette", "pydantic", "pydantic_core",

@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from . import companion_state, db, entities, episodes, llm, memory
+from . import companion_state, db, entities, episodes, llm, lore, memory
 from .persona import build_system_prompt
 from .security import ALLOWED_ORIGINS, TOKEN_HEADER, local_api_guard
 
@@ -213,7 +213,11 @@ async def chat(body: ChatIn) -> StreamingResponse:
             else companion_state.preview_interaction(body.content, current_state)
         )
         style = companion_state.get_style_guidance(next_state)
-        messages = [{"role": "system", "content": build_system_prompt(digest, style)}]
+        lore_digest = lore.retrieve_lore(body.content)
+        messages = [{
+            "role": "system",
+            "content": build_system_prompt(digest, style, lore_digest),
+        }]
         messages += [{"role": r["role"], "content": r["content"]} for r in history]
     finally:
         conn.close()

@@ -131,6 +131,26 @@ def test_session_and_chat_flow():
     assert client.get("/api/sessions").json()[0]["title"].startswith("你好")
 
 
+def test_persona_core_and_lore_are_separated_and_injected():
+    from app import lore
+    from app.persona import PERSONA_PROMPT, build_system_prompt
+
+    assert "你就是遐蝶本人" in PERSONA_PROMPT
+    assert "不要默认用户是开拓者" in PERSONA_PROMPT
+    assert "玻吕茜亚无法忍受永恒孤独" not in PERSONA_PROMPT
+
+    related = lore.retrieve_lore("说说你和玻吕茜亚妹妹的过去")
+    unrelated = lore.retrieve_lore("请帮我计算 12 乘以 8")
+    assert "起源与死亡权能" in related
+    assert "玻吕茜亚" in related
+    assert unrelated == ""
+
+    prompt = build_system_prompt("- 用户喜欢安静", "语气平静", related)
+    assert "与当前话题相关的角色设定" in prompt
+    assert "你与用户的相处记忆" in prompt
+    assert "用户喜欢安静" in prompt
+
+
 def test_memory_crud_and_toggle():
     m = client.post("/api/memories",
                     json={"layer": "L0", "content": "用户偏好中文"}).json()
