@@ -3,12 +3,19 @@
 // 不做启动多窗口堆叠。
 const { app, BrowserWindow, Tray, Menu, ipcMain, screen, shell } = require("electron");
 const path = require("path");
+const { fileURLToPath } = require("url");
 const { spawn } = require("child_process");
 const http = require("http");
+const { randomBytes } = require("crypto");
 
 const isDev = !app.isPackaged;
 const BACKEND_PORT = 8756;
 const DEV_URL = "http://127.0.0.1:5173";
+const inheritedToken = process.env.XIADIE_API_TOKEN || "";
+// 开发启动器需要先启动后端，因此会提供同一枚临时令牌；正式包始终由 Electron 生成。
+const API_TOKEN = isDev && inheritedToken.length >= 32
+  ? inheritedToken
+  : randomBytes(32).toString("base64url");
 
 let petWin = null;
 let mainWin = null;
@@ -36,7 +43,11 @@ function startBackend() {
   backendProc = spawn(backendExe, [], {
     cwd: path.dirname(backendExe),
     stdio: "ignore",
-    env: { ...process.env, XIADIE_DATA_DIR: dataDir },
+    env: {
+      ...process.env,
+      XIADIE_API_TOKEN: API_TOKEN,
+      XIADIE_DATA_DIR: dataDir,
+    },
   });
   // 必须监听 error：否则 ENOENT 会作为未处理的 EventEmitter error 抛出，导致主进程崩溃。
   backendProc.on("error", (e) => {
@@ -176,6 +187,23 @@ ipcMain.on("reset-pet", () => resetPet());
 ipcMain.on("quit", () => quit());
 ipcMain.on("show-pet-menu", () => {
   buildTrayMenu().popup();
+});
+
+// preload 同步读取一次后保存在渲染进程内存中；不通过 URL 或持久化存储传递。
+ipcMain.on("get-api-token", (event) => {
+  const senderUrl = event.senderFrame?.url || "";
+  let trusted = false;
+  try {
+    if (isDev) {
+      trusted = new URL(senderUrl).origin === DEV_URL;
+    } else if (senderUrl.startsWith("file://")) {
+      const frontendRoot = path.resolve(process.resourcesPath, "frontend") + path.sep;
+      trusted = path.resolve(fileURLToPath(senderUrl)).startsWith(frontendRoot);
+    }
+  } catch {
+    trusted = false;
+  }
+  event.returnValue = trusted ? API_TOKEN : "";
 });
 
 // 桌宠窗口拖拽移动

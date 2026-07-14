@@ -7,16 +7,60 @@ from fastapi.testclient import TestClient
 
 # 用临时库，避免污染开发数据
 os.environ["XIADIE_DATA_DIR"] = tempfile.mkdtemp(prefix="xiadie-test-")
+TEST_API_TOKEN = "test-token-with-at-least-thirty-two-bytes"
+os.environ["XIADIE_API_TOKEN"] = TEST_API_TOKEN
 
 from app.main import app  # noqa: E402
 
-client = TestClient(app)
+client = TestClient(app, headers={"X-Xiadie-Token": TEST_API_TOKEN})
 
 
 def test_health():
-    r = client.get("/api/health")
+    r = TestClient(app).get("/api/health")
     assert r.status_code == 200
-    assert r.json()["status"] == "ok"
+    assert r.json() == {"status": "ok"}
+
+
+def test_local_api_requires_correct_token():
+    untrusted = TestClient(app)
+    assert untrusted.get("/api/providers").status_code == 401
+    assert untrusted.get(
+        "/api/providers", headers={"X-Xiadie-Token": "wrong-token"}
+    ).status_code == 401
+    assert untrusted.get(
+        "/api/providers", headers={"X-Xiadie-Token": TEST_API_TOKEN}
+    ).status_code == 200
+
+
+def test_explicit_browser_dev_mode_is_origin_limited(monkeypatch):
+    monkeypatch.delenv("XIADIE_API_TOKEN")
+    monkeypatch.setenv("XIADIE_DEV_MODE", "1")
+    browser = TestClient(app)
+    assert browser.get(
+        "/api/providers", headers={"Origin": "http://127.0.0.1:5173"}
+    ).status_code == 200
+    assert browser.get(
+        "/api/providers", headers={"Origin": "https://example.com"}
+    ).status_code == 401
+    assert browser.get("/api/providers").status_code == 401
+
+
+def test_cors_only_allows_known_local_origins():
+    browser = TestClient(app)
+    preflight = {
+        "Access-Control-Request-Method": "GET",
+        "Access-Control-Request-Headers": "X-Xiadie-Token",
+    }
+    allowed = browser.options(
+        "/api/providers",
+        headers={"Origin": "http://127.0.0.1:5173", **preflight},
+    )
+    assert allowed.status_code == 200
+    assert allowed.headers["access-control-allow-origin"] == "http://127.0.0.1:5173"
+    denied = browser.options(
+        "/api/providers", headers={"Origin": "https://example.com", **preflight}
+    )
+    assert denied.status_code == 400
 
 
 def test_default_providers_seeded():

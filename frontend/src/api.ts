@@ -2,10 +2,18 @@
 export const API_BASE: string =
   (window as any).__XIADIE_API__ || "http://127.0.0.1:8756";
 
+function requestHeaders(init?: RequestInit): Headers {
+  const headers = new Headers(init?.headers);
+  if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+  const token = (window as any).xiadie?.getApiToken?.();
+  if (token) headers.set("X-Xiadie-Token", token);
+  return headers;
+}
+
 async function j<T>(path: string, init?: RequestInit): Promise<T> {
   const r = await fetch(API_BASE + path, {
-    headers: { "Content-Type": "application/json" },
     ...init,
+    headers: requestHeaders(init),
   });
   if (!r.ok) {
     let detail = r.statusText;
@@ -149,7 +157,7 @@ export async function streamChat(
   try {
     const r = await fetch(API_BASE + "/api/chat", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: requestHeaders(),
       body: JSON.stringify({ session_id, content, regenerate }),
     });
     if (!r.ok || !r.body) {
@@ -195,5 +203,6 @@ export const desktop = (window as any).xiadie as
       dragPet: (dx: number, dy: number) => void;
       setPetState: (s: string, bubble?: string, emotion?: string) => void;
       onPetState: (cb: (p: { state: string; bubble?: string; emotion?: string }) => void) => void;
+      getApiToken: () => string;
     }
   | undefined;

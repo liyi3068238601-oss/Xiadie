@@ -14,6 +14,7 @@ from pydantic import BaseModel
 
 from . import db, llm, memory
 from .persona import build_system_prompt
+from .security import ALLOWED_ORIGINS, TOKEN_HEADER, local_api_guard
 
 
 @asynccontextmanager
@@ -27,19 +28,21 @@ app = FastAPI(title="遐蝶 Agent Backend", version="0.1.0", lifespan=lifespan)
 # init 也在模块导入时执行一次，保证裸 TestClient（不走 lifespan）也有表可用。
 db.init_db()
 
-# 前端在 dev 期跑在 vite (5173)，Electron 生产用 file://。放开本地来源即可。
+# 只允许明确的本地开发来源和 Electron file:// 来源；实际数据接口还需临时令牌。
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=list(ALLOWED_ORIGINS),
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", TOKEN_HEADER],
 )
+app.middleware("http")(local_api_guard)
 
 
 # ---------------------------------------------------------------- 基础
 @app.get("/api/health")
 def health() -> dict:
-    return {"status": "ok", "app": "遐蝶", "version": "0.1.0"}
+    # 供 Electron 判断进程是否就绪，不暴露版本、配置或运行环境。
+    return {"status": "ok"}
 
 
 # ---------------------------------------------------------------- 会话

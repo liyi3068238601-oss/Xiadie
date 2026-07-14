@@ -35,7 +35,7 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests -q` | 通过：11 passed，1 warning，12.11s |
+| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests -q` | 通过：14 passed，1 warning |
 | 前端 | `cd frontend; npm.cmd run build` | 通过：TypeScript 检查及 Vite 生产构建成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 
@@ -56,7 +56,7 @@
 4. 启动 Electron；
 5. Electron 退出后清理本次启动的子进程。
 
-开发日志写入 `%LOCALAPPDATA%\Xiadie\dev-logs`。启动器已在 Windows 上完成一次端到端实机验证。
+开发日志写入 `%LOCALAPPDATA%\Xiadie\dev-logs`，包括后端、前端、桌面端日志和不含令牌的 `launcher.err.log`。启动器已在 Windows 上完成一次端到端实机验证。
 
 ### 分进程启动
 
@@ -80,6 +80,7 @@ npm.cmd start
 - Live2D：固定模型加载、动作和状态气泡；资源缺失时有占位降级。
 - 聊天：会话管理、SSE 流式输出、复制、收藏、重新生成和错误提示。
 - 模型：内置 mock，以及多种 OpenAI-Compatible 供应商配置、连接测试和模型切换。
+- 本地 API：除最小健康检查外均校验会话级随机令牌，CORS 仅允许明确的本机来源。
 - 数据：SQLite 本地保存会话、消息、记忆、任务、设置和工具日志。
 - 记忆：L0/L1/L2 分层、查看、修改、删除、禁用和保守自动抽取。
 - 任务：创建、状态流转、今日任务及聊天来源记录。
@@ -99,7 +100,7 @@ npm.cmd start
 
 | 类别 | 当前情况 | 后续处理 |
 |---|---|---|
-| 本地 API | CORS 当前允许 `*`，且没有本地调用令牌 | v0.1.1 收紧本地访问边界 |
+| 本地 API | 已有临时令牌与严格来源策略；正式安装包的重启链路仍需实机回归 | Windows 打包验收时复核令牌传递 |
 | 密钥 | API Key 存在本地 SQLite 中，接口不回显但存储未加密 | 迁移到 Electron `safeStorage` 或系统凭据存储 |
 | 重新生成 | 旧 assistant 消息先删除；新生成失败时可能丢失旧回复 | v0.1.2 改为成功后替换或保留版本 |
 | 上下文 | 当前会话历史没有长度或 token 预算 | v0.1.2 增加上下文窗口策略 |

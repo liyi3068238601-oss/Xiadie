@@ -51,6 +51,13 @@ try {
     throw "Electron runtime is incomplete. Run npm ci in the desktop directory."
   }
 
+  # 后端先于 Electron 启动，开发启动器为两个子进程生成同一枚临时令牌。
+  # 令牌只存在于当前进程树的环境中，不写入日志、URL 或磁盘。
+  # 两个独立 UUID 提供约 244 bit 随机强度；纯 .NET 写法不依赖 PATH 或外部命令。
+  $tokenPart1 = [Guid]::NewGuid().ToString("N")
+  $tokenPart2 = [Guid]::NewGuid().ToString("N")
+  $env:XIADIE_API_TOKEN = [string]::Concat($tokenPart1, $tokenPart2)
+
   $existingElectron = Get-CimInstance Win32_Process -Filter "Name = 'electron.exe'" -ErrorAction SilentlyContinue |
     Where-Object { $_.ExecutablePath -eq $electronExe } |
     Select-Object -First 1
@@ -58,7 +65,9 @@ try {
     exit 0
   }
 
-  if (-not (Test-Port 8756)) {
+  if (Test-Port 8756) {
+    throw "Backend port 8756 is already in use. Exit the existing backend and try again."
+  } else {
     $startedBackend = Start-Process `
       -FilePath $backendPython `
       -ArgumentList "run_frozen.py" `
@@ -114,6 +123,11 @@ try {
 
   Wait-Process -Id $desktop.Id
 } catch {
+  $launcherError = @(
+    "[$(Get-Date -Format o)] $($_.Exception.Message)"
+    $_.ScriptStackTrace
+  ) -join [Environment]::NewLine
+  Add-Content -LiteralPath (Join-Path $logRoot "launcher.err.log") -Value $launcherError -Encoding UTF8
   Show-LaunchError $_.Exception.Message
 } finally {
   Stop-ProcessTree $startedFrontend
