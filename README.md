@@ -4,6 +4,14 @@
 
 本仓库是按需求文档 `v1.0` 从零搭建的 **可运行 MVP 骨架**，覆盖近期允许范围（Live2D 入口 + 单主窗口 + 聊天/记忆/任务/多模型 + 权限框架），刻意不做被列为"近期禁止"的完整多窗口、模型市场、QQ、语音通话、MCP、桌面自动化。
 
+## 项目治理文档
+
+- [Codex 项目上下文](docs/CODEX_PROJECT_CONTEXT.md)：新对话快速恢复项目边界与当前状态。
+- [长期开发路线图](docs/XIADIE_LONG_TERM_ROADMAP.md)：从当前 MVP 到最终 Agent 形态的分阶段安排。
+- [项目基线状态](docs/BASELINE_STATUS.md)：当前环境、验证结果、已有能力与已知风险。
+- [小步开发与 PR 检查清单](docs/PR_CHECKLIST.md)：每次改动的范围、风险、验证与交付标准。
+- [架构决策记录](docs/adr/README.md)：重大技术选择的记录规则与模板。
+
 ## 架构
 
 ```
