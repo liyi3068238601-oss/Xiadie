@@ -35,7 +35,7 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; python -m pytest tests` | 通过：24 passed，1 warning |
+| 后端 | `cd backend; python -m pytest tests` | 通过：25 passed，1 warning |
 | 前端 | `cd frontend; npm.cmd run build` | 通过：TypeScript 检查及 Vite 生产构建成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 

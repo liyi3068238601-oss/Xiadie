@@ -305,6 +305,26 @@ def test_new_entity_and_alias_backfill_existing_fragments():
     assert alias_memory["id"] in {fragment["id"] for fragment in updated["fragments"]}
 
 
+def test_archived_entity_name_can_be_created_again():
+    memory_item = client.post(
+        "/api/memories", json={"layer": "L2", "content": "归航项目正在整理需求"}
+    ).json()
+    original = client.post(
+        "/api/entities", json={"name": "归航项目", "entity_type": "project"}
+    ).json()
+    assert client.delete(f"/api/entities/{original['id']}").status_code == 200
+    assert client.get(f"/api/entities/{original['id']}").status_code == 404
+
+    recreated_response = client.post(
+        "/api/entities", json={"name": "归航项目", "entity_type": "project"}
+    )
+    assert recreated_response.status_code == 200
+    recreated = recreated_response.json()
+    assert recreated["id"] != original["id"]
+    assert recreated["status"] == "active"
+    assert memory_item["id"] in {fragment["id"] for fragment in recreated["fragments"]}
+
+
 def test_episode_candidate_generation_acceptance_and_audit():
     first = client.post(
         "/api/memories",
@@ -455,7 +475,7 @@ def test_schema_migration_is_idempotent():
         version = conn.execute(
             "SELECT value FROM schema_meta WHERE key = 'schema_version'"
         ).fetchone()["value"]
-        assert version == "5"
+        assert version == "6"
         assert conn.execute("SELECT COUNT(*) c FROM companion_state").fetchone()["c"] <= 1
         tables = {
             row["name"] for row in conn.execute(

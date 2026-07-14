@@ -303,6 +303,14 @@ MIGRATIONS = [
             ON memory_events(object_type, object_id, created_at);
         """,
     ),
+    (
+        6,
+        """
+        DROP INDEX IF EXISTS idx_memory_entities_name_type;
+        CREATE UNIQUE INDEX idx_memory_entities_active_name_type
+            ON memory_entities(name, entity_type) WHERE status='active';
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
