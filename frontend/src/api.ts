@@ -50,8 +50,26 @@ export interface Memory {
   content: string;
   tags: string;
   source: string;
+  source_session_id?: string;
+  source_message_id?: string;
+  confidence?: number;
+  sensitivity?: "normal" | "sensitive";
+  status?: "active" | "cooling" | "frozen" | "tombstone";
   enabled: boolean;
   updated_at: number;
+}
+export interface MemoryCandidate {
+  id: string;
+  content: string;
+  proposed_layer: "L0" | "L1" | "L2";
+  tags: string;
+  source_session_id?: string;
+  source_message_id?: string;
+  confidence: number;
+  sensitivity: "normal" | "sensitive";
+  status: "pending" | "accepted" | "rejected";
+  resolution_note: string;
+  created_at: number;
 }
 export interface Task {
   id: string;
@@ -107,6 +125,21 @@ export const updateMemory = (id: string, body: Partial<Memory>) =>
   j<Memory>(`/api/memories/${id}`, { method: "PATCH", body: JSON.stringify(body) });
 export const deleteMemory = (id: string) =>
   j<{ ok: boolean }>(`/api/memories/${id}`, { method: "DELETE" });
+export const listMemoryCandidates = () =>
+  j<MemoryCandidate[]>("/api/memory-candidates?status=pending");
+export const acceptMemoryCandidate = (
+  id: string,
+  body: { content?: string; layer?: string; tags?: string }
+) =>
+  j<{ candidate: MemoryCandidate; memory: Memory }>(`/api/memory-candidates/${id}/accept`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+export const rejectMemoryCandidate = (id: string, note = "") =>
+  j<MemoryCandidate>(`/api/memory-candidates/${id}/reject`, {
+    method: "POST",
+    body: JSON.stringify({ note }),
+  });
 
 // ---- 任务 ----
 export const listTasks = (today = false) =>
@@ -147,7 +180,11 @@ export interface ChatCallbacks {
   onMeta?: (m: { model: string; memory_used: boolean }) => void;
   onDelta?: (text: string) => void;
   onError?: (message: string, hint: string) => void;
-  onDone?: (d: { message_id: string; auto_memory: Memory | null }) => void;
+  onDone?: (d: {
+    message_id: string;
+    auto_memory: Memory | null;
+    memory_candidate?: { id: string; content: string; status: string } | null;
+  }) => void;
 }
 
 // 用 fetch+ReadableStream 解析 SSE（EventSource 不支持 POST）

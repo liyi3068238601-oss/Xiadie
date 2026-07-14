@@ -249,9 +249,16 @@ async def chat(body: ChatIn) -> StreamingResponse:
             c2.close()
         if not body.regenerate:
             companion_state.save_state(next_state)
-        # 轻量自动记忆抽取（保守，标注 auto）
-        auto = memory.maybe_auto_extract(body.content) if not body.regenerate else None
-        yield _sse("done", {"message_id": aid, "auto_memory": auto})
+        # 只生成待确认候选，不再把模型判断静默写成正式记忆。
+        candidate = (
+            memory.maybe_create_candidate(body.content, body.session_id, uid)
+            if not body.regenerate
+            else None
+        )
+        yield _sse(
+            "done",
+            {"message_id": aid, "auto_memory": None, "memory_candidate": candidate},
+        )
 
     return StreamingResponse(gen(), media_type="text/event-stream")
 
@@ -294,6 +301,10 @@ def add_memory(body: MemoryIn) -> dict:
 def patch_memory(mid: str, body: dict) -> dict:
     if body.get("layer") is not None and body["layer"] not in ("L0", "L1", "L2"):
         raise HTTPException(400, "非法的记忆层级")
+    if body.get("status") is not None and body["status"] not in (
+        "active", "cooling", "frozen", "tombstone"
+    ):
+        raise HTTPException(400, "非法的记忆状态")
     m = memory.update_memory(mid, **body)
     if not m:
         raise HTTPException(404, "记忆不存在")
@@ -302,8 +313,58 @@ def patch_memory(mid: str, body: dict) -> dict:
 
 @app.delete("/api/memories/{mid}")
 def remove_memory(mid: str) -> dict:
-    memory.delete_memory(mid)
+    if not memory.delete_memory(mid):
+        raise HTTPException(404, "记忆不存在")
     return {"ok": True}
+
+
+class CandidateDecisionIn(BaseModel):
+    content: Optional[str] = None
+    layer: Optional[str] = None
+    tags: Optional[str] = None
+    note: str = ""
+
+
+@app.get("/api/memory-candidates")
+def get_memory_candidates(status: Optional[str] = "pending") -> list[dict]:
+    if status is not None and status not in ("pending", "accepted", "rejected"):
+        raise HTTPException(400, "非法的候选状态")
+    return memory.list_candidates(status)
+
+
+@app.get("/api/memory-candidates/{cid}")
+def get_memory_candidate(cid: str) -> dict:
+    candidate = memory.get_candidate(cid)
+    if not candidate:
+        raise HTTPException(404, "记忆候选不存在")
+    return candidate
+
+
+@app.post("/api/memory-candidates/{cid}/accept")
+def accept_memory_candidate(cid: str, body: CandidateDecisionIn) -> dict:
+    if body.layer is not None and body.layer not in ("L0", "L1", "L2"):
+        raise HTTPException(400, "非法的记忆层级")
+    if body.content is not None and not body.content.strip():
+        raise HTTPException(400, "记忆内容不能为空")
+    result = memory.accept_candidate(cid, body.content, body.layer, body.tags)
+    if not result:
+        raise HTTPException(409, "候选不存在或已处理")
+    return result
+
+
+@app.post("/api/memory-candidates/{cid}/reject")
+def reject_memory_candidate(cid: str, body: CandidateDecisionIn) -> dict:
+    result = memory.reject_candidate(cid, body.note)
+    if not result:
+        raise HTTPException(409, "候选不存在或已处理")
+    return result
+
+
+@app.get("/api/memory-events/{object_type}/{object_id}")
+def get_memory_events(object_type: str, object_id: str) -> list[dict]:
+    if object_type not in ("candidate", "fragment", "entity"):
+        raise HTTPException(400, "非法的记忆对象类型")
+    return memory.list_events(object_type, object_id)
 
 
 # ---------------------------------------------------------------- 任务

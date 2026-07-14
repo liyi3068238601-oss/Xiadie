@@ -36,16 +36,6 @@ CREATE TABLE IF NOT EXISTS messages (
     created_at REAL NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_messages_session ON messages(session_id, created_at);
-CREATE TABLE IF NOT EXISTS memories (
-    id TEXT PRIMARY KEY,
-    layer TEXT NOT NULL CHECK(layer IN ('L0','L1','L2')),
-    content TEXT NOT NULL,
-    tags TEXT NOT NULL DEFAULT '',
-    source TEXT NOT NULL DEFAULT 'manual',
-    enabled INTEGER NOT NULL DEFAULT 1,
-    created_at REAL NOT NULL,
-    updated_at REAL NOT NULL
-);
 CREATE TABLE IF NOT EXISTS tasks (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
@@ -92,6 +82,89 @@ MIGRATIONS = [
             immersion REAL NOT NULL CHECK(immersion BETWEEN 0 AND 1),
             updated_at REAL NOT NULL
         );
+        """,
+    ),
+    (
+        2,
+        """
+        DROP TABLE IF EXISTS memories;
+
+        CREATE TABLE IF NOT EXISTS memory_fragments (
+            id TEXT PRIMARY KEY,
+            layer TEXT NOT NULL CHECK(layer IN ('L0','L1','L2')),
+            content TEXT NOT NULL,
+            tags TEXT NOT NULL DEFAULT '',
+            source TEXT NOT NULL DEFAULT 'manual',
+            source_session_id TEXT REFERENCES sessions(id) ON DELETE SET NULL,
+            source_message_id TEXT REFERENCES messages(id) ON DELETE SET NULL,
+            confidence REAL NOT NULL DEFAULT 1.0 CHECK(confidence BETWEEN 0 AND 1),
+            sensitivity TEXT NOT NULL DEFAULT 'normal'
+                CHECK(sensitivity IN ('normal','sensitive')),
+            status TEXT NOT NULL DEFAULT 'active'
+                CHECK(status IN ('active','cooling','frozen','tombstone')),
+            enabled INTEGER NOT NULL DEFAULT 1,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_memory_fragments_active
+            ON memory_fragments(status, enabled, layer, updated_at);
+        CREATE INDEX IF NOT EXISTS idx_memory_fragments_source
+            ON memory_fragments(source_session_id, source_message_id);
+
+        CREATE TABLE IF NOT EXISTS memory_candidates (
+            id TEXT PRIMARY KEY,
+            content TEXT NOT NULL,
+            proposed_layer TEXT NOT NULL CHECK(proposed_layer IN ('L0','L1','L2')),
+            tags TEXT NOT NULL DEFAULT '',
+            source_session_id TEXT REFERENCES sessions(id) ON DELETE SET NULL,
+            source_message_id TEXT REFERENCES messages(id) ON DELETE SET NULL,
+            confidence REAL NOT NULL CHECK(confidence BETWEEN 0 AND 1),
+            sensitivity TEXT NOT NULL DEFAULT 'normal'
+                CHECK(sensitivity IN ('normal','sensitive')),
+            status TEXT NOT NULL DEFAULT 'pending'
+                CHECK(status IN ('pending','accepted','rejected')),
+            resolved_memory_id TEXT REFERENCES memory_fragments(id) ON DELETE SET NULL,
+            resolution_note TEXT NOT NULL DEFAULT '',
+            created_at REAL NOT NULL,
+            resolved_at REAL
+        );
+        CREATE INDEX IF NOT EXISTS idx_memory_candidates_status
+            ON memory_candidates(status, created_at);
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_memory_candidates_source_content
+            ON memory_candidates(source_message_id, content);
+
+        CREATE TABLE IF NOT EXISTS memory_entities (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            entity_type TEXT NOT NULL DEFAULT 'concept',
+            summary TEXT NOT NULL DEFAULT '',
+            aliases TEXT NOT NULL DEFAULT '[]',
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_memory_entities_name_type
+            ON memory_entities(name, entity_type);
+
+        CREATE TABLE IF NOT EXISTS memory_fragment_entities (
+            fragment_id TEXT NOT NULL REFERENCES memory_fragments(id) ON DELETE CASCADE,
+            entity_id TEXT NOT NULL REFERENCES memory_entities(id) ON DELETE CASCADE,
+            relation TEXT NOT NULL DEFAULT 'mentions',
+            created_at REAL NOT NULL,
+            PRIMARY KEY(fragment_id, entity_id, relation)
+        );
+
+        CREATE TABLE IF NOT EXISTS memory_events (
+            id TEXT PRIMARY KEY,
+            object_type TEXT NOT NULL CHECK(object_type IN ('candidate','fragment','entity')),
+            object_id TEXT NOT NULL,
+            action TEXT NOT NULL,
+            before_json TEXT,
+            after_json TEXT,
+            source TEXT NOT NULL DEFAULT 'system',
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_memory_events_object
+            ON memory_events(object_type, object_id, created_at);
         """,
     ),
 ]

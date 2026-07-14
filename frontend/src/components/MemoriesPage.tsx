@@ -17,6 +17,10 @@ function layerChipClass(layer: Layer): string {
 
 export function MemoriesPage() {
   const [memories, setMemories] = useState<api.Memory[]>([]);
+  const [candidates, setCandidates] = useState<api.MemoryCandidate[]>([]);
+  const [candidateEdits, setCandidateEdits] = useState<
+    Record<string, { content: string; layer: Layer }>
+  >({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,10 +35,18 @@ export function MemoriesPage() {
 
   const refresh = () => {
     setLoading(true);
-    api
-      .listMemories()
-      .then((m) => {
+    Promise.all([api.listMemories(), api.listMemoryCandidates()])
+      .then(([m, pending]) => {
         setMemories(m);
+        setCandidates(pending);
+        setCandidateEdits(
+          Object.fromEntries(
+            pending.map((item) => [
+              item.id,
+              { content: item.content, layer: item.proposed_layer },
+            ])
+          )
+        );
         setError(null);
       })
       .catch((e) => setError(e.message || "加载失败"))
@@ -42,6 +54,34 @@ export function MemoriesPage() {
   };
 
   useEffect(refresh, []);
+
+  const onAcceptCandidate = async (candidate: api.MemoryCandidate) => {
+    const edit = candidateEdits[candidate.id];
+    if (!edit?.content.trim()) {
+      toast("记忆内容不能为空");
+      return;
+    }
+    try {
+      await api.acceptMemoryCandidate(candidate.id, {
+        content: edit.content.trim(),
+        layer: edit.layer,
+      });
+      toast("已确认并保存为正式记忆");
+      refresh();
+    } catch (e: any) {
+      toast(e.message || "确认失败");
+    }
+  };
+
+  const onRejectCandidate = async (candidate: api.MemoryCandidate) => {
+    try {
+      await api.rejectMemoryCandidate(candidate.id);
+      toast("已忽略这条候选");
+      refresh();
+    } catch (e: any) {
+      toast(e.message || "操作失败");
+    }
+  };
 
   const onAdd = async () => {
     const content = newContent.trim();
@@ -103,8 +143,64 @@ export function MemoriesPage() {
     <div className="page">
       <h1>记忆与关系</h1>
       <div className="sub">
-        遐蝶会在对话中参考已启用的记忆；自动记忆已标注来源，可随时撤销。
+        遐蝶只会参考已启用的正式记忆；对话中识别到的内容会先等待你确认。
       </div>
+
+      {candidates.length > 0 && (
+        <div style={{ marginTop: 20, marginBottom: 24 }}>
+          <div className="section-label">待确认记忆</div>
+          <div className="sub" style={{ marginBottom: 12 }}>
+            这些内容尚未进入正式记忆。你可以先修改内容和层级，再决定是否保存。
+          </div>
+          {candidates.map((candidate) => {
+            const edit = candidateEdits[candidate.id] || {
+              content: candidate.content,
+              layer: candidate.proposed_layer,
+            };
+            return (
+              <div
+                key={candidate.id}
+                className="list-row"
+                style={{ alignItems: "center", flexWrap: "wrap" }}
+              >
+                <select
+                  value={edit.layer}
+                  onChange={(e) =>
+                    setCandidateEdits((current) => ({
+                      ...current,
+                      [candidate.id]: { ...edit, layer: e.target.value as Layer },
+                    }))
+                  }
+                  style={{ width: 82 }}
+                >
+                  {LAYERS.map((layer) => (
+                    <option key={layer.key} value={layer.key}>{layer.key}</option>
+                  ))}
+                </select>
+                <input
+                  value={edit.content}
+                  onChange={(e) =>
+                    setCandidateEdits((current) => ({
+                      ...current,
+                      [candidate.id]: { ...edit, content: e.target.value },
+                    }))
+                  }
+                  style={{ flex: 1, minWidth: 220 }}
+                />
+                {candidate.sensitivity === "sensitive" && (
+                  <span className="chip" style={{ color: "var(--danger)" }}>可能敏感</span>
+                )}
+                <button className="btn" onClick={() => onAcceptCandidate(candidate)}>
+                  接受
+                </button>
+                <button className="btn ghost" onClick={() => onRejectCandidate(candidate)}>
+                  拒绝
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* 新增记忆 */}
       <div className="list-row" style={{ alignItems: "flex-end", flexWrap: "wrap" }}>
@@ -165,7 +261,7 @@ export function MemoriesPage() {
                 {l.desc}
               </div>
               {group.map((m) => {
-                const isAuto = m.source === "auto";
+                const isAuto = m.source === "auto" || m.source === "auto_confirmed";
                 const isEditing = editingId === m.id;
                 return (
                   <div

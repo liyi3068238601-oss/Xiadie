@@ -35,7 +35,7 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests -q` | 通过：14 passed，1 warning |
+| 后端 | `cd backend; python -m pytest tests` | 通过：18 passed，1 warning |
 | 前端 | `cd frontend; npm.cmd run build` | 通过：TypeScript 检查及 Vite 生产构建成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 
@@ -75,6 +75,13 @@ npm.cmd start
 ```
 
 ## 5. 已有能力
+
+### 可追溯记忆候选基础（2026-07-14）
+
+- 正式记忆已迁移为 `memory_fragments`，带来源会话、来源消息、置信度、敏感性和生命周期状态。
+- 自动识别不再静默写入正式记忆，只创建 `memory_candidates` 待确认项。
+- 记忆页可以修改候选内容和层级，并接受或拒绝。
+- 已建立 Entity、Fragment-Entity 和 Event 基础表；实体归档、FTS5 检索和来源跳转尚未实现。
 
 - Electron：透明置顶桌宠、主窗口、托盘、右键菜单及基础 IPC 联动。
 - Live2D：固定模型加载、动作和状态气泡；资源缺失时有占位降级。

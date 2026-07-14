@@ -143,15 +143,52 @@ def test_memory_crud_and_toggle():
     assert all(x["id"] != mid for x in client.get("/api/memories").json())
 
 
-def test_auto_memory_extraction():
+def test_auto_memory_creates_traceable_candidate_then_accepts():
     s = client.post("/api/sessions", json={}).json()
     before = len(client.get("/api/memories").json())
     with client.stream("POST", "/api/chat",
                        json={"session_id": s["id"], "content": "记住我正在做遐蝶 Agent 项目"}) as resp:
-        "".join(resp.iter_text())
-    after = client.get("/api/memories").json()
-    assert len(after) == before + 1
-    assert any(x["source"] == "auto" for x in after)
+        body = "".join(resp.iter_text())
+    assert "memory_candidate" in body
+    # 自动识别只能提出候选，不能静默写入正式记忆。
+    assert len(client.get("/api/memories").json()) == before
+    candidates = client.get("/api/memory-candidates").json()
+    candidate = next(x for x in candidates if x["source_session_id"] == s["id"])
+    assert candidate["status"] == "pending"
+    assert candidate["source_message_id"]
+
+    result = client.post(
+        f"/api/memory-candidates/{candidate['id']}/accept",
+        json={"content": "用户正在开发遐蝶 Agent", "layer": "L1"},
+    ).json()
+    assert result["candidate"]["status"] == "accepted"
+    assert result["memory"]["content"] == "用户正在开发遐蝶 Agent"
+    assert result["memory"]["source_message_id"] == candidate["source_message_id"]
+    assert len(client.get("/api/memories").json()) == before + 1
+    events = client.get(f"/api/memory-events/candidate/{candidate['id']}").json()
+    assert [event["action"] for event in events] == ["proposed", "accepted"]
+
+
+def test_memory_candidate_can_be_rejected_and_not_reprocessed():
+    session = client.post("/api/sessions", json={}).json()
+    with client.stream(
+        "POST", "/api/chat",
+        json={"session_id": session["id"], "content": "我喜欢安静的工作环境"},
+    ) as response:
+        "".join(response.iter_text())
+    candidate = next(
+        item for item in client.get("/api/memory-candidates").json()
+        if item["source_session_id"] == session["id"]
+    )
+    rejected = client.post(
+        f"/api/memory-candidates/{candidate['id']}/reject",
+        json={"note": "不需要长期保存"},
+    ).json()
+    assert rejected["status"] == "rejected"
+    assert rejected["resolution_note"] == "不需要长期保存"
+    assert client.post(
+        f"/api/memory-candidates/{candidate['id']}/accept", json={}
+    ).status_code == 409
 
 
 def test_task_flow_from_chat():
@@ -246,7 +283,16 @@ def test_schema_migration_is_idempotent():
         version = conn.execute(
             "SELECT value FROM schema_meta WHERE key = 'schema_version'"
         ).fetchone()["value"]
-        assert version == "1"
+        assert version == "2"
         assert conn.execute("SELECT COUNT(*) c FROM companion_state").fetchone()["c"] <= 1
+        tables = {
+            row["name"] for row in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'memory_%'"
+            ).fetchall()
+        }
+        assert {
+            "memory_fragments", "memory_candidates", "memory_entities",
+            "memory_fragment_entities", "memory_events",
+        } <= tables
     finally:
         conn.close()
