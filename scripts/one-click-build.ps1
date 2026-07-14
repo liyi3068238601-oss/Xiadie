@@ -4,6 +4,17 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot   # 仓库根目录（本脚本在 scripts\ 下）
 
 function Have($cmd) { $null -ne (Get-Command $cmd -ErrorAction SilentlyContinue) }
+function HavePython3() {
+  if (Have py) {
+    & py -3 -c "import sys; assert sys.version_info >= (3, 10)" 2>$null
+    if ($LASTEXITCODE -eq 0) { return $true }
+  }
+  if (Have python) {
+    & python -c "import sys; assert sys.version_info >= (3, 10)" 2>$null
+    if ($LASTEXITCODE -eq 0) { return $true }
+  }
+  return $false
+}
 function RefreshPath() {
   $m = [System.Environment]::GetEnvironmentVariable("Path", "Machine")
   $u = [System.Environment]::GetEnvironmentVariable("Path", "User")
@@ -29,14 +40,14 @@ Write-Host "✓ Node $(node -v)" -ForegroundColor Green
 
 # ---------- 前置：Python ----------
 Step "检查 Python"
-if (-not (Have python) -and -not (Have py)) {
+if (-not (HavePython3)) {
   if (Have winget) {
     Write-Host "未检测到 Python，正在用 winget 自动安装 3.12…" -ForegroundColor Yellow
     winget install -e --id Python.Python.3.12 --accept-source-agreements --accept-package-agreements
     RefreshPath
   }
 }
-if (-not (Have python) -and -not (Have py)) {
+if (-not (HavePython3)) {
   Write-Host "✗ 仍未检测到 Python。请手动安装 3.10–3.12（勾选 Add to PATH）：https://www.python.org/downloads/" -ForegroundColor Red
   Write-Host "  装完请重新双击『一键打包安装.bat』。" -ForegroundColor Red
   exit 1

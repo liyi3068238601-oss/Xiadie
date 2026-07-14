@@ -9,6 +9,7 @@ __pycache__/
 node_modules/
 frontend/dist/
 desktop/dist/
+*.tsbuildinfo
 
 # 打包产物
 backend/build/

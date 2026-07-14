@@ -58,7 +58,7 @@ npm start
 ## 测试与构建
 
 ```bash
-cd backend && .venv/bin/python -m pytest -q     # 后端 API 冒烟测试（8 项）
+cd backend && .venv/bin/python -m pytest -q     # 后端 API 冒烟测试（11 项）
 cd frontend && npm run build                    # 前端类型检查 + 生产构建
 ```
 

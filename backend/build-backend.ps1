@@ -4,9 +4,22 @@
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 
+function Resolve-PythonCommand {
+  if (Get-Command py -ErrorAction SilentlyContinue) {
+    & py -3 -c "import sys; assert sys.version_info >= (3, 10)" 2>$null
+    if ($LASTEXITCODE -eq 0) { return @{ Command = "py"; Args = @("-3") } }
+  }
+  if (Get-Command python -ErrorAction SilentlyContinue) {
+    & python -c "import sys; assert sys.version_info >= (3, 10)" 2>$null
+    if ($LASTEXITCODE -eq 0) { return @{ Command = "python"; Args = @() } }
+  }
+  throw "未找到可用的 Python 3.10+。请安装 Python 3.12 后重试。"
+}
+
 Write-Host "== 创建构建用虚拟环境 ==" -ForegroundColor Cyan
 if (Test-Path ".venv-build") { Remove-Item -Recurse -Force ".venv-build" }
-py -3 -m venv .venv-build
+$python = Resolve-PythonCommand
+& $python.Command @($python.Args) -m venv .venv-build
 $py = ".\.venv-build\Scripts\python.exe"
 
 Write-Host "== 安装依赖 + PyInstaller ==" -ForegroundColor Cyan
