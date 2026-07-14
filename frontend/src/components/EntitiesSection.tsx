@@ -151,13 +151,13 @@ export function EntitiesSection({ memories, onOpenSource }: Props) {
   };
 
   return (
-    <div style={{ marginTop: 22, marginBottom: 26 }}>
+    <section className="memory-section memory-entity-section">
       <div className="section-label">实体档案</div>
       <div className="sub" style={{ marginBottom: 12 }}>
         人物、宠物、地点和项目会把相关记忆聚在一起；自动识别不确定时会保持未关联。
       </div>
 
-      <div className="list-row" style={{ flexWrap: "wrap" }}>
+      <div className="list-row entity-create-row" style={{ flexWrap: "wrap" }}>
         <input
           value={newName}
           placeholder="新实体名称"
@@ -237,7 +237,7 @@ export function EntitiesSection({ memories, onOpenSource }: Props) {
           )}
         </div>
       )}
-    </div>
+    </section>
   );
 }
 

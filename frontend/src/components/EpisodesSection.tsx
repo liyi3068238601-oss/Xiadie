@@ -111,7 +111,7 @@ export function EpisodesSection({ onOpenSource }: Props) {
   };
 
   return (
-    <div style={{ marginTop: 22, marginBottom: 26 }}>
+    <section className="memory-section memory-episode-section">
       <div className="episode-heading">
         <div>
           <div className="section-label">经历 · Episode</div>
@@ -128,8 +128,14 @@ export function EpisodesSection({ onOpenSource }: Props) {
         return (
           <div className="episode-candidate" key={candidate.id}>
             <div className="episode-candidate-title">待确认 · {formatDate(candidate.start_at)} 至 {formatDate(candidate.end_at)}</div>
-            <input value={draft.title} onChange={(event) => updateDraft(candidate.id, { title: event.target.value })} />
-            <textarea rows={3} value={draft.summary} onChange={(event) => updateDraft(candidate.id, { summary: event.target.value })} />
+            <label className="episode-field">
+              <span>经历名称</span>
+              <input value={draft.title} onChange={(event) => updateDraft(candidate.id, { title: event.target.value })} />
+            </label>
+            <label className="episode-field">
+              <span>经历摘要</span>
+              <textarea rows={3} value={draft.summary} onChange={(event) => updateDraft(candidate.id, { summary: event.target.value })} />
+            </label>
             <div className="episode-score">
               <label>重要度</label>
               <input type="range" min={1} max={10} value={draft.significance} onChange={(event) => updateDraft(candidate.id, { significance: Number(event.target.value) })} />
@@ -192,7 +198,7 @@ export function EpisodesSection({ onOpenSource }: Props) {
           ))}
         </div>
       )}
-    </div>
+    </section>
   );
 }
 

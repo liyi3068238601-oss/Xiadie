@@ -537,6 +537,128 @@ textarea {
   margin-bottom: 20px;
   font-size: 13px;
 }
+
+/* 记忆页：信息密度较高，使用独立层级与统一深色表单。 */
+.memory-page {
+  padding: 24px 30px 40px;
+}
+.memory-page-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 20px 22px 18px;
+  border: 1px solid rgba(157, 132, 255, 0.2);
+  border-radius: 18px;
+  background:
+    radial-gradient(420px 140px at 92% -20%, rgba(69, 199, 255, 0.12), transparent 68%),
+    linear-gradient(135deg, rgba(74, 45, 122, 0.4), rgba(25, 18, 53, 0.45));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+.memory-page-hero h1 {
+  color: #f4f1ff;
+  font-size: 24px;
+  letter-spacing: 0.02em;
+}
+.memory-page-hero .sub {
+  max-width: 720px;
+  margin: 7px 0 0;
+  color: #bcb5d8;
+  line-height: 1.65;
+}
+.memory-page-eyebrow {
+  margin-bottom: 7px;
+  color: #8fdcff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+.memory-section {
+  margin: 18px 0 0;
+  padding: 18px;
+  border: 1px solid rgba(150, 120, 255, 0.17);
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(37, 25, 68, 0.42), rgba(22, 15, 45, 0.3));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+.memory-page .section-label {
+  margin: 0 0 5px;
+  color: #e3ddf8;
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: 0.025em;
+  text-transform: none;
+}
+.memory-page .sub {
+  color: #a9a2c7;
+  line-height: 1.55;
+}
+.memory-page input:not([type="checkbox"]):not([type="range"]),
+.memory-page textarea,
+.memory-page select {
+  min-height: 40px;
+  padding: 9px 12px;
+  color: #eeeafb;
+  border: 1px solid rgba(157, 132, 255, 0.24);
+  border-radius: 10px;
+  outline: none;
+  background: rgba(13, 9, 29, 0.66);
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.18);
+  transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+}
+.memory-page textarea {
+  min-height: 72px;
+  resize: vertical;
+  line-height: 1.55;
+}
+.memory-page input::placeholder,
+.memory-page textarea::placeholder {
+  color: #777093;
+}
+.memory-page input:not([type="checkbox"]):not([type="range"]):focus,
+.memory-page textarea:focus,
+.memory-page select:focus {
+  border-color: rgba(143, 220, 255, 0.58);
+  background: rgba(19, 13, 39, 0.86);
+  box-shadow: 0 0 0 3px rgba(69, 199, 255, 0.07);
+}
+.memory-page select option {
+  color: #eeeafb;
+  background: #17102c;
+}
+.memory-page .btn {
+  min-height: 38px;
+  box-shadow: 0 5px 18px rgba(79, 73, 206, 0.18);
+}
+.memory-page .btn.ghost {
+  color: #c7c0df;
+  background: rgba(46, 32, 80, 0.52);
+  box-shadow: none;
+}
+.memory-page .btn.ghost:hover {
+  color: #f1edff;
+  border-color: rgba(157, 132, 255, 0.42);
+}
+.memory-page .empty {
+  margin-top: 10px;
+  padding: 22px;
+  color: #8f88ad;
+  border: 1px dashed rgba(150, 120, 255, 0.18);
+  border-radius: 12px;
+  background: rgba(14, 10, 30, 0.22);
+}
+.memory-page .list-row {
+  border-color: rgba(150, 120, 255, 0.16);
+  background: rgba(22, 15, 44, 0.44);
+}
+.entity-create-row {
+  padding: 12px;
+  background: rgba(12, 9, 27, 0.26) !important;
+}
+.memory-add-card {
+  margin-top: 18px;
+  padding: 16px;
+  border-color: rgba(69, 199, 255, 0.18) !important;
+  background: linear-gradient(135deg, rgba(31, 24, 62, 0.62), rgba(18, 16, 39, 0.5)) !important;
+}
 .field {
   margin-bottom: 14px;
 }
@@ -742,10 +864,17 @@ textarea {
   border: 1px solid var(--glass-border);
   background: rgba(30, 20, 56, 0.34);
   color: var(--text);
+  transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+}
+.entity-item:hover {
+  border-color: rgba(157, 132, 255, 0.34);
+  background: rgba(67, 46, 108, 0.28);
+  transform: translateX(2px);
 }
 .entity-item.active {
-  border-color: var(--glass-border-lit);
-  background: rgba(108, 76, 168, 0.22);
+  border-color: rgba(143, 220, 255, 0.42);
+  background: linear-gradient(135deg, rgba(108, 76, 168, 0.3), rgba(48, 76, 120, 0.2));
+  box-shadow: inset 3px 0 0 #72d4ff;
 }
 .entity-item small {
   display: block;
@@ -758,7 +887,7 @@ textarea {
   padding: 14px;
   border: 1px solid var(--glass-border);
   border-radius: 12px;
-  background: rgba(30, 20, 56, 0.3);
+  background: rgba(15, 10, 32, 0.32);
 }
 .entity-form-grid {
   display: grid;
@@ -769,8 +898,8 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 5px;
-  color: var(--text-dim);
-  font-size: 11px;
+  color: #b5aecf;
+  font-size: 12px;
 }
 .entity-form-grid .wide { grid-column: 1 / -1; }
 .entity-actions {
@@ -802,18 +931,30 @@ textarea {
   padding: 14px;
   margin-bottom: 10px;
   border: 1px solid var(--glass-border-lit);
-  border-radius: 12px;
-  background: rgba(45, 30, 76, 0.36);
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(52, 35, 88, 0.44), rgba(20, 14, 41, 0.46));
 }
 .episode-candidate-title {
-  margin-bottom: 9px;
-  color: var(--cyan);
+  display: inline-flex;
+  margin-bottom: 13px;
+  padding: 4px 9px;
+  color: #a8e6ff;
+  border: 1px solid rgba(69, 199, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(69, 199, 255, 0.07);
   font-size: 11px;
 }
-.episode-candidate > input,
-.episode-candidate > textarea {
+.episode-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+  color: #aaa3c5;
+  font-size: 11px;
+}
+.episode-field > input,
+.episode-field > textarea {
   width: 100%;
-  margin-bottom: 8px;
 }
 .episode-score {
   display: flex;
@@ -836,8 +977,18 @@ textarea {
   gap: 8px;
   padding: 8px 10px;
   border-radius: 9px;
-  background: rgba(18, 12, 38, 0.32);
+  color: #cfc9e4;
+  border: 1px solid rgba(150, 120, 255, 0.1);
+  background: rgba(13, 9, 29, 0.38);
   line-height: 1.45;
+}
+.episode-fragment-check:has(input:checked) {
+  border-color: rgba(86, 214, 160, 0.24);
+  background: rgba(49, 105, 85, 0.1);
+}
+.episode-fragment-check input[type="checkbox"] {
+  margin-top: 3px;
+  accent-color: var(--violet-soft);
 }
 .episode-fragment-check > span { flex: 1; }
 .episode-item { border-color: var(--glass-border); }

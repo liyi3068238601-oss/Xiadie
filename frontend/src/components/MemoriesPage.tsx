@@ -146,10 +146,13 @@ export function MemoriesPage({ onOpenSource }: Props) {
   };
 
   return (
-    <div className="page">
-      <h1>记忆与关系</h1>
-      <div className="sub">
-        遐蝶只会参考已启用的正式记忆；对话中识别到的内容会先等待你确认。
+    <div className="page memory-page">
+      <div className="memory-page-hero">
+        <div className="memory-page-eyebrow">MEMORY ARCHIVE</div>
+        <h1>记忆与关系</h1>
+        <div className="sub">
+          遐蝶只会参考已启用的正式记忆；对话中识别到的内容会先等待你确认。
+        </div>
       </div>
 
       <EntitiesSection memories={memories} onOpenSource={onOpenSource} />
@@ -223,7 +226,7 @@ export function MemoriesPage({ onOpenSource }: Props) {
       )}
 
       {/* 新增记忆 */}
-      <div className="list-row" style={{ alignItems: "flex-end", flexWrap: "wrap" }}>
+      <div className="list-row memory-add-card" style={{ alignItems: "flex-end", flexWrap: "wrap" }}>
         <div className="field" style={{ marginBottom: 0, width: 150 }}>
           <label>层级</label>
           <select
