@@ -12,6 +12,14 @@ const LAYERS: { key: Layer; name: string; desc: string }[] = [
   { key: "L2", name: "L2 长期记忆", desc: "值得长期记住的事实、经历与约定。" },
 ];
 
+const SCOPE_LABELS: Record<string, string> = {
+  user: "关于用户", self: "遐蝶自身", relationship: "共同关系", world: "外部世界",
+};
+const KIND_LABELS: Record<string, string> = {
+  fact: "事实", preference: "偏好", plan: "计划", experience: "共同经历",
+  relationship: "关系", observation: "观察", correction: "纠正",
+};
+
 // L0/L1 有专属配色，L2 用普通 chip。
 function layerChipClass(layer: Layer): string {
   return layer === "L0" ? "chip L0" : layer === "L1" ? "chip L1" : "chip";
@@ -38,6 +46,9 @@ export function MemoriesPage({ onOpenSource }: Props) {
   // 行内编辑
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState("");
+  const [correction, setCorrection] = useState<{
+    id: string; content: string; note: string;
+  } | null>(null);
 
   const refresh = () => {
     setLoading(true);
@@ -134,6 +145,21 @@ export function MemoriesPage({ onOpenSource }: Props) {
     }
   };
 
+  const onSaveCorrection = async () => {
+    if (!correction?.content.trim()) {
+      toast("纠正后的内容不能为空");
+      return;
+    }
+    try {
+      await api.correctMemory(correction.id, correction.content.trim(), correction.note.trim());
+      setCorrection(null);
+      toast("已按纠错语义保存，并保留审计记录");
+      refresh();
+    } catch (e: any) {
+      toast(e.message || "纠正失败");
+    }
+  };
+
   const onDelete = async (m: api.Memory) => {
     if (!window.confirm(`确定删除这条记忆吗？\n\n「${m.content}」`)) return;
     try {
@@ -151,79 +177,12 @@ export function MemoriesPage({ onOpenSource }: Props) {
         <div className="memory-page-eyebrow">MEMORY ARCHIVE</div>
         <h1>记忆与关系</h1>
         <div className="sub">
-          遐蝶只会参考已启用的正式记忆；对话中识别到的内容会先等待你确认。
+          遐蝶会依据人格自主选择值得留下的事；你仍可以查看来源、编辑、纠正、禁用或删除。
         </div>
       </div>
 
       <EntitiesSection memories={memories} onOpenSource={onOpenSource} />
       <EpisodesSection onOpenSource={onOpenSource} />
-
-      {candidates.length > 0 && (
-        <div style={{ marginTop: 20, marginBottom: 24 }}>
-          <div className="section-label">待确认记忆</div>
-          <div className="sub" style={{ marginBottom: 12 }}>
-            这些内容尚未进入正式记忆。你可以先修改内容和层级，再决定是否保存。
-          </div>
-          {candidates.map((candidate) => {
-            const edit = candidateEdits[candidate.id] || {
-              content: candidate.content,
-              layer: candidate.proposed_layer,
-            };
-            return (
-              <div
-                key={candidate.id}
-                className="list-row"
-                style={{ alignItems: "center", flexWrap: "wrap" }}
-              >
-                <select
-                  value={edit.layer}
-                  onChange={(e) =>
-                    setCandidateEdits((current) => ({
-                      ...current,
-                      [candidate.id]: { ...edit, layer: e.target.value as Layer },
-                    }))
-                  }
-                  style={{ width: 82 }}
-                >
-                  {LAYERS.map((layer) => (
-                    <option key={layer.key} value={layer.key}>{layer.key}</option>
-                  ))}
-                </select>
-                <input
-                  value={edit.content}
-                  onChange={(e) =>
-                    setCandidateEdits((current) => ({
-                      ...current,
-                      [candidate.id]: { ...edit, content: e.target.value },
-                    }))
-                  }
-                  style={{ flex: 1, minWidth: 220 }}
-                />
-                {candidate.sensitivity === "sensitive" && (
-                  <span className="chip" style={{ color: "var(--danger)" }}>可能敏感</span>
-                )}
-                {candidate.source_available && candidate.source_session_id && candidate.source_message_id ? (
-                  <button
-                    className="btn ghost"
-                    title={candidate.source_session_title || "来源对话"}
-                    onClick={() => onOpenSource(candidate.source_session_id!, candidate.source_message_id!)}
-                  >
-                    来源：{candidate.source_session_title || "原对话"}
-                  </button>
-                ) : (
-                  <span className="chip">来源已不存在</span>
-                )}
-                <button className="btn" onClick={() => onAcceptCandidate(candidate)}>
-                  接受
-                </button>
-                <button className="btn ghost" onClick={() => onRejectCandidate(candidate)}>
-                  拒绝
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      )}
 
       {/* 新增记忆 */}
       <div className="list-row memory-add-card" style={{ alignItems: "flex-end", flexWrap: "wrap" }}>
@@ -284,12 +243,13 @@ export function MemoriesPage({ onOpenSource }: Props) {
                 {l.desc}
               </div>
               {group.map((m) => {
-                const isAuto = m.source === "auto" || m.source === "auto_confirmed";
+                const isAuto = m.source === "observer" || m.source === "auto" || m.source === "auto_confirmed";
+                const isObserver = m.source === "observer";
                 const isEditing = editingId === m.id;
                 return (
                   <div
                     key={m.id}
-                    className="list-row"
+                    className="list-row memory-fragment-card"
                     style={{ opacity: m.enabled ? 1 : 0.45 }}
                   >
                     <span className={layerChipClass(m.layer)}>{m.layer}</span>
@@ -329,7 +289,9 @@ export function MemoriesPage({ onOpenSource }: Props) {
                       </div>
                     )}
 
-                    {isAuto && <span className="chip auto">自动</span>}
+                    {isAuto && (
+                      <span className="chip auto">{isObserver ? "遐蝶自主记忆" : "旧版自动"}</span>
+                    )}
 
                     {m.source_message_id && (
                       m.source_available && m.source_session_id ? (
@@ -370,6 +332,12 @@ export function MemoriesPage({ onOpenSource }: Props) {
                         </button>
                         <button
                           className="btn ghost"
+                          onClick={() => setCorrection({ id: m.id, content: m.content, note: "" })}
+                        >
+                          纠正
+                        </button>
+                        <button
+                          className="btn ghost"
                           onClick={() => onToggleEnabled(m)}
                         >
                           {m.enabled ? "禁用" : "启用"}
@@ -383,12 +351,102 @@ export function MemoriesPage({ onOpenSource }: Props) {
                         </button>
                       </>
                     )}
+
+                    {isObserver && (
+                      <div className="memory-observer-detail">
+                        <div className="memory-detail-tags">
+                          <span>{SCOPE_LABELS[m.scope || ""] || m.scope || "未分类视角"}</span>
+                          <span>{KIND_LABELS[m.kind || ""] || m.kind || "未分类类型"}</span>
+                          <span>重要度 {Math.round((m.importance || 0) * 100)}%</span>
+                          {m.emotion && <span>情绪：{m.emotion}</span>}
+                        </div>
+                        {m.inner_reason && (
+                          <div className="memory-reason">
+                            <strong>为什么留下</strong>
+                            <span>{m.inner_reason}</span>
+                          </div>
+                        )}
+                        <div className="memory-provenance">
+                          <span>观察器：{m.observer_version || "未知版本"}</span>
+                          <span>证据消息：{m.evidence_message_ids?.length || 0} 条</span>
+                          <span>置信度：{Math.round((m.confidence || 0) * 100)}%</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {correction?.id === m.id && (
+                      <div className="memory-correction-editor">
+                        <div className="memory-correction-title">纠正这条记忆</div>
+                        <textarea
+                          value={correction.content}
+                          onChange={(e) => setCorrection({ ...correction, content: e.target.value })}
+                          rows={2}
+                        />
+                        <input
+                          value={correction.note}
+                          placeholder="纠正原因（可选，例如：之前记错了时间）"
+                          onChange={(e) => setCorrection({ ...correction, note: e.target.value })}
+                        />
+                        <div className="row">
+                          <button className="btn" onClick={onSaveCorrection}>保存纠正</button>
+                          <button className="btn ghost" onClick={() => setCorrection(null)}>取消</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
           );
         })}
+
+      <details className="legacy-memory-candidates">
+        <summary>
+          旧版候选兼容区
+          <span>{candidates.length > 0 ? ` · ${candidates.length} 条待处理` : " · 暂无待处理项"}</span>
+        </summary>
+        <div className="sub">
+          这里仅保留模型不可用时产生的旧关键词候选。自主记忆不会进入此处；旧数据处理完之前不会删除该入口。
+        </div>
+        {candidates.length === 0 && <div className="empty">没有需要兼容处理的旧候选。</div>}
+        {candidates.map((candidate) => {
+          const edit = candidateEdits[candidate.id] || {
+            content: candidate.content,
+            layer: candidate.proposed_layer,
+          };
+          return (
+            <div key={candidate.id} className="legacy-candidate-row">
+              <select
+                value={edit.layer}
+                onChange={(e) => setCandidateEdits((current) => ({
+                  ...current,
+                  [candidate.id]: { ...edit, layer: e.target.value as Layer },
+                }))}
+              >
+                {LAYERS.map((layer) => <option key={layer.key} value={layer.key}>{layer.key}</option>)}
+              </select>
+              <input
+                value={edit.content}
+                onChange={(e) => setCandidateEdits((current) => ({
+                  ...current,
+                  [candidate.id]: { ...edit, content: e.target.value },
+                }))}
+              />
+              {candidate.sensitivity === "sensitive" && <span className="chip danger">可能敏感</span>}
+              {candidate.source_available && candidate.source_session_id && candidate.source_message_id ? (
+                <button
+                  className="btn ghost"
+                  onClick={() => onOpenSource(candidate.source_session_id!, candidate.source_message_id!)}
+                >
+                  查看来源
+                </button>
+              ) : <span className="chip">来源已不存在</span>}
+              <button className="btn" onClick={() => onAcceptCandidate(candidate)}>接受旧候选</button>
+              <button className="btn ghost" onClick={() => onRejectCandidate(candidate)}>拒绝</button>
+            </div>
+          );
+        })}
+      </details>
     </div>
   );
 }

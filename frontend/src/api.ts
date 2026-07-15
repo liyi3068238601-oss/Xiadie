@@ -122,6 +122,14 @@ export interface Memory {
   confidence?: number;
   sensitivity?: "normal" | "sensitive";
   status?: "active" | "cooling" | "frozen" | "tombstone";
+  scope?: "user" | "self" | "relationship" | "world";
+  kind?: "fact" | "preference" | "plan" | "experience" | "relationship" | "observation" | "correction";
+  importance?: number;
+  emotion?: string;
+  inner_reason?: string;
+  observer_version?: string;
+  evidence_message_ids?: string[];
+  source_assistant_message_id?: string | null;
   enabled: boolean;
   updated_at: number;
 }
@@ -241,6 +249,11 @@ export const addMemory = (layer: string, content: string, tags = "") =>
   j<Memory>("/api/memories", { method: "POST", body: JSON.stringify({ layer, content, tags }) });
 export const updateMemory = (id: string, body: Partial<Memory>) =>
   j<Memory>(`/api/memories/${id}`, { method: "PATCH", body: JSON.stringify(body) });
+export const correctMemory = (id: string, content: string, note = "") =>
+  j<Memory>(`/api/memories/${id}/correct`, {
+    method: "POST",
+    body: JSON.stringify({ content, note }),
+  });
 export const deleteMemory = (id: string) =>
   j<{ ok: boolean }>(`/api/memories/${id}`, { method: "DELETE" });
 export const listMemoryCandidates = () =>
@@ -352,6 +365,15 @@ export const setMemoryObserverModel = (body: ObserverModelConfig) =>
     method: "PUT",
     body: JSON.stringify(body),
   });
+export interface MemoryObserverResult {
+  id: string;
+  status: "queued" | "running" | "validated" | "applied" | "recovery_pending" | "exhausted" | "skipped";
+  error_code: string | null;
+  created_count: number;
+  remembered_count: number;
+}
+export const getMemoryObserverResult = (id: string) =>
+  j<MemoryObserverResult>(`/api/memory-observer/runs/${encodeURIComponent(id)}/result`);
 export const getCompanionState = () => j<CompanionState>("/api/companion-state");
 export const listCompanionStateEvents = (limit = 10) =>
   j<CompanionStateEvent[]>(`/api/companion-state/events?limit=${encodeURIComponent(limit)}`);

@@ -47,6 +47,7 @@ def apply_observation_in_transaction(
         raise MemoryApplyError("apply_candidate_changed")
 
     fragment_ids: list[str] = []
+    created_fragment_ids: list[str] = []
     for index, item in enumerate(revalidated["items"]):
         idempotency_key = (
             f"{observer.PROTOCOL_VERSION}:{run['source_assistant_message_id']}:{index}"
@@ -90,17 +91,20 @@ def apply_observation_in_transaction(
             conn, "fragment", fragment_id, "autonomous_created", None, fragment, "observer"
         )
         fragment_ids.append(fragment_id)
+        created_fragment_ids.append(fragment_id)
 
     now = db.now()
     conn.execute(
         "UPDATE memory_observer_runs SET status='applied',candidate_json=?,warnings_json=?,"
-        " error_code=NULL,next_attempt_at=NULL,applied_fragment_ids_json=?,applied_at=?,"
+        " error_code=NULL,next_attempt_at=NULL,applied_fragment_ids_json=?,"
+        " created_fragment_ids_json=?,applied_at=?,"
         " input_chars=?,output_chars=?,prompt_tokens=?,completion_tokens=?,latency_ms=?,"
         " repair_attempted=?,updated_at=? WHERE id=?",
         (
             json.dumps(candidate, ensure_ascii=False),
             json.dumps(candidate.get("warnings") or [], ensure_ascii=False),
-            json.dumps(fragment_ids, ensure_ascii=False), now,
+            json.dumps(fragment_ids, ensure_ascii=False),
+            json.dumps(created_fragment_ids, ensure_ascii=False), now,
             audit["input_chars"], audit["output_chars"], audit["prompt_tokens"],
             audit["completion_tokens"], audit["latency_ms"],
             1 if audit["repair_attempted"] else 0, now, run["id"],

@@ -102,6 +102,11 @@ def test_valid_candidate_is_applied_with_full_source_audit(monkeypatch):
     assert run["latency_ms"] is not None and run["latency_ms"] >= 0
     assert run["repair_attempted"] is False
     assert len(run["applied_fragment_ids"]) == 1 and run["applied_at"] is not None
+    assert run["created_fragment_ids"] == run["applied_fragment_ids"]
+    assert service.get_run_result(run["id"]) == {
+        "id": run["id"], "status": "applied", "error_code": None,
+        "created_count": 1, "remembered_count": 1,
+    }
     assert fragment_count() == before + 1
     conn = db.connect()
     try:
@@ -171,6 +176,8 @@ def test_same_fact_from_two_runs_reuses_one_fragment(monkeypatch):
     second_applied = get_run(second_run["id"])
     assert first_applied["status"] == second_applied["status"] == "applied"
     assert first_applied["applied_fragment_ids"] == second_applied["applied_fragment_ids"]
+    assert second_applied["created_fragment_ids"] == []
+    assert service.get_run_result(second_run["id"])["remembered_count"] == 0
     assert fragment_count() == before + 1
 
 
@@ -328,6 +335,8 @@ def test_sensitive_fragment_is_disabled_and_creates_no_entity_links(monkeypatch)
     assert run["status"] == "applied"
     assert fragment["enabled"] == 0 and fragment["sensitivity"] == "sensitive"
     assert links == 0
+    assert service.get_run_result(run["id"])["created_count"] == 1
+    assert service.get_run_result(run["id"])["remembered_count"] == 0
 
 
 def test_exhausted_model_path_creates_only_legacy_fallback_candidate(monkeypatch):

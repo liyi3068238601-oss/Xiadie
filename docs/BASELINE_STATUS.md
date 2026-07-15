@@ -35,8 +35,8 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; python -m pytest tests` | 通过：111 passed，1 warning |
-| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：2 项九簇映射测试、TypeScript 检查及 Vite 生产构建成功 |
+| 后端 | `cd backend; python -m pytest tests` | 通过：112 passed，1 warning |
+| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：4 项情绪映射/记忆提示测试、TypeScript 检查及 Vite 生产构建成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 
 已知但不阻断当前开发的警告：
@@ -94,6 +94,9 @@ npm.cmd start
 - 自主记忆阶段 B.3 已完成：来源、等值去重、正式 Fragment、实体关系、事件和 applied 状态在单一事务提交，失败整体回滚。
 - 自动 Fragment 保留来源会话、用户/助手消息、全部证据、观察理由、版本和幂等键；敏感 Fragment 默认禁用且不创建实体关系。
 - 真实模型路径可用时不再创建逐条确认候选；旧关键词候选只在模型不可用或重试耗尽时兜底。旧 pending 数据仍保留，待 B.4 提供兼容管理入口。
+- 自主记忆阶段 B.4 已完成：schema 12 区分新建与复用 Fragment，聊天仅对真正新增且启用的记忆显示五分钟限频轻提示。
+- 记忆页展示自主记忆的 scope、kind、importance、emotion、理由、观察器版本、证据数量和来源，并支持独立纠错审计。
+- 旧候选已移入默认折叠的兼容区；退役条件已固定，当前不删除表、API、历史数据或审计。
 
 ### 人格与内置背景知识（2026-07-14）
 

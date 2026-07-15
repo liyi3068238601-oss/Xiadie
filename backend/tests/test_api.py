@@ -739,10 +739,27 @@ def test_memory_observer_internal_api_is_read_only_and_validates_model():
     before = client.get("/api/memory-observer/runs").json()
     after = client.get("/api/memory-observer/runs").json()
     assert after == before
+    assert client.get("/api/memory-observer/runs/not-found/result").status_code == 404
     client.put(
         "/api/memory-observer/model",
         json={"mode": "current", "provider_id": None, "model": None},
     )
+
+
+def test_memory_correction_has_distinct_audit_semantics():
+    created = client.post(
+        "/api/memories", json={"layer": "L2", "content": "用户喜欢清晨", "tags": ""}
+    ).json()
+    corrected = client.post(
+        f"/api/memories/{created['id']}/correct",
+        json={"content": "用户更喜欢安静的夜晚", "note": "用户明确纠正了时间偏好"},
+    )
+    assert corrected.status_code == 200
+    assert corrected.json()["content"] == "用户更喜欢安静的夜晚"
+    events = client.get(f"/api/memory-events/fragment/{created['id']}").json()
+    event = events[-1]
+    assert event["action"] == "corrected" and event["source"] == "user_correction"
+    assert event["after"]["correction_note"] == "用户明确纠正了时间偏好"
 
 
 def test_real_memory_observer_path_does_not_create_legacy_candidate(monkeypatch):
@@ -837,7 +854,7 @@ def test_schema_migration_is_idempotent():
         version = conn.execute(
             "SELECT value FROM schema_meta WHERE key = 'schema_version'"
         ).fetchone()["value"]
-        assert version == "11"
+        assert version == "12"
         assert conn.execute("SELECT COUNT(*) c FROM companion_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM affect_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM relationship_state").fetchone()["c"] <= 1
@@ -848,7 +865,7 @@ def test_schema_migration_is_idempotent():
         run_columns = {
             row["name"] for row in conn.execute("PRAGMA table_info(memory_observer_runs)").fetchall()
         }
-        assert {"latency_ms", "repair_attempted"} <= run_columns
+        assert {"latency_ms", "repair_attempted", "created_fragment_ids_json"} <= run_columns
         assert conn.execute(
             "SELECT COUNT(*) c FROM sqlite_master"
             " WHERE type='table' AND name='memory_observer_runs'"

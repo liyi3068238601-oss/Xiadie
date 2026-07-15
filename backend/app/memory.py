@@ -98,6 +98,28 @@ def update_memory(mid: str, **fields) -> dict | None:
         conn.close()
 
 
+def correct_memory(mid: str, content: str, note: str = "") -> dict | None:
+    """纠正错误事实；与普通编辑使用不同事件动作和来源语义。"""
+    conn = db.connect()
+    try:
+        before = _get_fragment(conn, mid)
+        if not before or before["status"] == "tombstone":
+            return None
+        conn.execute(
+            "UPDATE memory_fragments SET content=?,updated_at=? WHERE id=?",
+            (content.strip(), db.now(), mid),
+        )
+        after = _get_fragment(conn, mid)
+        _event(
+            conn, "fragment", mid, "corrected", before,
+            {**after, "correction_note": note.strip()}, "user_correction",
+        )
+        conn.commit()
+        return after
+    finally:
+        conn.close()
+
+
 def delete_memory(mid: str) -> bool:
     """使用墓碑状态保留审计链；对列表和召回表现为已删除。"""
     conn = db.connect()
@@ -388,6 +410,10 @@ def _fragment_row(row) -> dict:
     result = dict(row)
     result["enabled"] = bool(result["enabled"])
     result["source_available"] = bool(result.get("source_available", False))
+    try:
+        result["evidence_message_ids"] = json.loads(result.get("evidence_message_ids") or "[]")
+    except (TypeError, ValueError):
+        result["evidence_message_ids"] = []
     return result
 
 

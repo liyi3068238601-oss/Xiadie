@@ -543,6 +543,13 @@ MIGRATIONS = [
             CHECK(repair_attempted IN (0,1));
         """,
     ),
+    (
+        12,
+        """
+        ALTER TABLE memory_observer_runs ADD COLUMN created_fragment_ids_json TEXT
+            NOT NULL DEFAULT '[]';
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

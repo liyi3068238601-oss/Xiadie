@@ -390,6 +390,14 @@ def get_memory_observer_runs(limit: int = 50) -> list[dict]:
     return memory_observer_service.list_runs(limit)
 
 
+@app.get("/api/memory-observer/runs/{run_id}/result")
+def get_memory_observer_run_result(run_id: str) -> dict:
+    result = memory_observer_service.get_run_result(run_id)
+    if not result:
+        raise HTTPException(404, "记忆观察记录不存在")
+    return result
+
+
 @app.get("/api/memory-observer/model")
 def get_memory_observer_model() -> dict:
     return memory_observer_service.get_model_config()
@@ -435,6 +443,21 @@ def patch_memory(mid: str, body: dict) -> dict:
     if not m:
         raise HTTPException(404, "记忆不存在")
     return m
+
+
+class MemoryCorrectionIn(BaseModel):
+    content: str = Field(min_length=1, max_length=400)
+    note: str = Field(default="", max_length=240)
+
+
+@app.post("/api/memories/{mid}/correct")
+def correct_memory(mid: str, body: MemoryCorrectionIn) -> dict:
+    if not body.content.strip():
+        raise HTTPException(400, "纠正后的记忆内容不能为空")
+    result = memory.correct_memory(mid, body.content, body.note)
+    if not result:
+        raise HTTPException(404, "记忆不存在")
+    return result
 
 
 @app.delete("/api/memories/{mid}")

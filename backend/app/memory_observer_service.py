@@ -485,6 +485,34 @@ def list_runs(limit: int = 50) -> list[dict]:
         conn.close()
 
 
+def get_run_result(run_id: str) -> dict | None:
+    """供聊天页短轮询的最小结果，不暴露候选正文、理由或来源内容。"""
+    conn = db.connect()
+    try:
+        row = conn.execute(
+            "SELECT id,status,error_code,created_fragment_ids_json FROM memory_observer_runs"
+            " WHERE id=?", (run_id,),
+        ).fetchone()
+        if not row:
+            return None
+        created_ids = json.loads(row["created_fragment_ids_json"] or "[]")
+        remembered_count = 0
+        if created_ids:
+            placeholders = ",".join("?" for _ in created_ids)
+            remembered_count = conn.execute(
+                f"SELECT COUNT(*) FROM memory_fragments WHERE id IN ({placeholders})"
+                " AND status='active' AND enabled=1",
+                created_ids,
+            ).fetchone()[0]
+        return {
+            "id": row["id"], "status": row["status"],
+            "error_code": row["error_code"], "created_count": len(created_ids),
+            "remembered_count": remembered_count,
+        }
+    finally:
+        conn.close()
+
+
 def _public(row: dict, *, include_candidate: bool = False) -> dict:
     result = {
         "id": row["id"], "status": row["status"], "error_code": row.get("error_code"),
@@ -507,6 +535,9 @@ def _public(row: dict, *, include_candidate: bool = False) -> dict:
             "repair_attempted": bool(row.get("repair_attempted")),
             "applied_fragment_ids": json.loads(
                 row.get("applied_fragment_ids_json") or "[]"
+            ),
+            "created_fragment_ids": json.loads(
+                row.get("created_fragment_ids_json") or "[]"
             ),
             "applied_at": row.get("applied_at"),
             "created_at": row["created_at"], "updated_at": row["updated_at"],

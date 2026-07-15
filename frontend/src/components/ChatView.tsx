@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as api from "./../api";
 import { Mode, toast } from "./../store";
+import { memoryNoticeText, shouldShowMemoryNotice } from "../memoryNotice.mjs";
 
 interface Props {
   sessionId: string | null;
@@ -21,8 +22,10 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState<Streaming | null>(null);
   const [errorCard, setErrorCard] = useState<{ msg: string; hint: string } | null>(null);
-  const [autoMemory, setAutoMemory] = useState<api.Memory | null>(null);
+  const [memoryNotice, setMemoryNotice] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const memoryWatchId = useRef(0);
+  const noticeTimer = useRef<number | null>(null);
   const busy = streaming !== null;
 
   useEffect(() => {
@@ -32,8 +35,15 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
     }
     api.listMessages(sessionId).then(setMessages);
     setErrorCard(null);
-    setAutoMemory(null);
+    setMemoryNotice(null);
+    memoryWatchId.current += 1;
+    if (noticeTimer.current !== null) window.clearTimeout(noticeTimer.current);
   }, [sessionId]);
+
+  useEffect(() => () => {
+    memoryWatchId.current += 1;
+    if (noticeTimer.current !== null) window.clearTimeout(noticeTimer.current);
+  }, []);
 
   useEffect(() => {
     if (!focusMessageId || !messages.some((message) => message.id === focusMessageId)) return;
@@ -53,12 +63,13 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
     if (!sessionId || busy) return;
     const content = regenerate ? lastUserContent() : input.trim();
     if (!content) return;
+    memoryWatchId.current += 1;
     if (!regenerate) {
       setMessages((m) => [...m, localMsg("user", content)]);
       setInput("");
     }
     setErrorCard(null);
-    setAutoMemory(null);
+    setMemoryNotice(null);
     setStreaming({ text: "", memoryCount: 0 });
     onMode("thinking");
     api.desktop?.setPetState?.("thinking", "让我想想…", companionCluster);
@@ -79,15 +90,54 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
         },
         onDone: (d) => {
           setStreaming(null);
-          setAutoMemory(d.auto_memory);
           onMode("companion");
           onCompanionState(d.companion_state);
           if (sessionId) api.listMessages(sessionId).then(setMessages);
           onSessionsChanged();
+          if (d.memory_observation?.id && d.memory_observation.status === "queued") {
+            void watchMemoryResult(d.memory_observation.id);
+          }
         },
       },
       regenerate
     );
+  }
+
+  async function watchMemoryResult(runId: string) {
+    const watchId = ++memoryWatchId.current;
+    for (let attempt = 0; attempt < 60 && memoryWatchId.current === watchId; attempt += 1) {
+      try {
+        const result = await api.getMemoryObserverResult(runId);
+        if (result.status === "applied") {
+          if (result.remembered_count > 0) showRememberedNotice(result.remembered_count);
+          return;
+        }
+        if (result.status === "exhausted" || result.status === "skipped") return;
+      } catch {
+        return;
+      }
+      await new Promise((resolve) => window.setTimeout(resolve, 1000));
+    }
+  }
+
+  function showRememberedNotice(count: number) {
+    const storageKey = "xiadie:last-memory-notice-at";
+    let lastShownAt = Number.NaN;
+    try {
+      lastShownAt = Number(window.sessionStorage.getItem(storageKey));
+    } catch {
+      /* sessionStorage 不可用时仍允许本次轻提示 */
+    }
+    const now = Date.now();
+    if (!shouldShowMemoryNotice(lastShownAt, now)) return;
+    try {
+      window.sessionStorage.setItem(storageKey, String(now));
+    } catch {
+      /* ignore */
+    }
+    setMemoryNotice(memoryNoticeText(count));
+    if (noticeTimer.current !== null) window.clearTimeout(noticeTimer.current);
+    noticeTimer.current = window.setTimeout(() => setMemoryNotice(null), 5200);
   }
 
   function lastUserContent(): string {
@@ -146,12 +196,12 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
           </div>
         )}
 
-        {autoMemory && (
-          <div className="card memory">
-            <div className="card-title">✦ 已记住一条信息</div>
-            <div>{autoMemory.content}</div>
-            <div className="card-hint">
-              自动记忆 · 可在「记忆与关系」中编辑或删除
+        {memoryNotice && (
+          <div className="memory-notice" role="status" aria-live="polite">
+            <span aria-hidden="true">✦</span>
+            <div>
+              <div>{memoryNotice}</div>
+              <small>可以在「记忆与关系」中查看、纠正或删除</small>
             </div>
           </div>
         )}
