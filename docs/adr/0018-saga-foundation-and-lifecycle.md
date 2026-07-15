@@ -97,6 +97,9 @@ active/completed/archived ──仅用户删除或隐私清除──> tombstone
 事务写入旧状态、新状态、原因、来源、策略版本和时间。`completed_at`、`archived_at`、
 `tombstoned_at` 保存最近一次进入对应状态的时间；重新激活不删除历史事件。
 
+正式 Saga 的分组指纹全局唯一，tombstone 也继续占用原指纹。相同来源组合不能被后台任务自动重建，
+避免用户删除或隐私清理后发生幽灵恢复；新的长期故事必须包含新的 Episode 来源并产生新指纹。
+
 Episode 的 completed/archived/delete 语义由阶段 E 的统一生命周期事务处理。D 阶段不为了 Saga 聚合
 重建 Episode 表，也不把 Saga 状态强加给其来源 Episode。
 

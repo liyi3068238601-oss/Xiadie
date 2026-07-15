@@ -32,7 +32,7 @@ def test_saga_schema_has_traceability_and_lifecycle_fields():
         version = conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
         ).fetchone()["value"]
-        assert version == "18"
+        assert version == "19"
         tables = {
             row["name"] for row in conn.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'memory_saga%'"
@@ -163,6 +163,47 @@ def test_saga_source_links_and_events_preserve_auditable_order():
         assert dict(event) == {
             "action": "created", "reason_code": "qualified_group", "source": "consolidator",
         }
+        conn.rollback()
+    finally:
+        conn.close()
+
+
+def test_saga_candidate_schema_rejects_invalid_status_score_and_fingerprint_reuse():
+    conn = db.connect()
+    stamp = db.now()
+    values = (
+        "candidate-a", "fingerprint-a", "observing", '["episode-a","episode-b"]',
+        "[]", 0.5, 0.5, 0.5, 0.5, 0.5, "saga-group-v1", stamp, stamp, stamp + 1,
+    )
+    statement = (
+        "INSERT INTO saga_group_candidates("
+        "id,grouping_fingerprint,status,episode_ids_json,shared_entity_ids_json,"
+        "entity_score,text_score,time_score,coherence_score,total_score,policy_version,"
+        "first_seen_at,last_evaluated_at,expires_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+    )
+    try:
+        columns = {
+            row["name"] for row in conn.execute(
+                "PRAGMA table_info(saga_group_candidates)"
+            ).fetchall()
+        }
+        assert {
+            "episode_ids_json", "shared_entity_ids_json", "entity_score", "text_score",
+            "time_score", "coherence_score", "total_score", "score_details_json",
+            "policy_version", "conflict_reason", "evaluation_count", "expires_at",
+        } <= columns
+        conn.execute(statement, values)
+        with pytest.raises(sqlite3.IntegrityError):
+            conn.execute(statement, ("candidate-b", *values[1:]))
+        with pytest.raises(sqlite3.IntegrityError):
+            conn.execute(statement, (
+                "candidate-c", "fingerprint-c", "invalid", *values[3:]
+            ))
+        invalid_score = list(values)
+        invalid_score[0:2] = ["candidate-d", "fingerprint-d"]
+        invalid_score[5] = 1.1
+        with pytest.raises(sqlite3.IntegrityError):
+            conn.execute(statement, invalid_score)
         conn.rollback()
     finally:
         conn.close()

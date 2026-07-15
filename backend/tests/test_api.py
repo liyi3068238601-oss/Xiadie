@@ -883,7 +883,7 @@ def test_schema_migration_is_idempotent():
         version = conn.execute(
             "SELECT value FROM schema_meta WHERE key = 'schema_version'"
         ).fetchone()["value"]
-        assert version == "18"
+        assert version == "19"
         assert conn.execute("SELECT COUNT(*) c FROM companion_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM affect_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM relationship_state").fetchone()["c"] <= 1
@@ -955,5 +955,9 @@ def test_schema_migration_is_idempotent():
             "memory_sagas", "memory_saga_episodes", "memory_saga_entities",
             "memory_saga_events",
         } <= tables
+        assert conn.execute(
+            "SELECT COUNT(*) c FROM sqlite_master"
+            " WHERE type='table' AND name='saga_group_candidates'"
+        ).fetchone()["c"] == 1
     finally:
         conn.close()

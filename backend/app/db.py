@@ -776,6 +776,35 @@ MIGRATIONS = [
             ON memory_saga_events(saga_id, created_at, id);
         """,
     ),
+    (
+        19,
+        """
+        CREATE TABLE saga_group_candidates (
+            id TEXT PRIMARY KEY,
+            grouping_fingerprint TEXT NOT NULL UNIQUE,
+            status TEXT NOT NULL CHECK(status IN (
+                'observing','qualified','conflicted','expired'
+            )),
+            episode_ids_json TEXT NOT NULL,
+            shared_entity_ids_json TEXT NOT NULL DEFAULT '[]',
+            entity_score REAL NOT NULL CHECK(entity_score BETWEEN 0 AND 1),
+            text_score REAL NOT NULL CHECK(text_score BETWEEN 0 AND 1),
+            time_score REAL NOT NULL CHECK(time_score BETWEEN 0 AND 1),
+            coherence_score REAL NOT NULL CHECK(coherence_score BETWEEN 0 AND 1),
+            total_score REAL NOT NULL CHECK(total_score BETWEEN 0 AND 1),
+            score_details_json TEXT NOT NULL DEFAULT '{}',
+            policy_version TEXT NOT NULL,
+            conflict_reason TEXT,
+            evaluation_count INTEGER NOT NULL DEFAULT 1 CHECK(evaluation_count >= 1),
+            promoted_saga_id TEXT REFERENCES memory_sagas(id) ON DELETE SET NULL,
+            first_seen_at REAL NOT NULL,
+            last_evaluated_at REAL NOT NULL,
+            expires_at REAL NOT NULL
+        );
+        CREATE INDEX idx_saga_group_candidates_status_expiry
+            ON saga_group_candidates(status, expires_at, last_evaluated_at);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
