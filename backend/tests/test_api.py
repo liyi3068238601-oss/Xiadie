@@ -516,11 +516,19 @@ def test_affect_timeline_is_deterministic_and_handles_one_night_and_seven_days()
     first = engine.advance(initial, 8 * 60)
     second = engine.advance(initial, 8 * 60)
     assert first == second
-    assert first["affect"]["contact_need"] > initial["affect"]["contact_need"]
+    assert 0.10 < first["affect"]["contact_need"] < 0.13
     assert first["affect"]["immersion"] < initial["affect"]["immersion"]
     replied = engine.apply_fallback_interaction(first, "早上好，我回来了")
     assert replied["affect"]["contact_need"] == 0.03
     assert replied["relationship"]["bond"] > first["relationship"]["bond"]
+
+    day = engine.advance(initial, 24 * 60)
+    assert 0.22 < day["affect"]["contact_need"] < 0.25
+    assert engine.signals(day) == []
+
+    three_days = engine.advance(initial, 3 * 24 * 60)
+    assert 0.70 < three_days["affect"]["contact_need"] < 0.75
+    assert engine.signals(three_days)[0]["action"] == "find_activity"
 
     week = engine.advance(initial, 7 * 24 * 60)
     assert 0 <= week["affect"]["contact_need"] <= 1
@@ -531,6 +539,72 @@ def test_affect_timeline_is_deterministic_and_handles_one_night_and_seven_days()
     ticked = client.post("/api/companion-state/tick", json={"minutes": 480}).json()
     assert ticked["affect"]["contact_need"] > 0.05
     assert client.post("/api/companion-state/tick", json={"minutes": 0}).status_code == 422
+
+
+def test_affect_math_boundaries_and_signal_thresholds():
+    from app.affect import engine
+
+    expected_factors = {
+        -1.0: 0.50,
+        -0.60: 0.90,
+        -0.30: 1.05,
+        0.0: 0.90,
+        0.50: 0.85,
+        1.0: 0.80,
+    }
+    for value, expected in expected_factors.items():
+        assert engine.valence_factor(value) == pytest.approx(expected)
+    for boundary in (-0.60, -0.30, 0.0):
+        left = engine.valence_factor(boundary - 1e-7)
+        right = engine.valence_factor(boundary + 1e-7)
+        assert abs(left - right) < 1e-5
+
+    def snapshot(contact_need: float, *, trust: float = 0.25) -> dict:
+        affect = dict(engine.DEFAULT_AFFECT)
+        affect["contact_need"] = contact_need
+        relationship = dict(engine.DEFAULT_RELATIONSHIP)
+        relationship["trust"] = trust
+        return {"affect": affect, "relationship": relationship}
+
+    assert engine.signals(snapshot(0.2999)) == []
+    assert engine.signals(snapshot(0.30))[0]["action"] == "observation"
+    assert engine.signals(snapshot(0.5499))[0]["action"] == "observation"
+    assert engine.signals(snapshot(0.55))[0]["action"] == "find_activity"
+    assert engine.signals(snapshot(0.55, trust=1.0))[0]["action"] == "consider_contact"
+    assert engine.signals(snapshot(0.75))[0]["action"] == "contact"
+
+
+def test_reply_reduces_contact_need_proportionally_and_rebases_latest_state():
+    from app import companion_state
+    from app.affect import engine
+
+    low = {
+        "affect": {**engine.DEFAULT_AFFECT, "contact_need": 0.05},
+        "relationship": dict(engine.DEFAULT_RELATIONSHIP),
+    }
+    high = {
+        "affect": {**engine.DEFAULT_AFFECT, "contact_need": 0.80},
+        "relationship": dict(engine.DEFAULT_RELATIONSHIP),
+    }
+    low_reply = engine.apply_fallback_interaction(low, "我回来了")
+    high_reply = engine.apply_fallback_interaction(high, "我回来了")
+    assert low_reply["affect"]["contact_need"] == pytest.approx(0.03)
+    assert high_reply["affect"]["contact_need"] == pytest.approx(0.16)
+    assert (
+        high_reply["relationship"]["bond"] - high["relationship"]["bond"]
+        > low_reply["relationship"]["bond"] - low["relationship"]["bond"]
+    )
+
+    companion_state.reset_state()
+    stale_preview = companion_state.preview_interaction("较早生成的预览")
+    advanced = companion_state.tick(3 * 24 * 60)
+    saved = companion_state.commit_interaction("流式回复成功后提交")
+    assert advanced["affect"]["contact_need"] > 0.70
+    assert saved["affect"]["contact_need"] > stale_preview["affect"]["contact_need"]
+    assert saved["affect"]["contact_need"] == pytest.approx(
+        advanced["affect"]["contact_need"] * 0.20,
+        rel=0.02,
+    )
 
 
 def test_failed_regeneration_keeps_previous_reply(monkeypatch):

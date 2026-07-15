@@ -7,9 +7,10 @@ from __future__ import annotations
 import copy
 import math
 
-ALGORITHM_VERSION = "affect-v1"
+ALGORITHM_VERSION = "affect-v1.1"
 MAX_ELAPSED_MINUTES = 7 * 24 * 60
 STEP_MINUTES = 5.0
+CONTACT_NEED_RATE_PER_MINUTE = 0.00012
 
 DEFAULT_AFFECT = {
     "contact_need": 0.05,
@@ -101,7 +102,7 @@ def _advance_step(snapshot: dict, minutes: float) -> None:
     acceleration = math.pow(1 + c, 1.2)
     immersion_factor = max(0.25, 1 - affect["immersion"] * 0.75)
     bond_factor = 1 + min(relation["bond"], 1) * 0.20
-    rate = 0.00042 * acceleration * immersion_factor * bond_factor
+    rate = CONTACT_NEED_RATE_PER_MINUTE * acceleration * immersion_factor * bond_factor
     rate *= valence_factor(affect["valence"])
     affect["contact_need"] += rate * minutes
 
@@ -141,7 +142,11 @@ def apply_fallback_interaction(snapshot: dict, user_text: str) -> dict:
     text = user_text.strip()
     appreciated = any(hint in text for hint in APPRECIATION_HINTS)
 
-    affect["contact_need"] = 0.03
+    contact_need_before_reply = affect["contact_need"]
+    affect["contact_need"] = min(
+        contact_need_before_reply,
+        max(0.03, contact_need_before_reply * 0.20),
+    )
     affect["immersion"] += min(0.20, 0.035 + len(text) / 1600)
     affect["arousal"] += min(0.06, len(text) / 4000)
     if appreciated:
@@ -149,7 +154,9 @@ def apply_fallback_interaction(snapshot: dict, user_text: str) -> dict:
         affect["valence"] += 0.04
 
     relation["interaction_count"] += 1
-    relation["bond"] += 0.001 + (0.001 if appreciated else 0)
+    # 等待越久后重新相见，关系增量可以稍高，但仍保持单轮变化很小。
+    waiting_bond = min(0.002, contact_need_before_reply * 0.0025)
+    relation["bond"] += 0.001 + waiting_bond + (0.001 if appreciated else 0)
     if appreciated:
         relation["trust"] += 0.001
     return normalize(result)

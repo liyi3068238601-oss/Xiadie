@@ -6,17 +6,32 @@ import json
 from .. import db
 from . import engine
 
+AFFECT_FIELDS = (
+    "contact_need", "guardedness_transient", "valence", "arousal", "immersion",
+    "activity_type", "activity_label", "activity_started_at", "last_user_message_at",
+    "last_tick_at", "updated_at",
+)
+RELATIONSHIP_FIELDS = ("bond", "trust", "interaction_count", "updated_at")
+AFFECT_EVENT_FIELDS = tuple(field for field in AFFECT_FIELDS if field != "updated_at")
+RELATIONSHIP_EVENT_FIELDS = tuple(
+    field for field in RELATIONSHIP_FIELDS if field != "updated_at"
+)
+
 
 def get_snapshot(*, advance_time: bool = True) -> dict:
     conn = db.connect()
     try:
         _ensure(conn)
-        snapshot = _load(conn)
         if not advance_time:
-            return snapshot
+            return _load(conn)
+        # 单用户桌面应用仍可能同时收到 SSE 聊天和状态栏读取。
+        # IMMEDIATE 锁让“重新读取 → 推进 → 保存”成为一个不可被覆盖的事务。
+        conn.execute("BEGIN IMMEDIATE")
+        snapshot = _load(conn)
         now = db.now()
         elapsed = max(0.0, (now - snapshot["affect"]["last_tick_at"]) / 60)
         if elapsed < 1.0:
+            conn.rollback()
             return snapshot
         before = snapshot
         after = engine.advance(before, elapsed)
@@ -45,6 +60,7 @@ def save_snapshot(
     conn = db.connect()
     try:
         _ensure(conn)
+        conn.execute("BEGIN IMMEDIATE")
         before = _load(conn)
         after = engine.normalize(_internal_snapshot(snapshot))
         now = db.now()
@@ -62,16 +78,73 @@ def save_snapshot(
         conn.close()
 
 
+def apply_interaction(
+    user_text: str,
+    *,
+    source_session_id: str | None = None,
+    source_message_id: str | None = None,
+) -> dict:
+    """在最新持久化快照上原子应用一次成功互动，避免流式响应期间的状态覆盖。"""
+    conn = db.connect()
+    try:
+        _ensure(conn)
+        conn.execute("BEGIN IMMEDIATE")
+        before = _load(conn)
+        now = db.now()
+        elapsed = max(0.0, (now - before["affect"]["last_tick_at"]) / 60)
+        base = before
+        if elapsed >= 1.0:
+            base = engine.advance(before, elapsed)
+            base["affect"]["last_tick_at"] = now
+            base["affect"]["updated_at"] = now
+            _event(
+                conn,
+                "tick",
+                "engine",
+                before,
+                base,
+                reason=f"按真实经过时间推进 {min(elapsed, engine.MAX_ELAPSED_MINUTES):.2f} 分钟",
+            )
+        after = engine.apply_fallback_interaction(base, user_text)
+        after["affect"]["last_user_message_at"] = now
+        after["affect"]["updated_at"] = now
+        after["relationship"]["updated_at"] = now
+        _save(conn, after)
+        _event(
+            conn,
+            "interaction",
+            "fallback",
+            base,
+            after,
+            reason="成功完成一轮对话，应用保守本地状态变化",
+            source_session_id=source_session_id,
+            source_message_id=source_message_id,
+        )
+        conn.commit()
+        return after
+    finally:
+        conn.close()
+
+
 def advance_by(minutes: float) -> dict:
-    before = get_snapshot(advance_time=False)
-    after = engine.advance(before, minutes)
-    after["affect"]["last_tick_at"] = db.now()
-    return save_snapshot(
-        after,
-        event_type="tick",
-        source="developer",
-        reason=f"手动推进 {minutes:.2f} 分钟",
-    )
+    conn = db.connect()
+    try:
+        _ensure(conn)
+        conn.execute("BEGIN IMMEDIATE")
+        before = _load(conn)
+        after = engine.advance(before, minutes)
+        now = db.now()
+        after["affect"]["last_tick_at"] = now
+        after["affect"]["updated_at"] = now
+        _save(conn, after)
+        _event(
+            conn, "tick", "developer", before, after,
+            reason=f"手动推进 {minutes:.2f} 分钟",
+        )
+        conn.commit()
+        return after
+    finally:
+        conn.close()
 
 
 def reset() -> dict:
@@ -203,22 +276,17 @@ def _event(
 
 def _public_numbers(snapshot: dict) -> dict:
     return {
-        "affect": {
-            key: value for key, value in snapshot["affect"].items()
-            if key not in ("id", "updated_at")
-        },
+        "affect": {key: snapshot["affect"].get(key) for key in AFFECT_EVENT_FIELDS},
         "relationship": {
-            key: value for key, value in snapshot["relationship"].items()
-            if key not in ("id", "updated_at")
+            key: snapshot["relationship"].get(key) for key in RELATIONSHIP_EVENT_FIELDS
         },
     }
 
 
 def _internal_snapshot(snapshot: dict) -> dict:
     return {
-        "affect": {
-            key: value for key, value in snapshot["affect"].items()
-            if key != "guardedness"
+        "affect": {key: snapshot["affect"].get(key) for key in AFFECT_FIELDS},
+        "relationship": {
+            key: snapshot["relationship"].get(key) for key in RELATIONSHIP_FIELDS
         },
-        "relationship": dict(snapshot["relationship"]),
     }

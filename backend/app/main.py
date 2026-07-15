@@ -279,8 +279,8 @@ async def chat(body: ChatIn) -> StreamingResponse:
             c2.close()
         saved_companion_state = None
         if not body.regenerate:
-            saved_companion_state = companion_state.save_state(
-                next_state,
+            saved_companion_state = companion_state.commit_interaction(
+                body.content,
                 source_session_id=body.session_id,
                 source_message_id=uid,
             )

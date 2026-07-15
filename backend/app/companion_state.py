@@ -36,6 +36,20 @@ def save_state(
     return _present(saved)
 
 
+def commit_interaction(
+    user_text: str,
+    *,
+    source_session_id: str | None = None,
+    source_message_id: str | None = None,
+) -> dict:
+    saved = repository.apply_interaction(
+        user_text,
+        source_session_id=source_session_id,
+        source_message_id=source_message_id,
+    )
+    return _present(saved)
+
+
 def reset_state() -> dict:
     return _present(repository.reset())
 
