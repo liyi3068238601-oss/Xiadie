@@ -10,7 +10,7 @@ import hashlib
 import json
 import re
 
-from . import db
+from . import db, saga_summary
 
 MIN_GROUP_SIZE = 2
 MAX_GROUP_SIZE = 12
@@ -71,6 +71,199 @@ def list_group_candidates(status: str = "observing") -> list[dict]:
             (status,),
         ).fetchall()
         return [_candidate_row(row) for row in rows]
+    finally:
+        conn.close()
+
+
+def get_group_candidate(candidate_id: str) -> dict | None:
+    conn = db.connect()
+    try:
+        row = conn.execute(
+            "SELECT * FROM saga_group_candidates WHERE id=?", (candidate_id,)
+        ).fetchone()
+        if not row:
+            return None
+        result = _candidate_row(row)
+        result["episodes"] = _load_candidate_episodes(conn, result["episode_ids"])
+        result["shared_entity_names"] = _shared_entity_names(
+            conn, result["shared_entity_ids"]
+        )
+        result["current_source_hash"] = saga_summary.source_hash(result["episodes"])
+        return result
+    finally:
+        conn.close()
+
+
+def qualified_candidates(limit: int = 20) -> list[dict]:
+    conn = db.connect()
+    try:
+        rows = conn.execute(
+            "SELECT id FROM saga_group_candidates WHERE status='qualified'"
+            " ORDER BY total_score DESC,first_seen_at,id LIMIT ?",
+            (max(1, min(int(limit), 20)),),
+        ).fetchall()
+    finally:
+        conn.close()
+    return [item for row in rows if (item := get_group_candidate(row["id"]))]
+
+
+def apply_model_summary(
+    candidate_id: str, raw: str | dict, *, provider_id: str, model: str,
+    prompt_tokens: int | None, completion_tokens: int | None,
+    repair_attempted: bool, expected_source_hash: str,
+) -> dict | None:
+    """事务内重读 Episode→Fragment 来源；旧模型结果不能覆盖新来源。"""
+    conn = db.connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT * FROM saga_group_candidates WHERE id=? AND status='qualified'",
+            (candidate_id,),
+        ).fetchone()
+        if not row:
+            conn.rollback()
+            return None
+        before = _candidate_row(row)
+        sources = _load_candidate_episodes(conn, before["episode_ids"])
+        current_hash = saga_summary.source_hash(sources)
+        if current_hash != expected_source_hash:
+            conn.rollback()
+            raise saga_summary.SagaSummaryValidationError(
+                "summary_source_changed", "模型调用期间 Saga 来源发生变化"
+            )
+        validated = saga_summary.parse_and_validate(
+            raw, episodes=sources,
+            entity_names=_shared_entity_names(conn, before["shared_entity_ids"]),
+        )
+        now = db.now()
+        conn.execute(
+            "UPDATE saga_group_candidates SET title=?,summary=?,theme=?,current_stage=?,"
+            "lifecycle_signal=?,summary_status='model_validated',summary_protocol_version=?,"
+            "summary_provider_id=?,summary_model=?,summary_evidence_episode_ids_json=?,"
+            "completion_evidence_episode_ids_json=?,summary_warnings_json=?,"
+            "summary_error_code=NULL,summary_source_hash=?,summary_prompt_tokens=?,"
+            "summary_completion_tokens=?,summary_repair_attempted=?,last_evaluated_at=? WHERE id=?",
+            (
+                validated["title"], validated["summary"], validated["theme"],
+                validated["current_stage"], validated["lifecycle_signal"],
+                validated["protocol_version"], provider_id, model,
+                json.dumps(validated["evidence_episode_ids"]),
+                json.dumps(validated["completion_evidence_episode_ids"]),
+                json.dumps(validated["warnings"], ensure_ascii=False), validated["source_hash"],
+                prompt_tokens, completion_tokens, 1 if repair_attempted else 0, now, candidate_id,
+            ),
+        )
+        _summary_event(
+            conn, candidate_id, "summary_validated", None,
+            {
+                "provider_id": provider_id, "model": model,
+                "prompt_tokens": prompt_tokens, "completion_tokens": completion_tokens,
+                "repair_attempted": bool(repair_attempted), "source_hash": current_hash,
+            }, now,
+        )
+        conn.commit()
+        return get_group_candidate(candidate_id)
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def record_summary_fallback(
+    candidate_id: str, error_code: str, *, provider_id: str | None = None,
+    model: str | None = None, prompt_tokens: int | None = None,
+    completion_tokens: int | None = None, repair_attempted: bool = False,
+) -> dict | None:
+    """永远从当前 Episode 来源重建回退摘要，不保留过期模型文本。"""
+    conn = db.connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT * FROM saga_group_candidates WHERE id=? AND status='qualified'",
+            (candidate_id,),
+        ).fetchone()
+        if not row:
+            conn.rollback()
+            return None
+        candidate = _candidate_row(row)
+        sources = _load_candidate_episodes(conn, candidate["episode_ids"])
+        fallback = saga_summary.extractive_fallback(
+            episodes=sources,
+            entity_names=_shared_entity_names(conn, candidate["shared_entity_ids"]),
+        )
+        warnings = [*fallback["warnings"], {"code": error_code}]
+        now = db.now()
+        conn.execute(
+            "UPDATE saga_group_candidates SET title=?,summary=?,theme=?,current_stage=?,"
+            "lifecycle_signal=?,summary_status='extractive_fallback',summary_protocol_version=?,"
+            "summary_provider_id=?,summary_model=?,summary_evidence_episode_ids_json=?,"
+            "completion_evidence_episode_ids_json=?,summary_warnings_json=?,summary_error_code=?,"
+            "summary_source_hash=?,summary_prompt_tokens=?,summary_completion_tokens=?,"
+            "summary_repair_attempted=?,last_evaluated_at=? WHERE id=?",
+            (
+                fallback["title"], fallback["summary"], fallback["theme"],
+                fallback["current_stage"], fallback["lifecycle_signal"],
+                fallback["protocol_version"], provider_id, model,
+                json.dumps(fallback["evidence_episode_ids"]),
+                json.dumps(fallback["completion_evidence_episode_ids"]),
+                json.dumps(warnings, ensure_ascii=False), error_code, fallback["source_hash"],
+                prompt_tokens, completion_tokens, 1 if repair_attempted else 0, now, candidate_id,
+            ),
+        )
+        _summary_event(
+            conn, candidate_id, "summary_fallback", error_code,
+            {
+                "provider_id": provider_id, "model": model,
+                "prompt_tokens": prompt_tokens, "completion_tokens": completion_tokens,
+                "repair_attempted": bool(repair_attempted),
+                "source_hash": fallback["source_hash"],
+            }, now,
+        )
+        conn.commit()
+        return get_group_candidate(candidate_id)
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def record_summary_rejection(candidate_id: str, error_code: str) -> None:
+    conn = db.connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        if conn.execute(
+            "SELECT 1 FROM saga_group_candidates WHERE id=?", (candidate_id,)
+        ).fetchone():
+            now = db.now()
+            conn.execute(
+                "UPDATE saga_group_candidates SET summary_error_code=?,last_evaluated_at=?"
+                " WHERE id=?",
+                (error_code, now, candidate_id),
+            )
+            _summary_event(
+                conn, candidate_id, "summary_rejected", error_code,
+                {"raw_output_stored": False}, now,
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def list_summary_events(candidate_id: str) -> list[dict]:
+    conn = db.connect()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM saga_candidate_summary_events WHERE candidate_id=?"
+            " ORDER BY created_at,id", (candidate_id,),
+        ).fetchall()
+        result = []
+        for row in rows:
+            item = dict(row)
+            item["metadata"] = json.loads(item.pop("metadata_json"))
+            result.append(item)
+        return result
     finally:
         conn.close()
 
@@ -316,6 +509,59 @@ def _load_episode_entities(conn, episode_ids: list[str]) -> dict[str, set[str]]:
     return result
 
 
+def _load_candidate_episodes(conn, episode_ids: list[str]) -> list[dict]:
+    if not episode_ids:
+        return []
+    placeholders = ",".join("?" for _ in episode_ids)
+    rows = conn.execute(
+        f"SELECT * FROM memory_episodes WHERE id IN ({placeholders})",
+        episode_ids,
+    ).fetchall()
+    by_id = {row["id"]: dict(row) for row in rows}
+    result = []
+    for episode_id in episode_ids:
+        episode = by_id.get(episode_id)
+        if not episode:
+            continue
+        fragments = conn.execute(
+            "SELECT f.*,ef.position FROM memory_episode_fragments ef"
+            " JOIN memory_fragments f ON f.id=ef.fragment_id"
+            " WHERE ef.episode_id=? ORDER BY ef.position,f.id",
+            (episode_id,),
+        ).fetchall()
+        episode["fragments"] = [dict(fragment) for fragment in fragments]
+        result.append(episode)
+    return result
+
+
+def _shared_entity_names(conn, entity_ids: list[str]) -> list[str]:
+    if not entity_ids:
+        return []
+    placeholders = ",".join("?" for _ in entity_ids)
+    rows = conn.execute(
+        f"SELECT name FROM memory_entities WHERE status='active'"
+        f" AND id IN ({placeholders}) ORDER BY name",
+        entity_ids,
+    ).fetchall()
+    return [row["name"] for row in rows]
+
+
+def _summary_event(
+    conn, candidate_id: str, action: str, error_code: str | None,
+    metadata: dict, created_at: float,
+) -> None:
+    if action not in {"summary_validated", "summary_fallback", "summary_rejected"}:
+        raise ValueError("非法的 Saga 候选摘要事件")
+    conn.execute(
+        "INSERT INTO saga_candidate_summary_events("
+        "id,candidate_id,action,error_code,metadata_json,created_at) VALUES(?,?,?,?,?,?)",
+        (
+            db.new_id(), candidate_id, action, error_code,
+            json.dumps(metadata, ensure_ascii=False, separators=(",", ":")), created_at,
+        ),
+    )
+
+
 def _expire_candidates(conn, now: float) -> int:
     cursor = conn.execute(
         "UPDATE saga_group_candidates SET status='expired',last_evaluated_at=?"
@@ -330,6 +576,16 @@ def _candidate_row(row) -> dict:
     result["episode_ids"] = json.loads(result.pop("episode_ids_json"))
     result["shared_entity_ids"] = json.loads(result.pop("shared_entity_ids_json"))
     result["score_details"] = json.loads(result.pop("score_details_json"))
+    result["summary_evidence_episode_ids"] = json.loads(
+        result.pop("summary_evidence_episode_ids_json", "[]")
+    )
+    result["completion_evidence_episode_ids"] = json.loads(
+        result.pop("completion_evidence_episode_ids_json", "[]")
+    )
+    result["summary_warnings"] = json.loads(result.pop("summary_warnings_json", "[]"))
+    if result.get("summary_status") == "not_started":
+        for field in ("title", "summary", "theme", "current_stage"):
+            result.pop(field, None)
     return result
 
 

@@ -35,7 +35,7 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; python -m pytest tests` | 通过：162 passed，1 warning |
+| 后端 | `cd backend; python -m pytest tests` | 通过：171 passed，1 warning |
 | 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：7 项情绪映射/记忆与 Episode 展示契约测试、TypeScript 检查及 Vite 生产构建成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 
@@ -120,7 +120,10 @@ npm.cmd start
 - Saga 阶段 D.2 已完成：schema 19 新增最小 Saga 分组候选账本，候选不复制 Episode 摘要或 Fragment 正文。
 - `saga-group-v1` 使用 Entity、文本、时间和叙事连贯性四分量，以及跨自然日、180 天总跨度、60 天相邻间隔和双层主题硬门槛。
 - 候选支持稳定指纹、低分观察、21 天终态过期、纠正后晋级和跨 Saga 冲突记录；不会修改 Episode 或创建正式 Saga。
-- 当前尚未实现 Saga 模型摘要、原子应用、API 和界面；这些从 D.3 开始施工。
+- Saga 阶段 D.3 已完成：schema 20 保存受来源约束的摘要、生命周期候选信号、整链哈希、token、修复标记和独立摘要事件。
+- `saga-summary-v1` 校验 Saga→Episode→Fragment 双层来源链；current_stage 必须来自最新 Episode，摘要必须覆盖起点和最新发展。
+- 模型只可逐字选择 Episode 事实；非法结构最多修复一次，虚构、注入、错误完成证据和来源变化改用当前来源安全回退或拒绝。
+- 当前尚未实现正式 Saga 原子应用、后台任务、API 和界面；这些从 D.4 开始施工。
 
 ### 人格与内置背景知识（2026-07-14）
 
@@ -143,7 +146,7 @@ npm.cmd start
 - 旁观观察器阶段 2.2 已建立受限非流式模型调用、幂等候选审计和失败恢复入队基础。
 - 旁观观察器阶段 2.3 已改为可靠后台 worker：聊天只入队，最多三次指数退避；设置页可选择独立轻量模型，净化候选与事件在同一事务原子应用。
 - 测试数据目录由 `tests/conftest.py` 在模块收集前统一隔离，测试文件顺序不会再接触开发数据库。
-- Saga 已有 D.1 数据地基与 D.2 本地候选预筛；摘要、正式应用、相对日期校正、矛盾检测和星图尚未实现。
+- Saga 已有 D.1～D.3 数据地基、预筛和事实摘要；正式应用、相对日期校正、矛盾检测和星图尚未实现。
 
 - Electron：透明置顶桌宠、主窗口、托盘、右键菜单及基础 IPC 联动。
 - Live2D：固定模型加载、动作和状态气泡；九个后端情绪簇控制表情，工作模式独立控制动作，资源缺失时有占位降级。

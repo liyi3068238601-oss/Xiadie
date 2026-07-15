@@ -805,6 +805,49 @@ MIGRATIONS = [
             ON saga_group_candidates(status, expires_at, last_evaluated_at);
         """,
     ),
+    (
+        20,
+        """
+        ALTER TABLE saga_group_candidates ADD COLUMN title TEXT NOT NULL DEFAULT '';
+        ALTER TABLE saga_group_candidates ADD COLUMN summary TEXT NOT NULL DEFAULT '';
+        ALTER TABLE saga_group_candidates ADD COLUMN theme TEXT NOT NULL DEFAULT '';
+        ALTER TABLE saga_group_candidates ADD COLUMN current_stage TEXT NOT NULL DEFAULT '';
+        ALTER TABLE saga_group_candidates ADD COLUMN lifecycle_signal TEXT NOT NULL DEFAULT 'active'
+            CHECK(lifecycle_signal IN ('active','completed'));
+        ALTER TABLE saga_group_candidates ADD COLUMN summary_status TEXT NOT NULL
+            DEFAULT 'not_started' CHECK(summary_status IN (
+                'not_started','extractive_fallback','model_validated'
+            ));
+        ALTER TABLE saga_group_candidates ADD COLUMN summary_protocol_version TEXT NOT NULL
+            DEFAULT 'saga-summary-v1';
+        ALTER TABLE saga_group_candidates ADD COLUMN summary_provider_id TEXT;
+        ALTER TABLE saga_group_candidates ADD COLUMN summary_model TEXT;
+        ALTER TABLE saga_group_candidates ADD COLUMN summary_evidence_episode_ids_json TEXT
+            NOT NULL DEFAULT '[]';
+        ALTER TABLE saga_group_candidates ADD COLUMN completion_evidence_episode_ids_json TEXT
+            NOT NULL DEFAULT '[]';
+        ALTER TABLE saga_group_candidates ADD COLUMN summary_warnings_json TEXT NOT NULL DEFAULT '[]';
+        ALTER TABLE saga_group_candidates ADD COLUMN summary_error_code TEXT;
+        ALTER TABLE saga_group_candidates ADD COLUMN summary_source_hash TEXT NOT NULL DEFAULT '';
+        ALTER TABLE saga_group_candidates ADD COLUMN summary_prompt_tokens INTEGER;
+        ALTER TABLE saga_group_candidates ADD COLUMN summary_completion_tokens INTEGER;
+        ALTER TABLE saga_group_candidates ADD COLUMN summary_repair_attempted INTEGER NOT NULL DEFAULT 0
+            CHECK(summary_repair_attempted IN (0,1));
+
+        CREATE TABLE saga_candidate_summary_events (
+            id TEXT PRIMARY KEY,
+            candidate_id TEXT NOT NULL REFERENCES saga_group_candidates(id) ON DELETE CASCADE,
+            action TEXT NOT NULL CHECK(action IN (
+                'summary_validated','summary_fallback','summary_rejected'
+            )),
+            error_code TEXT,
+            metadata_json TEXT NOT NULL DEFAULT '{}',
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_saga_candidate_summary_events_candidate
+            ON saga_candidate_summary_events(candidate_id, created_at, id);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

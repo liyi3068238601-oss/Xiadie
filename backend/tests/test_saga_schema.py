@@ -6,6 +6,8 @@ import pytest
 
 from app import db
 
+db.init_db()
+
 
 def _episode(conn: sqlite3.Connection, episode_id: str, at: float) -> None:
     conn.execute(
@@ -32,7 +34,7 @@ def test_saga_schema_has_traceability_and_lifecycle_fields():
         version = conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
         ).fetchone()["value"]
-        assert version == "19"
+        assert version == "20"
         tables = {
             row["name"] for row in conn.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'memory_saga%'"
@@ -191,8 +193,20 @@ def test_saga_candidate_schema_rejects_invalid_status_score_and_fingerprint_reus
             "episode_ids_json", "shared_entity_ids_json", "entity_score", "text_score",
             "time_score", "coherence_score", "total_score", "score_details_json",
             "policy_version", "conflict_reason", "evaluation_count", "expires_at",
+            "title", "summary", "theme", "current_stage", "lifecycle_signal",
+            "summary_status", "summary_protocol_version", "summary_provider_id",
+            "summary_model", "summary_evidence_episode_ids_json",
+            "completion_evidence_episode_ids_json", "summary_warnings_json",
+            "summary_error_code", "summary_source_hash", "summary_prompt_tokens",
+            "summary_completion_tokens", "summary_repair_attempted",
         } <= columns
         conn.execute(statement, values)
+        with pytest.raises(sqlite3.IntegrityError):
+            conn.execute(
+                "INSERT INTO saga_candidate_summary_events("
+                "id,candidate_id,action,created_at) VALUES('bad-event','candidate-a','raw_saved',?)",
+                (stamp,),
+            )
         with pytest.raises(sqlite3.IntegrityError):
             conn.execute(statement, ("candidate-b", *values[1:]))
         with pytest.raises(sqlite3.IntegrityError):

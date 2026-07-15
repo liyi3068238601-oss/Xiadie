@@ -5,6 +5,8 @@ import pytest
 
 from app import db, sagas
 
+db.init_db()
+
 
 @pytest.fixture(autouse=True)
 def clean_saga_scoring_objects():
