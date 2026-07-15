@@ -35,7 +35,7 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; python -m pytest tests` | 通过：102 passed，1 warning |
+| 后端 | `cd backend; python -m pytest tests` | 通过：111 passed，1 warning |
 | 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：2 项九簇映射测试、TypeScript 检查及 Vite 生产构建成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 
@@ -91,8 +91,9 @@ npm.cmd start
 - 自主记忆阶段 B.1 协议地基已完成；schema 11 在其上增加观察耗时与受限修复审计字段。
 - 自主记忆阶段 B.2 已接通后台幂等队列和真实模型调用：可跟随当前模型或选择独立真实模型，聊天完成事件只入队、不等待观察结果。
 - 严格记忆观察协议会校验证据消息、事实覆盖、枚举、数量、重要度上限、隐私与提示注入；格式失败的整个任务最多受限修复一次。
-- 成功结果目前只进入 `validated` 审计，不写正式 Fragment；失败只保存安全错误码与非内容统计。
-- 旧关键词候选和人工确认流程仍保持运行，待 B.3～B.4 完成后再安全切换，旧 pending 数据不会自动转正或丢失。
+- 自主记忆阶段 B.3 已完成：来源、等值去重、正式 Fragment、实体关系、事件和 applied 状态在单一事务提交，失败整体回滚。
+- 自动 Fragment 保留来源会话、用户/助手消息、全部证据、观察理由、版本和幂等键；敏感 Fragment 默认禁用且不创建实体关系。
+- 真实模型路径可用时不再创建逐条确认候选；旧关键词候选只在模型不可用或重试耗尽时兜底。旧 pending 数据仍保留，待 B.4 提供兼容管理入口。
 
 ### 人格与内置背景知识（2026-07-14）
 

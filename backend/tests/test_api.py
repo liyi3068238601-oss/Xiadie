@@ -745,6 +745,61 @@ def test_memory_observer_internal_api_is_read_only_and_validates_model():
     )
 
 
+def test_real_memory_observer_path_does_not_create_legacy_candidate(monkeypatch):
+    from app import db, llm, memory_observer_service
+
+    async def fake_stream(*_args, **_kwargs):
+        yield "我会记得。"
+
+    monkeypatch.setattr(llm, "stream_chat", fake_stream)
+    monkeypatch.setattr(
+        memory_observer_service, "enqueue_turn",
+        lambda **_kwargs: {"id": "queued-memory-run", "status": "queued", "error_code": None},
+    )
+    session = client.post("/api/sessions", json={}).json()
+    with client.stream(
+        "POST", "/api/chat",
+        json={"session_id": session["id"], "content": "记住我喜欢安静的夜晚。"},
+    ) as response:
+        body = "".join(response.iter_text())
+    assert "event: done" in body and '"memory_candidate": null' in body
+    conn = db.connect()
+    try:
+        count = conn.execute(
+            "SELECT COUNT(*) FROM memory_candidates WHERE source_session_id=?",
+            (session["id"],),
+        ).fetchone()[0]
+    finally:
+        conn.close()
+    assert count == 0
+
+
+def test_legacy_fallback_failure_cannot_hide_successful_chat(monkeypatch):
+    from app import llm, memory, memory_observer_service
+
+    async def fake_stream(*_args, **_kwargs):
+        yield "回复仍然成功。"
+
+    monkeypatch.setattr(llm, "stream_chat", fake_stream)
+    monkeypatch.setattr(
+        memory_observer_service, "enqueue_turn",
+        lambda **_kwargs: {
+            "status": "skipped", "error_code": "observer_model_unavailable"
+        },
+    )
+    monkeypatch.setattr(
+        memory, "maybe_create_candidate",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("fallback db failed")),
+    )
+    session = client.post("/api/sessions", json={}).json()
+    with client.stream(
+        "POST", "/api/chat",
+        json={"session_id": session["id"], "content": "记住我喜欢安静的夜晚。"},
+    ) as response:
+        body = "".join(response.iter_text())
+    assert "event: done" in body and "回复仍然成功" in body
+
+
 def test_failed_regeneration_keeps_previous_reply(monkeypatch):
     from app import llm
 

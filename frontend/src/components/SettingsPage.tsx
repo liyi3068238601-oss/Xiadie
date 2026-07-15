@@ -431,7 +431,7 @@ export function SettingsPage({ onModelChanged }: { onModelChanged: () => void })
               <div className="section-label">记忆观察模型</div>
               <div className="card" style={{ marginBottom: 18 }}>
                 <div className="card-hint" style={{ marginBottom: 10 }}>
-                  后台只分析并审计可能值得记住的内容；当前阶段不会自动写入正式记忆。
+                  后台分析值得记住的内容；通过来源与隐私校验后会自动写入正式记忆。
                 </div>
                 <div className="row" style={{ flexWrap: "wrap" }}>
                   <select value={memoryObserverMode} onChange={(e) => setMemoryObserverMode(e.target.value as "current" | "dedicated")}>

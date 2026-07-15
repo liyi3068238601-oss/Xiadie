@@ -308,12 +308,18 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 user_message_id=uid,
                 assistant_message_id=aid,
             )
-        # 只生成待确认候选，不再把模型判断静默写成正式记忆。
-        candidate = (
-            memory.maybe_create_candidate(body.content, body.session_id, uid)
-            if not body.regenerate
-            else None
-        )
+        # 旧关键词候选只在观察模型不可用时兜底；真实模型路径不再逐条等待确认。
+        candidate = None
+        if (
+            not body.regenerate
+            and db.get_setting("memory_enabled", "1") == "1"
+            and (memory_observation or {}).get("error_code")
+            in ("observer_model_unavailable", "observer_enqueue_failed")
+        ):
+            try:
+                candidate = memory.maybe_create_candidate(body.content, body.session_id, uid)
+            except Exception:  # noqa: BLE001 - 记忆兜底不能吞掉成功的聊天回复
+                candidate = None
         yield _sse(
             "done",
             {

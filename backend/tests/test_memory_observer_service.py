@@ -4,7 +4,10 @@ from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
-from app import db, llm, memory, memory_observer as observer, memory_observer_service as service
+from app import (
+    db, entities, llm, memory, memory_observer as observer,
+    memory_observer_service as service,
+)
 
 db.init_db()
 
@@ -44,16 +47,22 @@ def create_context(
     }
 
 
-def valid_output(context: dict) -> str:
+def valid_output(
+    context: dict,
+    content="用户准备未来三个月持续开发遐蝶项目",
+    entity_names=None,
+    sensitivity="normal",
+) -> str:
     return json.dumps({
         "protocol_version": observer.PROTOCOL_VERSION,
         "should_write": True,
         "items": [{
             "scope": "user", "kind": "plan",
-            "content": "用户准备未来三个月持续开发遐蝶项目",
+            "content": content,
             "inner_reason": "这是具有后续价值的明确长期计划",
             "importance": 0.84, "confidence": 0.91, "emotion": "期待",
-            "entities": ["遐蝶"], "sensitivity": "normal",
+            "entities": entity_names if entity_names is not None else ["遐蝶项目"],
+            "sensitivity": sensitivity,
             "evidence_message_ids": [context["user_message_id"]],
         }],
     }, ensure_ascii=False)
@@ -75,7 +84,7 @@ def fragment_count() -> int:
         conn.close()
 
 
-def test_valid_candidate_is_audited_without_writing_fragment(monkeypatch):
+def test_valid_candidate_is_applied_with_full_source_audit(monkeypatch):
     context = create_context()
 
     async def fake_complete(*_args, **_kwargs):
@@ -87,12 +96,39 @@ def test_valid_candidate_is_audited_without_writing_fragment(monkeypatch):
     assert queued["status"] == "queued"
     assert process() >= 1
     run = get_run(queued["id"])
-    assert run["status"] == "validated"
+    assert run["status"] == "applied"
     assert run["candidate"]["items"][0]["kind"] == "plan"
     assert run["prompt_tokens"] == 800 and run["completion_tokens"] == 180
     assert run["latency_ms"] is not None and run["latency_ms"] >= 0
     assert run["repair_attempted"] is False
-    assert fragment_count() == before
+    assert len(run["applied_fragment_ids"]) == 1 and run["applied_at"] is not None
+    assert fragment_count() == before + 1
+    conn = db.connect()
+    try:
+        fragment = dict(conn.execute(
+            "SELECT * FROM memory_fragments WHERE id=?", (run["applied_fragment_ids"][0],)
+        ).fetchone())
+        events = conn.execute(
+            "SELECT action,source FROM memory_events WHERE object_type='fragment' AND object_id=?",
+            (fragment["id"],),
+        ).fetchall()
+        links = conn.execute(
+            "SELECT COUNT(*) FROM memory_fragment_entities WHERE fragment_id=?",
+            (fragment["id"],),
+        ).fetchone()[0]
+    finally:
+        conn.close()
+    assert fragment["source"] == "observer"
+    assert fragment["source_session_id"] == context["session_id"]
+    assert fragment["source_message_id"] == context["user_message_id"]
+    assert fragment["source_assistant_message_id"] == context["assistant_message_id"]
+    assert json.loads(fragment["evidence_message_ids"]) == [context["user_message_id"]]
+    assert fragment["observer_version"] == observer.PROTOCOL_VERSION
+    assert fragment["scope"] == "user" and fragment["kind"] == "plan"
+    assert links >= 1
+    assert [(row["action"], row["source"]) for row in events] == [
+        ("autonomous_created", "observer")
+    ]
     assert process() == 0
 
 
@@ -111,6 +147,219 @@ def test_concurrent_enqueue_is_idempotent(monkeypatch):
     assert rows[0]["id"] == rows[1]["id"]
     process()
     assert calls == 1
+
+
+def test_same_fact_from_two_runs_reuses_one_fragment(monkeypatch):
+    text = "我决定连续六个月维护星尘计划。"
+    first = create_context(text)
+    second = create_context(text)
+    outputs = [
+        valid_output(first, "用户决定连续六个月维护星尘计划", ["星尘计划"]),
+        valid_output(second, "用户决定连续六个月维护星尘计划", ["星尘计划"]),
+    ]
+
+    async def fake_complete(*_args, **_kwargs):
+        return {"text": outputs.pop(0), "prompt_tokens": 1, "completion_tokens": 1}
+
+    monkeypatch.setattr(llm, "complete_json", fake_complete)
+    before = fragment_count()
+    first_run = service.enqueue_turn(**first)
+    process(limit=1)
+    second_run = service.enqueue_turn(**second)
+    process(limit=1)
+    first_applied = get_run(first_run["id"])
+    second_applied = get_run(second_run["id"])
+    assert first_applied["status"] == second_applied["status"] == "applied"
+    assert first_applied["applied_fragment_ids"] == second_applied["applied_fragment_ids"]
+    assert fragment_count() == before + 1
+
+
+def test_existing_b2_validated_run_applies_without_calling_model(monkeypatch):
+    context = create_context("我决定长期维护晨星档案。")
+    queued = service.enqueue_turn(**context)
+    candidate = observer.parse_and_validate(
+        valid_output(context, "用户决定长期维护晨星档案", ["晨星档案"]),
+        messages=[{
+            "id": context["user_message_id"], "role": "user",
+            "content": "我决定长期维护晨星档案。",
+        }],
+    )
+    conn = db.connect()
+    try:
+        conn.execute(
+            "UPDATE memory_observer_runs SET status='validated',candidate_json=?,"
+            " attempt_count=1,prompt_tokens=700,completion_tokens=120,output_chars=360"
+            " WHERE id=?",
+            (json.dumps(candidate, ensure_ascii=False), queued["id"]),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    async def should_not_call(*_args, **_kwargs):
+        raise AssertionError("validated B.2 candidate must not call model again")
+
+    monkeypatch.setattr(llm, "complete_json", should_not_call)
+    process(limit=1)
+    run = get_run(queued["id"])
+    assert run["status"] == "applied"
+    assert len(run["applied_fragment_ids"]) == 1
+    assert run["prompt_tokens"] == 700 and run["completion_tokens"] == 120
+    assert run["output_chars"] == 360
+
+
+def test_entity_failure_rolls_back_fragment_links_events_and_apply_state(monkeypatch):
+    context = create_context("我准备长期维护回声工程。")
+
+    async def fake_complete(*_args, **_kwargs):
+        return {
+            "text": valid_output(context, "用户准备长期维护回声工程", ["回声工程"]),
+            "prompt_tokens": 1, "completion_tokens": 1,
+        }
+
+    monkeypatch.setattr(llm, "complete_json", fake_complete)
+    monkeypatch.setattr(
+        entities, "auto_link_fragment",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("link failed")),
+    )
+    conn = db.connect()
+    try:
+        before = {
+            "fragments": conn.execute("SELECT COUNT(*) FROM memory_fragments").fetchone()[0],
+            "entities": conn.execute("SELECT COUNT(*) FROM memory_entities").fetchone()[0],
+            "links": conn.execute("SELECT COUNT(*) FROM memory_fragment_entities").fetchone()[0],
+            "events": conn.execute("SELECT COUNT(*) FROM memory_events").fetchone()[0],
+        }
+    finally:
+        conn.close()
+    queued = service.enqueue_turn(**context)
+    process(limit=1)
+    run = get_run(queued["id"])
+    assert run["status"] == "recovery_pending"
+    assert run["error_code"] == "observer_apply_failed"
+    assert run["applied_fragment_ids"] == []
+    conn = db.connect()
+    try:
+        after = {
+            "fragments": conn.execute("SELECT COUNT(*) FROM memory_fragments").fetchone()[0],
+            "entities": conn.execute("SELECT COUNT(*) FROM memory_entities").fetchone()[0],
+            "links": conn.execute("SELECT COUNT(*) FROM memory_fragment_entities").fetchone()[0],
+            "events": conn.execute("SELECT COUNT(*) FROM memory_events").fetchone()[0],
+        }
+    finally:
+        conn.close()
+    assert after == before
+
+
+def test_source_is_rechecked_inside_apply_transaction(monkeypatch):
+    context = create_context("我准备长期维护潮汐项目。")
+
+    async def fake_complete(*_args, **_kwargs):
+        conn = db.connect()
+        try:
+            conn.execute("UPDATE messages SET role='system' WHERE id=?", (context["user_message_id"],))
+            conn.commit()
+        finally:
+            conn.close()
+        return {
+            "text": valid_output(context, "用户准备长期维护潮汐项目", ["潮汐项目"]),
+            "prompt_tokens": 1, "completion_tokens": 1,
+        }
+
+    monkeypatch.setattr(llm, "complete_json", fake_complete)
+    before = fragment_count()
+    queued = service.enqueue_turn(**context)
+    process(limit=1)
+    run = get_run(queued["id"])
+    assert run["status"] == "recovery_pending"
+    assert run["error_code"] == "apply_source_unavailable"
+    assert fragment_count() == before
+
+
+def test_no_memory_decision_finishes_applied_without_fragment(monkeypatch):
+    context = create_context("帮我算一下十二乘八。")
+
+    async def fake_complete(*_args, **_kwargs):
+        return {
+            "text": json.dumps({
+                "protocol_version": observer.PROTOCOL_VERSION,
+                "should_write": False,
+                "items": [],
+            }),
+            "prompt_tokens": 1, "completion_tokens": 1,
+        }
+
+    monkeypatch.setattr(llm, "complete_json", fake_complete)
+    before = fragment_count()
+    queued = service.enqueue_turn(**context)
+    process(limit=1)
+    run = get_run(queued["id"])
+    assert run["status"] == "applied" and run["applied_fragment_ids"] == []
+    assert fragment_count() == before
+
+
+def test_sensitive_fragment_is_disabled_and_creates_no_entity_links(monkeypatch):
+    context = create_context("我有一段需要谨慎保存的个人经历。")
+
+    async def fake_complete(*_args, **_kwargs):
+        return {
+            "text": valid_output(
+                context, "用户有一段需要谨慎保存的个人经历", ["个人经历"], "sensitive"
+            ),
+            "prompt_tokens": 1, "completion_tokens": 1,
+        }
+
+    monkeypatch.setattr(llm, "complete_json", fake_complete)
+    queued = service.enqueue_turn(**context)
+    process(limit=1)
+    run = get_run(queued["id"])
+    conn = db.connect()
+    try:
+        fragment = conn.execute(
+            "SELECT enabled,sensitivity FROM memory_fragments WHERE id=?",
+            (run["applied_fragment_ids"][0],),
+        ).fetchone()
+        links = conn.execute(
+            "SELECT COUNT(*) FROM memory_fragment_entities WHERE fragment_id=?",
+            (run["applied_fragment_ids"][0],),
+        ).fetchone()[0]
+    finally:
+        conn.close()
+    assert run["status"] == "applied"
+    assert fragment["enabled"] == 0 and fragment["sensitivity"] == "sensitive"
+    assert links == 0
+
+
+def test_exhausted_model_path_creates_only_legacy_fallback_candidate(monkeypatch):
+    context = create_context("记住我喜欢安静的夜晚。")
+
+    async def invalid(*_args, **_kwargs):
+        return {"text": "not-json", "prompt_tokens": 1, "completion_tokens": 1}
+
+    monkeypatch.setattr(llm, "complete_json", invalid)
+    queued = service.enqueue_turn(**context)
+    conn = db.connect()
+    try:
+        conn.execute(
+            "UPDATE memory_observer_runs SET max_attempts=1 WHERE id=?", (queued["id"],)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    before = fragment_count()
+    process(limit=1)
+    run = get_run(queued["id"])
+    assert run["status"] == "exhausted"
+    assert fragment_count() == before
+    conn = db.connect()
+    try:
+        candidates = conn.execute(
+            "SELECT * FROM memory_candidates WHERE source_message_id=?",
+            (context["user_message_id"],),
+        ).fetchall()
+    finally:
+        conn.close()
+    assert len(candidates) == 1 and candidates[0]["status"] == "pending"
 
 
 def test_invalid_json_uses_only_one_model_repair_for_entire_run(monkeypatch):
@@ -231,10 +480,10 @@ def test_worker_wake_processes_queue_without_blocking_enqueue(monkeypatch):
             queued = service.enqueue_turn(**context)
             assert queued["status"] == "queued" and queued["attempt_count"] == 0
             for _ in range(100):
-                if get_run(queued["id"])["status"] == "validated":
+                if get_run(queued["id"])["status"] == "applied":
                     return
                 await asyncio.sleep(0.01)
-            raise AssertionError("memory observer did not validate queued run")
+            raise AssertionError("memory observer did not apply queued run")
         finally:
             await service.stop_worker()
 

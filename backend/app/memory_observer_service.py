@@ -1,7 +1,4 @@
-"""自主记忆观察器的后台调用与只读审计。
-
-B.2 的终点只能是 validated：本模块不会写 memory_fragments、实体或记忆事件。
-"""
+"""自主记忆观察器的后台调用、有限恢复与原子正式写入。"""
 from __future__ import annotations
 
 import asyncio
@@ -9,7 +6,7 @@ import json
 import time
 from contextlib import suppress
 
-from . import companion_state, db, llm, memory, memory_observer as observer
+from . import companion_state, db, llm, memory, memory_observer as observer, memory_writer
 from .persona import OBSERVER_PERSONA_SUMMARY
 
 MAX_INPUT_CHARS = 16_000
@@ -17,6 +14,10 @@ MAX_ATTEMPTS = 3
 FIRST_RETRY_DELAY_SECONDS = 5 * 60
 RUNNING_STALE_SECONDS = 2 * 60
 WORKER_IDLE_SECONDS = 30
+LEGACY_FALLBACK_ERROR_CODES = frozenset({
+    "model_call_failed", "observer_model_timeout", "invalid_json", "schema_invalid",
+    "invalid_type", "output_too_large",
+})
 
 _worker_task: asyncio.Task | None = None
 _wake_event: asyncio.Event | None = None
@@ -65,9 +66,13 @@ def enqueue_turn(
     try:
         provider, model = _resolve_model(chat_provider, chat_model)
         provider_id = provider.get("id") if provider else None
+        enabled = db.get_setting("memory_enabled", "1") == "1"
         available = bool(provider and provider_id != "mock" and provider.get("base_url"))
-        status = "queued" if available else "skipped"
-        error_code = None if available else "observer_model_unavailable"
+        status = "queued" if enabled and available else "skipped"
+        error_code = (
+            None if status == "queued"
+            else "memory_disabled" if not enabled else "observer_model_unavailable"
+        )
         key = f"{observer.PROTOCOL_VERSION}:{assistant_message_id}"
         conn = db.connect()
         try:
@@ -175,14 +180,17 @@ def _claim_next() -> dict | None:
         now = db.now()
         row = conn.execute(
             "SELECT * FROM memory_observer_runs WHERE "
-            "(status='queued' OR (status='recovery_pending' AND next_attempt_at<=?))"
-            " AND attempt_count < max_attempts ORDER BY created_at LIMIT 1",
+            "(status IN ('queued','validated')"
+            " OR (status='recovery_pending' AND next_attempt_at<=?))"
+            " AND (attempt_count < max_attempts OR candidate_json IS NOT NULL)"
+            " ORDER BY created_at LIMIT 1",
             (now,),
         ).fetchone()
         if not row:
             conn.rollback()
             return None
-        attempt = row["attempt_count"] + 1
+        has_stored_candidate = bool(row["candidate_json"])
+        attempt = row["attempt_count"] if has_stored_candidate else row["attempt_count"] + 1
         conn.execute(
             "UPDATE memory_observer_runs SET status='running',attempt_count=?,"
             " last_attempt_at=?,updated_at=? WHERE id=?",
@@ -190,13 +198,31 @@ def _claim_next() -> dict | None:
         )
         conn.commit()
         result = dict(row)
-        result.update({"attempt_count": attempt, "status": "running"})
+        result.update({
+            "attempt_count": attempt, "status": "running",
+            "has_stored_candidate": has_stored_candidate,
+        })
         return result
     finally:
         conn.close()
 
 
 async def _process_claimed(row: dict) -> None:
+    if row.get("has_stored_candidate"):
+        try:
+            candidate = json.loads(row["candidate_json"])
+        except (TypeError, ValueError):
+            _mark_failure(
+                row, "stored_candidate_invalid", input_chars=row.get("input_chars", 0),
+                completions=[], latency_ms=row.get("latency_ms") or 0,
+                repair_attempted=bool(row.get("repair_attempted")),
+            )
+            return
+        _apply_candidate(
+            row, candidate, [], row.get("input_chars", 0), row.get("latency_ms") or 0,
+            bool(row.get("repair_attempted")), stored_audit=True,
+        )
+        return
     context = _load_context(row)
     if not context:
         _finish_without_retry(row, "observer_source_unavailable", "skipped")
@@ -266,61 +292,72 @@ async def _process_claimed(row: dict) -> None:
             latency_ms=_elapsed_ms(started), repair_attempted=repair_attempted,
         )
         return
-    _store_validated(
+    _apply_candidate(
         row, candidate, completions, input_chars, _elapsed_ms(started), repair_attempted
     )
 
 
-def _store_validated(
+def _apply_candidate(
     row: dict, candidate: dict, completions: list[dict], input_chars: int,
-    latency_ms: int, repair_attempted: bool,
+    latency_ms: int, repair_attempted: bool, stored_audit: bool = False,
 ) -> None:
-    """原子保存净化候选和审计指标；刻意没有任何 Fragment 写入。"""
-    prompt_tokens, completion_tokens = _token_totals(completions)
-    output_chars = sum(len(item.get("text") or "") for item in completions)
+    """把净化候选、Fragment、实体、事件和 applied 状态放进同一事务。"""
+    if stored_audit:
+        prompt_tokens = row.get("prompt_tokens")
+        completion_tokens = row.get("completion_tokens")
+        output_chars = row.get("output_chars", 0)
+    else:
+        prompt_tokens, completion_tokens = _token_totals(completions)
+        output_chars = sum(len(item.get("text") or "") for item in completions)
     conn = db.connect()
-    audit_failed = False
+    apply_error: str | None = None
     try:
         conn.execute("BEGIN IMMEDIATE")
-        current = conn.execute(
-            "SELECT status FROM memory_observer_runs WHERE id=?", (row["id"],)
-        ).fetchone()
-        if not current or current["status"] != "running":
-            conn.rollback()
-            return
-        conn.execute(
-            "UPDATE memory_observer_runs SET status='validated',candidate_json=?,warnings_json=?,"
-            " error_code=NULL,next_attempt_at=NULL,input_chars=?,output_chars=?,prompt_tokens=?,"
-            " completion_tokens=?,latency_ms=?,repair_attempted=?,updated_at=? WHERE id=?",
-            (
-                json.dumps(candidate, ensure_ascii=False),
-                json.dumps(candidate.get("warnings") or [], ensure_ascii=False),
-                input_chars, output_chars, prompt_tokens, completion_tokens, latency_ms,
-                1 if repair_attempted else 0, db.now(), row["id"],
-            ),
+        memory_writer.apply_observation_in_transaction(
+            conn, run=row, candidate=candidate,
+            audit={
+                "input_chars": input_chars, "output_chars": output_chars,
+                "prompt_tokens": prompt_tokens, "completion_tokens": completion_tokens,
+                "latency_ms": latency_ms, "repair_attempted": repair_attempted,
+            },
         )
         conn.commit()
-    except Exception:  # noqa: BLE001 - 审计写入失败转恢复态，不遗留 running
+    except memory_writer.MemoryApplyError as exc:
         conn.rollback()
-        audit_failed = True
+        apply_error = exc.code
+    except Exception:  # noqa: BLE001 - 任一步失败都回滚，再单独标记恢复
+        conn.rollback()
+        apply_error = "observer_apply_failed"
     finally:
         conn.close()
-    if audit_failed:
+    if apply_error:
         _mark_failure(
-            row, "observer_audit_failed", input_chars=input_chars, completions=completions,
+            row, apply_error, input_chars=input_chars, completions=completions,
             latency_ms=latency_ms, repair_attempted=repair_attempted,
+            audit_override=(
+                {
+                    "output_chars": output_chars, "prompt_tokens": prompt_tokens,
+                    "completion_tokens": completion_tokens,
+                }
+                if stored_audit else None
+            ),
         )
 
 
 def _mark_failure(
     row: dict, error_code: str, *, input_chars: int, completions: list[dict],
-    latency_ms: int, repair_attempted: bool,
+    latency_ms: int, repair_attempted: bool, audit_override: dict | None = None,
 ) -> None:
     attempt = row["attempt_count"]
     exhausted = attempt >= row["max_attempts"]
     delay = FIRST_RETRY_DELAY_SECONDS * (2 ** max(0, attempt - 1))
-    prompt_tokens, completion_tokens = _token_totals(completions)
-    output_chars = sum(len(item.get("text") or "") for item in completions)
+    if audit_override:
+        prompt_tokens = audit_override.get("prompt_tokens")
+        completion_tokens = audit_override.get("completion_tokens")
+        output_chars = audit_override.get("output_chars", 0)
+    else:
+        prompt_tokens, completion_tokens = _token_totals(completions)
+        output_chars = sum(len(item.get("text") or "") for item in completions)
     conn = db.connect()
     try:
         now = db.now()
@@ -337,6 +374,8 @@ def _mark_failure(
         conn.commit()
     finally:
         conn.close()
+    if exhausted and error_code in LEGACY_FALLBACK_ERROR_CODES:
+        _maybe_create_legacy_fallback(row)
 
 
 def _finish_without_retry(
@@ -352,6 +391,8 @@ def _finish_without_retry(
         conn.commit()
     finally:
         conn.close()
+    if error_code == "observer_model_unavailable":
+        _maybe_create_legacy_fallback(row)
 
 
 def _record_repair_attempt(run_id: str) -> None:
@@ -364,6 +405,28 @@ def _record_repair_attempt(run_id: str) -> None:
         conn.commit()
     finally:
         conn.close()
+
+
+def _maybe_create_legacy_fallback(row: dict) -> None:
+    """真实观察路径不可用或耗尽时，才使用旧关键词候选作为保守兜底。"""
+    if db.get_setting("memory_enabled", "1") != "1":
+        return
+    conn = db.connect()
+    try:
+        source = conn.execute(
+            "SELECT content FROM messages WHERE id=? AND session_id=? AND role='user'",
+            (row["source_user_message_id"], row["source_session_id"]),
+        ).fetchone()
+    finally:
+        conn.close()
+    if not source:
+        return
+    try:
+        memory.maybe_create_candidate(
+            source["content"], row["source_session_id"], row["source_user_message_id"]
+        )
+    except Exception:  # noqa: BLE001 - 兜底失败也不能破坏 worker
+        return
 
 
 def _load_context(row: dict) -> dict | None:
@@ -442,6 +505,10 @@ def _public(row: dict, *, include_candidate: bool = False) -> dict:
             "completion_tokens": row.get("completion_tokens"),
             "latency_ms": row.get("latency_ms"),
             "repair_attempted": bool(row.get("repair_attempted")),
+            "applied_fragment_ids": json.loads(
+                row.get("applied_fragment_ids_json") or "[]"
+            ),
+            "applied_at": row.get("applied_at"),
             "created_at": row["created_at"], "updated_at": row["updated_at"],
         })
     return result
