@@ -35,7 +35,7 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; python -m pytest tests` | 通过：26 passed，1 warning |
+| 后端 | `cd backend; python -m pytest tests` | 通过：29 passed，1 warning |
 | 前端 | `cd frontend; npm.cmd run build` | 通过：TypeScript 检查及 Vite 生产构建成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 
@@ -95,6 +95,14 @@ npm.cmd start
 - 长篇角色背景已从人格核心中拆出，保存为内置 Markdown 背景知识，并按当前消息的关键词检索相关章节。
 - 背景知识、角色亲历记忆和用户对话记忆已明确分层，避免把设定误当成与当前用户共同经历的事实。
 - 目前的内置背景检索是轻量关键词方案；用户文件知识库的解析、索引、语义检索和引用仍未实现。
+
+### 情绪与关系状态阶段一（2026-07-15）
+
+- 已拆分短期 `affect_state` 与长期 `relationship_state`，不再混用关系熟悉度和联系需求。
+- 已实现确定性时间漂移、五分钟分步积分、情绪簇、遐蝶基础语调、主动信号和状态事件日志。
+- 聊天成功后才提交保守本地状态变化；模型失败不会增加互动次数或关系值。
+- 统一状态、手动 tick 和事件读取 API 已完成；前端右栏和 Live2D 尚未切换，仍属于后续阶段。
+- 旁观模型观察器、完整 9×5 语调网格和受控主动联系尚未实现。
 - Saga、相对日期校正、矛盾检测和星图尚未实现。
 
 - Electron：透明置顶桌宠、主窗口、托盘、右键菜单及基础 IPC 联动。

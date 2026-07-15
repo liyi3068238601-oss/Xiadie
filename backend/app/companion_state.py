@@ -1,124 +1,80 @@
-"""遐蝶的连续伴侣状态。
+"""情绪与关系系统的兼容服务入口。
 
-设计受 jiwen 启发，但采用适合当前 Python/SQLite 架构的独立实现。
-状态只影响表达方式，不改变事实、权限或安全边界。
+旧模块名暂时保留，内部已经切换到 affect_state / relationship_state。
 """
 from __future__ import annotations
 
 from . import db
-
-DEFAULT_STATE = {
-    "connection": 0.35,
-    "pride": 0.0,
-    "valence": 0.1,
-    "arousal": -0.1,
-    "immersion": 0.25,
-}
-
-POSITIVE_HINTS = ("谢谢", "感谢", "喜欢", "开心", "很好", "不错", "成功", "太棒")
-NEGATIVE_HINTS = ("报错", "失败", "难受", "生气", "烦", "糟糕", "不行", "崩溃")
-APPRECIATION_HINTS = ("谢谢你", "辛苦", "做得好", "帮大忙", "厉害")
+from .affect import engine, repository, tone_grid
 
 
 def get_state() -> dict:
-    conn = db.connect()
-    try:
-        row = conn.execute("SELECT * FROM companion_state WHERE id = 1").fetchone()
-        if not row:
-            _insert(conn, DEFAULT_STATE)
-            conn.commit()
-            row = conn.execute("SELECT * FROM companion_state WHERE id = 1").fetchone()
-        return _row(row)
-    finally:
-        conn.close()
+    return _present(repository.get_snapshot())
 
 
 def preview_interaction(user_text: str, current: dict | None = None) -> dict:
-    """计算本轮成功完成后应达到的状态，不立即写入数据库。"""
-    state = dict(current or get_state())
-    text = user_text.strip()
-    length_signal = min(len(text) / 400, 0.18)
-    positive = any(hint in text for hint in POSITIVE_HINTS)
-    negative = any(hint in text for hint in NEGATIVE_HINTS)
-    appreciated = any(hint in text for hint in APPRECIATION_HINTS)
+    internal = _internal(current or get_state())
+    preview = engine.apply_fallback_interaction(internal, user_text)
+    preview["affect"]["last_user_message_at"] = db.now()
+    return _present(preview)
 
-    state["connection"] = _clamp(state["connection"] + 0.008 + (0.012 if appreciated else 0), 0, 1)
-    state["pride"] = _clamp(state["pride"] * 0.9 + (0.07 if appreciated else 0), -1, 1)
-    state["valence"] = _clamp(
-        state["valence"] * 0.88 + (0.08 if positive else 0) - (0.08 if negative else 0),
-        -1,
-        1,
+
+def save_state(
+    state: dict,
+    *,
+    source_session_id: str | None = None,
+    source_message_id: str | None = None,
+) -> dict:
+    saved = repository.save_snapshot(
+        _internal(state),
+        event_type="interaction",
+        source="fallback",
+        reason="成功完成一轮对话，应用保守本地状态变化",
+        source_session_id=source_session_id,
+        source_message_id=source_message_id,
     )
-    state["arousal"] = _clamp(state["arousal"] * 0.78 - 0.01 + length_signal, -1, 1)
-    state["immersion"] = _clamp(state["immersion"] * 0.82 + 0.04 + length_signal, 0, 1)
-    state.pop("updated_at", None)
-    return state
-
-
-def save_state(state: dict) -> dict:
-    clean = {
-        "connection": _clamp(float(state["connection"]), 0, 1),
-        "pride": _clamp(float(state["pride"]), -1, 1),
-        "valence": _clamp(float(state["valence"]), -1, 1),
-        "arousal": _clamp(float(state["arousal"]), -1, 1),
-        "immersion": _clamp(float(state["immersion"]), 0, 1),
-    }
-    conn = db.connect()
-    try:
-        _insert(conn, clean)
-        conn.commit()
-        return _row(conn.execute("SELECT * FROM companion_state WHERE id = 1").fetchone())
-    finally:
-        conn.close()
+    return _present(saved)
 
 
 def reset_state() -> dict:
-    return save_state(DEFAULT_STATE)
+    return _present(repository.reset())
+
+
+def tick(minutes: float) -> dict:
+    return _present(repository.advance_by(minutes))
+
+
+def list_events(limit: int = 50) -> list[dict]:
+    return repository.list_events(limit)
 
 
 def get_style_guidance(state: dict) -> str:
-    """把数值状态转换为短小、可审查的模型语气指导。"""
-    guidance: list[str] = []
-    if state["connection"] < 0.45:
-        guidance.append("保持友好但不过分熟络，尊重用户的表达空间")
-    elif state["connection"] > 0.75:
-        guidance.append("可以自然地延续共同语境，但不要刻意强调亲密度")
-    if state["valence"] < -0.15:
-        guidance.append("语气稍显沉静，仍要清楚、可靠，不向用户索取安慰")
-    elif state["valence"] > 0.35:
-        guidance.append("语气可以更轻快一些，但不要喧闹或过度兴奋")
-    if state["arousal"] < -0.25:
-        guidance.append("使用舒缓、简洁的节奏")
-    elif state["arousal"] > 0.35:
-        guidance.append("回应可以更有行动感，优先给出明确下一步")
-    if state["immersion"] > 0.55:
-        guidance.append("对当前话题保持专注，主动衔接刚才的细节")
-    if state["pride"] > 0.3:
-        guidance.append("表现出安静的自信，不自夸")
-    return "；".join(guidance) or "保持温和、清楚、克制的默认语气"
+    derived = state.get("derived") if isinstance(state, dict) else None
+    if derived and derived.get("style_guidance"):
+        return derived["style_guidance"]
+    return tone_grid.style_guidance(_internal(state))
 
 
-def _insert(conn, state: dict) -> None:
-    conn.execute(
-        "INSERT INTO companion_state(id, connection, pride, valence, arousal, immersion, updated_at)"
-        " VALUES(1,?,?,?,?,?,?)"
-        " ON CONFLICT(id) DO UPDATE SET connection=excluded.connection, pride=excluded.pride,"
-        " valence=excluded.valence, arousal=excluded.arousal, immersion=excluded.immersion,"
-        " updated_at=excluded.updated_at",
-        (
-            state["connection"],
-            state["pride"],
-            state["valence"],
-            state["arousal"],
-            state["immersion"],
-            db.now(),
-        ),
-    )
+def _present(snapshot: dict) -> dict:
+    internal = _internal(snapshot)
+    derived = tone_grid.describe(internal)
+    affect = dict(internal["affect"])
+    affect.pop("id", None)
+    affect["guardedness"] = derived["guardedness"]
+    relationship = dict(internal["relationship"])
+    relationship.pop("id", None)
+    return {
+        "affect": affect,
+        "relationship": relationship,
+        "derived": derived,
+        "signals": engine.signals(internal),
+        "algorithm_version": engine.ALGORITHM_VERSION,
+    }
 
 
-def _row(row) -> dict:
-    return {key: row[key] for key in (*DEFAULT_STATE.keys(), "updated_at")}
-
-
-def _clamp(value: float, low: float, high: float) -> float:
-    return max(low, min(high, value))
+def _internal(snapshot: dict) -> dict:
+    if "affect" in snapshot and "relationship" in snapshot:
+        affect = dict(snapshot["affect"])
+        affect.pop("guardedness", None)
+        return {"affect": affect, "relationship": dict(snapshot["relationship"])}
+    raise ValueError("invalid affect snapshot")

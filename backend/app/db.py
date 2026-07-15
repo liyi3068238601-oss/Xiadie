@@ -311,6 +311,67 @@ MIGRATIONS = [
             ON memory_entities(name, entity_type) WHERE status='active';
         """,
     ),
+    (
+        7,
+        """
+        CREATE TABLE IF NOT EXISTS affect_state (
+            id INTEGER PRIMARY KEY CHECK(id = 1),
+            contact_need REAL NOT NULL CHECK(contact_need BETWEEN 0 AND 1),
+            guardedness_transient REAL NOT NULL
+                CHECK(guardedness_transient BETWEEN -0.25 AND 0.25),
+            valence REAL NOT NULL CHECK(valence BETWEEN -1 AND 1),
+            arousal REAL NOT NULL CHECK(arousal BETWEEN -1 AND 1),
+            immersion REAL NOT NULL CHECK(immersion BETWEEN 0 AND 1),
+            activity_type TEXT,
+            activity_label TEXT,
+            activity_started_at REAL,
+            last_user_message_at REAL,
+            last_tick_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS relationship_state (
+            id INTEGER PRIMARY KEY CHECK(id = 1),
+            bond REAL NOT NULL CHECK(bond BETWEEN 0 AND 1),
+            trust REAL NOT NULL CHECK(trust BETWEEN 0 AND 1),
+            interaction_count INTEGER NOT NULL DEFAULT 0 CHECK(interaction_count >= 0),
+            updated_at REAL NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS affect_events (
+            id TEXT PRIMARY KEY,
+            event_type TEXT NOT NULL,
+            source TEXT NOT NULL,
+            source_session_id TEXT REFERENCES sessions(id) ON DELETE SET NULL,
+            source_message_id TEXT REFERENCES messages(id) ON DELETE SET NULL,
+            before_json TEXT NOT NULL,
+            delta_json TEXT NOT NULL,
+            after_json TEXT NOT NULL,
+            reason TEXT NOT NULL DEFAULT '',
+            algorithm_version TEXT NOT NULL,
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_affect_events_created
+            ON affect_events(created_at DESC);
+
+        INSERT OR IGNORE INTO affect_state(
+            id, contact_need, guardedness_transient, valence, arousal, immersion,
+            last_tick_at, updated_at
+        )
+        SELECT 1, 0.05, 0.0,
+               MAX(-1.0, MIN(1.0, valence)),
+               MAX(-1.0, MIN(1.0, arousal)),
+               MAX(0.0, MIN(1.0, immersion)),
+               CAST(strftime('%s','now') AS REAL),
+               CAST(strftime('%s','now') AS REAL)
+        FROM companion_state WHERE id = 1;
+
+        INSERT OR IGNORE INTO relationship_state(id, bond, trust, interaction_count, updated_at)
+        SELECT 1, MAX(0.10, MIN(0.35, connection * 0.5)), 0.25, 0,
+               CAST(strftime('%s','now') AS REAL)
+        FROM companion_state WHERE id = 1;
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
@@ -342,12 +403,14 @@ def connect() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA busy_timeout = 5000")
     return conn
 
 
 def init_db() -> None:
     conn = connect()
     try:
+        conn.execute("PRAGMA journal_mode = WAL")
         conn.executescript(SCHEMA)
         _apply_migrations(conn)
         for i, (pid, name, base_url, models, enabled) in enumerate(DEFAULT_PROVIDERS):

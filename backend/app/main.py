@@ -166,6 +166,8 @@ def _current_model() -> tuple[Optional[dict], str]:
 
 @app.post("/api/chat")
 async def chat(body: ChatIn) -> StreamingResponse:
+    uid: str | None = None
+    replace_assistant_id: str | None = None
     conn = db.connect()
     try:
         sess = conn.execute("SELECT * FROM sessions WHERE id = ?", (body.session_id,)).fetchone()
@@ -189,23 +191,29 @@ async def chat(body: ChatIn) -> StreamingResponse:
                              (body.content.strip()[:20] or "新对话", body.session_id))
             conn.commit()
         else:
-            # 重新生成：先删掉该会话最近一条 assistant 回复，
-            # 否则历史会以旧回复结尾（语义变成续写）且新回复会重复堆积。
+            # 重新生成时先保留旧回复。构造上下文时排除它，只有新回复成功写入的
+            # 同一事务中才删除旧回复，网络或模型失败不会造成内容丢失。
             last = conn.execute(
                 "SELECT id FROM messages WHERE session_id = ? AND role = 'assistant'"
                 " ORDER BY created_at DESC LIMIT 1",
                 (body.session_id,),
             ).fetchone()
             if last:
-                conn.execute("DELETE FROM messages WHERE id = ?", (last["id"],))
-                conn.commit()
+                replace_assistant_id = last["id"]
 
         # 构造上下文：人设 + 记忆摘要 + 历史
         digest, recalled_memories = memory.build_digest(body.content)
-        history = conn.execute(
-            "SELECT role, content FROM messages WHERE session_id = ? ORDER BY created_at",
-            (body.session_id,),
-        ).fetchall()
+        if replace_assistant_id:
+            history = conn.execute(
+                "SELECT role, content FROM messages"
+                " WHERE session_id = ? AND id != ? ORDER BY created_at",
+                (body.session_id, replace_assistant_id),
+            ).fetchall()
+        else:
+            history = conn.execute(
+                "SELECT role, content FROM messages WHERE session_id = ? ORDER BY created_at",
+                (body.session_id,),
+            ).fetchall()
         current_state = companion_state.get_state()
         next_state = (
             current_state
@@ -263,12 +271,19 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 "INSERT INTO messages(id, session_id, role, content, model, created_at) VALUES(?,?,?,?,?,?)",
                 (aid, body.session_id, "assistant", full, model, db.now()),
             )
+            if replace_assistant_id:
+                c2.execute("DELETE FROM messages WHERE id = ?", (replace_assistant_id,))
             c2.execute("UPDATE sessions SET updated_at = ? WHERE id = ?", (db.now(), body.session_id))
             c2.commit()
         finally:
             c2.close()
+        saved_companion_state = None
         if not body.regenerate:
-            companion_state.save_state(next_state)
+            saved_companion_state = companion_state.save_state(
+                next_state,
+                source_session_id=body.session_id,
+                source_message_id=uid,
+            )
         # 只生成待确认候选，不再把模型判断静默写成正式记忆。
         candidate = (
             memory.maybe_create_candidate(body.content, body.session_id, uid)
@@ -277,7 +292,12 @@ async def chat(body: ChatIn) -> StreamingResponse:
         )
         yield _sse(
             "done",
-            {"message_id": aid, "auto_memory": None, "memory_candidate": candidate},
+            {
+                "message_id": aid,
+                "auto_memory": None,
+                "memory_candidate": candidate,
+                "companion_state": saved_companion_state,
+            },
         )
 
     return StreamingResponse(gen(), media_type="text/event-stream")
@@ -286,16 +306,26 @@ async def chat(body: ChatIn) -> StreamingResponse:
 # ---------------------------------------------------------------- 伴侣状态
 @app.get("/api/companion-state")
 def read_companion_state() -> dict:
-    state = companion_state.get_state()
-    state["style_guidance"] = companion_state.get_style_guidance(state)
-    return state
+    return companion_state.get_state()
 
 
 @app.post("/api/companion-state/reset")
 def reset_companion_state() -> dict:
-    state = companion_state.reset_state()
-    state["style_guidance"] = companion_state.get_style_guidance(state)
-    return state
+    return companion_state.reset_state()
+
+
+class CompanionTickIn(BaseModel):
+    minutes: float = Field(gt=0, le=7 * 24 * 60)
+
+
+@app.post("/api/companion-state/tick")
+def tick_companion_state(body: CompanionTickIn) -> dict:
+    return companion_state.tick(body.minutes)
+
+
+@app.get("/api/companion-state/events")
+def get_companion_state_events(limit: int = 50) -> list[dict]:
+    return companion_state.list_events(limit)
 
 
 # ---------------------------------------------------------------- 记忆

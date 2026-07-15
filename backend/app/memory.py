@@ -142,7 +142,7 @@ def search_memories(query: str, limit: int = MAX_INJECT) -> list[dict]:
                 " LEFT JOIN sessions s ON s.id = f.source_session_id"
                 " LEFT JOIN messages m ON m.id = f.source_message_id"
                 " WHERE memory_fragments_fts MATCH ?"
-                " AND f.enabled = 1 AND f.status = 'active'"
+                " AND f.enabled = 1 AND f.status = 'active' AND f.sensitivity = 'normal'"
                 " ORDER BY text_rank LIMIT ?",
                 (match_query, max(limit * 3, limit)),
             ).fetchall()
@@ -158,7 +158,8 @@ def search_memories(query: str, limit: int = MAX_INJECT) -> list[dict]:
                 " FROM memory_fragments f"
                 " LEFT JOIN sessions s ON s.id = f.source_session_id"
                 " LEFT JOIN messages m ON m.id = f.source_message_id"
-                f" WHERE f.enabled = 1 AND f.status = 'active' AND ({clauses})"
+                f" WHERE f.enabled = 1 AND f.status = 'active'"
+                f" AND f.sensitivity = 'normal' AND ({clauses})"
                 " ORDER BY f.updated_at DESC LIMIT ?",
                 (*params, limit),
             ).fetchall()

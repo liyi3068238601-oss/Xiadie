@@ -1,5 +1,7 @@
 # jiwen 与 MemoryConstellations 融合方案
 
+> 历史方案说明：其中记忆分层方向继续有效；旧 CompanionState 五轴语义已由 `AFFECT_AND_RELATIONSHIP_SYSTEM_PLAN.md` 和 ADR-0004 取代。后续实现以新计划为准。
+
 - 状态：已确定方向，分阶段实施
 - 日期：2026-07-14
 - 参考项目：[jiwen](https://github.com/ClaraShafiq/jiwen)、[MemoryConstellations](https://github.com/ClaraShafiq/MemoryConstellations)

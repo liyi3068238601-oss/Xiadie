@@ -189,6 +189,20 @@ def test_auto_memory_creates_traceable_candidate_then_accepts():
     assert [event["action"] for event in events] == ["proposed", "accepted"]
 
 
+def test_sensitive_memory_never_enters_chat_digest():
+    from app import memory
+
+    item = memory.create_memory(
+        "L1",
+        "用户的秘密花园通行口令只用于敏感测试",
+        sensitivity="sensitive",
+    )
+    digest, recalled = memory.build_digest("秘密花园通行口令")
+    assert item["sensitivity"] == "sensitive"
+    assert digest == ""
+    assert recalled == []
+
+
 def test_memory_candidate_can_be_rejected_and_not_reprocessed():
     session = client.post("/api/sessions", json={}).json()
     with client.stream(
@@ -459,8 +473,9 @@ def test_invalid_enum_values_return_400():
 
 def test_companion_state_changes_after_successful_chat_and_resets():
     initial = client.post("/api/companion-state/reset").json()
-    assert set(("connection", "pride", "valence", "arousal", "immersion")) <= set(initial)
-    assert initial["style_guidance"]
+    assert set(("affect", "relationship", "derived", "signals")) <= set(initial)
+    assert initial["derived"]["style_guidance"]
+    assert initial["derived"]["cluster"]
 
     session = client.post("/api/sessions", json={}).json()
     with client.stream(
@@ -472,17 +487,77 @@ def test_companion_state_changes_after_successful_chat_and_resets():
         "".join(response.iter_text())
 
     changed = client.get("/api/companion-state").json()
-    assert changed["connection"] > initial["connection"]
-    assert changed["pride"] > initial["pride"]
-    assert changed["immersion"] > initial["immersion"]
-    for key in ("connection", "immersion"):
-        assert 0 <= changed[key] <= 1
-    for key in ("pride", "valence", "arousal"):
-        assert -1 <= changed[key] <= 1
+    assert changed["affect"]["contact_need"] < initial["affect"]["contact_need"]
+    assert changed["affect"]["guardedness"] < initial["affect"]["guardedness"]
+    assert changed["affect"]["immersion"] > initial["affect"]["immersion"]
+    assert changed["relationship"]["bond"] > initial["relationship"]["bond"]
+    assert changed["relationship"]["interaction_count"] == 1
+    for key in ("contact_need", "guardedness", "immersion"):
+        assert 0 <= changed["affect"][key] <= 1
+    for key in ("valence", "arousal"):
+        assert -1 <= changed["affect"][key] <= 1
+
+    events = client.get("/api/companion-state/events").json()
+    assert events[0]["event_type"] == "interaction"
+    assert events[0]["source_message_id"]
 
     reset = client.post("/api/companion-state/reset").json()
-    assert reset["connection"] == initial["connection"]
-    assert reset["pride"] == initial["pride"]
+    assert reset["affect"]["contact_need"] == initial["affect"]["contact_need"]
+    assert reset["relationship"]["bond"] == initial["relationship"]["bond"]
+
+
+def test_affect_timeline_is_deterministic_and_handles_one_night_and_seven_days():
+    from app.affect import engine
+
+    initial = {
+        "affect": dict(engine.DEFAULT_AFFECT),
+        "relationship": dict(engine.DEFAULT_RELATIONSHIP),
+    }
+    first = engine.advance(initial, 8 * 60)
+    second = engine.advance(initial, 8 * 60)
+    assert first == second
+    assert first["affect"]["contact_need"] > initial["affect"]["contact_need"]
+    assert first["affect"]["immersion"] < initial["affect"]["immersion"]
+    replied = engine.apply_fallback_interaction(first, "早上好，我回来了")
+    assert replied["affect"]["contact_need"] == 0.03
+    assert replied["relationship"]["bond"] > first["relationship"]["bond"]
+
+    week = engine.advance(initial, 7 * 24 * 60)
+    assert 0 <= week["affect"]["contact_need"] <= 1
+    assert -1 <= week["affect"]["valence"] <= 1
+    assert -1 <= week["affect"]["arousal"] <= 1
+    assert -0.25 <= week["affect"]["guardedness_transient"] <= 0.25
+
+    ticked = client.post("/api/companion-state/tick", json={"minutes": 480}).json()
+    assert ticked["affect"]["contact_need"] > 0.05
+    assert client.post("/api/companion-state/tick", json={"minutes": 0}).status_code == 422
+
+
+def test_failed_regeneration_keeps_previous_reply(monkeypatch):
+    from app import llm
+
+    session = client.post("/api/sessions", json={}).json()
+    with client.stream(
+        "POST", "/api/chat", json={"session_id": session["id"], "content": "生成一条旧回复"}
+    ) as response:
+        "".join(response.iter_text())
+    before = client.get(f"/api/sessions/{session['id']}/messages").json()
+    old_reply = next(item for item in before if item["role"] == "assistant")
+
+    async def failing_stream(*_args, **_kwargs):
+        raise llm.LLMError("测试失败", "保留旧回复")
+        yield ""  # pragma: no cover - 保持 async generator 形态
+
+    monkeypatch.setattr(llm, "stream_chat", failing_stream)
+    with client.stream(
+        "POST",
+        "/api/chat",
+        json={"session_id": session["id"], "content": "生成一条旧回复", "regenerate": True},
+    ) as response:
+        body = "".join(response.iter_text())
+    assert "event: error" in body
+    after = client.get(f"/api/sessions/{session['id']}/messages").json()
+    assert any(item["id"] == old_reply["id"] for item in after)
 
 
 def test_schema_migration_is_idempotent():
@@ -495,8 +570,10 @@ def test_schema_migration_is_idempotent():
         version = conn.execute(
             "SELECT value FROM schema_meta WHERE key = 'schema_version'"
         ).fetchone()["value"]
-        assert version == "6"
+        assert version == "7"
         assert conn.execute("SELECT COUNT(*) c FROM companion_state").fetchone()["c"] <= 1
+        assert conn.execute("SELECT COUNT(*) c FROM affect_state").fetchone()["c"] <= 1
+        assert conn.execute("SELECT COUNT(*) c FROM relationship_state").fetchone()["c"] <= 1
         tables = {
             row["name"] for row in conn.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'memory_%'"
