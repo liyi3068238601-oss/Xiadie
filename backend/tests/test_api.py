@@ -481,7 +481,9 @@ def test_companion_state_changes_after_successful_chat_and_resets():
         json={"session_id": session["id"], "content": "谢谢你，继续专注完成这个功能"},
     ) as response:
         assert response.status_code == 200
-        "".join(response.iter_text())
+        stream_body = "".join(response.iter_text())
+    assert '"companion_state": {' in stream_body
+    assert '"guardedness_band":' in stream_body
 
     changed = client.get("/api/companion-state").json()
     assert changed["affect"]["contact_need"] < initial["affect"]["contact_need"]

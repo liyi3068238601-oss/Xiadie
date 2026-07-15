@@ -31,10 +31,39 @@ export default function App() {
   const [sessions, setSessions] = useState<api.Session[]>([]);
   const [activeSession, setActiveSession] = useState<string | null>(null);
   const [focusMessageId, setFocusMessageId] = useState<string | null>(null);
+  const [companionState, setCompanionState] = useState<api.CompanionState | null>(null);
+  const [stateReason, setStateReason] = useState<string | null>(null);
   const { model, refresh: refreshModel } = useCurrentModel();
   const toastMsg = useToast();
 
   const creatingRef = useRef(false);
+  const latestReasonAtRef = useRef(0);
+
+  const acceptStateSnapshot = useCallback((next: api.CompanionState) => {
+    setCompanionState((current) =>
+      current && current.affect.updated_at > next.affect.updated_at ? current : next
+    );
+  }, []);
+
+  const acceptReasonEvent = useCallback((event?: api.CompanionStateEvent) => {
+    if (!event || event.created_at < latestReasonAtRef.current) return;
+    latestReasonAtRef.current = event.created_at;
+    setStateReason(event.reason || null);
+  }, []);
+
+  const refreshCompanionState = useCallback(async () => {
+    try {
+      acceptStateSnapshot(await api.getCompanionState());
+    } catch {
+      // 短暂断线时保留最后一份有效快照，避免 UI 和桌宠闪回默认状态。
+    }
+    try {
+      const events = await api.listCompanionStateEvents(1);
+      acceptReasonEvent(events[0]);
+    } catch {
+      // 原因是辅助审计信息；读取失败不覆盖已有状态或原因。
+    }
+  }, [acceptReasonEvent, acceptStateSnapshot]);
 
   const refreshSessions = useCallback(async () => {
     const list = await api.listSessions();
@@ -58,6 +87,25 @@ export default function App() {
       }
     })();
   }, [refreshSessions]);
+
+  useEffect(() => {
+    refreshCompanionState();
+    const timer = setInterval(refreshCompanionState, 10_000);
+    return () => clearInterval(timer);
+  }, [refreshCompanionState]);
+
+  useEffect(() => {
+    const cluster = companionState?.derived.cluster;
+    if (!cluster) return;
+    const petState = mode === "thinking" ? "thinking" : mode === "executing" ? "executing" : mode === "resting" ? "resting" : "idle";
+    api.desktop?.setPetState?.(petState, undefined, cluster);
+  }, [companionState?.derived.cluster, mode]);
+
+  const acceptChatState = useCallback((state: api.CompanionState | null) => {
+    if (state) acceptStateSnapshot(state);
+    api.desktop?.setPetState?.("done", "回复好了~", state?.derived.cluster || companionState?.derived.cluster);
+    api.listCompanionStateEvents(1).then((events) => acceptReasonEvent(events[0])).catch(() => {});
+  }, [acceptReasonEvent, acceptStateSnapshot, companionState?.derived.cluster]);
 
   const newChat = async () => {
     const s = await api.createSession();
@@ -189,6 +237,8 @@ export default function App() {
               sessionId={activeSession}
               focusMessageId={focusMessageId}
               onMode={setMode}
+              companionCluster={companionState?.derived.cluster}
+              onCompanionState={acceptChatState}
               onSessionsChanged={refreshSessions}
             />
           )}
@@ -203,6 +253,8 @@ export default function App() {
         <RightBar
           className="rightbar glass"
           mode={mode}
+          companionState={companionState}
+          stateReason={stateReason}
           model={model}
           onGo={setView}
         />

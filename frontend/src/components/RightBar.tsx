@@ -1,22 +1,25 @@
 import { useEffect, useState } from "react";
 import * as api from "./../api";
 import { Mode, toast, View } from "./../store";
+import { getClusterPresentation } from "./../affectPresentation.mjs";
 
 interface Props {
   className: string;
   mode: Mode;
+  companionState: api.CompanionState | null;
+  stateReason: string | null;
   model: api.CurrentModel | null;
   onGo: (v: View) => void;
 }
 
-const MOOD: Record<Mode, { face: string; name: string; sub: string }> = {
+const WORK_MODE: Record<Mode, { face: string; name: string; sub: string }> = {
   companion: { face: "🦋", name: "陪伴中", sub: "安静地待在你身边" },
   thinking: { face: "💭", name: "思考中", sub: "正在组织回答" },
   executing: { face: "⚡", name: "执行中", sub: "正在处理任务" },
   resting: { face: "🌙", name: "休息中", sub: "随时可以叫我" },
 };
 
-export function RightBar({ className, mode, model, onGo }: Props) {
+export function RightBar({ className, mode, companionState, stateReason, model, onGo }: Props) {
   const [memories, setMemories] = useState<api.Memory[]>([]);
   const [tasks, setTasks] = useState<api.Task[]>([]);
 
@@ -33,19 +36,44 @@ export function RightBar({ className, mode, model, onGo }: Props) {
     return () => clearInterval(t);
   }, []);
 
-  const mood = MOOD[mode];
+  const workMode = WORK_MODE[mode];
+  const cluster = getClusterPresentation(companionState?.derived.cluster || "neutral");
 
   return (
     <div className={className}>
       <div className="state-block">
-        <div className="block-title">遐蝶状态</div>
-        <div className="mood">
-          <span className="face">{mood.face}</span>
+        <div className="block-title">工作模式</div>
+        <div className="mood work-mode-card">
+          <span className="face">{workMode.face}</span>
           <div>
-            <div className="mood-name">{mood.name}</div>
-            <div className="mood-sub">{mood.sub}</div>
+            <div className="mood-name">{workMode.name}</div>
+            <div className="mood-sub">{workMode.sub}</div>
           </div>
         </div>
+      </div>
+
+      <div className="state-block">
+        <div className="block-title">当前心境</div>
+        <div className="mood affect-card">
+          <span className="face">{cluster.icon}</span>
+          <div>
+            <div className="mood-name">{companionState?.derived.label || "正在读取"}</div>
+            <div className="mood-sub">{companionState ? cluster.summary : "等待后端状态快照"}</div>
+          </div>
+        </div>
+        <div className="state-reason">{stateReason || "状态正在平稳延续"}</div>
+        {import.meta.env.DEV && companionState && (
+          <details className="state-debug">
+            <summary>开发调试数据</summary>
+            <div>cluster: {companionState.derived.cluster}</div>
+            <div>guardedness: {companionState.derived.guardedness_band} ({companionState.derived.guardedness.toFixed(3)})</div>
+            <div>contact_need: {companionState.affect.contact_need.toFixed(3)}</div>
+            <div>valence / arousal: {companionState.affect.valence.toFixed(3)} / {companionState.affect.arousal.toFixed(3)}</div>
+            <div>immersion: {companionState.affect.immersion.toFixed(3)}</div>
+            <div>bond / trust: {companionState.relationship.bond.toFixed(3)} / {companionState.relationship.trust.toFixed(3)}</div>
+            <div>algorithm: {companionState.algorithm_version}</div>
+          </details>
+        )}
       </div>
 
       <div className="state-block">

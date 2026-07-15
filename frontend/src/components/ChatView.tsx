@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import * as api from "./../api";
 import { Mode, toast } from "./../store";
-import { inferEmotion } from "./../emotion";
 
 interface Props {
   sessionId: string | null;
   focusMessageId?: string | null;
   onMode: (m: Mode) => void;
+  companionCluster?: string;
+  onCompanionState: (state: api.CompanionState | null) => void;
   onSessionsChanged: () => void;
 }
 
@@ -15,7 +16,7 @@ interface Streaming {
   memoryCount: number;
 }
 
-export function ChatView({ sessionId, focusMessageId, onMode, onSessionsChanged }: Props) {
+export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, onCompanionState, onSessionsChanged }: Props) {
   const [messages, setMessages] = useState<api.Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState<Streaming | null>(null);
@@ -60,31 +61,27 @@ export function ChatView({ sessionId, focusMessageId, onMode, onSessionsChanged 
     setAutoMemory(null);
     setStreaming({ text: "", memoryCount: 0 });
     onMode("thinking");
-    api.desktop?.setPetState?.("thinking", "让我想想…", "confused");
+    api.desktop?.setPetState?.("thinking", "让我想想…", companionCluster);
 
-    let reply = ""; // 累积回复原文，done 时用于推断遐蝶情绪
     await api.streamChat(
       sessionId,
       content,
       {
         onMeta: (m) => setStreaming((s) => (s ? { ...s, memoryCount: m.memory_count } : s)),
         onDelta: (t) => {
-          reply += t;
           setStreaming((s) => (s ? { ...s, text: s.text + t } : { text: t, memoryCount: 0 }));
         },
         onError: (msg, hint) => {
           setStreaming(null);
           setErrorCard({ msg, hint });
           onMode("companion");
-          api.desktop?.setPetState?.("idle", undefined, "aggrieved");
+          api.desktop?.setPetState?.("idle", undefined, companionCluster);
         },
         onDone: (d) => {
           setStreaming(null);
           setAutoMemory(d.auto_memory);
           onMode("companion");
-          // 根据回复内容切换遐蝶表情
-          const emotion = inferEmotion(reply, content);
-          api.desktop?.setPetState?.("done", "回复好了~", emotion);
+          onCompanionState(d.companion_state);
           if (sessionId) api.listMessages(sessionId).then(setMessages);
           onSessionsChanged();
         },

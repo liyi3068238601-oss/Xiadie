@@ -16,8 +16,8 @@ contextBridge.exposeInMainWorld("xiadie", {
   dragPet: (dx, dy) => ipcRenderer.send("pet-drag", { dx, dy }),
 
   // 主窗口 → 桌宠 状态联动（气泡 / 表情 / 动作）
-  setPetState: (state, bubble, emotion) =>
-    ipcRenderer.send("pet-state", { state, bubble, emotion }),
+  setPetState: (state, bubble, cluster) =>
+    ipcRenderer.send("pet-state", { state, bubble, cluster }),
   onPetState: (cb) =>
     ipcRenderer.on("pet-state", (_e, payload) => cb(payload)),
 

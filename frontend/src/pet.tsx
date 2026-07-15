@@ -6,10 +6,11 @@
 import { createRoot } from "react-dom/client";
 import { useEffect, useRef, useState } from "react";
 import "./pet.css";
+import { getClusterPresentation } from "./affectPresentation.mjs";
 
 const MODEL_URL = "./models/xiadie/Xiadie.model3.json";
 
-type PetState = "idle" | "welcome" | "thinking" | "done" | "remind";
+type PetState = "idle" | "welcome" | "thinking" | "executing" | "resting" | "done" | "remind";
 
 const desktop = (window as any).xiadie;
 
@@ -20,6 +21,7 @@ function Pet() {
   const [modelFailed, setModelFailed] = useState(false);
   const appRef = useRef<any>(null);
   const modelRef = useRef<any>(null);
+  const latestState = useRef<{ state: PetState; cluster: string }>({ state: "idle", cluster: "neutral" });
   const lastInteract = useRef(0);
   const bumpIdle = () => { lastInteract.current = Date.now(); };
 
@@ -29,28 +31,30 @@ function Pet() {
     return () => clearTimeout(t);
   }, []);
 
-  // 主窗口状态联动 → 气泡 + 表情/动作（emotion 由聊天内容推断后经 IPC 传来）
+  // 主窗口状态联动：工作模式控制动作，后端 cluster 独立控制面部表情。
   useEffect(() => {
-    desktop?.onPetState?.((p: { state: PetState; bubble?: string; emotion?: string }) => {
+    desktop?.onPetState?.((p: { state: PetState; bubble?: string; cluster?: string }) => {
       if (p.bubble) {
         setBubble(p.bubble);
         setTimeout(() => setBubble(null), 3000);
       }
-      reactToState(modelRef.current, p.state, p.emotion);
+      latestState.current = {
+        state: p.state,
+        cluster: p.cluster || latestState.current.cluster || "neutral",
+      };
+      reactToState(modelRef.current, latestState.current.state, latestState.current.cluster);
       bumpIdle();
     });
   }, []);
 
-  // idle 表情随机轮换：距上次交互 >5s 时，每隔 ~9s 换一个温和表情（思考中不打扰）
+  // idle 只做轻微动作，不再随机换脸，避免覆盖后端情绪簇这份唯一真相。
   useEffect(() => {
     if (!modelReady) return;
     const id = setInterval(() => {
       const m = modelRef.current;
       if (!m || m.__thinkTimer) return;
       if (Date.now() - lastInteract.current < 5000) return;
-      const idx = IDLE_POOL[Math.floor(Math.random() * IDLE_POOL.length)];
-      setExpression(m, idx);
-      perk(m); // 换表情时轻微动一下
+      perk(m);
     }, 9000);
     return () => clearInterval(id);
   }, [modelReady]);
@@ -97,10 +101,11 @@ function Pet() {
         // 记录静止基准，供 perk 回弹动画使用
         (model as any).__baseScale = scale;
         (model as any).__baseY = PET_CY;
+        reactToState(model, latestState.current.state, latestState.current.cluster);
 
         // 点击模型 → 打开主窗口（并做点击动作/表情）
         model.on("pointertap", () => {
-          reactToState(model, "welcome");
+          reactToState(model, "welcome", latestState.current.cluster);
           bumpIdle();
           desktop?.openMain?.();
         });
@@ -190,21 +195,6 @@ function Pet() {
 // 0 中性 · 1 生气 · 2 哭 · 3 笑 · 4 脸红 · 5 调皮 · 6 星星眼 · 7 委屈 · 8 睡觉 · 9 无语 · 10 问号
 // （模型自带的 4 个 CAT_motion 只切耳朵/蝴蝶装饰且 Loop，不用于表情动效；头身动效改用 perk + focus）
 
-// 情绪名 → 表情索引（情绪名由 emotion.ts 从聊天文本推断）
-const EMO_TO_EXP: Record<string, number> = {
-  neutral: 0,
-  happy: 3,
-  excited: 6,
-  shy: 4,
-  playful: 5,
-  aggrieved: 7,
-  confused: 10,
-  speechless: 9,
-};
-
-// idle 随机轮换的温和表情池（偏中性/微笑，偶尔害羞/调皮/星星眼/疑惑）
-const IDLE_POOL = [0, 0, 3, 3, 4, 5, 6, 10];
-
 // 模型在画布中的静止中心
 const PET_CX = 140;
 const PET_CY = 200;
@@ -213,7 +203,12 @@ function setExpression(model: any, idx: number) {
   try {
     model?.expression?.(idx);
   } catch {
-    /* 模型无该表情，忽略 */
+    // 模型或指定表情缺失时回退中性；不影响文字聊天和其余动作。
+    try {
+      model?.expression?.(0);
+    } catch {
+      /* ignore */
+    }
   }
 }
 
@@ -271,24 +266,20 @@ function stopThinking(model: any) {
   }
 }
 
-// 根据主窗口状态 + 情绪切换表情 + 头身动效
-function reactToState(model: any, state: PetState, emotion?: string) {
+// 模式只决定动作；cluster 只决定表情，二者不得互相覆盖。
+function reactToState(model: any, state: PetState, cluster: string) {
   if (!model) return;
+  setExpression(model, getClusterPresentation(cluster).expression);
   if (state === "thinking") {
-    setExpression(model, EMO_TO_EXP.confused); // 思考中 → 疑惑
-    startThinking(model); // 缓慢歪头
+    startThinking(model);
     perk(model);
     return;
   }
-  stopThinking(model); // 其它状态先停止歪头、头回正
-  if (emotion && emotion in EMO_TO_EXP) {
-    setExpression(model, EMO_TO_EXP[emotion]); // 聊天内容驱动
-  } else if (state === "remind") {
-    setExpression(model, EMO_TO_EXP.excited);
-  } else if (state === "welcome" || state === "done") {
-    setExpression(model, EMO_TO_EXP.happy);
+  stopThinking(model);
+  if (state === "resting" || state === "idle") return;
+  if (state === "executing" || state === "remind" || state === "welcome" || state === "done") {
+    perk(model);
   }
-  perk(model); // 精神一下
 }
 
 createRoot(document.getElementById("pet-root")!).render(<Pet />);

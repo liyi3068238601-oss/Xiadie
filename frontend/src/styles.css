@@ -480,6 +480,33 @@ textarea {
   font-size: 12px;
   color: var(--text-dim);
 }
+.work-mode-card {
+  background: rgba(35, 27, 67, 0.58);
+}
+.affect-card {
+  background: linear-gradient(135deg, rgba(111, 87, 210, 0.18), rgba(72, 151, 190, 0.10));
+}
+.state-reason {
+  margin-top: 7px;
+  padding: 0 4px;
+  color: var(--text-faint);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.state-debug {
+  margin-top: 8px;
+  padding: 7px 9px;
+  border: 1px solid var(--glass-border);
+  border-radius: 9px;
+  color: var(--text-faint);
+  font: 10px/1.55 ui-monospace, SFMono-Regular, Consolas, monospace;
+  background: rgba(13, 9, 29, 0.42);
+}
+.state-debug summary {
+  cursor: pointer;
+  color: var(--violet-soft);
+  font-family: inherit;
+}
 .mini-item {
   font-size: 12px;
   color: var(--text-dim);

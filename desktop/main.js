@@ -214,7 +214,7 @@ ipcMain.on("pet-drag", (_e, { dx, dy }) => {
   petWin.setPosition(x + Math.round(dx), y + Math.round(dy));
 });
 
-// 主窗口 → 桌宠：状态联动（思考中/完成 等触发气泡）
+// 主窗口 → 桌宠：工作模式驱动动作，后端情绪簇驱动表情。
 ipcMain.on("pet-state", (_e, payload) => {
   if (petWin && !petWin.isDestroyed()) petWin.webContents.send("pet-state", payload);
 });

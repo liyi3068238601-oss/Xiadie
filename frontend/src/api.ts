@@ -49,6 +49,66 @@ export interface ObserverModelConfig {
   provider_id: string | null;
   model: string | null;
 }
+export type { EmotionCluster } from "./affectPresentation.mjs";
+export interface AffectState {
+  contact_need: number;
+  guardedness: number;
+  guardedness_transient: number;
+  valence: number;
+  arousal: number;
+  immersion: number;
+  activity_type: string | null;
+  activity_label: string | null;
+  activity_started_at: number | null;
+  last_user_message_at: number | null;
+  last_tick_at: number;
+  updated_at: number;
+}
+export interface RelationshipState {
+  bond: number;
+  trust: number;
+  interaction_count: number;
+  updated_at: number;
+}
+export interface DerivedCompanionState {
+  cluster: import("./affectPresentation.mjs").EmotionCluster;
+  label: string;
+  guardedness: number;
+  guardedness_band: string;
+  guardedness_baseline: number;
+  style_guidance: string;
+}
+export interface CompanionSignal {
+  action: "observation" | "find_activity" | "consider_contact" | "contact" | string;
+  urgency?: number;
+  reason?: string;
+}
+export interface CompanionState {
+  affect: AffectState;
+  relationship: RelationshipState;
+  derived: DerivedCompanionState;
+  signals: CompanionSignal[];
+  algorithm_version: string;
+}
+export interface CompanionStateEvent {
+  id: string;
+  event_type: string;
+  source: string;
+  reason: string;
+  source_session_id?: string | null;
+  source_message_id?: string | null;
+  algorithm_version: string;
+  before: {
+    affect: Omit<AffectState, "guardedness" | "updated_at">;
+    relationship: Omit<RelationshipState, "updated_at">;
+  };
+  delta: Record<string, unknown>;
+  after: {
+    affect: Omit<AffectState, "guardedness" | "updated_at">;
+    relationship: Omit<RelationshipState, "updated_at">;
+  };
+  created_at: number;
+}
 export interface Memory {
   id: string;
   layer: "L0" | "L1" | "L2";
@@ -285,6 +345,9 @@ export const setObserverModel = (body: ObserverModelConfig) =>
     method: "PUT",
     body: JSON.stringify(body),
   });
+export const getCompanionState = () => j<CompanionState>("/api/companion-state");
+export const listCompanionStateEvents = (limit = 10) =>
+  j<CompanionStateEvent[]>(`/api/companion-state/events?limit=${encodeURIComponent(limit)}`);
 
 // ---- 工具日志 ----
 export const listToolLogs = () => j<ToolLog[]>("/api/tool-logs");
@@ -308,6 +371,8 @@ export interface ChatCallbacks {
     message_id: string;
     auto_memory: Memory | null;
     memory_candidate?: { id: string; content: string; status: string } | null;
+    companion_state: CompanionState | null;
+    affect_observation?: { id: string; status: string } | null;
   }) => void;
 }
 
@@ -367,8 +432,8 @@ export const desktop = (window as any).xiadie as
       quit: () => void;
       showPetMenu: () => void;
       dragPet: (dx: number, dy: number) => void;
-      setPetState: (s: string, bubble?: string, emotion?: string) => void;
-      onPetState: (cb: (p: { state: string; bubble?: string; emotion?: string }) => void) => void;
+      setPetState: (s: string, bubble?: string, cluster?: string) => void;
+      onPetState: (cb: (p: { state: string; bubble?: string; cluster?: string }) => void) => void;
       getApiToken: () => string;
     }
   | undefined;
