@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from . import companion_state, db, entities, episodes, llm, lore, memory
+from . import companion_state, db, entities, episode_consolidator, episodes, llm, lore, memory
 from . import memory_observer_service
 from .affect import observer_service as affect_observer_service
 from .persona import build_system_prompt
@@ -517,6 +517,43 @@ def get_memory_events(object_type: str, object_id: str) -> list[dict]:
 
 
 # ---------------------------------------------------------------- Episode
+class EpisodeConsolidatorRunIn(BaseModel):
+    trigger: str = "manual"
+    request_key: Optional[str] = None
+
+
+@app.post("/api/episode-consolidator/runs")
+def enqueue_episode_consolidator_run(body: EpisodeConsolidatorRunIn) -> dict:
+    try:
+        return episode_consolidator.enqueue(trigger=body.trigger, request_key=body.request_key)
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
+
+
+@app.get("/api/episode-consolidator/runs")
+def get_episode_consolidator_runs(limit: int = 50) -> list[dict]:
+    return episode_consolidator.list_runs(limit=limit)
+
+
+@app.get("/api/episode-consolidator/runs/{run_id}")
+def get_episode_consolidator_run(run_id: str) -> dict:
+    run = episode_consolidator.get_run(run_id)
+    if not run:
+        raise HTTPException(404, "Episode 整理任务不存在")
+    return run
+
+
+@app.post("/api/episode-consolidator/runs/{run_id}/cancel")
+def cancel_episode_consolidator_run(run_id: str) -> dict:
+    try:
+        run = episode_consolidator.cancel(run_id)
+    except ValueError as error:
+        raise HTTPException(409, str(error)) from error
+    if not run:
+        raise HTTPException(404, "Episode 整理任务不存在")
+    return run
+
+
 class EpisodeDecisionIn(BaseModel):
     title: Optional[str] = None
     summary: Optional[str] = None

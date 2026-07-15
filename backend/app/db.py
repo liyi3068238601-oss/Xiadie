@@ -550,6 +550,47 @@ MIGRATIONS = [
             NOT NULL DEFAULT '[]';
         """,
     ),
+    (
+        13,
+        """
+        CREATE TABLE episode_consolidator_runs (
+            id TEXT PRIMARY KEY,
+            idempotency_key TEXT NOT NULL UNIQUE,
+            trigger TEXT NOT NULL CHECK(trigger IN ('startup','idle','manual','fragment')),
+            status TEXT NOT NULL CHECK(status IN (
+                'queued','running','cancel_requested','cancelled','applied',
+                'recovery_pending','exhausted','skipped'
+            )),
+            policy_version TEXT NOT NULL,
+            attempt_count INTEGER NOT NULL DEFAULT 0 CHECK(attempt_count BETWEEN 0 AND 3),
+            max_attempts INTEGER NOT NULL DEFAULT 3 CHECK(max_attempts BETWEEN 1 AND 3),
+            next_attempt_at REAL,
+            started_at REAL,
+            finished_at REAL,
+            error_code TEXT,
+            input_fragment_ids_json TEXT NOT NULL DEFAULT '[]',
+            result_episode_ids_json TEXT NOT NULL DEFAULT '[]',
+            group_count INTEGER NOT NULL DEFAULT 0 CHECK(group_count >= 0),
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_episode_consolidator_due
+            ON episode_consolidator_runs(status, next_attempt_at, created_at);
+
+        CREATE TABLE episode_consolidator_events (
+            id TEXT PRIMARY KEY,
+            run_id TEXT NOT NULL REFERENCES episode_consolidator_runs(id) ON DELETE CASCADE,
+            action TEXT NOT NULL,
+            before_status TEXT,
+            after_status TEXT NOT NULL,
+            reason_code TEXT,
+            metadata_json TEXT NOT NULL DEFAULT '{}',
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_episode_consolidator_events_run
+            ON episode_consolidator_events(run_id, created_at, id);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

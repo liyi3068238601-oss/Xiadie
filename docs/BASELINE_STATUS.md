@@ -35,7 +35,7 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; python -m pytest tests` | 通过：112 passed，1 warning |
+| 后端 | `cd backend; python -m pytest tests` | 通过：116 passed，1 warning |
 | 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：4 项情绪映射/记忆提示测试、TypeScript 检查及 Vite 生产构建成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 
@@ -97,6 +97,9 @@ npm.cmd start
 - 自主记忆阶段 B.4 已完成：schema 12 区分新建与复用 Fragment，聊天仅对真正新增且启用的记忆显示五分钟限频轻提示。
 - 记忆页展示自主记忆的 scope、kind、importance、emotion、理由、观察器版本、证据数量和来源，并支持独立纠错审计。
 - 旧候选已移入默认折叠的兼容区；退役条件已固定，当前不删除表、API、历史数据或审计。
+- Episode 自动化阶段 C.1 已完成：schema 13 新增独立 Consolidator run 与状态事件账本。
+- Episode 整理任务支持幂等排队、查询和协作式取消；当前地基不会调用模型或创建正式 Episode。
+- ADR-0013 固定两层短事务、来源集合指纹、单一正式归属、有限恢复和终态保护边界。
 
 ### 人格与内置背景知识（2026-07-14）
 
