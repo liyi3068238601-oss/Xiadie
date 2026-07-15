@@ -50,6 +50,9 @@ export function SettingsPage({ onModelChanged }: { onModelChanged: () => void })
   const [observerMode, setObserverMode] = useState<"current" | "dedicated">("current");
   const [observerPid, setObserverPid] = useState("");
   const [observerModel, setObserverModel] = useState("");
+  const [memoryObserverMode, setMemoryObserverMode] = useState<"current" | "dedicated">("current");
+  const [memoryObserverPid, setMemoryObserverPid] = useState("");
+  const [memoryObserverModel, setMemoryObserverModel] = useState("");
 
   const loadProviders = () => {
     setLoading(true);
@@ -57,8 +60,9 @@ export function SettingsPage({ onModelChanged }: { onModelChanged: () => void })
       api.listProviders(),
       api.getCurrentModel().catch(() => null),
       api.getObserverModel().catch(() => null),
+      api.getMemoryObserverModel().catch(() => null),
     ])
-      .then(([ps, cm, observer]) => {
+      .then(([ps, cm, observer, memoryObserver]) => {
         setProviders(ps);
         setCurrent(cm);
         setError("");
@@ -72,6 +76,12 @@ export function SettingsPage({ onModelChanged }: { onModelChanged: () => void })
         setObserverMode(mode);
         setObserverPid(observerProviderId);
         setObserverModel(observer?.model || observerProvider?.models[0] || "");
+        const memoryMode = memoryObserver?.mode || "current";
+        const memoryPid = memoryObserver?.provider_id || pid;
+        const memoryProvider = ps.find((p) => p.id === memoryPid);
+        setMemoryObserverMode(memoryMode);
+        setMemoryObserverPid(memoryPid);
+        setMemoryObserverModel(memoryObserver?.model || memoryProvider?.models[0] || "");
       })
       .catch((e) => setError(e.message || "加载失败"))
       .finally(() => setLoading(false));
@@ -117,6 +127,27 @@ export function SettingsPage({ onModelChanged }: { onModelChanged: () => void })
         toast(result.mode === "current" ? "观察器将跟随当前聊天模型" : "已保存独立观察模型");
       })
       .catch((e) => toast(e.message || "保存观察模型失败"));
+  };
+
+  const onSelectMemoryObserverProvider = (pid: string) => {
+    setMemoryObserverPid(pid);
+    setMemoryObserverModel(providers.find((p) => p.id === pid)?.models[0] || "");
+  };
+
+  const applyMemoryObserverModel = () => {
+    const body: api.ObserverModelConfig = memoryObserverMode === "current"
+      ? { mode: "current", provider_id: null, model: null }
+      : {
+          mode: "dedicated",
+          provider_id: memoryObserverPid || null,
+          model: memoryObserverModel || null,
+        };
+    api.setMemoryObserverModel(body)
+      .then((result) => {
+        setMemoryObserverMode(result.mode);
+        toast(result.mode === "current" ? "记忆观察器将跟随当前聊天模型" : "已保存独立记忆观察模型");
+      })
+      .catch((e) => toast(e.message || "保存记忆观察模型失败"));
   };
 
   const toggleConfig = (p: api.Provider) => {
@@ -394,6 +425,30 @@ export function SettingsPage({ onModelChanged }: { onModelChanged: () => void })
                     </>
                   )}
                   <button className="btn" onClick={applyObserverModel}>保存观察模型</button>
+                </div>
+              </div>
+
+              <div className="section-label">记忆观察模型</div>
+              <div className="card" style={{ marginBottom: 18 }}>
+                <div className="card-hint" style={{ marginBottom: 10 }}>
+                  后台只分析并审计可能值得记住的内容；当前阶段不会自动写入正式记忆。
+                </div>
+                <div className="row" style={{ flexWrap: "wrap" }}>
+                  <select value={memoryObserverMode} onChange={(e) => setMemoryObserverMode(e.target.value as "current" | "dedicated")}>
+                    <option value="current">跟随当前模型</option>
+                    <option value="dedicated">使用独立模型</option>
+                  </select>
+                  {memoryObserverMode === "dedicated" && (
+                    <>
+                      <select value={memoryObserverPid} onChange={(e) => onSelectMemoryObserverProvider(e.target.value)}>
+                        {providers.filter((p) => p.id !== "mock" && p.enabled).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      </select>
+                      <select value={memoryObserverModel} onChange={(e) => setMemoryObserverModel(e.target.value)}>
+                        {(providers.find((p) => p.id === memoryObserverPid)?.models || []).map((m) => <option key={m} value={m}>{m}</option>)}
+                      </select>
+                    </>
+                  )}
+                  <button className="btn" onClick={applyMemoryObserverModel}>保存记忆观察模型</button>
                 </div>
               </div>
 

@@ -534,6 +534,15 @@ MIGRATIONS = [
             ON memory_observer_runs(source_session_id, source_assistant_message_id);
         """,
     ),
+    (
+        11,
+        """
+        ALTER TABLE memory_observer_runs ADD COLUMN latency_ms INTEGER
+            CHECK(latency_ms IS NULL OR latency_ms >= 0);
+        ALTER TABLE memory_observer_runs ADD COLUMN repair_attempted INTEGER NOT NULL DEFAULT 0
+            CHECK(repair_attempted IN (0,1));
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
@@ -591,6 +600,10 @@ def init_db() -> None:
         conn.execute(
             "INSERT OR IGNORE INTO settings(key, value)"
             " VALUES('affect_observer_model', '{\"mode\":\"current\"}')"
+        )
+        conn.execute(
+            "INSERT OR IGNORE INTO settings(key, value)"
+            " VALUES('memory_observer_model', '{\"mode\":\"current\"}')"
         )
         conn.commit()
     finally:

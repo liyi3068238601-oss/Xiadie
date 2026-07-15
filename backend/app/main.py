@@ -13,7 +13,8 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from . import companion_state, db, entities, episodes, llm, lore, memory
-from .affect import observer_service
+from . import memory_observer_service
+from .affect import observer_service as affect_observer_service
 from .persona import build_system_prompt
 from .security import ALLOWED_ORIGINS, TOKEN_HEADER, local_api_guard
 
@@ -21,11 +22,13 @@ from .security import ALLOWED_ORIGINS, TOKEN_HEADER, local_api_guard
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db.init_db()
-    await observer_service.start_worker()
+    await affect_observer_service.start_worker()
+    await memory_observer_service.start_worker()
     try:
         yield
     finally:
-        await observer_service.stop_worker()
+        await memory_observer_service.stop_worker()
+        await affect_observer_service.stop_worker()
 
 
 app = FastAPI(title="遐蝶 Agent Backend", version="0.1.0", lifespan=lifespan)
@@ -284,13 +287,21 @@ async def chat(body: ChatIn) -> StreamingResponse:
             c2.close()
         saved_companion_state = None
         affect_observation = None
+        memory_observation = None
         if not body.regenerate:
             saved_companion_state = companion_state.commit_interaction(
                 body.content,
                 source_session_id=body.session_id,
                 source_message_id=uid,
             )
-            affect_observation = observer_service.enqueue_turn(
+            affect_observation = affect_observer_service.enqueue_turn(
+                chat_provider=provider,
+                chat_model=model,
+                session_id=body.session_id,
+                user_message_id=uid,
+                assistant_message_id=aid,
+            )
+            memory_observation = memory_observer_service.enqueue_turn(
                 chat_provider=provider,
                 chat_model=model,
                 session_id=body.session_id,
@@ -311,6 +322,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 "memory_candidate": candidate,
                 "companion_state": saved_companion_state,
                 "affect_observation": affect_observation,
+                "memory_observation": memory_observation,
             },
         )
 
@@ -344,7 +356,7 @@ def get_companion_state_events(limit: int = 50) -> list[dict]:
 
 @app.get("/api/companion-state/observer-runs")
 def get_affect_observer_runs(limit: int = 50) -> list[dict]:
-    return observer_service.list_runs(limit)
+    return affect_observer_service.list_runs(limit)
 
 
 class ObserverModelIn(BaseModel):
@@ -355,18 +367,38 @@ class ObserverModelIn(BaseModel):
 
 @app.get("/api/companion-state/observer-model")
 def get_affect_observer_model() -> dict:
-    return observer_service.get_model_config()
+    return affect_observer_service.get_model_config()
 
 
 @app.put("/api/companion-state/observer-model")
 def set_affect_observer_model(body: ObserverModelIn) -> dict:
     try:
-        return observer_service.set_model_config(body.mode, body.provider_id, body.model)
+        return affect_observer_service.set_model_config(body.mode, body.provider_id, body.model)
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
 
 
 # ---------------------------------------------------------------- 记忆
+@app.get("/api/memory-observer/runs")
+def get_memory_observer_runs(limit: int = 50) -> list[dict]:
+    return memory_observer_service.list_runs(limit)
+
+
+@app.get("/api/memory-observer/model")
+def get_memory_observer_model() -> dict:
+    return memory_observer_service.get_model_config()
+
+
+@app.put("/api/memory-observer/model")
+def set_memory_observer_model(body: ObserverModelIn) -> dict:
+    try:
+        return memory_observer_service.set_model_config(
+            body.mode, body.provider_id, body.model
+        )
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
 class MemoryIn(BaseModel):
     layer: str = "L2"
     content: str

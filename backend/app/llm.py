@@ -19,9 +19,10 @@ JSON_COMPLETION_MAX_CHARS = 12000
 class LLMError(Exception):
     """携带用户友好提示的模型错误（需求 CHAT-005 错误恢复）。"""
 
-    def __init__(self, message: str, hint: str = ""):
+    def __init__(self, message: str, hint: str = "", code: str | None = None):
         super().__init__(message)
         self.hint = hint or message
+        self.code = code
 
 
 MOCK_REPLY = (
@@ -148,7 +149,9 @@ async def complete_json(
     except httpx.ConnectError as exc:
         raise LLMError("无法连接观察模型", "稍后进入恢复队列重试。") from exc
     except httpx.TimeoutException as exc:
-        raise LLMError("观察模型请求超时", "稍后进入恢复队列重试。") from exc
+        raise LLMError(
+            "观察模型请求超时", "稍后进入恢复队列重试。", "observer_model_timeout"
+        ) from exc
     except httpx.HTTPError as exc:
         raise LLMError("观察模型连接中断", "稍后进入恢复队列重试。") from exc
 

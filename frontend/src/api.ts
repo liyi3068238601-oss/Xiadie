@@ -345,6 +345,13 @@ export const setObserverModel = (body: ObserverModelConfig) =>
     method: "PUT",
     body: JSON.stringify(body),
   });
+export const getMemoryObserverModel = () =>
+  j<ObserverModelConfig>("/api/memory-observer/model");
+export const setMemoryObserverModel = (body: ObserverModelConfig) =>
+  j<ObserverModelConfig>("/api/memory-observer/model", {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
 export const getCompanionState = () => j<CompanionState>("/api/companion-state");
 export const listCompanionStateEvents = (limit = 10) =>
   j<CompanionStateEvent[]>(`/api/companion-state/events?limit=${encodeURIComponent(limit)}`);
@@ -373,6 +380,7 @@ export interface ChatCallbacks {
     memory_candidate?: { id: string; content: string; status: string } | null;
     companion_state: CompanionState | null;
     affect_observation?: { id: string; status: string } | null;
+    memory_observation?: { id: string; status: string } | null;
   }) => void;
 }
 

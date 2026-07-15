@@ -717,6 +717,34 @@ def test_observer_model_config_api_validates_dedicated_model():
     assert invalid.status_code == 400
 
 
+def test_memory_observer_internal_api_is_read_only_and_validates_model():
+    client.patch("/api/providers/deepseek", json={"enabled": True})
+    current = client.put(
+        "/api/memory-observer/model",
+        json={"mode": "current", "provider_id": None, "model": None},
+    )
+    assert current.status_code == 200
+    dedicated = client.put(
+        "/api/memory-observer/model",
+        json={"mode": "dedicated", "provider_id": "deepseek", "model": "deepseek-chat"},
+    )
+    assert dedicated.status_code == 200
+    assert client.get("/api/memory-observer/model").json() == {
+        "mode": "dedicated", "provider_id": "deepseek", "model": "deepseek-chat",
+    }
+    assert client.put(
+        "/api/memory-observer/model",
+        json={"mode": "dedicated", "provider_id": "mock", "model": "xiadie-mock"},
+    ).status_code == 400
+    before = client.get("/api/memory-observer/runs").json()
+    after = client.get("/api/memory-observer/runs").json()
+    assert after == before
+    client.put(
+        "/api/memory-observer/model",
+        json={"mode": "current", "provider_id": None, "model": None},
+    )
+
+
 def test_failed_regeneration_keeps_previous_reply(monkeypatch):
     from app import llm
 
@@ -754,7 +782,7 @@ def test_schema_migration_is_idempotent():
         version = conn.execute(
             "SELECT value FROM schema_meta WHERE key = 'schema_version'"
         ).fetchone()["value"]
-        assert version == "10"
+        assert version == "11"
         assert conn.execute("SELECT COUNT(*) c FROM companion_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM affect_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM relationship_state").fetchone()["c"] <= 1
@@ -762,6 +790,10 @@ def test_schema_migration_is_idempotent():
             "SELECT COUNT(*) c FROM sqlite_master"
             " WHERE type='table' AND name='affect_observer_runs'"
         ).fetchone()["c"] == 1
+        run_columns = {
+            row["name"] for row in conn.execute("PRAGMA table_info(memory_observer_runs)").fetchall()
+        }
+        assert {"latency_ms", "repair_attempted"} <= run_columns
         assert conn.execute(
             "SELECT COUNT(*) c FROM sqlite_master"
             " WHERE type='table' AND name='memory_observer_runs'"
