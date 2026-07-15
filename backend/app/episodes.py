@@ -14,46 +14,61 @@ from . import db
 MIN_GROUP_SIZE = 2
 MAX_GROUP_SIZE = 20
 WINDOW_SECONDS = 7 * 24 * 60 * 60
-MIN_TEXT_SIMILARITY = 0.12
+GROUP_THRESHOLD = 0.50
+GROUP_POLICY_VERSION = "episode-group-v1"
+ENTITY_WEIGHT = 0.35
+TEXT_WEIGHT = 0.25
+TIME_WEIGHT = 0.20
+COHERENCE_WEIGHT = 0.20
 
 ROUTINE_HINTS = ("配置", "代码", "报错", "接口", "构建", "测试", "修复", "开发")
 SIGNIFICANT_HINTS = ("第一次", "决定", "完成", "成功", "纪念", "搬到", "旅行", "毕业", "入职")
 
 
-def generate_candidates() -> list[dict]:
+def generate_candidates(*, now: float | None = None) -> list[dict]:
     conn = db.connect()
     try:
-        rows = conn.execute(
-            "SELECT f.id FROM memory_fragments f"
-            " WHERE f.status='active' AND f.enabled=1"
-            " AND NOT EXISTS (SELECT 1 FROM memory_episode_fragments ef WHERE ef.fragment_id=f.id)"
-            " AND NOT EXISTS (SELECT 1 FROM memory_episode_candidate_fragments ecf"
-            " JOIN memory_episode_candidates ec ON ec.id=ecf.candidate_id"
-            " WHERE ecf.fragment_id=f.id AND ec.status='pending')"
-            " ORDER BY f.created_at"
-        ).fetchall()
+        timestamp = db.now() if now is None else now
+        _expire_group_candidates(conn, timestamp)
+        proposals = _build_group_proposals(conn, timestamp)
         created = []
-        for row in rows:
-            candidate = _maybe_generate(conn, row["id"])
-            if candidate:
-                created.append(candidate)
+        used_fragment_ids: set[str] = set()
+        for proposal in sorted(
+            proposals,
+            key=lambda item: (
+                -item["scores"]["total"], -len(item["fragments"]),
+                item["fragments"][0]["created_at"], item["fingerprint"],
+            ),
+        ):
+            fragment_ids = {fragment["id"] for fragment in proposal["fragments"]}
+            if fragment_ids & used_fragment_ids:
+                continue
+            used_fragment_ids.update(fragment_ids)
+            if proposal["scores"]["total"] >= GROUP_THRESHOLD:
+                candidate = _create_scored_candidate(conn, proposal, timestamp)
+                if candidate:
+                    created.append(candidate)
+            else:
+                _record_low_score_group(conn, proposal, timestamp)
         conn.commit()
         return created
     finally:
         conn.close()
 
 
-def maybe_generate_for_fragment(fragment_id: str, conn=None) -> dict | None:
-    own_conn = conn is None
-    conn = conn or db.connect()
+def list_group_candidates(status: str = "observing") -> list[dict]:
+    if status not in ("observing", "qualified", "superseded", "expired"):
+        raise ValueError("非法的 Episode 分组候选状态")
+    conn = db.connect()
     try:
-        result = _maybe_generate(conn, fragment_id)
-        if own_conn:
-            conn.commit()
-        return result
+        rows = conn.execute(
+            "SELECT * FROM episode_group_candidates WHERE status=?"
+            " ORDER BY last_evaluated_at DESC,id",
+            (status,),
+        ).fetchall()
+        return [_group_candidate_row(row) for row in rows]
     finally:
-        if own_conn:
-            conn.close()
+        conn.close()
 
 
 def list_candidates(status: str = "pending") -> list[dict]:
@@ -192,86 +207,131 @@ def reject_candidate(candidate_id: str, note: str = "") -> dict | None:
         conn.close()
 
 
-def _maybe_generate(conn, fragment_id: str) -> dict | None:
-    anchor = conn.execute(
-        "SELECT * FROM memory_fragments WHERE id=? AND status='active' AND enabled=1"
-        " AND NOT EXISTS (SELECT 1 FROM memory_episode_fragments ef WHERE ef.fragment_id=memory_fragments.id)",
-        (fragment_id,),
-    ).fetchone()
-    if not anchor or conn.execute(
-        "SELECT 1 FROM memory_episode_candidate_fragments ecf"
-        " JOIN memory_episode_candidates ec ON ec.id=ecf.candidate_id"
-        " WHERE ecf.fragment_id=? AND ec.status='pending' LIMIT 1",
-        (fragment_id,),
-    ).fetchone():
-        return None
-    entity_ids = [row["entity_id"] for row in conn.execute(
-        "SELECT entity_id FROM memory_fragment_entities WHERE fragment_id=?", (fragment_id,)
-    ).fetchall()]
-    params: list = [fragment_id, anchor["created_at"] - WINDOW_SECONDS, anchor["created_at"] + WINDOW_SECONDS]
-    relation_clause = ""
-    if entity_ids:
-        relation_clause = (
-            f" AND EXISTS (SELECT 1 FROM memory_fragment_entities fe WHERE fe.fragment_id=f.id"
-            f" AND fe.entity_id IN ({','.join('?' for _ in entity_ids)}))"
-        )
-        params.extend(entity_ids)
-    elif anchor["source_session_id"]:
-        relation_clause = " AND f.source_session_id=?"
-        params.append(anchor["source_session_id"])
-    else:
-        return None
+def _build_group_proposals(conn, now: float) -> list[dict]:
     rows = conn.execute(
-        "SELECT f.* FROM memory_fragments f WHERE f.id!=? AND f.status='active' AND f.enabled=1"
+        "SELECT f.* FROM memory_fragments f WHERE f.status='active' AND f.enabled=1"
         " AND f.created_at BETWEEN ? AND ?"
         " AND NOT EXISTS (SELECT 1 FROM memory_episode_fragments ef WHERE ef.fragment_id=f.id)"
         " AND NOT EXISTS (SELECT 1 FROM memory_episode_candidate_fragments ecf"
         " JOIN memory_episode_candidates ec ON ec.id=ecf.candidate_id"
         " WHERE ecf.fragment_id=f.id AND ec.status='pending')"
-        + relation_clause + " ORDER BY f.created_at DESC LIMIT 60",
-        params,
+        " ORDER BY f.created_at,f.id",
+        (now - WINDOW_SECONDS, now),
     ).fetchall()
-    matches = []
-    for row in rows:
-        similarity = _text_similarity(anchor["content"], row["content"])
-        same_session = bool(
-            anchor["source_session_id"] and anchor["source_session_id"] == row["source_session_id"]
+    fragments = {row["id"]: dict(row) for row in rows}
+    if len(fragments) < MIN_GROUP_SIZE:
+        return []
+    links = conn.execute(
+        f"SELECT fe.fragment_id,fe.entity_id FROM memory_fragment_entities fe"
+        f" JOIN memory_entities e ON e.id=fe.entity_id AND e.status='active'"
+        f" WHERE fe.fragment_id IN ({','.join('?' for _ in fragments)})"
+        " ORDER BY fe.entity_id,fe.fragment_id",
+        list(fragments),
+    ).fetchall()
+    entity_by_fragment = {fragment_id: set() for fragment_id in fragments}
+    fragments_by_entity: dict[str, list[dict]] = {}
+    for link in links:
+        entity_by_fragment[link["fragment_id"]].add(link["entity_id"])
+        fragments_by_entity.setdefault(link["entity_id"], []).append(
+            fragments[link["fragment_id"]]
         )
-        if similarity >= MIN_TEXT_SIMILARITY or same_session:
-            matches.append((row, similarity))
-    if not matches:
-        return None
-    matches.sort(key=lambda item: (item[1], item[0]["created_at"]), reverse=True)
-    fragments = [dict(anchor), *[dict(item[0]) for item in matches[:MAX_GROUP_SIZE - 1]]]
-    fragments.sort(key=lambda item: item["created_at"])
-    fragment_ids = [fragment["id"] for fragment in fragments]
-    grouping_key = hashlib.sha256("|".join(sorted(fragment_ids)).encode()).hexdigest()[:32]
+
+    proposals: dict[str, dict] = {}
+    for entity_id in sorted(fragments_by_entity):
+        candidates = sorted(
+            {item["id"]: item for item in fragments_by_entity[entity_id]}.values(),
+            key=lambda item: (item["created_at"], item["id"]),
+        )
+        offset = 0
+        while offset < len(candidates):
+            anchor_time = candidates[offset]["created_at"]
+            group = [
+                item for item in candidates[offset:]
+                if item["created_at"] - anchor_time <= WINDOW_SECONDS
+            ][:MAX_GROUP_SIZE]
+            if len(group) < MIN_GROUP_SIZE:
+                break
+            ids = [item["id"] for item in group]
+            fingerprint = _grouping_fingerprint(ids)
+            proposals[fingerprint] = {
+                "fingerprint": fingerprint,
+                "fragments": group,
+                "shared_entity_ids": sorted(set.intersection(
+                    *(entity_by_fragment[item["id"]] for item in group)
+                )),
+                "scores": score_group(group, entity_by_fragment),
+            }
+            offset += len(group)
+    return list(proposals.values())
+
+
+def score_group(fragments: list[dict], entity_by_fragment: dict[str, set[str]]) -> dict:
+    if not MIN_GROUP_SIZE <= len(fragments) <= MAX_GROUP_SIZE:
+        raise ValueError("Episode 分组必须包含 2 到 20 条 Fragment")
+    ordered = sorted(fragments, key=lambda item: (item["created_at"], item["id"]))
+    span = ordered[-1]["created_at"] - ordered[0]["created_at"]
+    if span < 0 or span > WINDOW_SECONDS:
+        raise ValueError("Episode 分组时间跨度不能超过 7 天")
+    entity_sets = [entity_by_fragment.get(item["id"], set()) for item in ordered]
+    shared = set.intersection(*entity_sets) if entity_sets and all(entity_sets) else set()
+    union = set.union(*entity_sets) if entity_sets else set()
+    entity_score = len(shared) / len(union) if union else 0.0
+    similarities = [
+        _text_similarity(left["content"], right["content"])
+        for index, left in enumerate(ordered)
+        for right in ordered[index + 1:]
+    ]
+    text_score = sum(similarities) / len(similarities) if similarities else 0.0
+    time_score = max(0.0, 1.0 - span / WINDOW_SECONDS)
+    coherence_score = sum(
+        _dominant_ratio(ordered, field) for field in ("emotion", "scope", "kind")
+    ) / 3
+    return combine_scores(entity_score, text_score, time_score, coherence_score)
+
+
+def combine_scores(entity: float, text: float, time: float, coherence: float) -> dict:
+    values = {
+        "entity": _unit(entity), "text": _unit(text), "time": _unit(time),
+        "coherence": _unit(coherence),
+    }
+    values["total"] = round(
+        values["entity"] * ENTITY_WEIGHT + values["text"] * TEXT_WEIGHT
+        + values["time"] * TIME_WEIGHT + values["coherence"] * COHERENCE_WEIGHT,
+        6,
+    )
+    return values
+
+
+def _create_scored_candidate(conn, proposal: dict, now: float) -> dict | None:
+    fingerprint = proposal["fingerprint"]
     existing = conn.execute(
-        "SELECT * FROM memory_episode_candidates WHERE grouping_key=?", (grouping_key,)
+        "SELECT * FROM memory_episode_candidates WHERE grouping_key=?", (fingerprint,)
     ).fetchone()
     if existing:
         return None
+    fragments = proposal["fragments"]
+    fragment_ids = [fragment["id"] for fragment in fragments]
     entity_names = [row["name"] for row in conn.execute(
-        f"SELECT DISTINCT e.name FROM memory_entities e"
-        f" JOIN memory_fragment_entities fe ON fe.entity_id=e.id"
-        f" WHERE fe.fragment_id IN ({','.join('?' for _ in fragment_ids)}) AND e.status='active'",
-        fragment_ids,
-    ).fetchall()]
+        f"SELECT e.name FROM memory_entities e WHERE e.id IN"
+        f" ({','.join('?' for _ in proposal['shared_entity_ids'])}) ORDER BY e.name",
+        proposal["shared_entity_ids"],
+    ).fetchall()] if proposal["shared_entity_ids"] else []
     subject = entity_names[0] if entity_names else "这段对话"
     title = f"关于{subject}的一段经历"
     summary = "；".join(fragment["content"].strip() for fragment in fragments)[:300]
     significance = _estimate_significance(fragments)
-    avg_similarity = sum(item[1] for item in matches[:MAX_GROUP_SIZE - 1]) / len(matches[:MAX_GROUP_SIZE - 1])
-    confidence = min(0.95, 0.68 + avg_similarity * 0.5)
+    scores = proposal["scores"]
     candidate_id = db.new_id()
-    t = db.now()
     conn.execute(
         "INSERT INTO memory_episode_candidates("
-        "id,title,summary,start_at,end_at,significance,confidence,status,grouping_key,created_at)"
-        " VALUES(?,?,?,?,?,?,?,'pending',?,?)",
+        "id,title,summary,start_at,end_at,significance,confidence,status,grouping_key,created_at,"
+        "entity_score,text_score,time_score,coherence_score,score_details_json,policy_version,"
+        "expires_at,last_evaluated_at) VALUES(?,?,?,?,?,?,?,'pending',?,?,?,?,?,?,?,?,?,?)",
         (
             candidate_id, title, summary, fragments[0]["created_at"], fragments[-1]["created_at"],
-            significance, confidence, grouping_key, t,
+            significance, scores["total"], fingerprint, now, scores["entity"], scores["text"],
+            scores["time"], scores["coherence"], json.dumps(scores, separators=(",", ":")),
+            GROUP_POLICY_VERSION, now + WINDOW_SECONDS, now,
         ),
     )
     for position, fid in enumerate(fragment_ids):
@@ -284,8 +344,72 @@ def _maybe_generate(conn, fragment_id: str) -> dict | None:
         conn,
         conn.execute("SELECT * FROM memory_episode_candidates WHERE id=?", (candidate_id,)).fetchone(),
     )
+    _supersede_low_groups(conn, fragment_ids, fingerprint, candidate_id, now)
     _event(conn, "episode_candidate", candidate_id, "proposed", None, candidate, "rule")
     return candidate
+
+
+def _record_low_score_group(conn, proposal: dict, now: float) -> None:
+    fingerprint = proposal["fingerprint"]
+    existing = conn.execute(
+        "SELECT * FROM episode_group_candidates WHERE grouping_fingerprint=?", (fingerprint,)
+    ).fetchone()
+    scores = proposal["scores"]
+    if existing:
+        if existing["status"] != "observing":
+            return
+        conn.execute(
+            "UPDATE episode_group_candidates SET entity_score=?,text_score=?,time_score=?,"
+            "coherence_score=?,total_score=?,evaluation_count=evaluation_count+1,"
+            "last_evaluated_at=? WHERE id=?",
+            (
+                scores["entity"], scores["text"], scores["time"], scores["coherence"],
+                scores["total"], now, existing["id"],
+            ),
+        )
+        return
+    fragment_ids = [fragment["id"] for fragment in proposal["fragments"]]
+    _supersede_low_groups(conn, fragment_ids, fingerprint, None, now)
+    conn.execute(
+        "INSERT INTO episode_group_candidates("
+        "id,grouping_fingerprint,status,fragment_ids_json,shared_entity_ids_json,entity_score,"
+        "text_score,time_score,coherence_score,total_score,policy_version,first_seen_at,"
+        "last_evaluated_at,expires_at) VALUES(?,?,'observing',?,?,?,?,?,?,?,?,?,?,?)",
+        (
+            db.new_id(), fingerprint, json.dumps(fragment_ids),
+            json.dumps(proposal["shared_entity_ids"]), scores["entity"], scores["text"],
+            scores["time"], scores["coherence"], scores["total"], GROUP_POLICY_VERSION,
+            now, now, now + WINDOW_SECONDS,
+        ),
+    )
+
+
+def _supersede_low_groups(
+    conn, fragment_ids: list[str], fingerprint: str, promoted_id: str | None, now: float,
+) -> None:
+    wanted = set(fragment_ids)
+    rows = conn.execute(
+        "SELECT * FROM episode_group_candidates WHERE status='observing'"
+    ).fetchall()
+    for row in rows:
+        current = set(json.loads(row["fragment_ids_json"]))
+        if not current & wanted:
+            continue
+        status = "qualified" if row["grouping_fingerprint"] == fingerprint and promoted_id else "superseded"
+        conn.execute(
+            "UPDATE episode_group_candidates SET status=?,promoted_candidate_id=?,"
+            "last_evaluated_at=? WHERE id=?",
+            (status, promoted_id, now, row["id"]),
+        )
+
+
+def _expire_group_candidates(conn, now: float) -> int:
+    cursor = conn.execute(
+        "UPDATE episode_group_candidates SET status='expired',last_evaluated_at=?"
+        " WHERE status='observing' AND expires_at<=?",
+        (now, now),
+    )
+    return cursor.rowcount
 
 
 def _load_fragments(conn, fragment_ids: list[str]) -> list[dict]:
@@ -302,6 +426,7 @@ def _load_fragments(conn, fragment_ids: list[str]) -> list[dict]:
 
 def _candidate_row(conn, row) -> dict:
     result = dict(row)
+    result["score_details"] = json.loads(result.pop("score_details_json", "{}"))
     fragments = conn.execute(
         "SELECT f.*, ecf.position, s.title AS source_session_title,"
         " CASE WHEN m.id IS NULL THEN 0 ELSE 1 END AS source_available"
@@ -313,6 +438,13 @@ def _candidate_row(conn, row) -> dict:
         (result["id"],),
     ).fetchall()
     result["fragments"] = [_fragment_row(fragment) for fragment in fragments]
+    return result
+
+
+def _group_candidate_row(row) -> dict:
+    result = dict(row)
+    result["fragment_ids"] = json.loads(result.pop("fragment_ids_json"))
+    result["shared_entity_ids"] = json.loads(result.pop("shared_entity_ids_json"))
     return result
 
 
@@ -350,6 +482,23 @@ def _text_similarity(left: str, right: str) -> float:
     if not a or not b:
         return 0.0
     return len(a & b) / len(a | b)
+
+
+def _grouping_fingerprint(fragment_ids: list[str]) -> str:
+    stable = f"{GROUP_POLICY_VERSION}|{'|'.join(sorted(set(fragment_ids)))}"
+    return hashlib.sha256(stable.encode()).hexdigest()
+
+
+def _dominant_ratio(fragments: list[dict], field: str) -> float:
+    counts: dict[str, int] = {}
+    for fragment in fragments:
+        value = str(fragment.get(field) or "unknown")
+        counts[value] = counts.get(value, 0) + 1
+    return max(counts.values()) / len(fragments) if fragments else 0.0
+
+
+def _unit(value: float) -> float:
+    return round(max(0.0, min(1.0, float(value))), 6)
 
 
 def _grams(text: str) -> set[str]:

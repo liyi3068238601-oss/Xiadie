@@ -7,6 +7,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import logging
 from contextlib import suppress
 
 from . import db, episodes
@@ -21,6 +22,7 @@ TERMINAL_STATUSES = frozenset({"cancelled", "applied", "exhausted", "skipped"})
 
 _worker_task: asyncio.Task | None = None
 _wake_event: asyncio.Event | None = None
+_logger = logging.getLogger(__name__)
 
 
 def enqueue(
@@ -113,6 +115,7 @@ async def _worker_loop() -> None:
         try:
             processed = await process_due(limit=3)
         except Exception:  # noqa: BLE001 - 后台循环必须能继续恢复
+            _logger.exception("Episode Consolidator worker loop failed")
             processed = 0
         if processed:
             continue

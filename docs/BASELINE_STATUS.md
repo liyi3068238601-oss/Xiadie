@@ -35,7 +35,7 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; python -m pytest tests` | 通过：123 passed，1 warning |
+| 后端 | `cd backend; python -m pytest tests` | 通过：131 passed，1 warning |
 | 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：4 项情绪映射/记忆提示测试、TypeScript 检查及 Vite 生产构建成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 
@@ -103,6 +103,9 @@ npm.cmd start
 - Episode 自动化阶段 C.2 已完成：Consolidator worker 支持原子认领、三次有限重试、陈旧任务恢复和取消安全点。
 - Fragment 正式提交后只做稳定幂等入队；应用启动和五分钟空闲窗口会唤醒整理，聊天事务不运行分组。
 - 旧“重新分析候选”按钮已改为后台排队；C.2 仍只产生兼容 pending 候选，不自动创建正式 Episode。
+- Episode 自动化阶段 C.3 已完成：schema 14 保存实体、文本、时间、情绪/主题四个评分分量和策略版本。
+- 分组严格限制为共同实体、最近 7 天、2～20 条且未进入正式 Episode；0.50 及以上产生兼容高分候选。
+- 低分分组只保存来源 ID 与评分，七天内幂等重评且不续期；可升格、被新分组取代或到期退出，始终不删除 Fragment。
 
 ### 人格与内置背景知识（2026-07-14）
 

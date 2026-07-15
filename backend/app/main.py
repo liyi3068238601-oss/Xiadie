@@ -571,6 +571,14 @@ def get_episode_candidates(status: str = "pending") -> list[dict]:
     return episodes.list_candidates(status)
 
 
+@app.get("/api/episode-group-candidates")
+def get_episode_group_candidates(status: str = "observing") -> list[dict]:
+    try:
+        return episodes.list_group_candidates(status)
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
+
+
 @app.post("/api/episode-candidates/generate")
 def generate_episode_candidates() -> dict:
     run = episode_consolidator.enqueue(trigger="manual")

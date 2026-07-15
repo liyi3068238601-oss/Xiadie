@@ -864,7 +864,7 @@ def test_schema_migration_is_idempotent():
         version = conn.execute(
             "SELECT value FROM schema_meta WHERE key = 'schema_version'"
         ).fetchone()["value"]
-        assert version == "13"
+        assert version == "14"
         assert conn.execute("SELECT COUNT(*) c FROM companion_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM affect_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM relationship_state").fetchone()["c"] <= 1
@@ -889,6 +889,19 @@ def test_schema_migration_is_idempotent():
         assert consolidator_tables == {
             "episode_consolidator_runs", "episode_consolidator_events",
         }
+        assert conn.execute(
+            "SELECT COUNT(*) c FROM sqlite_master"
+            " WHERE type='table' AND name='episode_group_candidates'"
+        ).fetchone()["c"] == 1
+        episode_candidate_columns = {
+            row["name"] for row in conn.execute(
+                "PRAGMA table_info(memory_episode_candidates)"
+            ).fetchall()
+        }
+        assert {
+            "entity_score", "text_score", "time_score", "coherence_score",
+            "score_details_json", "policy_version", "expires_at", "last_evaluated_at",
+        } <= episode_candidate_columns
         fragment_columns = {
             row["name"] for row in conn.execute("PRAGMA table_info(memory_fragments)").fetchall()
         }

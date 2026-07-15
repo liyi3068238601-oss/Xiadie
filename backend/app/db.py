@@ -591,6 +591,44 @@ MIGRATIONS = [
             ON episode_consolidator_events(run_id, created_at, id);
         """,
     ),
+    (
+        14,
+        """
+        ALTER TABLE memory_episode_candidates ADD COLUMN entity_score REAL NOT NULL DEFAULT 0
+            CHECK(entity_score BETWEEN 0 AND 1);
+        ALTER TABLE memory_episode_candidates ADD COLUMN text_score REAL NOT NULL DEFAULT 0
+            CHECK(text_score BETWEEN 0 AND 1);
+        ALTER TABLE memory_episode_candidates ADD COLUMN time_score REAL NOT NULL DEFAULT 0
+            CHECK(time_score BETWEEN 0 AND 1);
+        ALTER TABLE memory_episode_candidates ADD COLUMN coherence_score REAL NOT NULL DEFAULT 0
+            CHECK(coherence_score BETWEEN 0 AND 1);
+        ALTER TABLE memory_episode_candidates ADD COLUMN score_details_json TEXT NOT NULL DEFAULT '{}';
+        ALTER TABLE memory_episode_candidates ADD COLUMN policy_version TEXT NOT NULL DEFAULT 'legacy';
+        ALTER TABLE memory_episode_candidates ADD COLUMN expires_at REAL;
+        ALTER TABLE memory_episode_candidates ADD COLUMN last_evaluated_at REAL;
+
+        CREATE TABLE episode_group_candidates (
+            id TEXT PRIMARY KEY,
+            grouping_fingerprint TEXT NOT NULL UNIQUE,
+            status TEXT NOT NULL CHECK(status IN ('observing','qualified','superseded','expired')),
+            fragment_ids_json TEXT NOT NULL,
+            shared_entity_ids_json TEXT NOT NULL,
+            entity_score REAL NOT NULL CHECK(entity_score BETWEEN 0 AND 1),
+            text_score REAL NOT NULL CHECK(text_score BETWEEN 0 AND 1),
+            time_score REAL NOT NULL CHECK(time_score BETWEEN 0 AND 1),
+            coherence_score REAL NOT NULL CHECK(coherence_score BETWEEN 0 AND 1),
+            total_score REAL NOT NULL CHECK(total_score BETWEEN 0 AND 1),
+            evaluation_count INTEGER NOT NULL DEFAULT 1 CHECK(evaluation_count >= 1),
+            policy_version TEXT NOT NULL,
+            promoted_candidate_id TEXT REFERENCES memory_episode_candidates(id) ON DELETE SET NULL,
+            first_seen_at REAL NOT NULL,
+            last_evaluated_at REAL NOT NULL,
+            expires_at REAL NOT NULL
+        );
+        CREATE INDEX idx_episode_group_candidates_status_expiry
+            ON episode_group_candidates(status, expires_at, last_evaluated_at);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
