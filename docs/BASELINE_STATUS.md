@@ -35,7 +35,7 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; python -m pytest tests` | 通过：143 passed，1 warning |
+| 后端 | `cd backend; python -m pytest tests` | 通过：148 passed，1 warning |
 | 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：4 项情绪映射/记忆提示测试、TypeScript 检查及 Vite 生产构建成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 
@@ -109,6 +109,9 @@ npm.cmd start
 - Episode 自动化阶段 C.4 已完成：schema 15 保存摘要协议、模型/回退状态、证据 ID、来源哈希和调用审计。
 - 模型只能选择 Fragment 原句 claim，程序再拼接摘要；虚构内容、越权/误标 ID、标题无来源和提示注入均拒绝。
 - 模型不可用或校验失败时刷新安全抽取式摘要；模型调用期间来源被纠正会由事务内哈希复核阻止旧结果落库。
+- Episode 自动化阶段 C.5 已完成：schema 16 为正式 Episode 保存分组、来源集合/哈希、摘要审计和应用协议快照。
+- worker 现在自主提交高分候选；Episode、顺序来源、active Entity、候选状态、记忆审计和 run 终态在一个短事务完成。
+- 来源变化、归属冲突或中途异常会整批回滚并进入有限恢复；candidate、分组指纹和 Fragment 三层唯一约束防止重复 Episode。
 
 ### 人格与内置背景知识（2026-07-14）
 

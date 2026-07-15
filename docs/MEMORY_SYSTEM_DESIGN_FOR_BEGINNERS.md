@@ -1,8 +1,8 @@
 # 遐蝶自主记忆系统设计书（零基础说明版）
 
-版本：v0.12
+版本：v0.13
 
-状态：设计基线；阶段 A、阶段 B 与 C.1～C.4 已完成，C.5～F 待施工
+状态：设计基线；阶段 A、阶段 B 与 C.1～C.5 已完成，C.6～F 待施工
 
 主要参考：[MemoryConstellations](https://github.com/ClaraShafiq/MemoryConstellations)
 适用对象：项目所有者、第一次接触 Agent 的开发者、后续接手实现的 Codex
@@ -1108,8 +1108,29 @@ C.4 验收：ADR-0015 与 `episode-summary-v1` 规定模型只输出 title 和�
 
 #### 阶段 C.5：正式 Episode 原子应用
 
-- [ ] 原子写入 Episode、Fragment 顺序、实体关系、来源集合和审计事件。
-- [ ] 合成失败可重试，重复运行不会创建重复 Episode。
+- [x] 写 ADR-0016，固定正式应用事务、幂等、失败恢复和旧确认 API 过渡边界。
+- [x] schema 16 为正式 Episode 保存分组指纹、策略、来源集合/哈希和摘要审计快照。
+- [x] 为 candidate 保存应用尝试次数、稳定错误码和最近应用时间。
+- [x] 应用前在写锁内复核 pending 状态、安全摘要、来源哈希、来源资格和共同实体。
+- [x] 显式复核 Fragment 单一归属，并用 candidate、分组指纹和 Fragment 三层唯一约束兜底。
+- [x] 原子写入 Episode、Fragment 顺序、实体关系、来源集合、候选状态和两类记忆审计事件。
+- [x] 在同一事务写入 run 终态、结果 Episode ID 和无正文状态事件。
+- [x] 合成失败整批回滚并进入最多三次有限恢复；重复运行不会创建重复 Episode。
+- [x] 保留旧接受/拒绝 API；用户改写的结果标为 `user_edited`，不伪装成模型校验摘要。
+- [x] 覆盖来源竞争、刷新重试、中途审计失败回滚、幂等、来源/实体继承和 worker 恢复测试。
+
+C.5 开工前审查结论：C.4 review 1/1 通过、143+4 项测试通过且无新增问题。采纳“正式
+应用时再次核对来源哈希和 Fragment 单一归属”的建议；摘要串行批处理耗时留给后续性能预算，
+候选详情展示校验状态留给 C.6。N13、N14 继续暂缓。
+
+C.5 验收：ADR-0016 与 `episode-application-v1` 将最多 20 个稳定排序的 pending 候选放入
+一个 `BEGIN IMMEDIATE` 短事务。事务内复核安全摘要、证据集合、当前来源哈希、active/enabled/
+normal、安全内容、共同 active Entity 和未归属状态，再同时写正式 Episode、有序 Fragment、
+active Entity、候选 accepted、候选/经历审计、run 终态与结果 ID。schema 16 保存正式来源和
+摘要快照，并以 candidate、分组指纹和 Fragment 三个唯一索引防重复。来源竞争或任意中途异常
+会整批回滚；候选保留 pending 并记录错误，worker 与单候选均最多连续尝试三次，避免坏候选
+永久阻塞队列；来源纠正产生新摘要哈希时会清零该候选失败计数，使其可以重新进入自动批次。
+旧确认 API 暂留到 C.6。后端 148 项、前端 4 项、生产构建和 Electron 脚本检查通过。
 
 #### 阶段 C.6：界面切换与总验收
 

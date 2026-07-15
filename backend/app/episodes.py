@@ -20,9 +20,18 @@ ENTITY_WEIGHT = 0.35
 TEXT_WEIGHT = 0.25
 TIME_WEIGHT = 0.20
 COHERENCE_WEIGHT = 0.20
+APPLICATION_VERSION = "episode-application-v1"
+AUTOMATIC_BATCH_LIMIT = 20
+APPLICATION_MAX_ATTEMPTS = 3
 
 ROUTINE_HINTS = ("配置", "代码", "报错", "接口", "构建", "测试", "修复", "开发")
 SIGNIFICANT_HINTS = ("第一次", "决定", "完成", "成功", "纪念", "搬到", "旅行", "毕业", "入职")
+
+
+class EpisodeApplyError(RuntimeError):
+    def __init__(self, code: str, message: str):
+        super().__init__(message)
+        self.code = code
 
 
 def generate_candidates(*, now: float | None = None) -> list[dict]:
@@ -94,6 +103,34 @@ def get_candidate(candidate_id: str) -> dict | None:
         conn.close()
 
 
+def pending_candidates(
+    limit: int = AUTOMATIC_BATCH_LIMIT, *, include_changed_exhausted: bool = False,
+) -> list[dict]:
+    conn = db.connect()
+    try:
+        wanted = max(1, min(int(limit), AUTOMATIC_BATCH_LIMIT))
+        if not include_changed_exhausted:
+            rows = conn.execute(
+                "SELECT * FROM memory_episode_candidates WHERE status='pending'"
+                " AND application_attempt_count<?"
+                " ORDER BY confidence DESC,created_at,id LIMIT ?",
+                (APPLICATION_MAX_ATTEMPTS, wanted),
+            ).fetchall()
+            return [_candidate_row(conn, row) for row in rows]
+        rows = conn.execute(
+            "SELECT * FROM memory_episode_candidates WHERE status='pending'"
+            " ORDER BY confidence DESC,created_at,id LIMIT 100"
+        ).fetchall()
+        candidates = [_candidate_row(conn, row) for row in rows]
+        return [
+            item for item in candidates
+            if item["application_attempt_count"] < APPLICATION_MAX_ATTEMPTS
+            or _candidate_sources_need_refresh(item)
+        ][:wanted]
+    finally:
+        conn.close()
+
+
 def list_episodes(status: str = "active") -> list[dict]:
     conn = db.connect()
     try:
@@ -127,69 +164,228 @@ def accept_candidate(
 ) -> dict | None:
     conn = db.connect()
     try:
+        conn.execute("BEGIN IMMEDIATE")
         row = conn.execute(
             "SELECT * FROM memory_episode_candidates WHERE id=? AND status='pending'",
             (candidate_id,),
         ).fetchone()
         if not row:
+            conn.rollback()
             return None
-        candidate = _candidate_row(conn, row)
-        allowed_ids = [fragment["id"] for fragment in candidate["fragments"]]
-        chosen_ids = fragment_ids if fragment_ids is not None else allowed_ids
-        chosen_ids = list(dict.fromkeys(fid for fid in chosen_ids if fid in allowed_ids))
-        if len(chosen_ids) < MIN_GROUP_SIZE:
-            raise ValueError("Episode 至少需要 2 条候选记忆")
-        fragments = _load_fragments(conn, chosen_ids)
-        if len(fragments) < MIN_GROUP_SIZE:
-            raise ValueError("候选记忆不存在或已被其他 Episode 使用")
-        episode_id = db.new_id()
-        t = db.now()
-        chosen_title = (title if title is not None else candidate["title"]).strip()
-        chosen_summary = (summary if summary is not None else candidate["summary"]).strip()
-        chosen_significance = max(1, min(10, int(
-            significance if significance is not None else candidate["significance"]
-        )))
-        conn.execute(
-            "INSERT INTO memory_episodes("
-            "id,title,summary,start_at,end_at,significance,confidence,status,source,candidate_id,"
-            "created_at,updated_at) VALUES(?,?,?,?,?,?,?,'active','candidate_confirmed',?,?,?)",
-            (
-                episode_id, chosen_title, chosen_summary,
-                min(f["created_at"] for f in fragments), max(f["created_at"] for f in fragments),
-                chosen_significance, candidate["confidence"], candidate_id, t, t,
-            ),
+        episode = _apply_candidate_locked(
+            conn, row, source="candidate_confirmed", actor="user", title=title,
+            summary=summary, significance=significance, fragment_ids=fragment_ids,
         )
-        for position, fragment in enumerate(fragments):
-            conn.execute(
-                "INSERT INTO memory_episode_fragments(episode_id,fragment_id,position,created_at)"
-                " VALUES(?,?,?,?)",
-                (episode_id, fragment["id"], position, t),
-            )
-        entity_rows = conn.execute(
-            f"SELECT DISTINCT entity_id FROM memory_fragment_entities"
-            f" WHERE fragment_id IN ({','.join('?' for _ in chosen_ids)})",
-            chosen_ids,
-        ).fetchall()
-        for entity_row in entity_rows:
-            conn.execute(
-                "INSERT OR IGNORE INTO memory_episode_entities(episode_id,entity_id,created_at)"
-                " VALUES(?,?,?)",
-                (episode_id, entity_row["entity_id"], t),
-            )
-        conn.execute(
-            "UPDATE memory_episode_candidates SET status='accepted', resolved_episode_id=?,"
-            " resolved_at=? WHERE id=?",
-            (episode_id, t, candidate_id),
-        )
-        episode = _episode_row(
-            conn, conn.execute("SELECT * FROM memory_episodes WHERE id=?", (episode_id,)).fetchone()
-        )
-        _event(conn, "episode_candidate", candidate_id, "accepted", candidate, episode, "user")
-        _event(conn, "episode", episode_id, "created", None, episode, "candidate")
         conn.commit()
         return episode
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()
+
+
+def apply_candidates_for_run(run_id: str, candidate_ids: list[str]) -> list[dict]:
+    """在一个短事务中提交正式 Episode、来源关系、审计与 run 终态。"""
+    conn = db.connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        run = conn.execute(
+            "SELECT * FROM episode_consolidator_runs WHERE id=?", (run_id,)
+        ).fetchone()
+        if not run or run["status"] != "running":
+            conn.rollback()
+            raise EpisodeApplyError("application_run_not_running", "整理任务已不在运行状态")
+        ordered_ids = list(dict.fromkeys(str(value) for value in candidate_ids if value))
+        applied = []
+        for candidate_id in ordered_ids[:AUTOMATIC_BATCH_LIMIT]:
+            row = conn.execute(
+                "SELECT * FROM memory_episode_candidates WHERE id=?", (candidate_id,)
+            ).fetchone()
+            if not row or row["status"] != "pending":
+                continue
+            applied.append(_apply_candidate_locked(
+                conn, row, source="consolidator_auto", actor="consolidator"
+            ))
+        now = db.now()
+        status = "applied" if applied else "skipped"
+        reason = "formal_episodes_created" if applied else "no_eligible_group"
+        episode_ids = [item["id"] for item in applied]
+        conn.execute(
+            "UPDATE episode_consolidator_runs SET status=?,group_count=?,error_code=NULL,"
+            "result_episode_ids_json=?,finished_at=?,updated_at=? WHERE id=?",
+            (status, len(applied), json.dumps(episode_ids), now, now, run_id),
+        )
+        _consolidator_event(
+            conn, run_id, "processed", "running", status, reason,
+            {"group_count": len(applied), "episode_ids": episode_ids},
+        )
+        conn.commit()
+        return applied
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def record_application_failure(candidate_ids: list[str], error_code: str) -> None:
+    ids = list(dict.fromkeys(str(value) for value in candidate_ids if value))
+    if not ids:
+        return
+    conn = db.connect()
+    try:
+        now = db.now()
+        placeholders = ",".join("?" for _ in ids)
+        conn.execute(
+            f"UPDATE memory_episode_candidates SET application_attempt_count="
+            f"application_attempt_count+1,application_error_code=?,last_application_at=?"
+            f" WHERE status='pending' AND id IN ({placeholders})",
+            (error_code, now, *ids),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def _apply_candidate_locked(
+    conn, row, *, source: str, actor: str, title: str | None = None,
+    summary: str | None = None, significance: int | None = None,
+    fragment_ids: list[str] | None = None,
+) -> dict:
+    candidate = _candidate_row(conn, row)
+    candidate_fragments = candidate["fragments"]
+    allowed_ids = [fragment["id"] for fragment in candidate_fragments]
+    requested_ids = allowed_ids if fragment_ids is None else list(dict.fromkeys(fragment_ids))
+    if any(fragment_id not in allowed_ids for fragment_id in requested_ids):
+        raise ValueError("Episode 来源必须属于当前候选")
+    chosen_ids = [fragment_id for fragment_id in allowed_ids if fragment_id in requested_ids]
+    if len(chosen_ids) < MIN_GROUP_SIZE:
+        raise ValueError("Episode 至少需要 2 条候选记忆")
+    fragments = [
+        fragment for fragment in candidate_fragments if fragment["id"] in set(chosen_ids)
+    ]
+    if len(fragments) != len(chosen_ids):
+        raise EpisodeApplyError("application_source_missing", "候选来源已经缺失")
+    if any(
+        fragment["status"] != "active" or not fragment["enabled"]
+        or fragment["sensitivity"] != "normal"
+        or not episode_summary.is_safe_source(fragment["content"])
+        for fragment in fragments
+    ):
+        raise EpisodeApplyError("application_source_ineligible", "候选来源已不再适合合成")
+    placeholders = ",".join("?" for _ in chosen_ids)
+    occupied = conn.execute(
+        f"SELECT fragment_id FROM memory_episode_fragments"
+        f" WHERE fragment_id IN ({placeholders}) LIMIT 1", chosen_ids,
+    ).fetchone()
+    if occupied:
+        raise EpisodeApplyError("application_source_owned", "候选来源已归属其他 Episode")
+    current_hash = episode_summary.source_hash(fragments)
+    legacy_without_hash = (
+        not candidate["summary_source_hash"] and candidate["summary_status"] == "legacy_rule"
+    )
+    if candidate["summary_source_hash"] and current_hash != candidate["summary_source_hash"]:
+        raise EpisodeApplyError("application_source_changed", "候选来源在正式应用前发生变化")
+    automatic = source == "consolidator_auto"
+    if automatic and legacy_without_hash:
+        raise EpisodeApplyError("application_summary_unvalidated", "候选摘要尚未通过安全整理")
+    if automatic and candidate["summary_status"] not in (
+        "extractive_fallback", "model_validated",
+    ):
+        raise EpisodeApplyError("application_summary_unvalidated", "候选摘要尚未通过安全整理")
+    evidence_ids = candidate["summary_evidence_fragment_ids"]
+    if automatic and (
+        not evidence_ids or any(fragment_id not in chosen_ids for fragment_id in evidence_ids)
+    ):
+        raise EpisodeApplyError("application_evidence_invalid", "候选摘要来源集合无效")
+    shared_entities = shared_entity_names(conn, chosen_ids)
+    if automatic and not shared_entities:
+        raise EpisodeApplyError("application_shared_entity_missing", "候选已失去共同实体")
+
+    chosen_title = (title if title is not None else candidate["title"]).strip()
+    chosen_summary = (summary if summary is not None else candidate["summary"]).strip()
+    if not chosen_title or not chosen_summary:
+        raise ValueError("Episode 标题和摘要不能为空")
+    if not episode_summary.is_safe_source(chosen_title) or not episode_summary.is_safe_source(
+        chosen_summary
+    ):
+        raise EpisodeApplyError("application_content_unsafe", "Episode 标题或摘要不安全")
+    custom_source_set = chosen_ids != allowed_ids
+    user_edited = not automatic and (
+        title is not None or summary is not None or custom_source_set
+        or candidate["summary_status"] == "legacy_rule"
+    )
+    if custom_source_set and (title is None or summary is None):
+        raise ValueError("调整 Episode 来源时必须同时提供标题和摘要")
+    chosen_significance = max(1, min(10, int(
+        significance if significance is not None else candidate["significance"]
+    )))
+    summary_status = "user_edited" if user_edited else candidate["summary_status"]
+    summary_protocol = "manual-v1" if user_edited else candidate["summary_protocol_version"]
+    summary_evidence = [] if user_edited else evidence_ids
+    episode_id = db.new_id()
+    now = db.now()
+    conn.execute(
+        "INSERT INTO memory_episodes("
+        "id,title,summary,start_at,end_at,significance,confidence,status,source,candidate_id,"
+        "created_at,updated_at,grouping_fingerprint,policy_version,source_fragment_ids_json,"
+        "source_hash,summary_status,summary_protocol_version,summary_provider_id,summary_model,"
+        "summary_evidence_json,application_version)"
+        " VALUES(?,?,?,?,?,?,?,'active',?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        (
+            episode_id, chosen_title, chosen_summary,
+            min(fragment["created_at"] for fragment in fragments),
+            max(fragment["created_at"] for fragment in fragments),
+            chosen_significance, candidate["confidence"], source, candidate["id"], now, now,
+            candidate["grouping_key"], candidate["policy_version"], json.dumps(chosen_ids),
+            current_hash, summary_status, summary_protocol, candidate["summary_provider_id"],
+            candidate["summary_model"], json.dumps(summary_evidence), APPLICATION_VERSION,
+        ),
+    )
+    for position, fragment in enumerate(fragments):
+        conn.execute(
+            "INSERT INTO memory_episode_fragments(episode_id,fragment_id,position,created_at)"
+            " VALUES(?,?,?,?)", (episode_id, fragment["id"], position, now),
+        )
+    entity_rows = conn.execute(
+        f"SELECT DISTINCT fe.entity_id FROM memory_fragment_entities fe"
+        f" JOIN memory_entities e ON e.id=fe.entity_id AND e.status='active'"
+        f" WHERE fe.fragment_id IN ({placeholders}) ORDER BY fe.entity_id", chosen_ids,
+    ).fetchall()
+    for entity_row in entity_rows:
+        conn.execute(
+            "INSERT INTO memory_episode_entities(episode_id,entity_id,created_at) VALUES(?,?,?)",
+            (episode_id, entity_row["entity_id"], now),
+        )
+    cursor = conn.execute(
+        "UPDATE memory_episode_candidates SET status='accepted',resolved_episode_id=?,"
+        "resolved_at=?,application_attempt_count=application_attempt_count+1,"
+        "application_error_code=NULL,last_application_at=? WHERE id=? AND status='pending'",
+        (episode_id, now, now, candidate["id"]),
+    )
+    if cursor.rowcount != 1:
+        raise EpisodeApplyError("application_candidate_changed", "候选状态已经变化")
+    episode = _episode_row(
+        conn, conn.execute("SELECT * FROM memory_episodes WHERE id=?", (episode_id,)).fetchone()
+    )
+    _event(conn, "episode_candidate", candidate["id"], "accepted", candidate, episode, actor)
+    _event(conn, "episode", episode_id, "created", None, episode, source)
+    return episode
+
+
+def _candidate_sources_need_refresh(candidate: dict) -> bool:
+    fragments = candidate["fragments"]
+    return (
+        len(fragments) >= MIN_GROUP_SIZE
+        and all(
+            fragment["status"] == "active" and fragment["enabled"]
+            and fragment["sensitivity"] == "normal"
+            and episode_summary.is_safe_source(fragment["content"])
+            for fragment in fragments
+        )
+        and episode_summary.source_hash(fragments) != candidate["summary_source_hash"]
+    )
 
 
 def reject_candidate(candidate_id: str, note: str = "") -> dict | None:
@@ -559,6 +755,7 @@ def record_summary_fallback(
             fragments=before["fragments"],
             entity_names=shared_entity_names(conn, fragment_ids),
         )
+        source_changed = fallback["source_hash"] != before["summary_source_hash"]
         now = db.now()
         warnings = [*fallback["warnings"], {"code": error_code}]
         conn.execute(
@@ -567,12 +764,14 @@ def record_summary_fallback(
             "summary_provider_id=?,summary_model=?,summary_evidence_json=?,"
             "summary_warnings_json=?,summary_error_code=?,summary_source_hash=?,"
             "summary_prompt_tokens=?,summary_completion_tokens=?,summary_repair_attempted=?,"
-            "last_evaluated_at=? WHERE id=?",
+            "application_attempt_count=?,application_error_code=?,last_evaluated_at=? WHERE id=?",
             (
                 fallback["title"], fallback["summary"], fallback["protocol_version"],
                 provider_id, model, json.dumps(fallback["evidence_fragment_ids"]),
                 json.dumps(warnings, ensure_ascii=False), error_code, fallback["source_hash"],
-                prompt_tokens, completion_tokens, 1 if repair_attempted else 0, now, candidate_id,
+                prompt_tokens, completion_tokens, 1 if repair_attempted else 0,
+                0 if source_changed else before["application_attempt_count"],
+                None if source_changed else before["application_error_code"], now, candidate_id,
             ),
         )
         after = _candidate_row(
@@ -596,6 +795,12 @@ def _group_candidate_row(row) -> dict:
 
 def _episode_row(conn, row) -> dict:
     result = dict(row)
+    result["source_fragment_ids"] = json.loads(
+        result.pop("source_fragment_ids_json", "[]")
+    )
+    result["summary_evidence_fragment_ids"] = json.loads(
+        result.pop("summary_evidence_json", "[]")
+    )
     fragments = conn.execute(
         "SELECT f.*, ef.position, s.title AS source_session_title,"
         " CASE WHEN m.id IS NULL THEN 0 ELSE 1 END AS source_available"
@@ -673,5 +878,20 @@ def _event(conn, object_type: str, object_id: str, action: str, before, after, s
             json.dumps(before, ensure_ascii=False) if before is not None else None,
             json.dumps(after, ensure_ascii=False) if after is not None else None,
             source, db.now(),
+        ),
+    )
+
+
+def _consolidator_event(
+    conn, run_id: str, action: str, before_status: str | None, after_status: str,
+    reason_code: str | None, metadata: dict,
+) -> None:
+    conn.execute(
+        "INSERT INTO episode_consolidator_events("
+        "id,run_id,action,before_status,after_status,reason_code,metadata_json,created_at)"
+        " VALUES(?,?,?,?,?,?,?,?)",
+        (
+            db.new_id(), run_id, action, before_status, after_status, reason_code,
+            json.dumps(metadata, ensure_ascii=False), db.now(),
         ),
     )

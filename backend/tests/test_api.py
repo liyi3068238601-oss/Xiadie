@@ -370,27 +370,22 @@ def test_episode_candidate_generation_acceptance_and_audit():
     assert generated.json()["queued"] is True
     from app import episode_consolidator
     asyncio.run(episode_consolidator.process_due(limit=20))
-    candidates = client.get("/api/episode-candidates").json()
-    candidate = next(
-        item for item in candidates
-        if {fragment["id"] for fragment in item["fragments"]} == {first["id"], second["id"]}
+    episode = next(
+        client.get(f"/api/episodes/{item['id']}").json()
+        for item in client.get("/api/episodes").json()
+        if {fragment["id"] for fragment in client.get(
+            f"/api/episodes/{item['id']}"
+        ).json()["fragments"]} == {first["id"], second["id"]}
     )
-    assert 1 <= candidate["significance"] <= 10
-    assert candidate["confidence"] >= 0.68
-
-    episode = client.post(
-        f"/api/episode-candidates/{candidate['id']}/accept",
-        json={
-            "title": "晨曦计划模型配置阶段",
-            "summary": "完成模型配置界面和模型列表自动获取。",
-            "significance": 5,
-            "fragment_ids": [first["id"], second["id"]],
-        },
-    ).json()
-    assert episode["title"] == "晨曦计划模型配置阶段"
-    assert episode["significance"] == 5
+    assert episode["source"] == "consolidator_auto"
+    assert episode["application_version"] == "episode-application-v1"
+    assert episode["confidence"] >= 0.68
     assert {fragment["id"] for fragment in episode["fragments"]} == {first["id"], second["id"]}
     assert any(entity["name"] == "晨曦计划" for entity in episode["entities"])
+    candidate = next(
+        item for item in client.get("/api/episode-candidates?status=accepted").json()
+        if item["resolved_episode_id"] == episode["id"]
+    )
     assert client.post(
         f"/api/episode-candidates/{candidate['id']}/accept", json={}
     ).status_code == 409
@@ -405,11 +400,8 @@ def test_episode_candidate_rejects_and_requires_two_fragments():
     second = client.post(
         "/api/memories", json={"layer": "L1", "content": "晚风计划继续整理文档目录"}
     ).json()
-    generated = client.post("/api/episode-candidates/generate")
-    assert generated.status_code == 200
-    assert generated.json()["queued"] is True
-    from app import episode_consolidator
-    asyncio.run(episode_consolidator.process_due(limit=20))
+    from app import episodes
+    episodes.generate_candidates()
     candidate = next(
         item for item in client.get("/api/episode-candidates").json()
         if {fragment["id"] for fragment in item["fragments"]} == {first["id"], second["id"]}
@@ -864,7 +856,7 @@ def test_schema_migration_is_idempotent():
         version = conn.execute(
             "SELECT value FROM schema_meta WHERE key = 'schema_version'"
         ).fetchone()["value"]
-        assert version == "15"
+        assert version == "16"
         assert conn.execute("SELECT COUNT(*) c FROM companion_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM affect_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM relationship_state").fetchone()["c"] <= 1
@@ -905,7 +897,17 @@ def test_schema_migration_is_idempotent():
             "summary_model", "summary_evidence_json", "summary_warnings_json",
             "summary_error_code", "summary_source_hash", "summary_prompt_tokens",
             "summary_completion_tokens", "summary_repair_attempted",
+            "application_attempt_count", "application_error_code", "last_application_at",
         } <= episode_candidate_columns
+        episode_columns = {
+            row["name"] for row in conn.execute("PRAGMA table_info(memory_episodes)").fetchall()
+        }
+        assert {
+            "grouping_fingerprint", "policy_version", "source_fragment_ids_json",
+            "source_hash", "summary_status", "summary_protocol_version",
+            "summary_provider_id", "summary_model", "summary_evidence_json",
+            "application_version",
+        } <= episode_columns
         fragment_columns = {
             row["name"] for row in conn.execute("PRAGMA table_info(memory_fragments)").fetchall()
         }

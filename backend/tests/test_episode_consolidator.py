@@ -11,6 +11,28 @@ client = TestClient(
 )
 
 
+def _complete_mock_application(run_id: str, candidate_ids: list[str]):
+    conn = db.connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        now = db.now()
+        count = len(candidate_ids)
+        status = "applied" if count else "skipped"
+        conn.execute(
+            "UPDATE episode_consolidator_runs SET status=?,group_count=?,finished_at=?,updated_at=?"
+            " WHERE id=?", (status, count, now, now, run_id),
+        )
+        episode_consolidator._event(
+            conn, run_id, "processed", "running", status,
+            "formal_episodes_created" if count else "no_eligible_group",
+            {"group_count": count},
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return []
+
+
 @pytest.fixture(autouse=True)
 def clean_consolidator_runs():
     conn = db.connect()
@@ -121,17 +143,33 @@ def test_worker_claims_and_audits_empty_and_created_passes(monkeypatch):
     monkeypatch.setattr(
         episode_consolidator.episodes, "generate_candidates", lambda: [{"id": "legacy-group"}]
     )
+    monkeypatch.setattr(
+        episode_consolidator.episodes, "pending_candidates",
+        lambda **_kwargs: [{"id": "legacy-group"}],
+    )
+    monkeypatch.setattr(
+        episode_consolidator.episodes, "apply_candidates_for_run",
+        _complete_mock_application,
+    )
     assert asyncio.run(episode_consolidator.process_due(limit=1)) == 1
     finished = episode_consolidator.get_run(created["id"])
     assert finished["status"] == "applied"
     assert finished["group_count"] == 1
-    assert finished["events"][-1]["reason_code"] == "legacy_candidates_created"
+    assert finished["events"][-1]["reason_code"] == "formal_episodes_created"
 
 
 def test_summary_service_crash_keeps_safe_candidate_and_finishes_run(monkeypatch):
     run = episode_consolidator.enqueue(trigger="manual", request_key="summary-crash")
     monkeypatch.setattr(
         episode_consolidator.episodes, "generate_candidates", lambda: [{"id": "safe-fallback"}]
+    )
+    monkeypatch.setattr(
+        episode_consolidator.episodes, "pending_candidates",
+        lambda **_kwargs: [{"id": "safe-fallback"}],
+    )
+    monkeypatch.setattr(
+        episode_consolidator.episodes, "apply_candidates_for_run",
+        _complete_mock_application,
     )
 
     async def fail(_candidates):
@@ -142,6 +180,66 @@ def test_summary_service_crash_keeps_safe_candidate_and_finishes_run(monkeypatch
     finished = episode_consolidator.get_run(run["id"])
     assert finished["status"] == "applied"
     assert finished["group_count"] == 1
+
+
+def test_atomic_application_failure_enters_bounded_recovery(monkeypatch):
+    run = episode_consolidator.enqueue(trigger="manual", request_key="apply-retry")
+    monkeypatch.setattr(episode_consolidator.episodes, "generate_candidates", lambda: [])
+    monkeypatch.setattr(
+        episode_consolidator.episodes, "pending_candidates",
+        lambda **_kwargs: [{"id": "retry-candidate"}],
+    )
+
+    async def no_summary(_candidates):
+        return {"validated": 0, "fallback": 0, "skipped": 1}
+
+    def fail_apply(_run_id, _candidate_ids):
+        raise episode_consolidator.episodes.EpisodeApplyError(
+            "application_source_changed", "synthetic source race"
+        )
+
+    recorded = []
+    monkeypatch.setattr(episode_consolidator.episode_summary_service, "enrich_candidates", no_summary)
+    monkeypatch.setattr(
+        episode_consolidator.episodes, "apply_candidates_for_run", fail_apply
+    )
+    monkeypatch.setattr(
+        episode_consolidator.episodes, "record_application_failure",
+        lambda candidate_ids, code: recorded.append((candidate_ids, code)),
+    )
+    assert asyncio.run(episode_consolidator.process_due(limit=1)) == 1
+    retry = episode_consolidator.get_run(run["id"])
+    assert retry["status"] == "recovery_pending"
+    assert retry["error_code"] == "application_source_changed"
+    assert retry["events"][-1]["reason_code"] == "application_source_changed"
+    assert recorded == [(["retry-candidate"], "application_source_changed")]
+
+    cancelled_run = episode_consolidator.enqueue(
+        trigger="manual", request_key="cancel-at-application-lock"
+    )
+
+    def cancel_before_lock(run_id, _candidate_ids):
+        conn = db.connect()
+        try:
+            conn.execute(
+                "UPDATE episode_consolidator_runs SET status='cancel_requested',updated_at=?"
+                " WHERE id=?", (db.now(), run_id),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+        raise episode_consolidator.episodes.EpisodeApplyError(
+            "application_run_not_running", "synthetic cancel race"
+        )
+
+    recorded.clear()
+    monkeypatch.setattr(
+        episode_consolidator.episodes, "apply_candidates_for_run", cancel_before_lock
+    )
+    assert asyncio.run(episode_consolidator.process_due(limit=1)) == 1
+    cancelled = episode_consolidator.get_run(cancelled_run["id"])
+    assert cancelled["status"] == "cancelled"
+    assert recorded == []
 
 
 def test_worker_retries_then_exhausts_without_touching_fragments(monkeypatch):

@@ -215,21 +215,49 @@ async def _process_claimed(row: dict) -> None:
     if _finish_cancel_if_requested(row["id"]):
         return
     try:
-        created = await asyncio.to_thread(episodes.generate_candidates)
+        await asyncio.to_thread(episodes.generate_candidates)
     except Exception:  # noqa: BLE001 - 失败只进入有限恢复，不破坏 Fragment
         if _finish_cancel_if_requested(row["id"]):
             return
-        _mark_failure(row["id"], row["attempt_count"], row["max_attempts"])
+        _mark_failure(
+            row["id"], row["attempt_count"], row["max_attempts"],
+            "consolidator_generation_failed",
+        )
         return
     if _finish_cancel_if_requested(row["id"]):
         return
+    pending = await asyncio.to_thread(
+        episodes.pending_candidates, include_changed_exhausted=True
+    )
     try:
-        await episode_summary_service.enrich_candidates(created)
+        await episode_summary_service.enrich_candidates(pending)
     except Exception:  # noqa: BLE001 - 候选已带安全抽取摘要，不能让 run 悬挂
         _logger.exception("Episode summary enrichment failed; keeping extractive fallback")
     if _finish_cancel_if_requested(row["id"]):
         return
-    _finish_processed(row["id"], len(created))
+    selected_ids = {candidate["id"] for candidate in pending}
+    applicable = await asyncio.to_thread(episodes.pending_candidates)
+    candidate_ids = [candidate["id"] for candidate in applicable if candidate["id"] in selected_ids]
+    try:
+        await asyncio.to_thread(episodes.apply_candidates_for_run, row["id"], candidate_ids)
+    except episodes.EpisodeApplyError as exc:
+        if exc.code == "application_run_not_running" and _finish_cancel_if_requested(row["id"]):
+            return
+        _record_application_failure_safely(candidate_ids, exc.code)
+        _mark_failure(row["id"], row["attempt_count"], row["max_attempts"], exc.code)
+    except Exception:  # noqa: BLE001 - 应用事务已回滚，保留候选供有限重试
+        _record_application_failure_safely(candidate_ids, "episode_application_failed")
+        _mark_failure(
+            row["id"], row["attempt_count"], row["max_attempts"],
+            "episode_application_failed",
+        )
+
+
+def _record_application_failure_safely(candidate_ids: list[str], error_code: str) -> None:
+    try:
+        episodes.record_application_failure(candidate_ids, error_code)
+    except Exception:  # noqa: BLE001 - 候选审计失败不能阻止 run 进入有限恢复
+        _logger.exception("Failed to record Episode candidate application error")
 
 
 def _finish_cancel_if_requested(run_id: str) -> bool:
@@ -258,48 +286,10 @@ def _finish_cancel_if_requested(run_id: str) -> bool:
         conn.close()
 
 
-def _finish_processed(run_id: str, group_count: int) -> None:
-    status = "applied" if group_count else "skipped"
-    reason = "legacy_candidates_created" if group_count else "no_eligible_group"
-    conn = db.connect()
-    try:
-        conn.execute("BEGIN IMMEDIATE")
-        row = conn.execute(
-            "SELECT status FROM episode_consolidator_runs WHERE id=?", (run_id,)
-        ).fetchone()
-        if not row:
-            conn.rollback()
-            return
-        now = db.now()
-        if row["status"] == "cancel_requested":
-            conn.execute(
-                "UPDATE episode_consolidator_runs SET status='cancelled',finished_at=?,updated_at=?"
-                " WHERE id=?",
-                (now, now, run_id),
-            )
-            _event(
-                conn, run_id, "cancelled", "cancel_requested", "cancelled",
-                "worker_cancelled", {},
-            )
-            conn.commit()
-            return
-        if row["status"] != "running":
-            conn.rollback()
-            return
-        conn.execute(
-            "UPDATE episode_consolidator_runs SET status=?,group_count=?,error_code=NULL,"
-            "finished_at=?,updated_at=? WHERE id=?",
-            (status, group_count, now, now, run_id),
-        )
-        _event(conn, run_id, "processed", "running", status, reason, {
-            "group_count": group_count,
-        })
-        conn.commit()
-    finally:
-        conn.close()
-
-
-def _mark_failure(run_id: str, attempt_count: int, max_attempts: int) -> None:
+def _mark_failure(
+    run_id: str, attempt_count: int, max_attempts: int,
+    error_code: str = "consolidator_failed",
+) -> None:
     exhausted = attempt_count >= max_attempts
     status = "exhausted" if exhausted else "recovery_pending"
     now = db.now()
@@ -329,16 +319,16 @@ def _mark_failure(run_id: str, attempt_count: int, max_attempts: int) -> None:
             conn.rollback()
             return
         conn.execute(
-            "UPDATE episode_consolidator_runs SET status=?,error_code='consolidator_failed',"
+            "UPDATE episode_consolidator_runs SET status=?,error_code=?,"
             "next_attempt_at=?,finished_at=?,updated_at=? WHERE id=?",
             (
-                status, None if exhausted else now + delay, now if exhausted else None,
-                now, run_id,
+                status, error_code, None if exhausted else now + delay,
+                now if exhausted else None, now, run_id,
             ),
         )
         _event(
             conn, run_id, "exhausted" if exhausted else "retry_scheduled", "running",
-            status, "consolidator_failed", {"attempt": attempt_count},
+            status, error_code, {"attempt": attempt_count},
         )
         conn.commit()
     finally:

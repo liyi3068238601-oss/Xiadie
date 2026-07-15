@@ -650,6 +650,34 @@ MIGRATIONS = [
             CHECK(summary_repair_attempted IN (0,1));
         """,
     ),
+    (
+        16,
+        """
+        ALTER TABLE memory_episodes ADD COLUMN grouping_fingerprint TEXT;
+        ALTER TABLE memory_episodes ADD COLUMN policy_version TEXT NOT NULL DEFAULT 'legacy';
+        ALTER TABLE memory_episodes ADD COLUMN source_fragment_ids_json TEXT NOT NULL DEFAULT '[]';
+        ALTER TABLE memory_episodes ADD COLUMN source_hash TEXT NOT NULL DEFAULT '';
+        ALTER TABLE memory_episodes ADD COLUMN summary_status TEXT NOT NULL DEFAULT 'legacy_rule'
+            CHECK(summary_status IN (
+                'legacy_rule','extractive_fallback','model_validated','user_edited'
+            ));
+        ALTER TABLE memory_episodes ADD COLUMN summary_protocol_version TEXT NOT NULL DEFAULT 'legacy';
+        ALTER TABLE memory_episodes ADD COLUMN summary_provider_id TEXT;
+        ALTER TABLE memory_episodes ADD COLUMN summary_model TEXT;
+        ALTER TABLE memory_episodes ADD COLUMN summary_evidence_json TEXT NOT NULL DEFAULT '[]';
+        ALTER TABLE memory_episodes ADD COLUMN application_version TEXT NOT NULL DEFAULT 'legacy';
+
+        ALTER TABLE memory_episode_candidates ADD COLUMN application_attempt_count INTEGER NOT NULL
+            DEFAULT 0 CHECK(application_attempt_count >= 0);
+        ALTER TABLE memory_episode_candidates ADD COLUMN application_error_code TEXT;
+        ALTER TABLE memory_episode_candidates ADD COLUMN last_application_at REAL;
+
+        CREATE UNIQUE INDEX idx_memory_episodes_candidate_unique
+            ON memory_episodes(candidate_id) WHERE candidate_id IS NOT NULL;
+        CREATE UNIQUE INDEX idx_memory_episodes_grouping_unique
+            ON memory_episodes(grouping_fingerprint) WHERE grouping_fingerprint IS NOT NULL;
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
