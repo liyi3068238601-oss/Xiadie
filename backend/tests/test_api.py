@@ -516,6 +516,7 @@ def test_affect_timeline_is_deterministic_and_handles_one_night_and_seven_days()
     first = engine.advance(initial, 8 * 60)
     second = engine.advance(initial, 8 * 60)
     assert first == second
+    # 参数基线断言依赖 CONTACT_NEED_RATE_PER_MINUTE=0.00012；调参时必须同步复核整条时间线。
     assert 0.10 < first["affect"]["contact_need"] < 0.13
     assert first["affect"]["immersion"] < initial["affect"]["immersion"]
     replied = engine.apply_fallback_interaction(first, "早上好，我回来了")
@@ -605,6 +606,39 @@ def test_reply_reduces_contact_need_proportionally_and_rebases_latest_state():
         advanced["affect"]["contact_need"] * 0.20,
         rel=0.02,
     )
+
+
+def test_generation_preview_advances_time_without_writing_state_or_event():
+    from app import companion_state, db
+
+    companion_state.reset_state()
+    conn = db.connect()
+    try:
+        conn.execute(
+            "UPDATE affect_state SET last_tick_at = ? WHERE id = 1",
+            (db.now() - 24 * 60 * 60,),
+        )
+        conn.commit()
+        stored_before = conn.execute(
+            "SELECT contact_need FROM affect_state WHERE id = 1"
+        ).fetchone()["contact_need"]
+        events_before = conn.execute("SELECT COUNT(*) c FROM affect_events").fetchone()["c"]
+    finally:
+        conn.close()
+
+    preview = companion_state.get_state(persist_advance=False)
+    assert preview["affect"]["contact_need"] > stored_before
+
+    conn = db.connect()
+    try:
+        stored_after = conn.execute(
+            "SELECT contact_need FROM affect_state WHERE id = 1"
+        ).fetchone()["contact_need"]
+        events_after = conn.execute("SELECT COUNT(*) c FROM affect_events").fetchone()["c"]
+    finally:
+        conn.close()
+    assert stored_after == stored_before
+    assert events_after == events_before
 
 
 def test_failed_regeneration_keeps_previous_reply(monkeypatch):

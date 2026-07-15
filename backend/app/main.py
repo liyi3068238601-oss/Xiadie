@@ -214,7 +214,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 "SELECT role, content FROM messages WHERE session_id = ? ORDER BY created_at",
                 (body.session_id,),
             ).fetchall()
-        current_state = companion_state.get_state()
+        current_state = companion_state.get_state(persist_advance=False)
         next_state = (
             current_state
             if body.regenerate

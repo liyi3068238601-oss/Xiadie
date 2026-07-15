@@ -8,12 +8,17 @@ from . import db
 from .affect import engine, repository, tone_grid
 
 
-def get_state() -> dict:
-    return _present(repository.get_snapshot())
+def get_state(*, persist_advance: bool = True) -> dict:
+    snapshot = (
+        repository.get_snapshot()
+        if persist_advance
+        else repository.get_preview_snapshot()
+    )
+    return _present(snapshot)
 
 
 def preview_interaction(user_text: str, current: dict | None = None) -> dict:
-    internal = _internal(current or get_state())
+    internal = _internal(current or get_state(persist_advance=False))
     preview = engine.apply_fallback_interaction(internal, user_text)
     preview["affect"]["last_user_message_at"] = db.now()
     return _present(preview)

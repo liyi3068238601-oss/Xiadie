@@ -48,6 +48,27 @@ def get_snapshot(*, advance_time: bool = True) -> dict:
         conn.close()
 
 
+def get_preview_snapshot() -> dict:
+    """计算截至当前的只读预览，不为生成前语调产生额外写事务。"""
+    conn = db.connect()
+    try:
+        affect_exists = conn.execute("SELECT 1 FROM affect_state WHERE id=1").fetchone()
+        relation_exists = conn.execute("SELECT 1 FROM relationship_state WHERE id=1").fetchone()
+        if affect_exists is None or relation_exists is None:
+            _ensure(conn)
+        snapshot = _load(conn)
+        now = db.now()
+        elapsed = max(0.0, (now - snapshot["affect"]["last_tick_at"]) / 60)
+        if elapsed < 1.0:
+            return snapshot
+        preview = engine.advance(snapshot, elapsed)
+        preview["affect"]["last_tick_at"] = now
+        preview["affect"]["updated_at"] = now
+        return preview
+    finally:
+        conn.close()
+
+
 def save_snapshot(
     snapshot: dict,
     *,
