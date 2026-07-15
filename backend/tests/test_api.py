@@ -1,14 +1,9 @@
 """后端核心 API 冒烟测试（需求 11.2 工程验收）。"""
-import os
-import tempfile
-
 import pytest
 from fastapi.testclient import TestClient
 
-# 用临时库，避免污染开发数据
-os.environ["XIADIE_DATA_DIR"] = tempfile.mkdtemp(prefix="xiadie-test-")
+# conftest.py 在任何 app 模块导入前建立临时库，避免测试收集顺序污染开发数据。
 TEST_API_TOKEN = "test-token-with-at-least-thirty-two-bytes"
-os.environ["XIADIE_API_TOKEN"] = TEST_API_TOKEN
 
 from app.main import app  # noqa: E402
 
@@ -641,6 +636,42 @@ def test_generation_preview_advances_time_without_writing_state_or_event():
     assert events_after == events_before
 
 
+def test_observer_failure_does_not_break_chat_done_event(monkeypatch):
+    from app import llm
+    from app import main as main_module
+
+    provider = {
+        "id": "test-observer-provider",
+        "base_url": "https://example.invalid/v1",
+        "api_key": "not-logged",
+    }
+    monkeypatch.setattr(main_module, "_current_model", lambda: (provider, "test-model"))
+
+    async def fake_stream(*_args, **_kwargs):
+        yield "观察失败也不影响这条回复"
+
+    async def failing_observer(*_args, **_kwargs):
+        raise llm.LLMError("观察失败中的敏感详情", "不要记录")
+
+    monkeypatch.setattr(llm, "stream_chat", fake_stream)
+    monkeypatch.setattr(llm, "complete_json", failing_observer)
+    session = client.post("/api/sessions", json={}).json()
+    with client.stream(
+        "POST", "/api/chat",
+        json={"session_id": session["id"], "content": "继续测试失败隔离"},
+    ) as response:
+        body = "".join(response.iter_text())
+    assert "event: done" in body
+    assert '"status": "recovery_pending"' in body
+    assert '"error_code": "model_call_failed"' in body
+    assert "观察失败中的敏感详情" not in body
+
+    runs = client.get("/api/companion-state/observer-runs").json()
+    run = next(item for item in runs if item["source_session_id"] == session["id"])
+    assert run["status"] == "recovery_pending"
+    assert run["candidate"] is None
+
+
 def test_failed_regeneration_keeps_previous_reply(monkeypatch):
     from app import llm
 
@@ -678,10 +709,14 @@ def test_schema_migration_is_idempotent():
         version = conn.execute(
             "SELECT value FROM schema_meta WHERE key = 'schema_version'"
         ).fetchone()["value"]
-        assert version == "7"
+        assert version == "8"
         assert conn.execute("SELECT COUNT(*) c FROM companion_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM affect_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM relationship_state").fetchone()["c"] <= 1
+        assert conn.execute(
+            "SELECT COUNT(*) c FROM sqlite_master"
+            " WHERE type='table' AND name='affect_observer_runs'"
+        ).fetchone()["c"] == 1
         tables = {
             row["name"] for row in conn.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'memory_%'"

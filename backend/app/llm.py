@@ -11,6 +11,10 @@ from urllib.parse import urlsplit
 
 import httpx
 
+JSON_COMPLETION_MAX_TOKENS = 500
+JSON_COMPLETION_TIMEOUT_SECONDS = 20
+JSON_COMPLETION_MAX_CHARS = 12000
+
 
 class LLMError(Exception):
     """携带用户友好提示的模型错误（需求 CHAT-005 错误恢复）。"""
@@ -92,6 +96,67 @@ async def stream_chat(
         provider["base_url"], provider.get("api_key", ""), model, messages
     ):
         yield ch
+
+
+async def complete_json(
+    provider: Optional[dict],
+    model: str,
+    messages: list[dict],
+    *,
+    max_tokens: int = JSON_COMPLETION_MAX_TOKENS,
+) -> dict:
+    """执行受限的非流式 JSON 观察调用；不负责解析或信任模型输出。"""
+    if provider is None or provider.get("id") == "mock" or not provider.get("base_url"):
+        raise LLMError("观察模型不可用", "演示模型不执行旁观观察。")
+    safe_max_tokens = max(1, min(int(max_tokens), JSON_COMPLETION_MAX_TOKENS))
+    url = provider["base_url"].rstrip("/") + "/chat/completions"
+    headers = {"Content-Type": "application/json"}
+    if provider.get("api_key"):
+        headers["Authorization"] = f"Bearer {provider['api_key']}"
+    payload = {
+        "model": model,
+        "messages": messages,
+        "stream": False,
+        "temperature": 0,
+        "max_tokens": safe_max_tokens,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=JSON_COMPLETION_TIMEOUT_SECONDS) as client:
+            response = await client.post(url, headers=headers, json=payload)
+        if response.status_code == 401:
+            raise LLMError("观察模型鉴权失败", "API Key 无效或已过期。")
+        if response.status_code == 429:
+            raise LLMError("观察模型被限流", "稍后进入恢复队列重试。")
+        if response.status_code >= 400:
+            raise LLMError(f"观察模型返回错误 {response.status_code}", "稍后重试。")
+        try:
+            body = response.json()
+            content = body["choices"][0]["message"]["content"]
+        except (ValueError, KeyError, IndexError, TypeError) as exc:
+            raise LLMError("观察模型响应格式错误", "响应缺少 JSON 文本。") from exc
+        if not isinstance(content, str) or not content.strip():
+            raise LLMError("观察模型响应为空", "稍后重试。")
+        if len(content) > JSON_COMPLETION_MAX_CHARS:
+            raise LLMError("观察模型响应过长", "响应超过本地安全上限。")
+        usage = body.get("usage") if isinstance(body, dict) else None
+        usage = usage if isinstance(usage, dict) else {}
+        return {
+            "text": content,
+            "prompt_tokens": _safe_token_count(usage.get("prompt_tokens")),
+            "completion_tokens": _safe_token_count(usage.get("completion_tokens")),
+        }
+    except httpx.ConnectError as exc:
+        raise LLMError("无法连接观察模型", "稍后进入恢复队列重试。") from exc
+    except httpx.TimeoutException as exc:
+        raise LLMError("观察模型请求超时", "稍后进入恢复队列重试。") from exc
+    except httpx.HTTPError as exc:
+        raise LLMError("观察模型连接中断", "稍后进入恢复队列重试。") from exc
+
+
+def _safe_token_count(value) -> int | None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    return max(0, min(int(value), 10_000_000))
 
 
 async def test_connection(base_url: str, api_key: str, model: str) -> dict:

@@ -60,7 +60,7 @@ class RelationshipDelta(_StrictModel):
 
 class Evidence(_StrictModel):
     speaker: Literal["user", "assistant"]
-    quote: str = Field(min_length=1, max_length=160)
+    quote: str = Field(min_length=3, max_length=160)
 
 
 class AffectObservation(_StrictModel):

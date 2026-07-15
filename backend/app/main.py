@@ -13,7 +13,8 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from . import companion_state, db, entities, episodes, llm, lore, memory
-from .persona import build_system_prompt
+from .affect import observer_service
+from .persona import OBSERVER_PERSONA_SUMMARY, build_system_prompt
 from .security import ALLOWED_ORIGINS, TOKEN_HEADER, local_api_guard
 
 
@@ -278,11 +279,23 @@ async def chat(body: ChatIn) -> StreamingResponse:
         finally:
             c2.close()
         saved_companion_state = None
+        affect_observation = None
         if not body.regenerate:
             saved_companion_state = companion_state.commit_interaction(
                 body.content,
                 source_session_id=body.session_id,
                 source_message_id=uid,
+            )
+            affect_observation = await observer_service.observe_turn(
+                provider=provider,
+                model=model,
+                session_id=body.session_id,
+                user_message_id=uid,
+                assistant_message_id=aid,
+                user_text=body.content,
+                assistant_text=full,
+                current_state=saved_companion_state,
+                persona_summary=OBSERVER_PERSONA_SUMMARY,
             )
         # 只生成待确认候选，不再把模型判断静默写成正式记忆。
         candidate = (
@@ -297,6 +310,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 "auto_memory": None,
                 "memory_candidate": candidate,
                 "companion_state": saved_companion_state,
+                "affect_observation": affect_observation,
             },
         )
 
@@ -326,6 +340,11 @@ def tick_companion_state(body: CompanionTickIn) -> dict:
 @app.get("/api/companion-state/events")
 def get_companion_state_events(limit: int = 50) -> list[dict]:
     return companion_state.list_events(limit)
+
+
+@app.get("/api/companion-state/observer-runs")
+def get_affect_observer_runs(limit: int = 50) -> list[dict]:
+    return observer_service.list_runs(limit)
 
 
 # ---------------------------------------------------------------- 记忆

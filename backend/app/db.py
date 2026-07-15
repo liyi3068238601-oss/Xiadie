@@ -372,6 +372,39 @@ MIGRATIONS = [
         FROM companion_state WHERE id = 1;
         """,
     ),
+    (
+        8,
+        """
+        CREATE TABLE IF NOT EXISTS affect_observer_runs (
+            id TEXT PRIMARY KEY,
+            idempotency_key TEXT NOT NULL UNIQUE,
+            source_session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            source_user_message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+            source_assistant_message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+            provider_id TEXT,
+            model TEXT NOT NULL,
+            status TEXT NOT NULL
+                CHECK(status IN ('running','candidate','recovery_pending','skipped')),
+            candidate_json TEXT,
+            warnings_json TEXT NOT NULL DEFAULT '[]',
+            error_code TEXT,
+            attempt_count INTEGER NOT NULL DEFAULT 1 CHECK(attempt_count BETWEEN 1 AND 3),
+            max_attempts INTEGER NOT NULL DEFAULT 3 CHECK(max_attempts BETWEEN 1 AND 3),
+            next_attempt_at REAL,
+            input_chars INTEGER NOT NULL DEFAULT 0 CHECK(input_chars >= 0),
+            output_chars INTEGER NOT NULL DEFAULT 0 CHECK(output_chars >= 0),
+            prompt_tokens INTEGER,
+            completion_tokens INTEGER,
+            protocol_version TEXT NOT NULL,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_affect_observer_runs_recovery
+            ON affect_observer_runs(status, next_attempt_at, updated_at);
+        CREATE INDEX IF NOT EXISTS idx_affect_observer_runs_source
+            ON affect_observer_runs(source_session_id, source_assistant_message_id);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

@@ -35,7 +35,7 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; python -m pytest tests` | 通过：39 passed，1 warning |
+| 后端 | `cd backend; python -m pytest tests` | 通过：46 passed，1 warning |
 | 前端 | `cd frontend; npm.cmd run build` | 通过：TypeScript 检查及 Vite 生产构建成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 
@@ -105,7 +105,9 @@ npm.cmd start
 - 旁观模型观察器、完整 9×5 语调网格和受控主动联系尚未实现。
 - 状态懒推进、互动提交和开发 tick 已增加原子写事务；聊天成功时会在最新状态上重新应用互动，避免流式期间的状态覆盖。
 - contact_need 已按 1/8/24/72/168 小时模拟重新校准：一天不直接联系、三天优先转移活动、七天才形成联系信号；用户回复后按等待程度比例回落。
-- 旁观观察器阶段 2.1 协议层已完成：严格版本化 schema、逐字证据、字段限幅、低置信度降级和 trust 边界校验已具备；尚未接入真实模型，也没有状态写入路径。
+- 旁观观察器阶段 2.1 协议层已完成：严格版本化 schema、逐字证据、字段限幅、低置信度降级和 trust 边界校验已具备。
+- 旁观观察器阶段 2.2 已接入受限非流式模型调用、幂等候选审计和失败恢复入队；候选仍不应用状态，实际重试执行、独立轻量模型和后台调度尚未实现。
+- 测试数据目录由 `tests/conftest.py` 在模块收集前统一隔离，测试文件顺序不会再接触开发数据库。
 - Saga、相对日期校正、矛盾检测和星图尚未实现。
 
 - Electron：透明置顶桌宠、主窗口、托盘、右键菜单及基础 IPC 联动。

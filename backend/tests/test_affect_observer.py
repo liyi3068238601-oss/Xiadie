@@ -71,6 +71,11 @@ def test_observer_rejects_invalid_json_non_finite_and_missing_evidence():
         parse(missing)
     assert exc.value.code == "schema_invalid"
 
+    too_short = valid_payload(evidence=[{"speaker": "user", "quote": "好"}])
+    with pytest.raises(observer.ObserverValidationError) as exc:
+        parse(too_short)
+    assert exc.value.code == "schema_invalid"
+
 
 def test_observer_requires_verbatim_evidence_from_declared_speaker():
     fabricated = valid_payload(
