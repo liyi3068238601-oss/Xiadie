@@ -47,11 +47,18 @@ export function SettingsPage({ onModelChanged }: { onModelChanged: () => void })
   const [discovering, setDiscovering] = useState<string | null>(null);
   const [discoveries, setDiscoveries] = useState<Record<string, { ok: boolean; message: string }>>({});
   const [modelDrafts, setModelDrafts] = useState<Record<string, string>>({});
+  const [observerMode, setObserverMode] = useState<"current" | "dedicated">("current");
+  const [observerPid, setObserverPid] = useState("");
+  const [observerModel, setObserverModel] = useState("");
 
   const loadProviders = () => {
     setLoading(true);
-    Promise.all([api.listProviders(), api.getCurrentModel().catch(() => null)])
-      .then(([ps, cm]) => {
+    Promise.all([
+      api.listProviders(),
+      api.getCurrentModel().catch(() => null),
+      api.getObserverModel().catch(() => null),
+    ])
+      .then(([ps, cm, observer]) => {
         setProviders(ps);
         setCurrent(cm);
         setError("");
@@ -59,6 +66,12 @@ export function SettingsPage({ onModelChanged }: { onModelChanged: () => void })
         setSelPid(pid);
         const prov = ps.find((p) => p.id === pid);
         setSelModel(cm?.model || prov?.models[0] || "");
+        const mode = observer?.mode || "current";
+        const observerProviderId = observer?.provider_id || pid;
+        const observerProvider = ps.find((p) => p.id === observerProviderId);
+        setObserverMode(mode);
+        setObserverPid(observerProviderId);
+        setObserverModel(observer?.model || observerProvider?.models[0] || "");
       })
       .catch((e) => setError(e.message || "加载失败"))
       .finally(() => setLoading(false));
@@ -87,6 +100,23 @@ export function SettingsPage({ onModelChanged }: { onModelChanged: () => void })
         toast(`已切换到 ${cm.provider_name} · ${cm.model}`);
       })
       .catch((e) => toast(e.message || "切换失败"));
+  };
+
+  const onSelectObserverProvider = (pid: string) => {
+    setObserverPid(pid);
+    setObserverModel(providers.find((p) => p.id === pid)?.models[0] || "");
+  };
+
+  const applyObserverModel = () => {
+    const body: api.ObserverModelConfig = observerMode === "current"
+      ? { mode: "current", provider_id: null, model: null }
+      : { mode: "dedicated", provider_id: observerPid || null, model: observerModel || null };
+    api.setObserverModel(body)
+      .then((result) => {
+        setObserverMode(result.mode);
+        toast(result.mode === "current" ? "观察器将跟随当前聊天模型" : "已保存独立观察模型");
+      })
+      .catch((e) => toast(e.message || "保存观察模型失败"));
   };
 
   const toggleConfig = (p: api.Provider) => {
@@ -341,6 +371,30 @@ export function SettingsPage({ onModelChanged }: { onModelChanged: () => void })
                     )}
                   </div>
                 )}
+              </div>
+
+              <div className="section-label">情绪观察模型</div>
+              <div className="card" style={{ marginBottom: 18 }}>
+                <div className="card-hint" style={{ marginBottom: 10 }}>
+                  观察器在后台分析完整对话。可跟随聊天模型，也可选择更便宜的轻量模型。
+                </div>
+                <div className="row" style={{ flexWrap: "wrap" }}>
+                  <select value={observerMode} onChange={(e) => setObserverMode(e.target.value as "current" | "dedicated")}>
+                    <option value="current">跟随当前模型</option>
+                    <option value="dedicated">使用独立模型</option>
+                  </select>
+                  {observerMode === "dedicated" && (
+                    <>
+                      <select value={observerPid} onChange={(e) => onSelectObserverProvider(e.target.value)}>
+                        {providers.filter((p) => p.id !== "mock" && p.enabled).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      </select>
+                      <select value={observerModel} onChange={(e) => setObserverModel(e.target.value)}>
+                        {(providers.find((p) => p.id === observerPid)?.models || []).map((m) => <option key={m} value={m}>{m}</option>)}
+                      </select>
+                    </>
+                  )}
+                  <button className="btn" onClick={applyObserverModel}>保存观察模型</button>
+                </div>
               </div>
 
               {/* 供应商列表 */}

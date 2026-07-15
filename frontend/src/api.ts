@@ -44,6 +44,11 @@ export interface Message {
   favorite: boolean;
   created_at: number;
 }
+export interface ObserverModelConfig {
+  mode: "current" | "dedicated";
+  provider_id: string | null;
+  model: string | null;
+}
 export interface Memory {
   id: string;
   layer: "L0" | "L1" | "L2";
@@ -272,6 +277,13 @@ export const setCurrentModel = (provider_id: string, model: string) =>
   j<CurrentModel>("/api/current-model", {
     method: "POST",
     body: JSON.stringify({ provider_id, model }),
+  });
+export const getObserverModel = () =>
+  j<ObserverModelConfig>("/api/companion-state/observer-model");
+export const setObserverModel = (body: ObserverModelConfig) =>
+  j<ObserverModelConfig>("/api/companion-state/observer-model", {
+    method: "PUT",
+    body: JSON.stringify(body),
   });
 
 // ---- 工具日志 ----

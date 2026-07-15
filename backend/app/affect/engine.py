@@ -7,7 +7,7 @@ from __future__ import annotations
 import copy
 import math
 
-ALGORITHM_VERSION = "affect-v1.1"
+ALGORITHM_VERSION = "affect-v1.2"
 MAX_ELAPSED_MINUTES = 7 * 24 * 60
 STEP_MINUTES = 5.0
 CONTACT_NEED_RATE_PER_MINUTE = 0.00012
@@ -159,6 +159,22 @@ def apply_fallback_interaction(snapshot: dict, user_text: str) -> dict:
     relation["bond"] += 0.001 + waiting_bond + (0.001 if appreciated else 0)
     if appreciated:
         relation["trust"] += 0.001
+    return normalize(result)
+
+
+def apply_observation(snapshot: dict, candidate: dict) -> dict:
+    """把已净化的观察候选应用到快照；调用方仍需负责事务和幂等。"""
+    result = copy.deepcopy(snapshot)
+    affect = result["affect"]
+    relation = result["relationship"]
+    delta = candidate["affect_delta"]
+    affect["contact_need"] += delta["contact_need"]
+    affect["guardedness_transient"] += delta["guardedness"]
+    affect["valence"] += delta["valence"]
+    affect["arousal"] += delta["arousal"]
+    affect["immersion"] += delta["immersion"]
+    relation["bond"] += candidate["relationship_delta"]["bond"]
+    relation["trust"] += candidate["relationship_delta"]["trust"]
     return normalize(result)
 
 

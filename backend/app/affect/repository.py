@@ -147,6 +147,40 @@ def apply_interaction(
         conn.close()
 
 
+def apply_observation_in_transaction(
+    conn,
+    candidate: dict,
+    *,
+    run_id: str,
+    source_session_id: str,
+    source_message_id: str,
+) -> tuple[dict, str]:
+    """在调用方已开启的写事务内推进时间、应用候选并记录事件。"""
+    before = _load(conn)
+    now = db.now()
+    elapsed = max(0.0, (now - before["affect"]["last_tick_at"]) / 60)
+    base = before
+    if elapsed >= 1.0:
+        base = engine.advance(before, elapsed)
+        base["affect"]["last_tick_at"] = now
+        base["affect"]["updated_at"] = now
+        _event(
+            conn, "tick", "engine", before, base,
+            reason=f"按真实经过时间推进 {min(elapsed, engine.MAX_ELAPSED_MINUTES):.2f} 分钟",
+        )
+    after = engine.apply_observation(base, candidate)
+    after["affect"]["updated_at"] = now
+    after["relationship"]["updated_at"] = now
+    _save(conn, after)
+    event_id = _event(
+        conn, "observation", "observer", base, after,
+        reason=f"观察任务 {run_id}：{candidate['reason']}",
+        source_session_id=source_session_id,
+        source_message_id=source_message_id,
+    )
+    return after, event_id
+
+
 def advance_by(minutes: float) -> dict:
     conn = db.connect()
     try:
@@ -268,7 +302,7 @@ def _event(
     reason: str,
     source_session_id: str | None = None,
     source_message_id: str | None = None,
-) -> None:
+) -> str:
     before_clean = _public_numbers(before)
     after_clean = _public_numbers(after)
     delta = {
@@ -281,18 +315,20 @@ def _event(
         }
         for section in ("affect", "relationship")
     }
+    event_id = db.new_id()
     conn.execute(
         "INSERT INTO affect_events(id,event_type,source,source_session_id,source_message_id,"
         "before_json,delta_json,after_json,reason,algorithm_version,created_at)"
         " VALUES(?,?,?,?,?,?,?,?,?,?,?)",
         (
-            db.new_id(), event_type, source, source_session_id, source_message_id,
+            event_id, event_type, source, source_session_id, source_message_id,
             json.dumps(before_clean, ensure_ascii=False),
             json.dumps(delta, ensure_ascii=False),
             json.dumps(after_clean, ensure_ascii=False),
             reason, engine.ALGORITHM_VERSION, db.now(),
         ),
     )
+    return event_id
 
 
 def _public_numbers(snapshot: dict) -> dict:

@@ -1,4 +1,6 @@
 """后端核心 API 冒烟测试（需求 11.2 工程验收）。"""
+import asyncio
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -637,14 +639,25 @@ def test_generation_preview_advances_time_without_writing_state_or_event():
 
 
 def test_observer_failure_does_not_break_chat_done_event(monkeypatch):
-    from app import llm
+    from app import db, llm
     from app import main as main_module
+    from app.affect import observer_service
 
     provider = {
         "id": "test-observer-provider",
         "base_url": "https://example.invalid/v1",
         "api_key": "not-logged",
     }
+    conn = db.connect()
+    try:
+        conn.execute(
+            "INSERT OR REPLACE INTO providers(id,name,base_url,api_key,models,enabled,sort)"
+            " VALUES(?,?,?,?,?,1,99)",
+            (provider["id"], "失败隔离测试", provider["base_url"], provider["api_key"], '["test-model"]'),
+        )
+        conn.commit()
+    finally:
+        conn.close()
     monkeypatch.setattr(main_module, "_current_model", lambda: (provider, "test-model"))
 
     async def fake_stream(*_args, **_kwargs):
@@ -662,14 +675,44 @@ def test_observer_failure_does_not_break_chat_done_event(monkeypatch):
     ) as response:
         body = "".join(response.iter_text())
     assert "event: done" in body
-    assert '"status": "recovery_pending"' in body
-    assert '"error_code": "model_call_failed"' in body
+    assert '"status": "queued"' in body
     assert "观察失败中的敏感详情" not in body
 
+    # 聊天热路径只入队；模型观察尚未执行，因此不会延迟 done。
+    queued_run = next(
+        item for item in client.get("/api/companion-state/observer-runs").json()
+        if item["source_session_id"] == session["id"]
+    )
+    assert queued_run["attempt_count"] == 0
+    asyncio.run(observer_service.process_due())
     runs = client.get("/api/companion-state/observer-runs").json()
     run = next(item for item in runs if item["source_session_id"] == session["id"])
     assert run["status"] == "recovery_pending"
     assert run["candidate"] is None
+
+
+def test_observer_model_config_api_validates_dedicated_model():
+    client.patch("/api/providers/deepseek", json={"enabled": True})
+    current = client.put(
+        "/api/companion-state/observer-model",
+        json={"mode": "current", "provider_id": None, "model": None},
+    )
+    assert current.status_code == 200
+    assert current.json()["mode"] == "current"
+
+    dedicated = client.put(
+        "/api/companion-state/observer-model",
+        json={"mode": "dedicated", "provider_id": "deepseek", "model": "deepseek-chat"},
+    )
+    assert dedicated.status_code == 200
+    assert client.get("/api/companion-state/observer-model").json() == {
+        "mode": "dedicated", "provider_id": "deepseek", "model": "deepseek-chat",
+    }
+    invalid = client.put(
+        "/api/companion-state/observer-model",
+        json={"mode": "dedicated", "provider_id": "deepseek", "model": "missing"},
+    )
+    assert invalid.status_code == 400
 
 
 def test_failed_regeneration_keeps_previous_reply(monkeypatch):
@@ -709,7 +752,7 @@ def test_schema_migration_is_idempotent():
         version = conn.execute(
             "SELECT value FROM schema_meta WHERE key = 'schema_version'"
         ).fetchone()["value"]
-        assert version == "8"
+        assert version == "9"
         assert conn.execute("SELECT COUNT(*) c FROM companion_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM affect_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM relationship_state").fetchone()["c"] <= 1

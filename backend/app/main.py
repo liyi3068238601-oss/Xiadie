@@ -14,14 +14,18 @@ from pydantic import BaseModel, Field
 
 from . import companion_state, db, entities, episodes, llm, lore, memory
 from .affect import observer_service
-from .persona import OBSERVER_PERSONA_SUMMARY, build_system_prompt
+from .persona import build_system_prompt
 from .security import ALLOWED_ORIGINS, TOKEN_HEADER, local_api_guard
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db.init_db()
-    yield
+    await observer_service.start_worker()
+    try:
+        yield
+    finally:
+        await observer_service.stop_worker()
 
 
 app = FastAPI(title="遐蝶 Agent Backend", version="0.1.0", lifespan=lifespan)
@@ -286,16 +290,12 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 source_session_id=body.session_id,
                 source_message_id=uid,
             )
-            affect_observation = await observer_service.observe_turn(
-                provider=provider,
-                model=model,
+            affect_observation = observer_service.enqueue_turn(
+                chat_provider=provider,
+                chat_model=model,
                 session_id=body.session_id,
                 user_message_id=uid,
                 assistant_message_id=aid,
-                user_text=body.content,
-                assistant_text=full,
-                current_state=saved_companion_state,
-                persona_summary=OBSERVER_PERSONA_SUMMARY,
             )
         # 只生成待确认候选，不再把模型判断静默写成正式记忆。
         candidate = (
@@ -345,6 +345,25 @@ def get_companion_state_events(limit: int = 50) -> list[dict]:
 @app.get("/api/companion-state/observer-runs")
 def get_affect_observer_runs(limit: int = 50) -> list[dict]:
     return observer_service.list_runs(limit)
+
+
+class ObserverModelIn(BaseModel):
+    mode: str
+    provider_id: str | None = None
+    model: str | None = None
+
+
+@app.get("/api/companion-state/observer-model")
+def get_affect_observer_model() -> dict:
+    return observer_service.get_model_config()
+
+
+@app.put("/api/companion-state/observer-model")
+def set_affect_observer_model(body: ObserverModelIn) -> dict:
+    try:
+        return observer_service.set_model_config(body.mode, body.provider_id, body.model)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
 
 
 # ---------------------------------------------------------------- 记忆

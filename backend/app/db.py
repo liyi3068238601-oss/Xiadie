@@ -405,6 +405,71 @@ MIGRATIONS = [
             ON affect_observer_runs(source_session_id, source_assistant_message_id);
         """,
     ),
+    (
+        9,
+        """
+        DROP INDEX IF EXISTS idx_affect_observer_runs_recovery;
+        DROP INDEX IF EXISTS idx_affect_observer_runs_source;
+        ALTER TABLE affect_observer_runs RENAME TO affect_observer_runs_v8;
+
+        CREATE TABLE affect_observer_runs (
+            id TEXT PRIMARY KEY,
+            idempotency_key TEXT NOT NULL UNIQUE,
+            source_session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            source_user_message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+            source_assistant_message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+            provider_id TEXT,
+            model TEXT NOT NULL,
+            status TEXT NOT NULL CHECK(status IN (
+                'queued','running','applied','recovery_pending','exhausted','skipped'
+            )),
+            candidate_json TEXT,
+            warnings_json TEXT NOT NULL DEFAULT '[]',
+            error_code TEXT,
+            attempt_count INTEGER NOT NULL DEFAULT 0 CHECK(attempt_count BETWEEN 0 AND 3),
+            max_attempts INTEGER NOT NULL DEFAULT 3 CHECK(max_attempts BETWEEN 1 AND 3),
+            next_attempt_at REAL,
+            last_attempt_at REAL,
+            applied_event_id TEXT REFERENCES affect_events(id) ON DELETE SET NULL,
+            applied_at REAL,
+            input_chars INTEGER NOT NULL DEFAULT 0 CHECK(input_chars >= 0),
+            output_chars INTEGER NOT NULL DEFAULT 0 CHECK(output_chars >= 0),
+            prompt_tokens INTEGER,
+            completion_tokens INTEGER,
+            protocol_version TEXT NOT NULL,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        INSERT INTO affect_observer_runs(
+            id,idempotency_key,source_session_id,source_user_message_id,
+            source_assistant_message_id,provider_id,model,status,candidate_json,warnings_json,
+            error_code,attempt_count,max_attempts,next_attempt_at,input_chars,output_chars,
+            prompt_tokens,completion_tokens,protocol_version,created_at,updated_at
+        )
+        SELECT id,idempotency_key,source_session_id,source_user_message_id,
+               source_assistant_message_id,provider_id,model,
+               CASE status
+                   WHEN 'candidate' THEN 'queued'
+                   WHEN 'running' THEN 'recovery_pending'
+                   ELSE status
+               END,
+               CASE WHEN status='candidate' THEN NULL ELSE candidate_json END,
+               warnings_json,
+               CASE WHEN status='running' THEN 'observer_interrupted' ELSE error_code END,
+               CASE WHEN status='candidate' THEN 0 ELSE attempt_count END,
+               max_attempts,
+               CASE WHEN status IN ('candidate','running')
+                    THEN CAST(strftime('%s','now') AS REAL) ELSE next_attempt_at END,
+               input_chars,output_chars,prompt_tokens,completion_tokens,
+               protocol_version,created_at,updated_at
+        FROM affect_observer_runs_v8;
+        DROP TABLE affect_observer_runs_v8;
+        CREATE INDEX idx_affect_observer_runs_recovery
+            ON affect_observer_runs(status, next_attempt_at, updated_at);
+        CREATE INDEX idx_affect_observer_runs_source
+            ON affect_observer_runs(source_session_id, source_assistant_message_id);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
@@ -458,6 +523,10 @@ def init_db() -> None:
         )
         conn.execute(
             "INSERT OR IGNORE INTO settings(key, value) VALUES('memory_enabled', '1')"
+        )
+        conn.execute(
+            "INSERT OR IGNORE INTO settings(key, value)"
+            " VALUES('affect_observer_model', '{\"mode\":\"current\"}')"
         )
         conn.commit()
     finally:
