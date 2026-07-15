@@ -19,6 +19,8 @@
 - affect/relationship 更新、observation 事件和任务 applied 状态必须在同一 SQLite 事务提交。
 - 任务通过 `applied_event_id` 指向实际状态事件；应用事务失败则完整回滚并按有限重试处理。
 - stale running 恢复只由 worker 执行；聊天热路径和 GET API 不产生恢复写入。
+- 单次观察输入上限从阶段 2.2 的 20000 字符收紧到 12000 字符。正常对话仍可覆盖，
+  同时减少异常超长上下文的调用成本；超限任务直接进入 `skipped`，不保存原文。
 
 ## 后果
 

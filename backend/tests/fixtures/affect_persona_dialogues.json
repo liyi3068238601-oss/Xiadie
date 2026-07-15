@@ -1,0 +1,11 @@
+[
+  {"name": "明快分享", "user": "今天终于把项目跑起来了。", "valence": 0.7, "arousal": 0.6, "cluster": "bright", "required": "不要喧闹"},
+  {"name": "安静陪伴", "user": "陪我安静坐一会儿吧。", "valence": 0.6, "arousal": -0.6, "cluster": "serene", "required": "安宁柔和"},
+  {"name": "烦躁故障", "user": "又报错了，我真的很烦。", "valence": -0.7, "arousal": 0.7, "cluster": "agitated", "required": "不能迁怒用户"},
+  {"name": "低落倾诉", "user": "今天什么都不想做。", "valence": -0.7, "arousal": -0.7, "cluster": "melancholic", "required": "不向用户索取安慰"},
+  {"name": "专注协作", "user": "我们继续排查启动流程。", "valence": 0.0, "arousal": 0.5, "cluster": "focused", "required": "当前问题的关键细节"},
+  {"name": "沉思告别", "user": "人为什么会害怕告别？", "valence": 0.0, "arousal": -0.5, "cluster": "contemplative", "required": "不故作玄奥"},
+  {"name": "温和喜悦", "user": "我很喜欢今天的结果。", "valence": 0.6, "arousal": 0.0, "cluster": "pleased", "required": "自然的轻快和温柔"},
+  {"name": "沉静受挫", "user": "还是没成功，不过慢慢来吧。", "valence": -0.6, "arousal": 0.0, "cluster": "subdued", "required": "不把低落变成冷漠"},
+  {"name": "平常问候", "user": "晚上好，今天过得怎么样？", "valence": 0.0, "arousal": 0.0, "cluster": "neutral", "required": "温和、清楚、克制"}
+]
