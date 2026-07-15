@@ -128,6 +128,22 @@ def test_worker_claims_and_audits_empty_and_created_passes(monkeypatch):
     assert finished["events"][-1]["reason_code"] == "legacy_candidates_created"
 
 
+def test_summary_service_crash_keeps_safe_candidate_and_finishes_run(monkeypatch):
+    run = episode_consolidator.enqueue(trigger="manual", request_key="summary-crash")
+    monkeypatch.setattr(
+        episode_consolidator.episodes, "generate_candidates", lambda: [{"id": "safe-fallback"}]
+    )
+
+    async def fail(_candidates):
+        raise RuntimeError("synthetic summary service crash")
+
+    monkeypatch.setattr(episode_consolidator.episode_summary_service, "enrich_candidates", fail)
+    assert asyncio.run(episode_consolidator.process_due(limit=1)) == 1
+    finished = episode_consolidator.get_run(run["id"])
+    assert finished["status"] == "applied"
+    assert finished["group_count"] == 1
+
+
 def test_worker_retries_then_exhausts_without_touching_fragments(monkeypatch):
     run = episode_consolidator.enqueue(trigger="manual", request_key="failing-pass")
     before_count = len(memory.list_memories())

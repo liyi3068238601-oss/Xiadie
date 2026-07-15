@@ -864,7 +864,7 @@ def test_schema_migration_is_idempotent():
         version = conn.execute(
             "SELECT value FROM schema_meta WHERE key = 'schema_version'"
         ).fetchone()["value"]
-        assert version == "14"
+        assert version == "15"
         assert conn.execute("SELECT COUNT(*) c FROM companion_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM affect_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM relationship_state").fetchone()["c"] <= 1
@@ -901,6 +901,10 @@ def test_schema_migration_is_idempotent():
         assert {
             "entity_score", "text_score", "time_score", "coherence_score",
             "score_details_json", "policy_version", "expires_at", "last_evaluated_at",
+            "summary_status", "summary_protocol_version", "summary_provider_id",
+            "summary_model", "summary_evidence_json", "summary_warnings_json",
+            "summary_error_code", "summary_source_hash", "summary_prompt_tokens",
+            "summary_completion_tokens", "summary_repair_attempted",
         } <= episode_candidate_columns
         fragment_columns = {
             row["name"] for row in conn.execute("PRAGMA table_info(memory_fragments)").fetchall()

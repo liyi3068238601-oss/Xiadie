@@ -12,7 +12,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from . import companion_state, db, entities, episode_consolidator, episodes, llm, lore, memory
+from . import (
+    companion_state, db, entities, episode_consolidator, episode_summary_service,
+    episodes, llm, lore, memory,
+)
 from . import memory_observer_service
 from .affect import observer_service as affect_observer_service
 from .persona import build_system_prompt
@@ -535,6 +538,21 @@ def enqueue_episode_consolidator_run(body: EpisodeConsolidatorRunIn) -> dict:
 @app.get("/api/episode-consolidator/runs")
 def get_episode_consolidator_runs(limit: int = 50) -> list[dict]:
     return episode_consolidator.list_runs(limit=limit)
+
+
+@app.get("/api/episode-summary/model")
+def get_episode_summary_model() -> dict:
+    return episode_summary_service.get_model_config()
+
+
+@app.put("/api/episode-summary/model")
+def set_episode_summary_model(body: ObserverModelIn) -> dict:
+    try:
+        return episode_summary_service.set_model_config(
+            body.mode, body.provider_id, body.model
+        )
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
 
 
 @app.get("/api/episode-consolidator/runs/{run_id}")

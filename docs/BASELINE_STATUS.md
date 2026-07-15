@@ -35,7 +35,7 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; python -m pytest tests` | 通过：131 passed，1 warning |
+| 后端 | `cd backend; python -m pytest tests` | 通过：143 passed，1 warning |
 | 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：4 项情绪映射/记忆提示测试、TypeScript 检查及 Vite 生产构建成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 
@@ -106,6 +106,9 @@ npm.cmd start
 - Episode 自动化阶段 C.3 已完成：schema 14 保存实体、文本、时间、情绪/主题四个评分分量和策略版本。
 - 分组严格限制为共同实体、最近 7 天、2～20 条且未进入正式 Episode；0.50 及以上产生兼容高分候选。
 - 低分分组只保存来源 ID 与评分，七天内幂等重评且不续期；可升格、被新分组取代或到期退出，始终不删除 Fragment。
+- Episode 自动化阶段 C.4 已完成：schema 15 保存摘要协议、模型/回退状态、证据 ID、来源哈希和调用审计。
+- 模型只能选择 Fragment 原句 claim，程序再拼接摘要；虚构内容、越权/误标 ID、标题无来源和提示注入均拒绝。
+- 模型不可用或校验失败时刷新安全抽取式摘要；模型调用期间来源被纠正会由事务内哈希复核阻止旧结果落库。
 
 ### 人格与内置背景知识（2026-07-14）
 

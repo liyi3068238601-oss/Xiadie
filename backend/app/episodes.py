@@ -9,7 +9,7 @@ import hashlib
 import json
 import re
 
-from . import db
+from . import db, episode_summary
 
 MIN_GROUP_SIZE = 2
 MAX_GROUP_SIZE = 20
@@ -79,6 +79,17 @@ def list_candidates(status: str = "pending") -> list[dict]:
             (status,),
         ).fetchall()
         return [_candidate_row(conn, row) for row in rows]
+    finally:
+        conn.close()
+
+
+def get_candidate(candidate_id: str) -> dict | None:
+    conn = db.connect()
+    try:
+        row = conn.execute(
+            "SELECT * FROM memory_episode_candidates WHERE id=?", (candidate_id,)
+        ).fetchone()
+        return _candidate_row(conn, row) if row else None
     finally:
         conn.close()
 
@@ -218,7 +229,10 @@ def _build_group_proposals(conn, now: float) -> list[dict]:
         " ORDER BY f.created_at,f.id",
         (now - WINDOW_SECONDS, now),
     ).fetchall()
-    fragments = {row["id"]: dict(row) for row in rows}
+    fragments = {
+        row["id"]: dict(row) for row in rows
+        if row["sensitivity"] == "normal" and episode_summary.is_safe_source(row["content"])
+    }
     if len(fragments) < MIN_GROUP_SIZE:
         return []
     links = conn.execute(
@@ -316,9 +330,11 @@ def _create_scored_candidate(conn, proposal: dict, now: float) -> dict | None:
         f" ({','.join('?' for _ in proposal['shared_entity_ids'])}) ORDER BY e.name",
         proposal["shared_entity_ids"],
     ).fetchall()] if proposal["shared_entity_ids"] else []
-    subject = entity_names[0] if entity_names else "这段对话"
-    title = f"关于{subject}的一段经历"
-    summary = "；".join(fragment["content"].strip() for fragment in fragments)[:300]
+    fallback = episode_summary.extractive_fallback(
+        fragments=fragments, entity_names=entity_names
+    )
+    title = fallback["title"]
+    summary = fallback["summary"]
     significance = _estimate_significance(fragments)
     scores = proposal["scores"]
     candidate_id = db.new_id()
@@ -326,12 +342,18 @@ def _create_scored_candidate(conn, proposal: dict, now: float) -> dict | None:
         "INSERT INTO memory_episode_candidates("
         "id,title,summary,start_at,end_at,significance,confidence,status,grouping_key,created_at,"
         "entity_score,text_score,time_score,coherence_score,score_details_json,policy_version,"
-        "expires_at,last_evaluated_at) VALUES(?,?,?,?,?,?,?,'pending',?,?,?,?,?,?,?,?,?,?)",
+        "expires_at,last_evaluated_at,summary_status,summary_protocol_version,"
+        "summary_evidence_json,summary_warnings_json,summary_error_code,summary_source_hash)"
+        " VALUES(?,?,?,?,?,?,?,'pending',?,?,?,?,?,?,?,?,?,?,'extractive_fallback',?,?,?,?,?)",
         (
             candidate_id, title, summary, fragments[0]["created_at"], fragments[-1]["created_at"],
             significance, scores["total"], fingerprint, now, scores["entity"], scores["text"],
             scores["time"], scores["coherence"], json.dumps(scores, separators=(",", ":")),
             GROUP_POLICY_VERSION, now + WINDOW_SECONDS, now,
+            fallback["protocol_version"],
+            json.dumps(fallback["evidence_fragment_ids"]),
+            json.dumps(fallback["warnings"], ensure_ascii=False),
+            "summary_not_attempted", fallback["source_hash"],
         ),
     )
     for position, fid in enumerate(fragment_ids):
@@ -427,6 +449,10 @@ def _load_fragments(conn, fragment_ids: list[str]) -> list[dict]:
 def _candidate_row(conn, row) -> dict:
     result = dict(row)
     result["score_details"] = json.loads(result.pop("score_details_json", "{}"))
+    result["summary_evidence_fragment_ids"] = json.loads(
+        result.pop("summary_evidence_json", "[]")
+    )
+    result["summary_warnings"] = json.loads(result.pop("summary_warnings_json", "[]"))
     fragments = conn.execute(
         "SELECT f.*, ecf.position, s.title AS source_session_title,"
         " CASE WHEN m.id IS NULL THEN 0 ELSE 1 END AS source_available"
@@ -439,6 +465,126 @@ def _candidate_row(conn, row) -> dict:
     ).fetchall()
     result["fragments"] = [_fragment_row(fragment) for fragment in fragments]
     return result
+
+
+def shared_entity_names(conn, fragment_ids: list[str]) -> list[str]:
+    if not fragment_ids:
+        return []
+    placeholders = ",".join("?" for _ in fragment_ids)
+    rows = conn.execute(
+        f"SELECT e.name,COUNT(DISTINCT fe.fragment_id) AS linked_count"
+        f" FROM memory_entities e JOIN memory_fragment_entities fe ON fe.entity_id=e.id"
+        f" WHERE e.status='active' AND fe.fragment_id IN ({placeholders})"
+        " GROUP BY e.id HAVING linked_count=? ORDER BY e.name",
+        (*fragment_ids, len(set(fragment_ids))),
+    ).fetchall()
+    return [row["name"] for row in rows]
+
+
+def apply_model_summary(
+    candidate_id: str, raw: str | dict, *, provider_id: str, model: str,
+    prompt_tokens: int | None, completion_tokens: int | None,
+    repair_attempted: bool, expected_source_hash: str,
+) -> dict | None:
+    """在写锁内重新读取来源并校验；原始模型输出永不落库。"""
+    conn = db.connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT * FROM memory_episode_candidates WHERE id=? AND status='pending'",
+            (candidate_id,),
+        ).fetchone()
+        if not row:
+            conn.rollback()
+            return None
+        before = _candidate_row(conn, row)
+        fragment_ids = [fragment["id"] for fragment in before["fragments"]]
+        if episode_summary.source_hash(before["fragments"]) != expected_source_hash:
+            conn.rollback()
+            raise episode_summary.EpisodeSummaryValidationError(
+                "summary_source_changed", "模型调用期间 Episode 来源发生变化"
+            )
+        entity_names = shared_entity_names(conn, fragment_ids)
+        validated = episode_summary.parse_and_validate(
+            raw, fragments=before["fragments"], entity_names=entity_names
+        )
+        now = db.now()
+        conn.execute(
+            "UPDATE memory_episode_candidates SET title=?,summary=?,summary_status='model_validated',"
+            "summary_protocol_version=?,summary_provider_id=?,summary_model=?,"
+            "summary_evidence_json=?,summary_warnings_json=?,summary_error_code=NULL,"
+            "summary_source_hash=?,summary_prompt_tokens=?,summary_completion_tokens=?,"
+            "summary_repair_attempted=?,last_evaluated_at=? WHERE id=?",
+            (
+                validated["title"], validated["summary"], validated["protocol_version"],
+                provider_id, model, json.dumps(validated["evidence_fragment_ids"]),
+                json.dumps(validated["warnings"], ensure_ascii=False), validated["source_hash"],
+                prompt_tokens, completion_tokens, 1 if repair_attempted else 0, now, candidate_id,
+            ),
+        )
+        after = _candidate_row(
+            conn, conn.execute(
+                "SELECT * FROM memory_episode_candidates WHERE id=?", (candidate_id,)
+            ).fetchone(),
+        )
+        _event(conn, "episode_candidate", candidate_id, "summary_validated", before, after, "model")
+        conn.commit()
+        return after
+    except episode_summary.EpisodeSummaryValidationError:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def record_summary_fallback(
+    candidate_id: str, error_code: str, *, provider_id: str | None = None,
+    model: str | None = None, prompt_tokens: int | None = None,
+    completion_tokens: int | None = None, repair_attempted: bool = False,
+) -> dict | None:
+    """从当前来源重新生成抽取摘要，避免模型失败时保留过期或幻觉文本。"""
+    conn = db.connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT * FROM memory_episode_candidates WHERE id=? AND status='pending'",
+            (candidate_id,),
+        ).fetchone()
+        if not row:
+            conn.rollback()
+            return None
+        before = _candidate_row(conn, row)
+        fragment_ids = [fragment["id"] for fragment in before["fragments"]]
+        fallback = episode_summary.extractive_fallback(
+            fragments=before["fragments"],
+            entity_names=shared_entity_names(conn, fragment_ids),
+        )
+        now = db.now()
+        warnings = [*fallback["warnings"], {"code": error_code}]
+        conn.execute(
+            "UPDATE memory_episode_candidates SET title=?,summary=?,"
+            "summary_status='extractive_fallback',summary_protocol_version=?,"
+            "summary_provider_id=?,summary_model=?,summary_evidence_json=?,"
+            "summary_warnings_json=?,summary_error_code=?,summary_source_hash=?,"
+            "summary_prompt_tokens=?,summary_completion_tokens=?,summary_repair_attempted=?,"
+            "last_evaluated_at=? WHERE id=?",
+            (
+                fallback["title"], fallback["summary"], fallback["protocol_version"],
+                provider_id, model, json.dumps(fallback["evidence_fragment_ids"]),
+                json.dumps(warnings, ensure_ascii=False), error_code, fallback["source_hash"],
+                prompt_tokens, completion_tokens, 1 if repair_attempted else 0, now, candidate_id,
+            ),
+        )
+        after = _candidate_row(
+            conn, conn.execute(
+                "SELECT * FROM memory_episode_candidates WHERE id=?", (candidate_id,)
+            ).fetchone(),
+        )
+        _event(conn, "episode_candidate", candidate_id, "summary_fallback", before, after, "system")
+        conn.commit()
+        return after
+    finally:
+        conn.close()
 
 
 def _group_candidate_row(row) -> dict:

@@ -10,7 +10,7 @@ import json
 import logging
 from contextlib import suppress
 
-from . import db, episodes
+from . import db, episode_summary_service, episodes
 
 POLICY_VERSION = "episode-consolidator-v1"
 MAX_ATTEMPTS = 3
@@ -221,6 +221,12 @@ async def _process_claimed(row: dict) -> None:
             return
         _mark_failure(row["id"], row["attempt_count"], row["max_attempts"])
         return
+    if _finish_cancel_if_requested(row["id"]):
+        return
+    try:
+        await episode_summary_service.enrich_candidates(created)
+    except Exception:  # noqa: BLE001 - 候选已带安全抽取摘要，不能让 run 悬挂
+        _logger.exception("Episode summary enrichment failed; keeping extractive fallback")
     if _finish_cancel_if_requested(row["id"]):
         return
     _finish_processed(row["id"], len(created))

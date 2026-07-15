@@ -1,8 +1,8 @@
 # 遐蝶自主记忆系统设计书（零基础说明版）
 
-版本：v0.11
+版本：v0.12
 
-状态：设计基线；阶段 A、阶段 B 与 C.1～C.3 已完成，C.4～F 待施工
+状态：设计基线；阶段 A、阶段 B 与 C.1～C.4 已完成，C.5～F 待施工
 
 主要参考：[MemoryConstellations](https://github.com/ClaraShafiq/MemoryConstellations)
 适用对象：项目所有者、第一次接触 Agent 的开发者、后续接手实现的 Codex
@@ -1090,7 +1090,21 @@ qualified，到期转 expired，均不修改 Fragment。后端 131 项、前端 
 
 #### 阶段 C.4：摘要与事实校验
 
-- [ ] Episode 摘要通过来源事实校验，不添加原 Fragment 中没有的事实。
+- [x] Episode 摘要通过来源事实校验，不添加原 Fragment 中没有的事实。
+
+C.4 开工前审查结论：C.3 review 3/3 通过、131+4 项测试通过且无新增问题。非重叠
+滑窗是优先时间连续性的既定选择，不在摘要阶段改动；startup run 每次检查仍是预期行为。
+N13、N14 继续暂缓。
+
+C.4 验收：ADR-0015 与 `episode-summary-v1` 规定模型只输出 title 和带来源 Fragment ID
+的原句 claims，程序在写锁内重新读取来源、校验每一个所列 ID 都逐字覆盖 claim，再拼成摘要；
+模型不能直接提交 summary。越权/误标 ID、重复或虚构 claim、无来源标题、不安全内容均整体
+拒绝。只对 JSON/type/schema 错误允许一次格式修复，事实错误不得修复绕过。高分候选先保存
+`episode-extractive-v1` 安全回退；模型不可用、失败或非法时从当前来源刷新回退，原始模型
+输出永不落库。调用前后比较来源内容哈希，期间纠正会拒绝旧输出。schema 15 保存协议、状态、
+供应商/模型、证据、稳定错误码、token 和修复审计。当前仍只更新兼容 pending 候选，不创建
+正式 Episode。摘要服务异常时保留已落盘抽取回退并正常收敛 run。后端 143 项、前端 4 项、
+生产构建和 Electron 脚本检查通过。
 
 #### 阶段 C.5：正式 Episode 原子应用
 

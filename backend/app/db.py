@@ -629,6 +629,27 @@ MIGRATIONS = [
             ON episode_group_candidates(status, expires_at, last_evaluated_at);
         """,
     ),
+    (
+        15,
+        """
+        ALTER TABLE memory_episode_candidates ADD COLUMN summary_status TEXT NOT NULL
+            DEFAULT 'legacy_rule' CHECK(summary_status IN (
+                'legacy_rule','extractive_fallback','model_validated'
+            ));
+        ALTER TABLE memory_episode_candidates ADD COLUMN summary_protocol_version TEXT NOT NULL
+            DEFAULT 'legacy';
+        ALTER TABLE memory_episode_candidates ADD COLUMN summary_provider_id TEXT;
+        ALTER TABLE memory_episode_candidates ADD COLUMN summary_model TEXT;
+        ALTER TABLE memory_episode_candidates ADD COLUMN summary_evidence_json TEXT NOT NULL DEFAULT '[]';
+        ALTER TABLE memory_episode_candidates ADD COLUMN summary_warnings_json TEXT NOT NULL DEFAULT '[]';
+        ALTER TABLE memory_episode_candidates ADD COLUMN summary_error_code TEXT;
+        ALTER TABLE memory_episode_candidates ADD COLUMN summary_source_hash TEXT NOT NULL DEFAULT '';
+        ALTER TABLE memory_episode_candidates ADD COLUMN summary_prompt_tokens INTEGER;
+        ALTER TABLE memory_episode_candidates ADD COLUMN summary_completion_tokens INTEGER;
+        ALTER TABLE memory_episode_candidates ADD COLUMN summary_repair_attempted INTEGER NOT NULL DEFAULT 0
+            CHECK(summary_repair_attempted IN (0,1));
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
