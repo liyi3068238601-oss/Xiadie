@@ -391,6 +391,33 @@ def test_episode_candidate_generation_acceptance_and_audit():
     ).status_code == 409
     events = client.get(f"/api/memory-events/episode/{episode['id']}").json()
     assert [event["action"] for event in events] == ["created"]
+    corrected = client.post(
+        f"/api/episodes/{episode['id']}/correct",
+        json={
+            "title": "晨曦计划的两次模型准备",
+            "summary": "用户纠正：这是两次连续的模型准备。",
+            "significance": 6,
+            "note": "用户明确补充了经历范围",
+        },
+    )
+    assert corrected.status_code == 200
+    corrected_episode = corrected.json()
+    assert corrected_episode["summary_status"] == "user_edited"
+    assert corrected_episode["summary_protocol_version"] == "manual-v1"
+    assert corrected_episode["summary_evidence_fragment_ids"] == []
+    assert corrected_episode["correction_note"] == "用户明确补充了经历范围"
+    assert corrected_episode["corrected_at"] is not None
+    assert corrected_episode["source_hash"] == episode["source_hash"]
+    assert corrected_episode["source_fragment_ids"] == episode["source_fragment_ids"]
+    corrected_events = client.get(f"/api/memory-events/episode/{episode['id']}").json()
+    assert [
+        event["action"] for event in corrected_events
+    ] == ["created", "corrected"]
+    assert corrected_events[-1]["source"] == "user_correction"
+    assert corrected_events[-1]["after"]["correction_note"] == "用户明确补充了经历范围"
+    assert client.post(
+        f"/api/episodes/{episode['id']}/correct", json={"title": ""}
+    ).status_code == 400
 
 
 def test_episode_candidate_rejects_and_requires_two_fragments():
@@ -856,7 +883,7 @@ def test_schema_migration_is_idempotent():
         version = conn.execute(
             "SELECT value FROM schema_meta WHERE key = 'schema_version'"
         ).fetchone()["value"]
-        assert version == "16"
+        assert version == "17"
         assert conn.execute("SELECT COUNT(*) c FROM companion_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM affect_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM relationship_state").fetchone()["c"] <= 1
@@ -906,7 +933,7 @@ def test_schema_migration_is_idempotent():
             "grouping_fingerprint", "policy_version", "source_fragment_ids_json",
             "source_hash", "summary_status", "summary_protocol_version",
             "summary_provider_id", "summary_model", "summary_evidence_json",
-            "application_version",
+            "application_version", "correction_note", "corrected_at",
         } <= episode_columns
         fragment_columns = {
             row["name"] for row in conn.execute("PRAGMA table_info(memory_fragments)").fetchall()

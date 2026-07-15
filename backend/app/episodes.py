@@ -141,7 +141,7 @@ def list_episodes(status: str = "active") -> list[dict]:
             " WHERE e.status=? GROUP BY e.id ORDER BY e.end_at DESC",
             (status,),
         ).fetchall()
-        return [dict(row) for row in rows]
+        return [_episode_list_row(row) for row in rows]
     finally:
         conn.close()
 
@@ -151,6 +151,64 @@ def get_episode(episode_id: str) -> dict | None:
     try:
         row = conn.execute("SELECT * FROM memory_episodes WHERE id=?", (episode_id,)).fetchone()
         return _episode_row(conn, row) if row else None
+    finally:
+        conn.close()
+
+
+def correct_episode(
+    episode_id: str, *, title: str | None = None, summary: str | None = None,
+    significance: int | None = None, note: str = "",
+) -> dict | None:
+    """纠正正式经历；来源关系不变，摘要改写使用独立审计语义。"""
+    conn = db.connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT * FROM memory_episodes WHERE id=? AND status='active'", (episode_id,)
+        ).fetchone()
+        if not row:
+            conn.rollback()
+            return None
+        before = _episode_row(conn, row)
+        next_title = before["title"] if title is None else title.strip()
+        next_summary = before["summary"] if summary is None else summary.strip()
+        if not next_title or not next_summary:
+            raise ValueError("Episode 标题和摘要不能为空")
+        if not episode_summary.is_safe_source(next_title) or not episode_summary.is_safe_source(
+            next_summary
+        ):
+            raise ValueError("Episode 标题或摘要包含不安全内容")
+        next_significance = before["significance"] if significance is None else int(significance)
+        if not 1 <= next_significance <= 10:
+            raise ValueError("重要度必须在 1 到 10 之间")
+        summary_changed = next_title != before["title"] or next_summary != before["summary"]
+        now = db.now()
+        conn.execute(
+            "UPDATE memory_episodes SET title=?,summary=?,significance=?,correction_note=?,"
+            "corrected_at=?,updated_at=?,summary_status=?,summary_protocol_version=?,"
+            "summary_evidence_json=? WHERE id=?",
+            (
+                next_title, next_summary, next_significance, note.strip(), now, now,
+                "user_edited" if summary_changed else before["summary_status"],
+                "manual-v1" if summary_changed else before["summary_protocol_version"],
+                "[]" if summary_changed else json.dumps(
+                    before["summary_evidence_fragment_ids"]
+                ),
+                episode_id,
+            ),
+        )
+        after = _episode_row(
+            conn, conn.execute("SELECT * FROM memory_episodes WHERE id=?", (episode_id,)).fetchone()
+        )
+        _event(
+            conn, "episode", episode_id, "corrected", before,
+            {**after, "correction_note": note.strip()}, "user_correction",
+        )
+        conn.commit()
+        return after
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()
 
@@ -794,13 +852,7 @@ def _group_candidate_row(row) -> dict:
 
 
 def _episode_row(conn, row) -> dict:
-    result = dict(row)
-    result["source_fragment_ids"] = json.loads(
-        result.pop("source_fragment_ids_json", "[]")
-    )
-    result["summary_evidence_fragment_ids"] = json.loads(
-        result.pop("summary_evidence_json", "[]")
-    )
+    result = _episode_list_row(row)
     fragments = conn.execute(
         "SELECT f.*, ef.position, s.title AS source_session_title,"
         " CASE WHEN m.id IS NULL THEN 0 ELSE 1 END AS source_available"
@@ -818,6 +870,17 @@ def _episode_row(conn, row) -> dict:
     result["fragments"] = [_fragment_row(fragment) for fragment in fragments]
     result["entities"] = [dict(entity) for entity in entities]
     result["fragment_count"] = len(fragments)
+    return result
+
+
+def _episode_list_row(row) -> dict:
+    result = dict(row)
+    result["source_fragment_ids"] = json.loads(
+        result.pop("source_fragment_ids_json", "[]")
+    )
+    result["summary_evidence_fragment_ids"] = json.loads(
+        result.pop("summary_evidence_json", "[]")
+    )
     return result
 
 

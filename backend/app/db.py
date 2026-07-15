@@ -678,6 +678,13 @@ MIGRATIONS = [
             ON memory_episodes(grouping_fingerprint) WHERE grouping_fingerprint IS NOT NULL;
         """,
     ),
+    (
+        17,
+        """
+        ALTER TABLE memory_episodes ADD COLUMN correction_note TEXT NOT NULL DEFAULT '';
+        ALTER TABLE memory_episodes ADD COLUMN corrected_at REAL;
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

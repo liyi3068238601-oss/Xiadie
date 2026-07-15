@@ -131,6 +131,7 @@ export interface Memory {
   evidence_message_ids?: string[];
   source_assistant_message_id?: string | null;
   enabled: boolean;
+  created_at: number;
   updated_at: number;
 }
 export interface MemoryCandidate {
@@ -192,6 +193,20 @@ export interface MemoryEpisode {
   significance: number;
   confidence: number;
   status: "active" | "archived" | "tombstone";
+  source: "consolidator_auto" | "candidate_confirmed" | string;
+  candidate_id?: string | null;
+  grouping_fingerprint?: string | null;
+  policy_version: string;
+  source_fragment_ids: string[];
+  source_hash: string;
+  summary_status: "legacy_rule" | "extractive_fallback" | "model_validated" | "user_edited";
+  summary_protocol_version: string;
+  summary_provider_id?: string | null;
+  summary_model?: string | null;
+  summary_evidence_fragment_ids: string[];
+  application_version: string;
+  correction_note: string;
+  corrected_at?: number | null;
   fragment_count: number;
   fragments?: EpisodeFragment[];
   entities?: Array<{ id: string; name: string; entity_type: string }>;
@@ -329,6 +344,13 @@ export const rejectEpisodeCandidate = (id: string, note = "") =>
   });
 export const listEpisodes = () => j<MemoryEpisode[]>("/api/episodes");
 export const getEpisode = (id: string) => j<MemoryEpisode>(`/api/episodes/${id}`);
+export const correctEpisode = (
+  id: string,
+  body: { title?: string; summary?: string; significance?: number; note?: string }
+) => j<MemoryEpisode>(`/api/episodes/${id}/correct`, {
+  method: "POST",
+  body: JSON.stringify(body),
+});
 
 // ---- 任务 ----
 export const listTasks = (today = false) =>

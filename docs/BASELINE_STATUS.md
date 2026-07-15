@@ -35,8 +35,8 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; python -m pytest tests` | 通过：148 passed，1 warning |
-| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：4 项情绪映射/记忆提示测试、TypeScript 检查及 Vite 生产构建成功 |
+| 后端 | `cd backend; python -m pytest tests` | 通过：149 passed，1 warning |
+| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：7 项情绪映射/记忆与 Episode 展示契约测试、TypeScript 检查及 Vite 生产构建成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 
 已知但不阻断当前开发的警告：
@@ -112,6 +112,9 @@ npm.cmd start
 - Episode 自动化阶段 C.5 已完成：schema 16 为正式 Episode 保存分组、来源集合/哈希、摘要审计和应用协议快照。
 - worker 现在自主提交高分候选；Episode、顺序来源、active Entity、候选状态、记忆审计和 run 终态在一个短事务完成。
 - 来源变化、归属冲突或中途异常会整批回滚并进入有限恢复；candidate、分组指纹和 Fragment 三层唯一约束防止重复 Episode。
+- Episode 自动化阶段 C.6 已完成：schema 17 与专用纠错 API 保存人工纠错说明、时间和独立审计语义。
+- 主界面不再展示候选确认，改为正式经历详情、摘要校验状态、短来源指纹、有序来源和原对话入口。
+- 纠错标题/摘要会标记 `user_edited` 且不改变来源链；精确阈值、跨日期、继承、幂等和失败回滚完成总验收。
 
 ### 人格与内置背景知识（2026-07-14）
 

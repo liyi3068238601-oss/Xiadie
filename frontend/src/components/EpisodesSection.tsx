@@ -1,106 +1,118 @@
 import { useEffect, useState } from "react";
 import * as api from "./../api";
+import { episodeSummaryPresentation, shortSourceHash } from "./../episodePresentation.mjs";
 import { toast } from "./../store";
 
 interface Props {
   onOpenSource: (sessionId: string, messageId: string) => void;
 }
 
-type Draft = {
+type CorrectionDraft = {
   title: string;
   summary: string;
   significance: number;
-  fragmentIds: string[];
+  note: string;
 };
 
 export function EpisodesSection({ onOpenSource }: Props) {
-  const [candidates, setCandidates] = useState<api.EpisodeCandidate[]>([]);
   const [episodes, setEpisodes] = useState<api.MemoryEpisode[]>([]);
-  const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [generating, setGenerating] = useState(false);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [draft, setDraft] = useState<CorrectionDraft | null>(null);
+  const [busy, setBusy] = useState<"refresh" | "schedule" | "save" | null>(null);
 
   const refresh = async () => {
-    const [pending, existing] = await Promise.all([
-      api.listEpisodeCandidates(),
-      api.listEpisodes(),
-    ]);
-    setCandidates(pending);
+    const existing = await api.listEpisodes();
     setEpisodes(existing);
-    setDrafts(Object.fromEntries(pending.map((candidate) => [candidate.id, {
-      title: candidate.title,
-      summary: candidate.summary,
-      significance: candidate.significance,
-      fragmentIds: candidate.fragments.map((fragment) => fragment.id),
-    }])));
-    return { pending, existing };
+    return existing;
   };
 
   useEffect(() => {
-    refresh().catch(() => toast("Episode 加载失败"));
+    refresh().catch(() => toast("经历加载失败"));
   }, []);
 
-  const generate = async () => {
-    setGenerating(true);
+  const refreshNow = async () => {
+    setBusy("refresh");
+    try {
+      await refresh();
+      setExpanded(null);
+      setEditing(null);
+      setDraft(null);
+      toast("经历列表已刷新");
+    } catch (error: any) {
+      toast(error.message || "经历刷新失败");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const schedule = async () => {
+    setBusy("schedule");
     try {
       await api.generateEpisodeCandidates();
-      await refresh();
-      toast("后台整理已安排，稍后可在这里查看结果");
+      toast("后台整理已安排，完成后刷新即可看到新经历");
     } catch (error: any) {
-      toast(error.message || "候选生成失败");
+      toast(error.message || "后台整理安排失败");
     } finally {
-      setGenerating(false);
-    }
-  };
-
-  const updateDraft = (id: string, patch: Partial<Draft>) => {
-    setDrafts((current) => ({ ...current, [id]: { ...current[id], ...patch } }));
-  };
-
-  const toggleFragment = (candidateId: string, fragmentId: string) => {
-    const draft = drafts[candidateId];
-    const selected = draft.fragmentIds.includes(fragmentId)
-      ? draft.fragmentIds.filter((id) => id !== fragmentId)
-      : [...draft.fragmentIds, fragmentId];
-    updateDraft(candidateId, { fragmentIds: selected });
-  };
-
-  const accept = async (candidate: api.EpisodeCandidate) => {
-    const draft = drafts[candidate.id];
-    if (!draft?.title.trim() || !draft.summary.trim()) return toast("标题和摘要不能为空");
-    if (draft.fragmentIds.length < 2) return toast("Episode 至少需要两条记忆");
-    try {
-      await api.acceptEpisodeCandidate(candidate.id, {
-        title: draft.title.trim(),
-        summary: draft.summary.trim(),
-        significance: draft.significance,
-        fragment_ids: draft.fragmentIds,
-      });
-      await refresh();
-      toast("Episode 已确认");
-    } catch (error: any) {
-      toast(error.message || "确认失败");
-    }
-  };
-
-  const reject = async (candidate: api.EpisodeCandidate) => {
-    try {
-      await api.rejectEpisodeCandidate(candidate.id);
-      await refresh();
-      toast("已拒绝这组 Episode 候选");
-    } catch (error: any) {
-      toast(error.message || "拒绝失败");
+      setBusy(null);
     }
   };
 
   const openEpisode = async (id: string) => {
-    if (expanded === id) return setExpanded(null);
+    if (expanded === id) {
+      setExpanded(null);
+      setEditing(null);
+      return;
+    }
     try {
       const detail = await api.getEpisode(id);
-      setEpisodes((current) => current.map((episode) => episode.id === id ? detail : episode));
+      setEpisodes((current) => current.map((item) => item.id === id ? detail : item));
       setExpanded(id);
     } catch (error: any) {
-      toast(error.message || "Episode 详情加载失败");
+      toast(error.message || "经历详情加载失败");
+    }
+  };
+
+  const beginCorrection = (episode: api.MemoryEpisode) => {
+    setEditing(episode.id);
+    setDraft({
+      title: episode.title,
+      summary: episode.summary,
+      significance: episode.significance,
+      note: "",
+    });
+  };
+
+  const saveCorrection = async (episodeId: string) => {
+    if (!draft?.title.trim() || !draft.summary.trim()) {
+      return toast("经历名称和摘要不能为空");
+    }
+    setBusy("save");
+    try {
+      const corrected = await api.correctEpisode(episodeId, {
+        title: draft.title.trim(),
+        summary: draft.summary.trim(),
+        significance: draft.significance,
+        note: draft.note.trim(),
+      });
+      setEpisodes((current) => current.map((item) => item.id === episodeId ? corrected : item));
+      setEditing(null);
+      setDraft(null);
+      toast("经历已纠正，并留下独立审计记录");
+    } catch (error: any) {
+      toast(error.message || "经历纠正失败");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const copyHash = async (hash: string) => {
+    if (!hash) return;
+    try {
+      await navigator.clipboard.writeText(hash);
+      toast("完整来源校验指纹已复制");
+    } catch {
+      toast("无法复制，请稍后重试");
     }
   };
 
@@ -108,94 +120,124 @@ export function EpisodesSection({ onOpenSource }: Props) {
     <section className="memory-section memory-episode-section">
       <div className="episode-heading">
         <div>
-          <div className="section-label">经历 · Episode</div>
-          <div className="sub">把相关的零散记忆整理成一次完整经历，候选不会自动成为长期 Episode。</div>
+          <div className="section-label">共同经历 · Episode</div>
+          <div className="sub">遐蝶会在后台把相关正式记忆自主整理成经历；这里用于查看来源与纠错。</div>
         </div>
-        <button className="btn ghost" disabled={generating} onClick={generate}>
-          {generating ? "安排中…" : "安排后台整理"}
-        </button>
+        <div className="episode-heading-actions">
+          <button className="btn ghost" disabled={busy !== null || editing !== null} onClick={refreshNow}>
+            {busy === "refresh" ? "刷新中…" : "刷新经历"}
+          </button>
+          <button className="btn ghost" disabled={busy !== null || editing !== null} onClick={schedule}>
+            {busy === "schedule" ? "安排中…" : "检查新经历"}
+          </button>
+        </div>
       </div>
 
-      {candidates.map((candidate) => {
-        const draft = drafts[candidate.id];
-        if (!draft) return null;
-        return (
-          <div className="episode-candidate" key={candidate.id}>
-            <div className="episode-candidate-title">待确认 · {formatDate(candidate.start_at)} 至 {formatDate(candidate.end_at)}</div>
-            <label className="episode-field">
-              <span>经历名称</span>
-              <input value={draft.title} onChange={(event) => updateDraft(candidate.id, { title: event.target.value })} />
-            </label>
-            <label className="episode-field">
-              <span>经历摘要</span>
-              <textarea rows={3} value={draft.summary} onChange={(event) => updateDraft(candidate.id, { summary: event.target.value })} />
-            </label>
-            <div className="episode-score">
-              <label>重要度</label>
-              <input type="range" min={1} max={10} value={draft.significance} onChange={(event) => updateDraft(candidate.id, { significance: Number(event.target.value) })} />
-              <span>{draft.significance}/10</span>
-              <span className="chip">规则置信度 {Math.round(candidate.confidence * 100)}%</span>
-            </div>
-            <div className="episode-fragments">
-              {candidate.fragments.map((fragment) => (
-                <label key={fragment.id} className="episode-fragment-check">
-                  <input
-                    type="checkbox"
-                    checked={draft.fragmentIds.includes(fragment.id)}
-                    onChange={() => toggleFragment(candidate.id, fragment.id)}
-                  />
-                  <span>{fragment.content}</span>
-                  {fragment.source_available && fragment.source_session_id && fragment.source_message_id && (
-                    <button type="button" onClick={(event) => {
-                      event.preventDefault();
-                      onOpenSource(fragment.source_session_id!, fragment.source_message_id!);
-                    }}>来源</button>
-                  )}
-                </label>
-              ))}
-            </div>
-            <div className="entity-actions">
-              <button className="btn" onClick={() => accept(candidate)}>接受 Episode</button>
-              <button className="btn ghost" onClick={() => reject(candidate)}>拒绝</button>
-            </div>
-          </div>
-        );
-      })}
-
-      {candidates.length === 0 && episodes.length === 0 && (
-        <div className="empty" style={{ padding: 20 }}>还没有可整理的经历。至少需要两条相关正式记忆。</div>
-      )}
-
-      {episodes.length > 0 && (
-        <div className="episode-list">
-          {episodes.map((episode) => (
-            <div className="episode-item" key={episode.id}>
-              <button className="episode-item-head" onClick={() => openEpisode(episode.id)}>
-                <span>{episode.title}</span>
-                <small>{formatDate(episode.start_at)} · {episode.fragment_count} 条 · 重要度 {episode.significance}</small>
-              </button>
-              {expanded === episode.id && (
-                <div className="episode-item-detail">
-                  <p>{episode.summary}</p>
-                  {!!episode.entities?.length && <div className="chip">涉及：{episode.entities.map((entity) => entity.name).join("、")}</div>}
-                  {episode.fragments?.map((fragment) => (
-                    <div className="entity-fragment" key={fragment.id}>
-                      {fragment.content}
-                      {fragment.source_available && fragment.source_session_id && fragment.source_message_id && (
-                        <div className="msg-meta"><button onClick={() => onOpenSource(fragment.source_session_id!, fragment.source_message_id!)}>查看来源</button></div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+      {episodes.length === 0 && (
+        <div className="empty episode-empty">
+          还没有形成共同经历。至少两条具有共同主题的正式记忆通过评分后，系统会在后台自动整理。
         </div>
       )}
+
+      <div className="episode-list">
+        {episodes.map((episode) => {
+          const presentation = episodeSummaryPresentation(episode.summary_status);
+          const isExpanded = expanded === episode.id;
+          const isEditing = editing === episode.id && draft;
+          return (
+            <article className="episode-item" key={episode.id}>
+              <button
+                className="episode-item-head"
+                aria-expanded={isExpanded}
+                onClick={() => openEpisode(episode.id)}
+              >
+                <span className="episode-title-group">
+                  <strong>{episode.title}</strong>
+                  <span className={`episode-status ${presentation.tone}`}>{presentation.label}</span>
+                </span>
+                <small>
+                  {formatDateRange(episode.start_at, episode.end_at)} · {episode.fragment_count} 条来源 · 重要度 {episode.significance}
+                </small>
+              </button>
+
+              {isExpanded && (
+                <div className="episode-item-detail">
+                  {!isEditing && <p className="episode-summary">{episode.summary}</p>}
+
+                  <div className="episode-audit-grid">
+                    <div><span>摘要状态</span><strong>{presentation.label}</strong><small>{presentation.detail}</small></div>
+                    <div><span>来源校验</span><strong>{shortSourceHash(episode.source_hash)}</strong><small>内容哈希短指纹</small></div>
+                    <div><span>整理方式</span><strong>{episode.source === "consolidator_auto" ? "后台自主整理" : "兼容流程"}</strong><small>{episode.application_version}</small></div>
+                    <div><span>规则置信度</span><strong>{Math.round(episode.confidence * 100)}%</strong><small>{episode.policy_version}</small></div>
+                  </div>
+
+                  <div className="episode-detail-actions">
+                    {!!episode.source_hash && (
+                      <button className="btn ghost" onClick={() => copyHash(episode.source_hash)}>复制完整校验指纹</button>
+                    )}
+                    {!isEditing && <button className="btn ghost" onClick={() => beginCorrection(episode)}>纠正这段经历</button>}
+                  </div>
+
+                  {isEditing && draft && (
+                    <div className="episode-correction">
+                      <label><span>经历名称</span><input value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} /></label>
+                      <label><span>经历摘要</span><textarea rows={4} value={draft.summary} onChange={(event) => setDraft({ ...draft, summary: event.target.value })} /></label>
+                      <label><span>重要度 · {draft.significance}/10</span><input type="range" min={1} max={10} value={draft.significance} onChange={(event) => setDraft({ ...draft, significance: Number(event.target.value) })} /></label>
+                      <label><span>纠错说明（可选）</span><input value={draft.note} maxLength={240} onChange={(event) => setDraft({ ...draft, note: event.target.value })} /></label>
+                      <div className="entity-actions">
+                        <button className="btn" disabled={busy === "save"} onClick={() => saveCorrection(episode.id)}>{busy === "save" ? "保存中…" : "保存纠错"}</button>
+                        <button className="btn ghost" onClick={() => { setEditing(null); setDraft(null); }}>取消</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {!!episode.entities?.length && (
+                    <div className="episode-entities">涉及：{episode.entities.map((entity) => entity.name).join("、")}</div>
+                  )}
+
+                  <div className="episode-source-heading">
+                    <strong>来源记忆</strong>
+                    <span>{episode.fragments?.length ?? 0} / {episode.source_fragment_ids.length} 条可读取</span>
+                  </div>
+                  <div className="episode-sources">
+                    {episode.fragments?.map((fragment, index) => (
+                      <div className="episode-source" key={fragment.id}>
+                        <div className="episode-source-index">{index + 1}</div>
+                        <div className="episode-source-body">
+                          <div>{fragment.content}</div>
+                          <small>{formatDate(fragment.created_at)} · {fragment.source_available ? "原对话可用" : "仅保留正式记忆来源"}</small>
+                        </div>
+                        {fragment.source_available && fragment.source_session_id && fragment.source_message_id && (
+                          <button onClick={() => onOpenSource(fragment.source_session_id!, fragment.source_message_id!)}>查看原对话</button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  {episode.corrected_at && (
+                    <div className="episode-correction-note">
+                      最近纠错：{formatDateTime(episode.corrected_at)}{episode.correction_note ? ` · ${episode.correction_note}` : ""}
+                    </div>
+                  )}
+                </div>
+              )}
+            </article>
+          );
+        })}
+      </div>
     </section>
   );
 }
 
 function formatDate(value: number): string {
   return new Date(value * 1000).toLocaleDateString("zh-CN");
+}
+
+function formatDateTime(value: number): string {
+  return new Date(value * 1000).toLocaleString("zh-CN");
+}
+
+function formatDateRange(start: number, end: number): string {
+  const left = formatDate(start);
+  const right = formatDate(end);
+  return left === right ? left : `${left} 至 ${right}`;
 }

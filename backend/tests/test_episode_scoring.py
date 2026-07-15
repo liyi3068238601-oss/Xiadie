@@ -147,6 +147,21 @@ def test_group_size_and_seven_day_boundaries():
         episodes.score_group(edge, {"left": {"entity"}, "right": {"entity"}})
 
 
+def test_group_can_cross_calendar_dates_inside_seven_day_window():
+    entity = _entity()
+    first_time = 1_768_953_540.0  # 2026-01-20 23:59:00 UTC
+    second_time = first_time + 120
+    first = _fragment("跨日共同经历开始", first_time, entity["id"], emotion="joy")
+    second = _fragment("跨日共同经历继续", second_time, entity["id"], emotion="joy")
+    created = episodes.generate_candidates(now=second_time + 1)
+    candidate = next(
+        item for item in created
+        if {fragment["id"] for fragment in item["fragments"]} == {first["id"], second["id"]}
+    )
+    assert candidate["start_at"] < candidate["end_at"]
+    assert candidate["end_at"] - candidate["start_at"] == 120
+
+
 def test_no_shared_entity_creates_no_group():
     now = db.now()
     first_entity, second_entity = _entity(), _entity()

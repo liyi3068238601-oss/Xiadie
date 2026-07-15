@@ -582,6 +582,13 @@ class EpisodeDecisionIn(BaseModel):
     note: str = ""
 
 
+class EpisodeCorrectionIn(BaseModel):
+    title: Optional[str] = Field(default=None, max_length=80)
+    summary: Optional[str] = Field(default=None, max_length=600)
+    significance: Optional[int] = None
+    note: str = Field(default="", max_length=240)
+
+
 @app.get("/api/episode-candidates")
 def get_episode_candidates(status: str = "pending") -> list[dict]:
     if status not in ("pending", "accepted", "rejected"):
@@ -633,6 +640,20 @@ def reject_episode_candidate(candidate_id: str, body: EpisodeDecisionIn) -> dict
 @app.get("/api/episodes")
 def get_episodes() -> list[dict]:
     return episodes.list_episodes()
+
+
+@app.post("/api/episodes/{episode_id}/correct")
+def correct_episode(episode_id: str, body: EpisodeCorrectionIn) -> dict:
+    try:
+        episode = episodes.correct_episode(
+            episode_id, title=body.title, summary=body.summary,
+            significance=body.significance, note=body.note,
+        )
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
+    if not episode:
+        raise HTTPException(404, "Episode 不存在")
+    return episode
 
 
 @app.get("/api/episodes/{episode_id}")

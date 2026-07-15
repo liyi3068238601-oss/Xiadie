@@ -1150,3 +1150,166 @@ textarea {
 }
 .episode-item-head small { color: var(--text-faint); }
 .episode-item-detail { padding-top: 10px; color: var(--text-dim); }
+.episode-heading-actions,
+.episode-detail-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.episode-empty {
+  padding: 24px;
+  line-height: 1.7;
+}
+.episode-title-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.episode-title-group strong {
+  color: #eeeaff;
+  font-size: 14px;
+}
+.episode-status {
+  padding: 3px 8px;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+}
+.episode-status.verified {
+  color: #8ce9c1;
+  border-color: rgba(86, 214, 160, 0.28);
+  background: rgba(49, 105, 85, 0.14);
+}
+.episode-status.extractive {
+  color: #a8e6ff;
+  border-color: rgba(69, 199, 255, 0.24);
+  background: rgba(69, 199, 255, 0.08);
+}
+.episode-status.corrected {
+  color: #d6c2ff;
+  border-color: rgba(167, 139, 250, 0.3);
+  background: rgba(139, 92, 246, 0.1);
+}
+.episode-status.legacy {
+  color: #aaa3c5;
+  border-color: rgba(170, 163, 197, 0.22);
+  background: rgba(170, 163, 197, 0.06);
+}
+.episode-summary {
+  margin: 0 0 12px;
+  color: #d8d2ea;
+  line-height: 1.7;
+}
+.episode-audit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+.episode-audit-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(150, 120, 255, 0.12);
+  border-radius: 10px;
+  background: rgba(13, 9, 29, 0.34);
+}
+.episode-audit-grid span,
+.episode-audit-grid small {
+  color: var(--text-faint);
+  font-size: 10px;
+}
+.episode-audit-grid strong {
+  overflow: hidden;
+  color: #d8d2ea;
+  font-size: 12px;
+  text-overflow: ellipsis;
+}
+.episode-correction {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 14px;
+  border: 1px solid rgba(167, 139, 250, 0.22);
+  border-radius: 12px;
+  background: rgba(64, 42, 108, 0.14);
+}
+.episode-correction label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: #aaa3c5;
+  font-size: 11px;
+}
+.episode-correction input,
+.episode-correction textarea { width: 100%; }
+.episode-correction input[type="range"] { width: min(320px, 100%); }
+.episode-entities {
+  display: inline-flex;
+  margin-top: 12px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  color: #cfc9e4;
+  background: rgba(139, 92, 246, 0.1);
+  font-size: 11px;
+}
+.episode-source-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 18px 0 8px;
+  color: #d8d2ea;
+}
+.episode-source-heading span {
+  color: var(--text-faint);
+  font-size: 10px;
+}
+.episode-sources { display: grid; gap: 7px; }
+.episode-source {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid rgba(150, 120, 255, 0.1);
+  border-radius: 10px;
+  background: rgba(13, 9, 29, 0.32);
+}
+.episode-source-index {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  color: #bba8ee;
+  background: rgba(139, 92, 246, 0.14);
+  font-size: 10px;
+}
+.episode-source-body { min-width: 0; color: #cfc9e4; line-height: 1.5; }
+.episode-source-body small { display: block; margin-top: 4px; color: var(--text-faint); }
+.episode-source > button {
+  color: #a8e6ff;
+  font-size: 10px;
+}
+.episode-correction-note {
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-left: 2px solid rgba(167, 139, 250, 0.5);
+  color: #aaa3c5;
+  background: rgba(139, 92, 246, 0.06);
+  font-size: 10px;
+}
+@media (max-width: 760px) {
+  .episode-heading { flex-direction: column; }
+  .episode-heading-actions { justify-content: flex-start; }
+  .episode-item-head { flex-direction: column; }
+  .episode-audit-grid { grid-template-columns: 1fr; }
+  .episode-source { grid-template-columns: 24px minmax(0, 1fr); }
+  .episode-source > button { grid-column: 2; justify-self: start; }
+}
