@@ -65,14 +65,12 @@ def create_memory(
         from . import entities
 
         entities.auto_link_fragment(memory["id"], memory["content"], conn=conn)
-        from . import episodes
-
-        episodes.maybe_generate_for_fragment(memory["id"], conn=conn)
         _event(conn, "fragment", memory["id"], "created", None, memory, source)
         conn.commit()
-        return memory
     finally:
         conn.close()
+    _enqueue_episode_fragment(memory["id"])
+    return memory
 
 
 def update_memory(mid: str, **fields) -> dict | None:
@@ -306,9 +304,6 @@ def accept_candidate(
         from . import entities
 
         entities.auto_link_fragment(memory["id"], memory["content"], conn=conn)
-        from . import episodes
-
-        episodes.maybe_generate_for_fragment(memory["id"], conn=conn)
         resolved_at = db.now()
         conn.execute(
             "UPDATE memory_candidates SET status='accepted', resolved_memory_id=?, resolved_at=?"
@@ -319,9 +314,10 @@ def accept_candidate(
         _event(conn, "candidate", cid, "accepted", candidate, accepted, "user")
         _event(conn, "fragment", memory["id"], "created", None, memory, "candidate")
         conn.commit()
-        return {"candidate": accepted, "memory": memory}
     finally:
         conn.close()
+    _enqueue_episode_fragment(memory["id"])
+    return {"candidate": accepted, "memory": memory}
 
 
 def reject_candidate(cid: str, note: str = "") -> dict | None:
@@ -378,6 +374,16 @@ def _create_fragment(conn, **values) -> dict:
         ),
     )
     return _get_fragment(conn, mid)
+
+
+def _enqueue_episode_fragment(fragment_id: str) -> None:
+    """Fragment 已提交后才入队；调度失败不能反向破坏正式记忆。"""
+    try:
+        from . import episode_consolidator
+
+        episode_consolidator.enqueue_for_fragments([fragment_id], request_key=fragment_id)
+    except Exception:  # noqa: BLE001 - 后台整理不能破坏记忆写入
+        return
 
 
 def _get_fragment(conn, mid: str) -> dict | None:

@@ -365,6 +365,11 @@ def test_episode_candidate_generation_acceptance_and_audit():
         "/api/memories",
         json={"layer": "L1", "content": "晨曦计划完成模型列表自动获取"},
     ).json()
+    generated = client.post("/api/episode-candidates/generate")
+    assert generated.status_code == 200
+    assert generated.json()["queued"] is True
+    from app import episode_consolidator
+    asyncio.run(episode_consolidator.process_due(limit=20))
     candidates = client.get("/api/episode-candidates").json()
     candidate = next(
         item for item in candidates
@@ -400,6 +405,11 @@ def test_episode_candidate_rejects_and_requires_two_fragments():
     second = client.post(
         "/api/memories", json={"layer": "L1", "content": "晚风计划继续整理文档目录"}
     ).json()
+    generated = client.post("/api/episode-candidates/generate")
+    assert generated.status_code == 200
+    assert generated.json()["queued"] is True
+    from app import episode_consolidator
+    asyncio.run(episode_consolidator.process_due(limit=20))
     candidate = next(
         item for item in client.get("/api/episode-candidates").json()
         if {fragment["id"] for fragment in item["fragments"]} == {first["id"], second["id"]}

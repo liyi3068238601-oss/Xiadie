@@ -24,9 +24,11 @@ async def lifespan(app: FastAPI):
     db.init_db()
     await affect_observer_service.start_worker()
     await memory_observer_service.start_worker()
+    await episode_consolidator.start_worker()
     try:
         yield
     finally:
+        await episode_consolidator.stop_worker()
         await memory_observer_service.stop_worker()
         await affect_observer_service.stop_worker()
 
@@ -571,8 +573,8 @@ def get_episode_candidates(status: str = "pending") -> list[dict]:
 
 @app.post("/api/episode-candidates/generate")
 def generate_episode_candidates() -> dict:
-    created = episodes.generate_candidates()
-    return {"created": len(created), "candidates": created}
+    run = episode_consolidator.enqueue(trigger="manual")
+    return {"queued": True, "run": run}
 
 
 @app.post("/api/episode-candidates/{candidate_id}/accept")

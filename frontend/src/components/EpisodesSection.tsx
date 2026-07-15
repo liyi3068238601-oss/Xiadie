@@ -43,15 +43,9 @@ export function EpisodesSection({ onOpenSource }: Props) {
   const generate = async () => {
     setGenerating(true);
     try {
-      const result = await api.generateEpisodeCandidates();
-      const current = await refresh();
-      if (result.created) {
-        toast(`发现 ${result.created} 个新的 Episode 候选`);
-      } else if (current.pending.length) {
-        toast(`分析完成，已有 ${current.pending.length} 个候选等待确认`);
-      } else {
-        toast("分析完成，暂时没有可合并的经历");
-      }
+      await api.generateEpisodeCandidates();
+      await refresh();
+      toast("后台整理已安排，稍后可在这里查看结果");
     } catch (error: any) {
       toast(error.message || "候选生成失败");
     } finally {
@@ -118,7 +112,7 @@ export function EpisodesSection({ onOpenSource }: Props) {
           <div className="sub">把相关的零散记忆整理成一次完整经历，候选不会自动成为长期 Episode。</div>
         </div>
         <button className="btn ghost" disabled={generating} onClick={generate}>
-          {generating ? "分析中…" : "重新分析候选"}
+          {generating ? "安排中…" : "安排后台整理"}
         </button>
       </div>
 

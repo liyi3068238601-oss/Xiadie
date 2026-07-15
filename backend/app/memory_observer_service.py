@@ -6,7 +6,10 @@ import json
 import time
 from contextlib import suppress
 
-from . import companion_state, db, llm, memory, memory_observer as observer, memory_writer
+from . import (
+    companion_state, db, episode_consolidator, llm, memory,
+    memory_observer as observer, memory_writer,
+)
 from .persona import OBSERVER_PERSONA_SUMMARY
 
 MAX_INPUT_CHARS = 16_000
@@ -311,9 +314,10 @@ def _apply_candidate(
         output_chars = sum(len(item.get("text") or "") for item in completions)
     conn = db.connect()
     apply_error: str | None = None
+    fragment_ids: list[str] = []
     try:
         conn.execute("BEGIN IMMEDIATE")
-        memory_writer.apply_observation_in_transaction(
+        fragment_ids = memory_writer.apply_observation_in_transaction(
             conn, run=row, candidate=candidate,
             audit={
                 "input_chars": input_chars, "output_chars": output_chars,
@@ -342,6 +346,13 @@ def _apply_candidate(
                 if stored_audit else None
             ),
         )
+        return
+    try:
+        episode_consolidator.enqueue_for_fragments(
+            fragment_ids, request_key=f"memory-observer:{row['id']}"
+        )
+    except Exception:  # noqa: BLE001 - Episode 调度不能改变已提交的观察结果
+        pass
 
 
 def _mark_failure(

@@ -197,6 +197,15 @@ export interface MemoryEpisode {
   entities?: Array<{ id: string; name: string; entity_type: string }>;
   updated_at: number;
 }
+export interface EpisodeConsolidatorRun {
+  id: string;
+  trigger: "startup" | "idle" | "manual" | "fragment";
+  status: "queued" | "running" | "cancel_requested" | "cancelled" | "applied" |
+    "recovery_pending" | "exhausted" | "skipped";
+  group_count: number;
+  input_fragment_ids: string[];
+  result_episode_ids: string[];
+}
 export interface Task {
   id: string;
   title: string;
@@ -303,7 +312,7 @@ export const mergeEntity = (targetId: string, source_entity_id: string) =>
 export const listEpisodeCandidates = () =>
   j<EpisodeCandidate[]>("/api/episode-candidates?status=pending");
 export const generateEpisodeCandidates = () =>
-  j<{ created: number; candidates: EpisodeCandidate[] }>("/api/episode-candidates/generate", {
+  j<{ queued: boolean; run: EpisodeConsolidatorRun }>("/api/episode-candidates/generate", {
     method: "POST",
   });
 export const acceptEpisodeCandidate = (

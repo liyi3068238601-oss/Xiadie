@@ -35,7 +35,7 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; python -m pytest tests` | 通过：116 passed，1 warning |
+| 后端 | `cd backend; python -m pytest tests` | 通过：123 passed，1 warning |
 | 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：4 项情绪映射/记忆提示测试、TypeScript 检查及 Vite 生产构建成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 
@@ -100,6 +100,9 @@ npm.cmd start
 - Episode 自动化阶段 C.1 已完成：schema 13 新增独立 Consolidator run 与状态事件账本。
 - Episode 整理任务支持幂等排队、查询和协作式取消；当前地基不会调用模型或创建正式 Episode。
 - ADR-0013 固定两层短事务、来源集合指纹、单一正式归属、有限恢复和终态保护边界。
+- Episode 自动化阶段 C.2 已完成：Consolidator worker 支持原子认领、三次有限重试、陈旧任务恢复和取消安全点。
+- Fragment 正式提交后只做稳定幂等入队；应用启动和五分钟空闲窗口会唤醒整理，聊天事务不运行分组。
+- 旧“重新分析候选”按钮已改为后台排队；C.2 仍只产生兼容 pending 候选，不自动创建正式 Episode。
 
 ### 人格与内置背景知识（2026-07-14）
 
