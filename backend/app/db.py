@@ -685,6 +685,97 @@ MIGRATIONS = [
         ALTER TABLE memory_episodes ADD COLUMN corrected_at REAL;
         """,
     ),
+    (
+        18,
+        """
+        CREATE TABLE memory_sagas (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL CHECK(length(trim(title)) BETWEEN 1 AND 80),
+            summary TEXT NOT NULL CHECK(length(trim(summary)) BETWEEN 1 AND 1200),
+            theme TEXT NOT NULL DEFAULT '' CHECK(length(theme) <= 80),
+            start_at REAL NOT NULL,
+            end_at REAL NOT NULL CHECK(end_at >= start_at),
+            significance INTEGER NOT NULL DEFAULT 5 CHECK(significance BETWEEN 1 AND 10),
+            confidence REAL NOT NULL DEFAULT 0.7 CHECK(confidence BETWEEN 0 AND 1),
+            status TEXT NOT NULL DEFAULT 'active' CHECK(status IN (
+                'active','completed','archived','tombstone'
+            )),
+            source TEXT NOT NULL DEFAULT 'automatic' CHECK(source IN (
+                'automatic','manual','migration'
+            )),
+            grouping_fingerprint TEXT,
+            policy_version TEXT NOT NULL DEFAULT 'saga-v1',
+            source_episode_ids_json TEXT NOT NULL DEFAULT '[]',
+            source_hash TEXT NOT NULL DEFAULT '',
+            summary_status TEXT NOT NULL DEFAULT 'extractive_fallback' CHECK(summary_status IN (
+                'legacy_rule','extractive_fallback','model_validated','user_edited'
+            )),
+            summary_protocol_version TEXT NOT NULL DEFAULT 'saga-summary-v1',
+            summary_provider_id TEXT,
+            summary_model TEXT,
+            summary_evidence_json TEXT NOT NULL DEFAULT '[]',
+            completion_reason TEXT NOT NULL DEFAULT '',
+            completed_at REAL,
+            archived_at REAL,
+            tombstoned_at REAL,
+            correction_note TEXT NOT NULL DEFAULT '',
+            corrected_at REAL,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_memory_sagas_status_time
+            ON memory_sagas(status, end_at DESC);
+        CREATE UNIQUE INDEX idx_memory_sagas_grouping_unique
+            ON memory_sagas(grouping_fingerprint)
+            WHERE grouping_fingerprint IS NOT NULL;
+
+        CREATE TABLE memory_saga_episodes (
+            saga_id TEXT NOT NULL REFERENCES memory_sagas(id) ON DELETE CASCADE,
+            episode_id TEXT NOT NULL REFERENCES memory_episodes(id) ON DELETE RESTRICT,
+            position INTEGER NOT NULL CHECK(position >= 0),
+            role TEXT NOT NULL DEFAULT 'development' CHECK(role IN (
+                'anchor','development','resolution'
+            )),
+            added_at REAL NOT NULL,
+            removed_at REAL CHECK(removed_at IS NULL OR removed_at >= added_at),
+            PRIMARY KEY(saga_id, episode_id)
+        );
+        CREATE UNIQUE INDEX idx_saga_episode_one_active_saga
+            ON memory_saga_episodes(episode_id) WHERE removed_at IS NULL;
+        CREATE INDEX idx_memory_saga_episodes_order
+            ON memory_saga_episodes(saga_id, position, added_at);
+
+        CREATE TABLE memory_saga_entities (
+            saga_id TEXT NOT NULL REFERENCES memory_sagas(id) ON DELETE CASCADE,
+            entity_id TEXT NOT NULL REFERENCES memory_entities(id) ON DELETE RESTRICT,
+            relation TEXT NOT NULL DEFAULT 'involves',
+            confidence REAL NOT NULL DEFAULT 1.0 CHECK(confidence BETWEEN 0 AND 1),
+            source TEXT NOT NULL DEFAULT 'episode_derived' CHECK(source IN (
+                'episode_derived','manual'
+            )),
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            PRIMARY KEY(saga_id, entity_id)
+        );
+        CREATE INDEX idx_memory_saga_entities_entity
+            ON memory_saga_entities(entity_id, saga_id);
+
+        CREATE TABLE memory_saga_events (
+            id TEXT PRIMARY KEY,
+            saga_id TEXT NOT NULL REFERENCES memory_sagas(id) ON DELETE CASCADE,
+            action TEXT NOT NULL,
+            before_json TEXT,
+            after_json TEXT,
+            reason_code TEXT,
+            source TEXT NOT NULL DEFAULT 'system',
+            policy_version TEXT NOT NULL DEFAULT 'saga-v1',
+            metadata_json TEXT NOT NULL DEFAULT '{}',
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_memory_saga_events_saga
+            ON memory_saga_events(saga_id, created_at, id);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
