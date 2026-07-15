@@ -35,7 +35,7 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; python -m pytest tests` | 通过：75 passed，1 warning |
+| 后端 | `cd backend; python -m pytest tests` | 通过：93 passed，1 warning |
 | 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：2 项九簇映射测试、TypeScript 检查及 Vite 生产构建成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 
@@ -88,6 +88,9 @@ npm.cmd start
 - 记忆页已有实体列表与详情管理，以及 Episode 候选审核和详情查看；Saga 和星图尚未实现。
 - Episode 基础已实现：共同实体、7 天窗口和文本重合会产生 2~20 条 Fragment 的待确认候选。
 - 用户可修改 Episode 标题、摘要、重要度和 Fragment 选择；接受后继承来源与实体，拒绝和接受均可审计。
+- 自主记忆阶段 B.1 协议地基已完成：schema 10 增加 scope/kind/importance/观察器来源字段和 memory_observer_runs 空队列表。
+- 严格记忆观察协议已能校验证据消息、事实覆盖、枚举、数量、重要度上限、隐私与提示注入；当前不调用模型、不写任务或 Fragment。
+- 旧关键词候选和人工确认流程仍保持运行，待 B.2～B.4 完成后再安全切换，旧 pending 数据不会自动转正或丢失。
 
 ### 人格与内置背景知识（2026-07-14）
 

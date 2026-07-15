@@ -754,7 +754,7 @@ def test_schema_migration_is_idempotent():
         version = conn.execute(
             "SELECT value FROM schema_meta WHERE key = 'schema_version'"
         ).fetchone()["value"]
-        assert version == "9"
+        assert version == "10"
         assert conn.execute("SELECT COUNT(*) c FROM companion_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM affect_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM relationship_state").fetchone()["c"] <= 1
@@ -762,6 +762,17 @@ def test_schema_migration_is_idempotent():
             "SELECT COUNT(*) c FROM sqlite_master"
             " WHERE type='table' AND name='affect_observer_runs'"
         ).fetchone()["c"] == 1
+        assert conn.execute(
+            "SELECT COUNT(*) c FROM sqlite_master"
+            " WHERE type='table' AND name='memory_observer_runs'"
+        ).fetchone()["c"] == 1
+        fragment_columns = {
+            row["name"] for row in conn.execute("PRAGMA table_info(memory_fragments)").fetchall()
+        }
+        assert {
+            "scope", "kind", "importance", "emotion", "inner_reason", "observer_version",
+            "evidence_message_ids", "source_assistant_message_id", "idempotency_key",
+        } <= fragment_columns
         tables = {
             row["name"] for row in conn.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'memory_%'"

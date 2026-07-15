@@ -470,6 +470,70 @@ MIGRATIONS = [
             ON affect_observer_runs(source_session_id, source_assistant_message_id);
         """,
     ),
+    (
+        10,
+        """
+        ALTER TABLE memory_fragments ADD COLUMN scope TEXT NOT NULL DEFAULT 'world'
+            CHECK(scope IN ('user','self','relationship','world'));
+        ALTER TABLE memory_fragments ADD COLUMN kind TEXT NOT NULL DEFAULT 'fact'
+            CHECK(kind IN ('fact','preference','plan','experience','relationship','observation','correction'));
+        ALTER TABLE memory_fragments ADD COLUMN importance REAL NOT NULL DEFAULT 0.5
+            CHECK(importance BETWEEN 0 AND 1);
+        ALTER TABLE memory_fragments ADD COLUMN emotion TEXT NOT NULL DEFAULT '';
+        ALTER TABLE memory_fragments ADD COLUMN inner_reason TEXT NOT NULL DEFAULT '';
+        ALTER TABLE memory_fragments ADD COLUMN observer_version TEXT NOT NULL DEFAULT 'legacy';
+        ALTER TABLE memory_fragments ADD COLUMN evidence_message_ids TEXT NOT NULL DEFAULT '[]';
+        ALTER TABLE memory_fragments ADD COLUMN source_assistant_message_id TEXT
+            REFERENCES messages(id) ON DELETE SET NULL;
+        ALTER TABLE memory_fragments ADD COLUMN idempotency_key TEXT NOT NULL DEFAULT '';
+
+        UPDATE memory_fragments
+        SET importance = CASE layer WHEN 'L0' THEN 0.90 WHEN 'L1' THEN 0.65 ELSE 0.50 END,
+            evidence_message_ids = CASE
+                WHEN source_message_id IS NULL THEN '[]'
+                ELSE json_array(source_message_id)
+            END,
+            inner_reason = '迁移自旧版记忆，尚未由自主观察器重新评估';
+
+        CREATE UNIQUE INDEX idx_memory_fragments_observer_idempotency
+            ON memory_fragments(idempotency_key) WHERE idempotency_key != '';
+        CREATE INDEX idx_memory_fragments_scope_kind
+            ON memory_fragments(status, enabled, scope, kind, importance DESC);
+
+        CREATE TABLE memory_observer_runs (
+            id TEXT PRIMARY KEY,
+            idempotency_key TEXT NOT NULL UNIQUE,
+            source_session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            source_user_message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+            source_assistant_message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+            provider_id TEXT,
+            model TEXT NOT NULL,
+            status TEXT NOT NULL CHECK(status IN (
+                'queued','running','validated','applied','recovery_pending','exhausted','skipped'
+            )),
+            candidate_json TEXT,
+            warnings_json TEXT NOT NULL DEFAULT '[]',
+            error_code TEXT,
+            attempt_count INTEGER NOT NULL DEFAULT 0 CHECK(attempt_count BETWEEN 0 AND 3),
+            max_attempts INTEGER NOT NULL DEFAULT 3 CHECK(max_attempts BETWEEN 1 AND 3),
+            next_attempt_at REAL,
+            last_attempt_at REAL,
+            applied_fragment_ids_json TEXT NOT NULL DEFAULT '[]',
+            applied_at REAL,
+            input_chars INTEGER NOT NULL DEFAULT 0 CHECK(input_chars >= 0),
+            output_chars INTEGER NOT NULL DEFAULT 0 CHECK(output_chars >= 0),
+            prompt_tokens INTEGER,
+            completion_tokens INTEGER,
+            protocol_version TEXT NOT NULL,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_memory_observer_runs_recovery
+            ON memory_observer_runs(status, next_attempt_at, updated_at);
+        CREATE INDEX idx_memory_observer_runs_source
+            ON memory_observer_runs(source_session_id, source_assistant_message_id);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
