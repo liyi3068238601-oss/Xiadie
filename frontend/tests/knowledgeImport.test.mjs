@@ -106,3 +106,14 @@ test("knowledge transmission policy and provider location stay explicit", async 
   assert.match(api, /transmission_policy|policy_revision|execution_location|location_revision/);
   assert.match(api, /updateKnowledgeTransmissionPolicy/);
 });
+
+test("knowledge shadow recall diagnostics are honest and contain no query body", async () => {
+  const [page, api] = await Promise.all([
+    readFile(new URL("../src/components/FilesPage.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/api.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(page, /影子召回判断（不会改变回答或发送资料）/);
+  assert.match(page, /建议召回|需要确认|跳过/);
+  assert.match(api, /KnowledgeRecallDecision|listKnowledgeRecallDecisions|query_fingerprint/);
+  assert.doesNotMatch(api, /KnowledgeRecallDecision[\s\S]{0,900}\bquery:\s*string/);
+});

@@ -217,11 +217,18 @@ def hybrid_search(
     if len(tag_filters) > MAX_TAG_FILTERS or any(len(tag) > 40 for tag in tag_filters):
         raise SearchError("knowledge_tag_filter_invalid", "标签筛选最大 10 项且每项最大 40 字符")
     lexical = {"results": [], "result_count": 0}
+    lexical_available = mode != "vector"
     if mode != "vector":
-        lexical = search(
-            query, collection_id=collection_id, document_ids=document_ids, tags=tags,
-            limit=MAX_LIMIT, context_window=context_window, max_chars=MAX_RESULT_CHARS,
-        )
+        try:
+            lexical = search(
+                query, collection_id=collection_id, document_ids=document_ids, tags=tags,
+                limit=MAX_LIMIT, context_window=context_window, max_chars=MAX_RESULT_CHARS,
+            )
+        except SearchError as error:
+            # 没有 FTS 词项时仍允许本地 dense 候选；其他输入/过滤错误继续显式失败。
+            if error.code != "knowledge_query_has_no_terms" or mode == "fts":
+                raise
+            lexical_available = False
     vector = {"results": [], "available": False, "error_code": None}
     if mode != "fts":
         try:
@@ -256,6 +263,8 @@ def hybrid_search(
         used_chars += len(item["content"])
     retrieval_mode = "fts"
     if mode == "vector":
+        retrieval_mode = "vector" if vector["available"] else "fts_unavailable"
+    elif not lexical_available:
         retrieval_mode = "vector" if vector["available"] else "fts_unavailable"
     elif vector["available"]:
         retrieval_mode = "hybrid"

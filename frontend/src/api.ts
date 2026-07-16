@@ -323,6 +323,29 @@ export interface KnowledgeRetrievalAudit {
   created_at: number;
   finished_at?: number | null;
 }
+export interface KnowledgeRecallDecision {
+  id: string;
+  protocol_version: string;
+  recall_mode: "explicit" | "smart";
+  shadow: boolean;
+  action: "skip" | "retrieve" | "ask";
+  reason_code: string;
+  confidence_band: "low" | "medium" | "high";
+  query_fingerprint: string;
+  policy_fingerprint: string;
+  candidate_count: number;
+  eligible_count: number;
+  injected_count: number;
+  retrieval_mode: "none" | "fts" | "vector" | "hybrid" | "fts_unavailable";
+  vector_available: boolean;
+  vector_error_code?: string | null;
+  provider_location: "local" | "remote" | "unknown";
+  provider_location_revision: number;
+  latency_ms: number;
+  status: "queued" | "completed" | "failed" | "timed_out";
+  created_at: number;
+  finished_at?: number | null;
+}
 export interface KnowledgeImportEvent {
   id: string;
   action: string;
@@ -673,6 +696,8 @@ export const getKnowledgeDeletionRun = (id: string) =>
   j<KnowledgeDeletionRun>(`/api/knowledge/deletion-runs/${id}`);
 export const listKnowledgeRetrievals = (limit = 30) =>
   j<KnowledgeRetrievalAudit[]>(`/api/knowledge/retrievals?limit=${limit}`);
+export const listKnowledgeRecallDecisions = (limit = 30) =>
+  j<KnowledgeRecallDecision[]>(`/api/knowledge/recall-decisions?limit=${limit}`);
 export async function importKnowledgeFile(
   file: File, sensitivity: "normal" | "sensitive" = "normal",
 ): Promise<KnowledgeImportResult> {

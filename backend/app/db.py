@@ -1586,6 +1586,45 @@ MIGRATIONS = [
         END;
         """,
     ),
+    (
+        36,
+        """
+        CREATE TABLE knowledge_recall_decisions (
+            id TEXT PRIMARY KEY,
+            session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            user_message_id TEXT REFERENCES messages(id) ON DELETE SET NULL,
+            protocol_version TEXT NOT NULL,
+            recall_mode TEXT NOT NULL CHECK(recall_mode IN ('explicit','smart')),
+            shadow INTEGER NOT NULL DEFAULT 1 CHECK(shadow IN (0,1)),
+            action TEXT NOT NULL CHECK(action IN ('skip','retrieve','ask')),
+            reason_code TEXT NOT NULL,
+            confidence_band TEXT NOT NULL CHECK(confidence_band IN ('low','medium','high')),
+            query_sha256 TEXT NOT NULL CHECK(length(query_sha256)=64),
+            candidate_count INTEGER NOT NULL DEFAULT 0 CHECK(candidate_count >= 0),
+            eligible_count INTEGER NOT NULL DEFAULT 0 CHECK(eligible_count >= 0),
+            injected_count INTEGER NOT NULL DEFAULT 0 CHECK(injected_count >= 0),
+            retrieval_mode TEXT NOT NULL DEFAULT 'none'
+                CHECK(retrieval_mode IN ('none','fts','vector','hybrid','fts_unavailable')),
+            vector_available INTEGER NOT NULL DEFAULT 0 CHECK(vector_available IN (0,1)),
+            vector_error_code TEXT,
+            policy_snapshot_sha256 TEXT NOT NULL CHECK(length(policy_snapshot_sha256)=64),
+            provider_id TEXT,
+            provider_location TEXT NOT NULL DEFAULT 'unknown'
+                CHECK(provider_location IN ('local','remote','unknown')),
+            provider_location_revision INTEGER NOT NULL DEFAULT 1
+                CHECK(provider_location_revision >= 1),
+            latency_ms INTEGER NOT NULL DEFAULT 0 CHECK(latency_ms >= 0),
+            status TEXT NOT NULL DEFAULT 'queued'
+                CHECK(status IN ('queued','completed','failed','timed_out')),
+            created_at REAL NOT NULL,
+            finished_at REAL
+        );
+        CREATE INDEX idx_knowledge_recall_decisions_session
+            ON knowledge_recall_decisions(session_id,created_at DESC,id DESC);
+        CREATE INDEX idx_knowledge_recall_decisions_status
+            ON knowledge_recall_decisions(status,created_at,id);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
@@ -1656,6 +1695,10 @@ def init_db() -> None:
         conn.execute(
             "INSERT OR IGNORE INTO settings(key, value)"
             " VALUES('knowledge_local_embedding_enabled', '1')"
+        )
+        conn.execute(
+            "INSERT OR IGNORE INTO settings(key, value)"
+            " VALUES('knowledge_shadow_recall_enabled', '1')"
         )
         conn.commit()
     finally:

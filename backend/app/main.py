@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 
 from . import (
     archivist, archivist_worker, companion_state, db, entities, episode_consolidator, episode_summary_service,
-    episodes, knowledge, knowledge_context, knowledge_embeddings, knowledge_management, knowledge_policy, knowledge_search, knowledge_worker, llm, lore, memory, memory_conflicts, saga_consolidator, saga_lifecycle, saga_summary,
+    episodes, knowledge, knowledge_context, knowledge_embeddings, knowledge_management, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search, knowledge_worker, llm, lore, memory, memory_conflicts, saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, slow_lifecycle,
 )
 from . import memory_observer_service
@@ -34,9 +34,11 @@ async def lifespan(app: FastAPI):
     await saga_consolidator.start_worker()
     await archivist_worker.start_worker()
     await knowledge_worker.start_worker()
+    knowledge_recall_service.start_worker()
     try:
         yield
     finally:
+        knowledge_recall_service.stop_worker()
         await knowledge_worker.stop_worker()
         await archivist_worker.stop_worker()
         await saga_consolidator.stop_worker()
@@ -322,6 +324,12 @@ async def chat(body: ChatIn) -> StreamingResponse:
         conn.close()
 
     provider, model = _current_model()
+    if not body.regenerate and uid:
+        # 只在后台记录影子判断；绝不修改本轮 messages 或 knowledge_block。
+        knowledge_recall.enqueue(
+            session_id=body.session_id, user_message_id=uid,
+            user_text=body.content, provider=provider,
+        )
 
     async def gen():
         used_memories = recalled_memories
@@ -656,6 +664,37 @@ def get_knowledge_retrievals(session_id: Optional[str] = None,
         row["session_available"] = bool(row["session_available"])
         row["query_fingerprint"] = row.pop("query_sha256")[:12]
     return rows
+
+
+class KnowledgeRecallSettingsIn(BaseModel):
+    shadow_enabled: bool
+
+
+@app.get("/api/knowledge/recall/settings")
+def get_knowledge_recall_settings() -> dict:
+    return knowledge_recall.settings()
+
+
+@app.patch("/api/knowledge/recall/settings")
+def patch_knowledge_recall_settings(body: KnowledgeRecallSettingsIn) -> dict:
+    return knowledge_recall.set_shadow_enabled(body.shadow_enabled)
+
+
+@app.get("/api/knowledge/recall-decisions")
+def get_knowledge_recall_decisions(
+    session_id: Optional[str] = None, limit: int = 30,
+) -> list[dict]:
+    if limit < 1 or limit > 100:
+        raise HTTPException(400, "召回判断数量须为 1 到 100")
+    return knowledge_recall.list_decisions(session_id=session_id, limit=limit)
+
+
+@app.get("/api/knowledge/recall-decisions/{decision_id}")
+def get_knowledge_recall_decision(decision_id: str) -> dict:
+    result = knowledge_recall.get_decision(decision_id)
+    if not result:
+        raise HTTPException(404, "召回判断不存在")
+    return result
 
 
 class KnowledgeSearchIn(BaseModel):

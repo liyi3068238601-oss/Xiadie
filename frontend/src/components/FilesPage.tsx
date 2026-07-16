@@ -47,6 +47,7 @@ export function FilesPage() {
   const [tagDraft, setTagDraft] = useState("");
   const [actionBusy, setActionBusy] = useState<string | null>(null);
   const [audits, setAudits] = useState<api.KnowledgeRetrievalAudit[] | null>(null);
+  const [recallDecisions, setRecallDecisions] = useState<api.KnowledgeRecallDecision[] | null>(null);
   const [embeddingStatus, setEmbeddingStatus] = useState<api.KnowledgeEmbeddingStatus | null>(null);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -244,10 +245,15 @@ export function FilesPage() {
   async function toggleAudits() {
     if (audits !== null) {
       setAudits(null);
+      setRecallDecisions(null);
       return;
     }
     try {
-      setAudits(await api.listKnowledgeRetrievals());
+      const [retrievals, decisions] = await Promise.all([
+        api.listKnowledgeRetrievals(), api.listKnowledgeRecallDecisions(),
+      ]);
+      setAudits(retrievals);
+      setRecallDecisions(decisions);
     } catch (error: any) {
       toast(error.message || "检索记录加载失败");
     }
@@ -405,6 +411,23 @@ export function FilesPage() {
               <span>知识 {audit.knowledge_tokens}/{audit.knowledge_token_budget} token</span>
               <span>指纹 {audit.query_fingerprint}</span>
               {!audit.session_available && <span className="danger-text">原会话已删除</span>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {recallDecisions !== null && (
+        <div className="glass knowledge-audits knowledge-shadow-audits">
+          <div className="card-title">影子召回判断（不会改变回答或发送资料）</div>
+          {recallDecisions.length === 0 ? <div className="sub">还没有影子判断记录</div> : recallDecisions.map((decision) => (
+            <div className="knowledge-audit-row knowledge-shadow-row" key={decision.id}>
+              <span>{new Date(decision.created_at * 1000).toLocaleString("zh-CN")}</span>
+              <span className={`shadow-action action-${decision.action}`}>
+                {decision.action === "retrieve" ? "建议召回" : decision.action === "ask" ? "需要确认" : "跳过"}
+              </span>
+              <span>{decision.reason_code} · {decision.confidence_band}</span>
+              <span>{decision.candidate_count}/{decision.eligible_count} 候选 · {decision.retrieval_mode}</span>
+              <span>{decision.latency_ms} ms · 指纹 {decision.query_fingerprint}</span>
             </div>
           ))}
         </div>

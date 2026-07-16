@@ -6,7 +6,7 @@ import sqlite3
 import pytest
 from fastapi.testclient import TestClient
 
-from app import db, knowledge, knowledge_search, knowledge_worker
+from app import db, knowledge, knowledge_embeddings, knowledge_search, knowledge_worker
 from app.main import app
 
 client = TestClient(
@@ -171,6 +171,21 @@ def test_search_budget_and_query_validation_are_bounded_and_syntax_safe():
         knowledge_search.search("valid", document_ids=[str(i) for i in range(21)])
     with pytest.raises(knowledge_search.SearchError):
         knowledge_search.search("valid", tags=[str(i) for i in range(11)])
+
+
+def test_hybrid_search_allows_vector_only_when_fts_has_no_terms(monkeypatch):
+    monkeypatch.setattr(knowledge_embeddings, "search", lambda *_a, **_k: {
+        "results": [], "available": True, "error_code": None,
+    })
+    result = knowledge_search.hybrid_search("🦋🦋")
+    assert result["retrieval_mode"] == "vector"
+    assert result["vector_available"] is True
+
+    monkeypatch.setattr(knowledge_embeddings, "search", lambda *_a, **_k: {
+        "results": [], "available": False, "error_code": "embedding_unavailable",
+    })
+    degraded = knowledge_search.hybrid_search("🦋🦋")
+    assert degraded["retrieval_mode"] == "fts_unavailable"
 
 
 def test_cancel_during_index_preparation_cleans_fts_chunks_and_artifact(monkeypatch):
