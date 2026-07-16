@@ -1,8 +1,8 @@
 # 遐蝶自主记忆系统设计书（零基础说明版）
 
-版本：v0.22
+版本：v0.23
 
-状态：设计基线；阶段 A～D 与 E.1～E.2 已完成，阶段 E.3～F 待施工
+状态：设计基线；阶段 A～D 与 E.1～E.3 已完成，阶段 E.4～F 待施工
 
 主要参考：[MemoryConstellations](https://github.com/ClaraShafiq/MemoryConstellations)
 适用对象：项目所有者、第一次接触 Agent 的开发者、后续接手实现的 Codex
@@ -956,7 +956,7 @@ POST /api/memory-maintenance/run
 | B 自主 Fragment 写入 | 已完成 | schema 12、原子自主写入、限频提示、详情/纠错界面及旧候选兼容策略均已提交 |
 | C Episode 自动化 | 已完成 | schema 13～17、自动整理、事实校验、原子应用和正式界面均已提交 |
 | D Saga | 已完成 | schema 18～22、评分、事实摘要、原子应用、生命周期、纠错、API、正式界面与总验收均已提交 |
-| E Archivist | E.2 已完成 | schema 23、真实注入计数、纯保留评分和跨层保护识别已提交；尚未启动维护任务 |
+| E Archivist | E.3 已完成 | schema 24、精确状态转换、三类恢复、事务审计和 FTS 同步已提交；尚未启动维护 worker |
 | F 用户文件知识库 | 未开始 | 当前仅有界面占位 |
 
 ### 阶段 A：人格与背景分离（本轮已完成）
@@ -1362,15 +1362,29 @@ duplicate penalty 的纯评分输入和上限已完成；实际重复关系识�
 
 #### 阶段 E.3：Fragment 精确转换与索引同步
 
-- [ ] 实现 active → cooling 的 14 天最短年龄、`<0.45` 分数和保护守卫。
-- [ ] 实现 cooling → frozen 的额外 30 天、`<0.30` 分数和未完成内容守卫。
-- [ ] 实现 cooling/frozen 在强相关真实注入、新证据或人工操作下恢复 active。
-- [ ] 状态、时间、revision 和事件在同一个 `BEGIN IMMEDIATE` 短事务提交。
-- [ ] 每次事件保存旧/新状态、分数分量、原因、来源和策略版本。
-- [ ] cooling/frozen 退出普通召回；frozen 派生索引可安全移除并在恢复时重建。
-- [ ] Archivist 的目标状态集合在代码层和数据库层都排除 tombstone。
-- [ ] 用户删除/隐私清除继续走独立路径，并按第 14.7 节退出索引和清理正文。
-- [ ] 增加 14/30/90 天、恢复、保护、并发 revision、回滚和永不自动 tombstone 测试。
+- [x] 实现 active → cooling 的 14 天最短年龄、`<0.45` 分数和保护守卫。
+- [x] 实现 cooling → frozen 的额外 30 天、`<0.30` 分数和未完成内容守卫。
+- [x] 实现 cooling/frozen 在强相关真实注入、新证据或人工操作下恢复 active。
+- [x] 状态、时间、revision 和事件在同一个 `BEGIN IMMEDIATE` 短事务提交。
+- [x] 每次事件保存旧/新状态、分数分量、原因、来源和策略版本。
+- [x] cooling/frozen 退出普通召回；frozen 派生索引可安全移除并在恢复时重建。
+- [x] Archivist 的目标状态集合在代码层和数据库层都排除 tombstone。
+- [x] 用户删除/隐私清除继续走独立路径，并按第 14.7 节退出索引和清理正文。
+- [x] 增加 14/30/90 天、恢复、保护、并发 revision、回滚和永不自动 tombstone 测试。
+
+E.3 开工前审查结论：E.2 review 全项通过且没有缺陷。五条方向全部采纳：转换使用
+`BEGIN IMMEDIATE` 原子写入状态、revision 和事件；冻结要求 cooling 额外满 30 天且分数 `<0.30`；
+恢复区分真实召回、新证据和用户操作；active Episode 与 active Saga anchor 均有明确保护测试；frozen
+退出 FTS 并在恢复时重建。review 示例中的普通 `DELETE FROM ..._fts` 不适用于当前 external-content
+FTS5，实际使用 FTS5 特殊 delete 命令，并用 schema 24 的 `fts_indexed` 与状态感知触发器保持同步。
+
+自动评估一次最多前进一步，不会 active 直接跳到 frozen；90 天只是稳定性回归边界，不是自动删除期限。
+强相关召回先计算“若本轮真实注入一次”的保留分，达到 `0.50` 才成为恢复候选；恢复与真实召回记账在
+同一事务完成，事务失败就从最终提示词移除该候选。普通 PATCH 禁止修改状态，用户恢复使用专用生命周期
+端点和乐观 revision。用户删除写 tombstone 事件并退出索引；`privacy=true` 还会清空正文、标签、内部理由、
+情绪、证据与来源 ID，并净化旧 Fragment 审计正文；即使先普通删除，之后仍可执行隐私清除。13 项 E.3
+生命周期专项、E.1～E.3 共 27 项专项、后端 212 项测试全部通过；前端 13 项、生产构建和 Electron
+检查沿用本阶段最终验收结果。
 
 #### 阶段 E.4：Archivist worker、调度与预算
 

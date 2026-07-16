@@ -982,6 +982,36 @@ MIGRATIONS = [
             ON memory_lifecycle_events(fragment_id, created_at, id);
         """,
     ),
+    (
+        24,
+        """
+        ALTER TABLE memory_fragments ADD COLUMN fts_indexed INTEGER NOT NULL DEFAULT 1
+            CHECK(fts_indexed IN (0,1));
+
+        DROP TRIGGER IF EXISTS memory_fragments_fts_insert;
+        DROP TRIGGER IF EXISTS memory_fragments_fts_delete;
+        DROP TRIGGER IF EXISTS memory_fragments_fts_update;
+
+        CREATE TRIGGER memory_fragments_fts_insert
+        AFTER INSERT ON memory_fragments WHEN new.fts_indexed=1 BEGIN
+            INSERT INTO memory_fragments_fts(rowid,content,tags)
+            VALUES(new.rowid,new.content,new.tags);
+        END;
+        CREATE TRIGGER memory_fragments_fts_delete
+        AFTER DELETE ON memory_fragments WHEN old.fts_indexed=1 BEGIN
+            INSERT INTO memory_fragments_fts(memory_fragments_fts,rowid,content,tags)
+            VALUES('delete',old.rowid,old.content,old.tags);
+        END;
+        CREATE TRIGGER memory_fragments_fts_update
+        AFTER UPDATE OF content,tags ON memory_fragments
+        WHEN old.fts_indexed=1 AND new.fts_indexed=1 BEGIN
+            INSERT INTO memory_fragments_fts(memory_fragments_fts,rowid,content,tags)
+            VALUES('delete',old.rowid,old.content,old.tags);
+            INSERT INTO memory_fragments_fts(rowid,content,tags)
+            VALUES(new.rowid,new.content,new.tags);
+        END;
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

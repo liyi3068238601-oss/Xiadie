@@ -35,7 +35,7 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; python -m pytest tests` | 通过：198 passed，1 warning |
+| 后端 | `cd backend; python -m pytest tests` | 通过：212 passed，1 warning |
 | 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：13 项情绪映射、运行可靠性、记忆、Episode 与 Saga 展示契约测试；TypeScript 检查及 Vite 生产构建成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 
@@ -139,6 +139,10 @@ npm.cmd start
 - `fragment-retention-v1` 以纯函数输出 importance、饱和召回、180 天 recency、关系意义、active Saga、confidence 和重复惩罚七个分量；不读取即时情绪轴。
 - 保护快照用一个 SQL 识别正式 Episode、active Saga 和 anchor，并明确保护 L0、稳定边界、当前纠错事实、活跃 Saga 锚点和未完成计划。
 - E.2 仍不执行自动冷却、冻结或恢复；duplicate penalty 已有评分输入与上限，实际重复/冲突识别留给 E.6。
+- Archivist 阶段 E.3 已完成 Fragment 精确转换：active 满 14 天且分数 `<0.45` 才可 cooling；cooling 额外满 30 天且分数 `<0.30` 才可 frozen，保护对象不会自动降温。
+- schema 24 增加 `fts_indexed` 并使用状态感知 FTS 触发器；frozen 会原子退出派生索引，强相关真实召回、新证据或用户操作可恢复 active 并重建索引。
+- 每次转换与 revision、进入时间、评分分量及无正文事件在同一短事务提交；Archivist 永不自动 tombstone，删除与隐私清除仍是独立用户路径。
+- E.3 只提供确定性评估/恢复能力，定时扫描、任务账本和预算控制留给 E.4 worker。
 
 ### 人格与内置背景知识（2026-07-14）
 

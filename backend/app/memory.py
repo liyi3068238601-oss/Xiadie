@@ -74,7 +74,7 @@ def create_memory(
 
 
 def update_memory(mid: str, **fields) -> dict | None:
-    allowed = {"layer", "content", "tags", "enabled", "status"}
+    allowed = {"layer", "content", "tags", "enabled"}
     sets = {key: value for key, value in fields.items() if key in allowed and value is not None}
     if not sets:
         return get_memory(mid)
@@ -118,19 +118,63 @@ def correct_memory(mid: str, content: str, note: str = "") -> dict | None:
         conn.close()
 
 
-def delete_memory(mid: str) -> bool:
+def delete_memory(mid: str, *, privacy: bool = False) -> bool:
     """使用墓碑状态保留审计链；对列表和召回表现为已删除。"""
     conn = db.connect()
     try:
+        conn.execute("BEGIN IMMEDIATE")
         before = _get_fragment(conn, mid)
         if not before:
+            conn.rollback()
             return False
+        if before["status"] == "tombstone" and not privacy:
+            conn.commit()
+            return True
+        if int(before.get("fts_indexed", 1)) == 1:
+            conn.execute(
+                "INSERT INTO memory_fragments_fts(memory_fragments_fts,rowid,content,tags)"
+                " SELECT 'delete',rowid,content,tags FROM memory_fragments WHERE id=?",
+                (mid,),
+            )
+        now = db.now()
+        revision = int(before.get("lifecycle_revision") or 0) + 1
+        if privacy:
+            conn.execute(
+                "UPDATE memory_fragments SET status='tombstone',enabled=0,fts_indexed=0,"
+                "content='',tags='',inner_reason='',emotion='',evidence_message_ids='[]',"
+                "source_session_id=NULL,source_message_id=NULL,source_assistant_message_id=NULL,"
+                "lifecycle_policy_version='fragment-retention-v1',lifecycle_revision=?,updated_at=?"
+                " WHERE id=?", (revision, now, mid),
+            )
+            conn.execute(
+                "UPDATE memory_events SET before_json=NULL,after_json=?"
+                " WHERE object_type='fragment' AND object_id=?",
+                (json.dumps({"id": mid, "status": "tombstone"}), mid),
+            )
+        else:
+            conn.execute(
+                "UPDATE memory_fragments SET status='tombstone',enabled=0,fts_indexed=0,"
+                "lifecycle_policy_version='fragment-retention-v1',lifecycle_revision=?,updated_at=?"
+                " WHERE id=?", (revision, now, mid),
+            )
         conn.execute(
-            "UPDATE memory_fragments SET status='tombstone', enabled=0, updated_at=? WHERE id=?",
-            (db.now(), mid),
+            "INSERT INTO memory_lifecycle_events("
+            "id,fragment_id,revision,from_status,to_status,retention_score,"
+            "score_components_json,reason_code,source,policy_version,created_at)"
+            " VALUES(?,?,?,?, 'tombstone',NULL,'{}',?,'user',"
+            "'fragment-retention-v1',?)",
+            (
+                db.new_id(), mid, revision, before["status"],
+                "privacy_cleared_by_user" if privacy else "deleted_by_user", now,
+            ),
         )
         after = _get_fragment(conn, mid)
-        _event(conn, "fragment", mid, "deleted", before, after, "user")
+        if privacy:
+            minimal_before = {"id": mid, "status": before["status"]}
+            minimal_after = {"id": mid, "status": "tombstone", "privacy_cleared": True}
+            _event(conn, "fragment", mid, "privacy_cleared", minimal_before, minimal_after, "user")
+        else:
+            _event(conn, "fragment", mid, "deleted", before, after, "user")
         conn.commit()
         return True
     finally:
@@ -194,6 +238,20 @@ def build_digest(query: str) -> tuple[str, list[dict]]:
     if db.get_setting("memory_enabled", "1") != "1":
         return "", []
     memories = search_memories(query, MAX_INJECT)
+    if len(memories) < MAX_INJECT:
+        from . import archivist
+
+        seen = {item["id"] for item in memories}
+        memories.extend(
+            item for item in archivist.find_reactivation_candidates(
+                query, limit=MAX_INJECT - len(memories)
+            ) if item["id"] not in seen
+        )
+    return render_digest(memories)
+
+
+def render_digest(memories: list[dict]) -> tuple[str, list[dict]]:
+    """只格式化已经选定的记忆；供恢复记账失败时安全移除非 active 候选。"""
     if not memories:
         return "", []
     lines = []

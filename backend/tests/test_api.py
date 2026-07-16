@@ -187,7 +187,7 @@ def test_auto_memory_creates_traceable_candidate_then_accepts():
 
 
 def test_sensitive_memory_never_enters_chat_digest():
-    from app import memory
+    from app import db, memory
 
     item = memory.create_memory(
         "L1",
@@ -243,7 +243,7 @@ def test_memory_source_becomes_unavailable_after_session_deleted():
 
 
 def test_fts_retrieval_only_returns_relevant_active_enabled_memories():
-    from app import memory
+    from app import db, memory
 
     relevant = client.post(
         "/api/memories", json={"layer": "L1", "content": "用户的猫叫月光，喜欢趴在窗边"}
@@ -269,9 +269,15 @@ def test_fts_retrieval_only_returns_relevant_active_enabled_memories():
     assert relevant["id"] not in {
         item["id"] for item in memory.search_memories("猫叫月光")
     }
-    client.patch(
-        f"/api/memories/{relevant['id']}", json={"enabled": True, "status": "frozen"}
-    )
+    conn = db.connect()
+    try:
+        conn.execute(
+            "UPDATE memory_fragments SET enabled=1,status='frozen',frozen_at=? WHERE id=?",
+            (db.now(), relevant["id"]),
+        )
+        conn.commit()
+    finally:
+        conn.close()
     assert relevant["id"] not in {
         item["id"] for item in memory.search_memories("猫叫月光")
     }
@@ -883,7 +889,7 @@ def test_schema_migration_is_idempotent():
         version = conn.execute(
             "SELECT value FROM schema_meta WHERE key = 'schema_version'"
         ).fetchone()["value"]
-        assert version == "23"
+        assert version == "24"
         assert conn.execute("SELECT COUNT(*) c FROM companion_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM affect_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM relationship_state").fetchone()["c"] <= 1
@@ -942,7 +948,7 @@ def test_schema_migration_is_idempotent():
             "scope", "kind", "importance", "emotion", "inner_reason", "observer_version",
             "evidence_message_ids", "source_assistant_message_id", "idempotency_key",
             "last_recalled_at", "recall_count", "cooling_since", "frozen_at",
-            "lifecycle_policy_version", "lifecycle_revision",
+            "lifecycle_policy_version", "lifecycle_revision", "fts_indexed",
         } <= fragment_columns
         tables = {
             row["name"] for row in conn.execute(

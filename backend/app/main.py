@@ -255,35 +255,46 @@ async def chat(body: ChatIn) -> StreamingResponse:
     provider, model = _current_model()
 
     async def gen():
-        # 先发一个元事件：模型信息 + 是否命中记忆（前端展示"已参考记忆"）
-        yield _sse(
-            "meta",
-            {
-                "model": model,
-                "memory_used": bool(recalled_memories),
-                "memory_count": len(recalled_memories),
-                "memory_refs": [
-                    {
-                        "id": item["id"],
-                        "layer": item["layer"],
-                        "source_session_id": item.get("source_session_id"),
-                        "source_message_id": item.get("source_message_id"),
-                    }
-                    for item in recalled_memories
-                ],
-            },
-        )
+        used_memories = recalled_memories
         collected: list[str] = []
         try:
-            if recalled_memories and uid:
+            if used_memories and uid:
                 try:
-                    archivist.record_injected_memories(
-                        recalled_memories,
+                    recorded_ids = set(archivist.record_injected_memories(
+                        used_memories,
                         context_key=archivist.recall_context_key(body.session_id, uid),
                         source_session_id=body.session_id,
-                    )
+                    ))
                 except Exception:  # noqa: BLE001 - 召回审计失败不能让聊天失败
-                    pass
+                    recorded_ids = set()
+                failed_reactivations = {
+                    item["id"] for item in used_memories
+                    if item.get("_reactivation_candidate") and item["id"] not in recorded_ids
+                }
+                if failed_reactivations:
+                    used_memories = [
+                        item for item in used_memories if item["id"] not in failed_reactivations
+                    ]
+                    used_digest, used_memories = memory.render_digest(used_memories)
+                    messages[0]["content"] = build_system_prompt(used_digest, style, lore_digest)
+            # 记账/恢复完成后再报告最终实际注入集合。
+            yield _sse(
+                "meta",
+                {
+                    "model": model,
+                    "memory_used": bool(used_memories),
+                    "memory_count": len(used_memories),
+                    "memory_refs": [
+                        {
+                            "id": item["id"],
+                            "layer": item["layer"],
+                            "source_session_id": item.get("source_session_id"),
+                            "source_message_id": item.get("source_message_id"),
+                        }
+                        for item in used_memories
+                    ],
+                },
+            )
             async for chunk in llm.stream_chat(provider, model, messages):
                 collected.append(chunk)
                 yield _sse("delta", {"text": chunk})
@@ -458,14 +469,34 @@ def add_memory(body: MemoryIn) -> dict:
 def patch_memory(mid: str, body: dict) -> dict:
     if body.get("layer") is not None and body["layer"] not in ("L0", "L1", "L2"):
         raise HTTPException(400, "非法的记忆层级")
-    if body.get("status") is not None and body["status"] not in (
-        "active", "cooling", "frozen", "tombstone"
-    ):
-        raise HTTPException(400, "非法的记忆状态")
+    if body.get("status") is not None:
+        raise HTTPException(400, "记忆状态不能普通编辑；恢复请使用生命周期接口")
     m = memory.update_memory(mid, **body)
     if not m:
         raise HTTPException(404, "记忆不存在")
     return m
+
+
+class FragmentLifecycleIn(BaseModel):
+    target_status: str
+    reason: str = Field(default="", max_length=240)
+    expected_revision: int | None = Field(default=None, ge=0)
+
+
+@app.post("/api/memories/{mid}/lifecycle")
+def transition_memory_lifecycle(mid: str, body: FragmentLifecycleIn) -> dict:
+    if body.target_status != "active":
+        raise HTTPException(400, "用户接口只允许恢复记忆；冷却和冻结由 Archivist 评估")
+    try:
+        return archivist.reactivate_fragment(
+            mid, trigger="user", reason=body.reason,
+            expected_revision=body.expected_revision,
+        )
+    except archivist.ArchivistLifecycleError as exc:
+        status = 404 if exc.code == "fragment_missing" else (
+            409 if exc.code == "revision_conflict" else 400
+        )
+        raise HTTPException(status, str(exc)) from exc
 
 
 class MemoryCorrectionIn(BaseModel):
@@ -484,10 +515,10 @@ def correct_memory(mid: str, body: MemoryCorrectionIn) -> dict:
 
 
 @app.delete("/api/memories/{mid}")
-def remove_memory(mid: str) -> dict:
-    if not memory.delete_memory(mid):
+def remove_memory(mid: str, privacy: bool = False) -> dict:
+    if not memory.delete_memory(mid, privacy=privacy):
         raise HTTPException(404, "记忆不存在")
-    return {"ok": True}
+    return {"ok": True, "privacy_cleared": privacy}
 
 
 class CandidateDecisionIn(BaseModel):

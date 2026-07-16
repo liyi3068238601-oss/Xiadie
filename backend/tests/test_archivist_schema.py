@@ -28,13 +28,13 @@ def test_schema_23_adds_retention_fields_and_minimal_audit_tables():
         version = conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
         ).fetchone()["value"]
-        assert version == "23"
+        assert version == "24"
         columns = {
             row["name"] for row in conn.execute("PRAGMA table_info(memory_fragments)")
         }
         assert {
             "last_recalled_at", "recall_count", "cooling_since", "frozen_at",
-            "lifecycle_policy_version", "lifecycle_revision",
+            "lifecycle_policy_version", "lifecycle_revision", "fts_indexed",
         } <= columns
         tables = {
             row["name"] for row in conn.execute(
@@ -135,5 +135,57 @@ def test_archivist_audit_schema_cannot_store_memory_body():
         for table in ("memory_recall_events", "memory_lifecycle_events"):
             columns = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
             assert not ({"content", "summary", "tags", "source_text", "raw_output"} & columns)
+    finally:
+        conn.close()
+
+
+def test_schema_24_upgrades_existing_fts_triggers_without_losing_searchability():
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    try:
+        conn.executescript(
+            "CREATE TABLE memory_fragments("
+            "id TEXT PRIMARY KEY,content TEXT NOT NULL,tags TEXT NOT NULL DEFAULT '');"
+            "CREATE VIRTUAL TABLE memory_fragments_fts USING fts5("
+            "content,tags,content='memory_fragments',content_rowid='rowid',tokenize='trigram');"
+            "CREATE TRIGGER memory_fragments_fts_insert AFTER INSERT ON memory_fragments BEGIN"
+            " INSERT INTO memory_fragments_fts(rowid,content,tags)"
+            " VALUES(new.rowid,new.content,new.tags); END;"
+            "CREATE TRIGGER memory_fragments_fts_delete AFTER DELETE ON memory_fragments BEGIN"
+            " INSERT INTO memory_fragments_fts(memory_fragments_fts,rowid,content,tags)"
+            " VALUES('delete',old.rowid,old.content,old.tags); END;"
+            "CREATE TRIGGER memory_fragments_fts_update"
+            " AFTER UPDATE OF content,tags ON memory_fragments BEGIN"
+            " INSERT INTO memory_fragments_fts(memory_fragments_fts,rowid,content,tags)"
+            " VALUES('delete',old.rowid,old.content,old.tags);"
+            " INSERT INTO memory_fragments_fts(rowid,content,tags)"
+            " VALUES(new.rowid,new.content,new.tags); END;"
+            "INSERT INTO memory_fragments VALUES('legacy','旧库可检索内容','');"
+        )
+        migration = next(sql for version, sql in db.MIGRATIONS if version == 24)
+        conn.executescript(migration)
+        row = conn.execute(
+            "SELECT fts_indexed FROM memory_fragments WHERE id='legacy'"
+        ).fetchone()
+        assert row["fts_indexed"] == 1
+        triggers = {
+            item["name"] for item in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='trigger'"
+                " AND name LIKE 'memory_fragments_fts_%'"
+            )
+        }
+        assert triggers == {
+            "memory_fragments_fts_insert", "memory_fragments_fts_delete",
+            "memory_fragments_fts_update",
+        }
+        assert conn.execute(
+            "SELECT COUNT(*) count FROM memory_fragments_fts"
+            " WHERE memory_fragments_fts MATCH '可检索'"
+        ).fetchone()["count"] == 1
+        conn.execute("UPDATE memory_fragments SET content='更新后的检索内容' WHERE id='legacy'")
+        assert conn.execute(
+            "SELECT COUNT(*) count FROM memory_fragments_fts"
+            " WHERE memory_fragments_fts MATCH '更新后'"
+        ).fetchone()["count"] == 1
     finally:
         conn.close()

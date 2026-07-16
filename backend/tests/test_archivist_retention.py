@@ -204,7 +204,7 @@ def test_cross_layer_snapshot_finds_episode_active_saga_and_anchor(fragment):
         conn.commit()
         result = archivist.evaluate_fragments([fragment["id"]], now=stamp)[0]
         assert result["dependency_flags"] == {
-            "in_episode": True, "in_active_saga": True,
+            "in_episode": True, "in_active_episode": True, "in_active_saga": True,
             "is_active_saga_anchor": True,
         }
         assert result["components"]["relationship_significance"] == 1
