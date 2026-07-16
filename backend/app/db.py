@@ -1625,6 +1625,79 @@ MIGRATIONS = [
             ON knowledge_recall_decisions(status,created_at,id);
         """,
     ),
+    (
+        37,
+        """
+        ALTER TABLE knowledge_recall_decisions ADD COLUMN threshold_version TEXT NOT NULL
+            DEFAULT 'knowledge-recall-thresholds-v1';
+
+        CREATE TABLE knowledge_transmission_grants (
+            id TEXT PRIMARY KEY,
+            recall_decision_id TEXT REFERENCES knowledge_recall_decisions(id) ON DELETE SET NULL,
+            session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            user_message_id TEXT REFERENCES messages(id) ON DELETE SET NULL
+                DEFERRABLE INITIALLY DEFERRED,
+            request_nonce TEXT NOT NULL CHECK(length(request_nonce) BETWEEN 16 AND 64),
+            user_content_sha256 TEXT NOT NULL CHECK(length(user_content_sha256)=64),
+            query_sha256 TEXT NOT NULL CHECK(length(query_sha256)=64),
+            provider_id TEXT,
+            model TEXT NOT NULL,
+            provider_location TEXT NOT NULL CHECK(provider_location IN ('local','remote','unknown')),
+            provider_location_revision INTEGER NOT NULL CHECK(provider_location_revision >= 1),
+            plan_sha256 TEXT NOT NULL CHECK(length(plan_sha256)=64),
+            policy_snapshot_sha256 TEXT NOT NULL CHECK(length(policy_snapshot_sha256)=64),
+            threshold_version TEXT NOT NULL,
+            token_hash TEXT UNIQUE CHECK(token_hash IS NULL OR length(token_hash)=64),
+            status TEXT NOT NULL DEFAULT 'pending'
+                CHECK(status IN ('pending','issued','consumed','denied','expired','revoked')),
+            document_count INTEGER NOT NULL CHECK(document_count >= 0),
+            chunk_count INTEGER NOT NULL CHECK(chunk_count >= 0),
+            token_min INTEGER NOT NULL CHECK(token_min >= 0),
+            token_max INTEGER NOT NULL CHECK(token_max >= token_min),
+            expires_at REAL NOT NULL,
+            issued_at REAL,
+            consumed_at REAL,
+            denied_at REAL,
+            revoked_at REAL,
+            error_code TEXT,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            UNIQUE(session_id,request_nonce)
+        );
+        CREATE INDEX idx_knowledge_transmission_grants_status
+            ON knowledge_transmission_grants(status,expires_at,created_at,id);
+        CREATE INDEX idx_knowledge_transmission_grants_decision
+            ON knowledge_transmission_grants(recall_decision_id,created_at,id);
+
+        CREATE TABLE knowledge_transmission_grant_items (
+            grant_id TEXT NOT NULL REFERENCES knowledge_transmission_grants(id) ON DELETE CASCADE,
+            document_id TEXT NOT NULL,
+            chunk_id TEXT NOT NULL,
+            content_sha256 TEXT NOT NULL CHECK(length(content_sha256)=64),
+            transmission_policy TEXT NOT NULL
+                CHECK(transmission_policy IN ('remote_allowed','ask_each_time','local_only')),
+            policy_revision INTEGER NOT NULL CHECK(policy_revision >= 1),
+            sensitivity TEXT NOT NULL CHECK(sensitivity IN ('normal','sensitive')),
+            token_estimate INTEGER NOT NULL CHECK(token_estimate >= 0),
+            PRIMARY KEY(grant_id,chunk_id)
+        );
+        CREATE INDEX idx_knowledge_transmission_grant_items_document
+            ON knowledge_transmission_grant_items(document_id,grant_id);
+
+        CREATE TABLE knowledge_transmission_grant_events (
+            id TEXT PRIMARY KEY,
+            grant_id TEXT NOT NULL REFERENCES knowledge_transmission_grants(id) ON DELETE CASCADE,
+            action TEXT NOT NULL,
+            before_status TEXT,
+            after_status TEXT NOT NULL,
+            reason_code TEXT NOT NULL,
+            item_count INTEGER NOT NULL DEFAULT 0 CHECK(item_count >= 0),
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_knowledge_transmission_grant_events_grant
+            ON knowledge_transmission_grant_events(grant_id,created_at,id);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

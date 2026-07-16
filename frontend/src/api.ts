@@ -12,11 +12,13 @@ function requestHeaders(init?: RequestInit): Headers {
 
 export class ApiError extends Error {
   status: number;
+  code?: string;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, code?: string) {
     super(message);
     this.name = "ApiError";
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -26,11 +28,14 @@ async function j<T>(path: string, init?: RequestInit): Promise<T> {
     headers: requestHeaders(init),
   });
   if (!r.ok) {
-    let detail = r.statusText;
+    let detail: string | { code?: string; message?: string } = r.statusText;
     try {
       detail = (await r.json()).detail || detail;
     } catch {
       /* ignore */
+    }
+    if (typeof detail === "object") {
+      throw new ApiError(r.status, detail.message || r.statusText, detail.code);
     }
     throw new ApiError(r.status, detail);
   }
@@ -326,6 +331,7 @@ export interface KnowledgeRetrievalAudit {
 export interface KnowledgeRecallDecision {
   id: string;
   protocol_version: string;
+  threshold_version: string;
   recall_mode: "explicit" | "smart";
   shadow: boolean;
   action: "skip" | "retrieve" | "ask";
@@ -355,6 +361,41 @@ export interface KnowledgeRecallStats {
   latency_ms: { average: number; p50: number; p90: number; p99: number };
   vector_available_rate: number;
   timeout_rate: number;
+}
+export interface KnowledgeGrantDocument {
+  id: string;
+  name: string;
+  policy: "remote_allowed" | "ask_each_time" | "local_only";
+  sensitivity: "normal" | "sensitive";
+  chunk_count: number;
+  token_estimate: number;
+}
+export interface KnowledgeGrantPreflight {
+  id: string | null;
+  status: "not_needed" | "pending" | "issued" | "consumed" | "denied" | "expired" | "revoked";
+  protocol_version?: string;
+  provider: {
+    id: string | null;
+    model: string;
+    location: "local" | "remote" | "unknown";
+    location_revision: number;
+  };
+  documents: KnowledgeGrantDocument[];
+  document_count: number;
+  chunk_count: number;
+  token_range: { min: number; max: number };
+  single_use: boolean;
+  can_allow_once: boolean;
+  can_always_allow: boolean;
+  stores_content: false;
+}
+export interface KnowledgeGrantResolution {
+  id: string;
+  status: "issued" | "policy_updated";
+  token: string | null;
+  expires_at?: number;
+  single_use?: boolean;
+  transmission_policy?: "remote_allowed" | "local_only";
 }
 export interface KnowledgeImportEvent {
   id: string;
@@ -712,6 +753,25 @@ export const getKnowledgeRecallStats = (sessionId?: string) =>
   j<KnowledgeRecallStats>(`/api/knowledge/recall-decisions/stats${
     sessionId ? `?session_id=${encodeURIComponent(sessionId)}` : ""
   }`);
+export const preflightKnowledgeTransmission = (
+  session_id: string, request_nonce: string, content: string,
+) => j<KnowledgeGrantPreflight>("/api/knowledge/recall/preflight", {
+  method: "POST", body: JSON.stringify({ session_id, request_nonce, content }),
+});
+export const resolveKnowledgeTransmissionGrant = (body: {
+  grant_id: string;
+  action: "allow_once" | "always_allow" | "local_only";
+  session_id: string;
+  request_nonce: string;
+  content: string;
+}) => j<KnowledgeGrantResolution>("/api/knowledge/transmission-grants", {
+  method: "POST", body: JSON.stringify(body),
+});
+export const denyKnowledgeTransmissionGrant = (grantId: string) =>
+  j<{ id: string; status: "denied" }>(
+    `/api/knowledge/transmission-grants/${encodeURIComponent(grantId)}/deny`,
+    { method: "POST" },
+  );
 export async function importKnowledgeFile(
   file: File, sensitivity: "normal" | "sensitive" = "normal",
 ): Promise<KnowledgeImportResult> {
@@ -948,12 +1008,19 @@ export interface ChatCallbacks {
   }) => void;
 }
 
+export interface ChatRequestOptions {
+  regenerate?: boolean;
+  request_nonce?: string;
+  knowledge_grant_token?: string;
+  knowledge_skip_restricted?: boolean;
+}
+
 // 用 fetch+ReadableStream 解析 SSE（EventSource 不支持 POST）
 export async function streamChat(
   session_id: string,
   content: string,
   cb: ChatCallbacks,
-  regenerate = false
+  options: ChatRequestOptions = {},
 ): Promise<void> {
   // 整体 try/catch：fetch 连接被拒或流读取中断都会 reject，必须保证 onError 触发，
   // 否则调用方（ChatView）的 busy 状态永不复位、输入框卡死。
@@ -961,10 +1028,23 @@ export async function streamChat(
     const r = await fetch(API_BASE + "/api/chat", {
       method: "POST",
       headers: requestHeaders(),
-      body: JSON.stringify({ session_id, content, regenerate }),
+      body: JSON.stringify({ session_id, content, ...options }),
     });
     if (!r.ok || !r.body) {
-      cb.onError?.("请求失败", "无法连接到后端服务，请确认后端已启动。");
+      let message = "请求失败";
+      let hint = "后端拒绝了本次请求，请检查资料授权后重试。";
+      try {
+        const payload = await r.json();
+        const detail = payload?.detail;
+        if (typeof detail === "string") message = detail;
+        else if (detail?.message) message = detail.message;
+        if (detail?.code === "knowledge_grant_required") {
+          hint = "资料需要重新确认后才能发送给当前模型。";
+        }
+      } catch {
+        if (r.status >= 500) hint = "后端服务暂时不可用，请稍后重试。";
+      }
+      cb.onError?.(message, hint);
       return;
     }
     const reader = r.body.getReader();

@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 
 from . import (
     archivist, archivist_worker, companion_state, db, entities, episode_consolidator, episode_summary_service,
-    episodes, knowledge, knowledge_context, knowledge_embeddings, knowledge_management, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search, knowledge_worker, llm, lore, memory, memory_conflicts, saga_consolidator, saga_lifecycle, saga_summary,
+    episodes, knowledge, knowledge_context, knowledge_embeddings, knowledge_grants, knowledge_management, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search, knowledge_worker, llm, lore, memory, memory_conflicts, saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, slow_lifecycle,
 )
 from . import memory_observer_service
@@ -211,6 +211,10 @@ class ChatIn(BaseModel):
     session_id: str
     content: str
     regenerate: bool = False
+    request_nonce: Optional[str] = Field(default=None, min_length=16, max_length=64,
+                                         pattern=r"^[A-Za-z0-9_-]+$")
+    knowledge_grant_token: Optional[str] = Field(default=None, max_length=256)
+    knowledge_skip_restricted: bool = False
 
 
 def _current_model() -> tuple[Optional[dict], str]:
@@ -236,28 +240,16 @@ def _current_model() -> tuple[Optional[dict], str]:
 async def chat(body: ChatIn) -> StreamingResponse:
     uid: str | None = None
     replace_assistant_id: str | None = None
+    provider, model = _current_model()
     conn = db.connect()
     try:
         sess = conn.execute("SELECT * FROM sessions WHERE id = ?", (body.session_id,)).fetchone()
         if not sess:
             raise HTTPException(404, "会话不存在")
 
-        # 记录用户消息（regenerate 时不重复插入）
+        # 先分配/定位消息 ID，但在远传授权校验完成前不写入新消息。
         if not body.regenerate:
             uid = db.new_id()
-            conn.execute(
-                "INSERT INTO messages(id, session_id, role, content, created_at) VALUES(?,?,?,?,?)",
-                (uid, body.session_id, "user", body.content, db.now()),
-            )
-            # 首条用户消息用作会话标题
-            cnt = conn.execute(
-                "SELECT COUNT(*) c FROM messages WHERE session_id = ? AND role='user'",
-                (body.session_id,),
-            ).fetchone()["c"]
-            if cnt == 1:
-                conn.execute("UPDATE sessions SET title = ? WHERE id = ?",
-                             (body.content.strip()[:20] or "新对话", body.session_id))
-            conn.commit()
         else:
             # 重新生成时先保留旧回复。构造上下文时排除它，只有新回复成功写入的
             # 同一事务中才删除旧回复，网络或模型失败不会造成内容丢失。
@@ -277,17 +269,6 @@ async def chat(body: ChatIn) -> StreamingResponse:
 
         # 构造上下文：人设 + 记忆摘要 + 历史
         digest, recalled_memories = memory.build_digest(body.content)
-        if replace_assistant_id:
-            history = conn.execute(
-                "SELECT role, content FROM messages"
-                " WHERE session_id = ? AND id != ? ORDER BY created_at",
-                (body.session_id, replace_assistant_id),
-            ).fetchall()
-        else:
-            history = conn.execute(
-                "SELECT role, content FROM messages WHERE session_id = ? ORDER BY created_at",
-                (body.session_id,),
-            ).fetchall()
         current_state = companion_state.get_state(persist_advance=False)
         next_state = (
             current_state
@@ -299,6 +280,46 @@ async def chat(body: ChatIn) -> StreamingResponse:
         knowledge_retrieval = knowledge_context.prepare(
             body.content, lore_text=lore_digest, memory_text=digest,
         )
+        try:
+            knowledge_retrieval = knowledge_grants.authorize_chat_locked(
+                conn, prepared=knowledge_retrieval, session_id=body.session_id,
+                user_message_id=uid or "", request_nonce=body.request_nonce,
+                content=body.content, provider=provider, model=model,
+                grant_token=body.knowledge_grant_token,
+                skip_restricted=body.knowledge_skip_restricted,
+            )
+        except knowledge_grants.GrantError as error:
+            if conn.in_transaction:
+                conn.rollback()
+            raise HTTPException(
+                error.status_code, {"code": error.code, "message": str(error)},
+            ) from error
+
+        if not body.regenerate:
+            conn.execute(
+                "INSERT INTO messages(id,session_id,role,content,created_at) VALUES(?,?,?,?,?)",
+                (uid, body.session_id, "user", body.content, db.now()),
+            )
+            cnt = conn.execute(
+                "SELECT COUNT(*) c FROM messages WHERE session_id=? AND role='user'",
+                (body.session_id,),
+            ).fetchone()["c"]
+            if cnt == 1:
+                conn.execute(
+                    "UPDATE sessions SET title=? WHERE id=?",
+                    (body.content.strip()[:20] or "新对话", body.session_id),
+                )
+
+        if replace_assistant_id:
+            history = conn.execute(
+                "SELECT role,content FROM messages WHERE session_id=? AND id!=? ORDER BY created_at",
+                (body.session_id, replace_assistant_id),
+            ).fetchall()
+        else:
+            history = conn.execute(
+                "SELECT role,content FROM messages WHERE session_id=? ORDER BY created_at",
+                (body.session_id,),
+            ).fetchall()
         knowledge_block = knowledge_context.prompt_block(knowledge_retrieval)
         if knowledge_retrieval:
             conn.execute(
@@ -314,7 +335,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
                     knowledge_retrieval["memory_tokens"], knowledge_retrieval["status"], db.now(),
                 ),
             )
-            conn.commit()
+        conn.commit()
         messages = [{
             "role": "system",
             "content": build_system_prompt(digest, style, lore_digest, knowledge_block),
@@ -323,7 +344,6 @@ async def chat(body: ChatIn) -> StreamingResponse:
     finally:
         conn.close()
 
-    provider, model = _current_model()
     if not body.regenerate and uid:
         # 只在后台记录影子判断；绝不修改本轮 messages 或 knowledge_block。
         knowledge_recall.enqueue(
@@ -692,6 +712,68 @@ def get_knowledge_recall_decisions(
 @app.get("/api/knowledge/recall-decisions/stats")
 def get_knowledge_recall_decision_stats(session_id: Optional[str] = None) -> dict:
     return knowledge_recall.decision_stats(session_id=session_id)
+
+
+class KnowledgeRecallPreflightIn(BaseModel):
+    session_id: str
+    request_nonce: str = Field(min_length=16, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
+    content: str = Field(min_length=1)
+
+
+@app.post("/api/knowledge/recall/preflight")
+def preflight_knowledge_recall(body: KnowledgeRecallPreflightIn) -> dict:
+    provider, model = _current_model()
+    try:
+        knowledge_grants.expire_due(limit=50)
+        return knowledge_grants.preflight(
+            session_id=body.session_id, request_nonce=body.request_nonce,
+            content=body.content, provider=provider, model=model,
+        )
+    except knowledge_grants.GrantError as error:
+        raise HTTPException(
+            error.status_code, {"code": error.code, "message": str(error)},
+        ) from error
+
+
+class KnowledgeGrantResolveIn(BaseModel):
+    grant_id: str
+    action: str = Field(pattern=r"^(allow_once|always_allow|local_only)$")
+    session_id: str
+    request_nonce: str = Field(min_length=16, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
+    content: str = Field(min_length=1)
+
+
+@app.post("/api/knowledge/transmission-grants")
+def resolve_knowledge_transmission_grant(body: KnowledgeGrantResolveIn) -> dict:
+    provider, model = _current_model()
+    try:
+        return knowledge_grants.resolve(
+            grant_id=body.grant_id, action=body.action, session_id=body.session_id,
+            request_nonce=body.request_nonce, content=body.content,
+            provider=provider, model=model,
+        )
+    except knowledge_grants.GrantError as error:
+        raise HTTPException(
+            error.status_code, {"code": error.code, "message": str(error)},
+        ) from error
+
+
+@app.post("/api/knowledge/transmission-grants/{grant_id}/deny")
+def deny_knowledge_transmission_grant(grant_id: str) -> dict:
+    try:
+        return knowledge_grants.deny(grant_id)
+    except knowledge_grants.GrantError as error:
+        raise HTTPException(
+            error.status_code, {"code": error.code, "message": str(error)},
+        ) from error
+
+
+@app.get("/api/knowledge/transmission-grants/{grant_id}")
+def get_knowledge_transmission_grant(grant_id: str) -> dict:
+    result = knowledge_grants.get_grant(grant_id)
+    if not result:
+        raise HTTPException(404, "授权记录不存在")
+    return result
 
 
 @app.get("/api/knowledge/recall-decisions/{decision_id}")

@@ -4,7 +4,7 @@
 
 制定日期：2026-07-16
 
-状态：施工中；K.0～K.3 已完成，下一阶段 K.4
+状态：施工中；K.0～K.4 已完成，下一阶段 K.5
 适用对象：项目所有者、后续施工的 Codex、第一次接触检索系统的开发者
 
 ---
@@ -726,15 +726,33 @@ K.3 完工记录（2026-07-17）：
 
 ### K.4：一次性授权与确认界面
 
-- [ ] 建立 grant schema、状态机、哈希 token、过期和单次消费。
-- [ ] grant 绑定消息、Provider/model/location revision、policy revision、chunk 哈希。
-- [ ] 前端展示 Provider、文档、片段数、token 范围和四种用户选择。
-- [ ] 后端重新计算允许集合，不信任前端 chunk 列表。
-- [ ] 拒绝、过期、策略变化、来源变化和重放均安全失败。
-- [ ] 授权事件不保存正文或明文 token。
-- [ ] 在线模型调用失败时定义 grant 的不可重放恢复规则。
+- [x] 建立 grant schema、状态机、哈希 token、过期和单次消费。
+- [x] grant 绑定消息、Provider/model/location revision、policy revision、chunk 哈希。
+- [x] 前端展示 Provider、文档、片段数、token 范围和四种用户选择。
+- [x] 后端重新计算允许集合，不信任前端 chunk 列表。
+- [x] 拒绝、过期、策略变化、来源变化和重放均安全失败。
+- [x] 授权事件不保存正文或明文 token。
+- [x] 在线模型调用失败时定义 grant 的不可重放恢复规则。
 
 验收：没有有效 grant 时，ask_each_time/local_only 文档片段不可能进入远程请求。
+
+K.4 完工记录（2026-07-17）：
+
+- 开工前 review：`knowledge-stage-k3-review.html`；提交、schema 36、固定集和测试基线均与仓库一致。
+- 采纳：`secrets.token_urlsafe(32)`、SHA-256-only、五分钟过期、单次原子消费、并发重放测试；Provider
+  位置变化提示并入授权卡；新增 `threshold_version`；扩展 local/remote/unknown × 文档策略测试矩阵。
+- 调整后采纳：grant 单向引用 RecallDecision/请求 nonce，不在长期 RecallDecision 中反向保存 `grant_id`，避免
+  一次判断与多次预检形成错误的一对一关系；漏斗分析可按现有时间、会话和单向引用关联。
+- 推迟：过期记录的物理清理由 K.8 审计生命周期统一实施；真实打包 Provider E2E 留到 K.9。
+- 拒绝：前端提交候选 chunk 列表；后端始终重跑检索并只允许原始候选集合的交集。
+- schema：36 → 37；新增 grant、item、event 三表，RecallDecision 增加阈值版本。
+- 安全边界：grant 与消息同事务消费；明文 token 只返回一次；模型失败后保持 consumed，重试必须重新确认。
+- UI：确认卡展示 Provider/model/位置 revision、文档策略/敏感级别、片段数、token 范围和四种明确选择。
+- ADR：ADR-0040 固定一次性授权、失败恢复和无正文审计边界。
+- 后端测试：357 passed，1 个既有 Starlette/httpx 弃用 warning；K.4 专项 17 passed。
+- 前端测试：30 passed；Vite 生产构建 188 modules；Electron main/preload 语法检查通过。
+- 提交：`Add single-use knowledge transmission grants`（本地 main；GitHub 网络恢复后补推）。
+- 剩余风险：K.4 仍未开启自然注入；pending/consumed 审计物理保留期尚待 K.8；真实在线 Provider E2E 待 K.9。
 
 ### K.5：智能召回正式接入
 

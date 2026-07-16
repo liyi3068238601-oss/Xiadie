@@ -92,6 +92,26 @@ def prompt_block(prepared: dict | None) -> str:
     return _PROMPT_PREAMBLE + "\n```json\n" + payload + "\n```"
 
 
+def filter_prepared(prepared: dict | None, allowed_chunk_ids: set[str]) -> dict | None:
+    """按后端授权结果收窄候选；调用方不能借此扩大原始检索集合。"""
+    if not prepared:
+        return None
+    original_ids = {item["chunk_id"] for item in prepared["results"]}
+    allowed = original_ids & set(allowed_chunk_ids)
+    selected = [item for item in prepared["results"] if item["chunk_id"] in allowed]
+    used = estimate_tokens(_PROMPT_PREAMBLE)
+    for item in selected:
+        used += estimate_tokens(json.dumps(
+            _prompt_record(item["citation_key"], item), ensure_ascii=False, separators=(",", ":"),
+        ))
+    return {
+        **prepared,
+        "results": selected,
+        "knowledge_tokens": used,
+        "status": "injected" if selected else "no_results",
+    }
+
+
 def validate_citations(text: str, prepared: dict | None) -> tuple[str, list[dict]]:
     allowed = {item["citation_key"]: item for item in (prepared or {}).get("results", [])}
     used: list[dict] = []
