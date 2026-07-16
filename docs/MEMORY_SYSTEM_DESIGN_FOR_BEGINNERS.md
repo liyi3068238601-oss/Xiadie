@@ -1283,7 +1283,7 @@ D.5 验收：schema 22 保存完成证据、生命周期策略、乐观 revision
 要求至少两个按时间排序的正式 Episode，阻止跨 Saga 搬运，重算分组指纹、摘要、Entity 和整链哈希，
 并分别记录移除/加入事件。所有写 API 要求 expected_revision。列表、详情、时间线、来源、事件、摘要
 模型和 Consolidator run/cancel API 已开放。完成 Saga 只产生 bond≤0.02、trust≤0.01 的只读建议，
-恢复、来源纠错或 tombstone 会撤销未消费建议，绝不写 relationship_state/affect_state。7 项 D.5 专项
+恢复、来源纠错或 tombstone 会撤销未消费建议，绝不写 relationship_state/affect_state。8 项 D.5 专项
 测试与 Saga 全阶段 33 项测试通过；后端 183 项、前端 7 项、生产构建和 Electron 检查通过。D.6 才
 实现正式 Saga 界面和阶段 D 总验收。
 
