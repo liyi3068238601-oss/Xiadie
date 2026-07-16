@@ -1,8 +1,8 @@
 # 遐蝶自主记忆系统设计书（零基础说明版）
 
-版本：v0.18
+版本：v0.19
 
-状态：设计基线；阶段 A～C 与 D.1～D.4 已完成，阶段 D.5～F 待施工
+状态：设计基线；阶段 A～C 与 D.1～D.5 已完成，阶段 D.6～F 待施工
 
 主要参考：[MemoryConstellations](https://github.com/ClaraShafiq/MemoryConstellations)
 适用对象：项目所有者、第一次接触 Agent 的开发者、后续接手实现的 Codex
@@ -955,7 +955,7 @@ POST /api/memory-maintenance/run
 | A 人格与背景分离 | 已完成 | 人格/Lore 分层、打包配置和自动测试已提交 |
 | B 自主 Fragment 写入 | 已完成 | schema 12、原子自主写入、限频提示、详情/纠错界面及旧候选兼容策略均已提交 |
 | C Episode 自动化 | 已完成 | schema 13～17、自动整理、事实校验、原子应用和正式界面均已提交 |
-| D Saga | D.3 已完成 | schema 18～20、数据地基、本地评分与事实摘要已提交；应用、API 和界面待施工 |
+| D Saga | D.5 已完成 | schema 18～22、评分、事实摘要、原子应用、生命周期、纠错与 API 已提交；正式界面待施工 |
 | E Archivist | 未开始 | 只有生命周期设计，尚无维护任务 |
 | F 用户文件知识库 | 未开始 | 当前仅有界面占位 |
 
@@ -1262,14 +1262,30 @@ D.4 验收：schema 21 增加 Saga Consolidator run/event 账本和候选应用�
 
 #### 阶段 D.5：生命周期、纠错与对外 API
 
-- [ ] 实现 active、completed、archived、tombstone 的合法转换守卫和独立事件。
-- [ ] 自动任务不能产生 tombstone，tombstone 不可恢复。
-- [ ] completed 出现可信新发展 Episode 时可以恢复 active，并保留历史完成事件。
-- [ ] 增加 Saga 列表、详情、时间线、来源和事件 API。
-- [ ] 增加 Saga 专用纠错端点，区分内容纠错和来源归组纠错。
-- [ ] 内容纠错不改变来源链；来源纠错必须重算摘要和来源哈希。
-- [ ] 提供只读、有上限、可审计的关系 delta 建议，不直接写关系或情绪状态。
-- [ ] 增加结束、恢复、非法转换、纠错、删除边界和关系隔离测试。
+- [x] 实现 active、completed、archived、tombstone 的合法转换守卫和独立事件。
+- [x] 自动任务不能产生 tombstone，tombstone 不可恢复。
+- [x] completed 出现可信新发展 Episode 时可以恢复 active，并保留历史完成事件。
+- [x] 增加 Saga 列表、详情、时间线、来源和事件 API。
+- [x] 增加 Saga 专用纠错端点，区分内容纠错和来源归组纠错。
+- [x] 内容纠错不改变来源链；来源纠错必须重算摘要和来源哈希。
+- [x] 提供只读、有上限、可审计的关系 delta 建议，不直接写关系或情绪状态。
+- [x] 增加结束、恢复、非法转换、纠错、删除边界和关系隔离测试。
+
+D.5 施工前审查：D.4 review 无新增问题。采纳生命周期转换复用短事务内复核、开放 Saga run/event
+只读 API、明确自动 Saga 始终至少包含两个 Episode、分离内容与来源纠错事务四项建议。优雅停机建议
+部分采纳：不扩张模型调用链，但 worker 被取消时立即把 running 任务转为 recovery_pending，避免等待
+五分钟陈旧阈值。N13/N14 仍属于 D.6 界面体验范围。
+
+D.5 验收：schema 22 保存完成证据、生命周期策略、乐观 revision，并新增不可直接应用的关系 delta
+建议账本。状态守卫只允许 active→completed、completed→active/archived、archived→active，以及用户或
+隐私清理触发的 tombstone；tombstone 永不可恢复。自动完成在写事务内重验最新 Episode 的明确结束
+证据，completed Saga 追加可信新发展会恢复 active。正文纠错标记 user_edited 且保持来源；来源纠错
+要求至少两个按时间排序的正式 Episode，阻止跨 Saga 搬运，重算分组指纹、摘要、Entity 和整链哈希，
+并分别记录移除/加入事件。所有写 API 要求 expected_revision。列表、详情、时间线、来源、事件、摘要
+模型和 Consolidator run/cancel API 已开放。完成 Saga 只产生 bond≤0.02、trust≤0.01 的只读建议，
+恢复、来源纠错或 tombstone 会撤销未消费建议，绝不写 relationship_state/affect_state。7 项 D.5 专项
+测试与 Saga 全阶段 33 项测试通过；后端 183 项、前端 7 项、生产构建和 Electron 检查通过。D.6 才
+实现正式 Saga 界面和阶段 D 总验收。
 
 #### 阶段 D.6：正式界面与总验收
 

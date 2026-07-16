@@ -366,6 +366,15 @@ def _apply_candidate_locked(conn, candidate: dict) -> dict:
     current_hash = saga_summary.source_hash(sources)
     if current_hash != candidate.get("summary_source_hash"):
         raise SagaApplyError("application_source_changed", "Saga 来源在应用前发生变化")
+    if candidate.get("lifecycle_signal") == "completed":
+        from . import saga_lifecycle
+        try:
+            saga_lifecycle._validate_completion_evidence(
+                episode_ids, sources,
+                candidate.get("completion_evidence_episode_ids") or [],
+            )
+        except saga_lifecycle.SagaLifecycleError as exc:
+            raise SagaApplyError(f"application_{exc.code}", str(exc)) from exc
     links = conn.execute(
         f"SELECT episode_id,saga_id FROM memory_saga_episodes WHERE removed_at IS NULL"
         f" AND episode_id IN ({','.join('?' for _ in episode_ids)}) ORDER BY episode_id",
@@ -375,7 +384,8 @@ def _apply_candidate_locked(conn, candidate: dict) -> dict:
     if candidate.get("application_mode") == "append":
         target_id = candidate.get("target_saga_id")
         target = conn.execute(
-            "SELECT * FROM memory_sagas WHERE id=? AND status='active'", (target_id,)
+            "SELECT * FROM memory_sagas WHERE id=? AND status IN ('active','completed')",
+            (target_id,),
         ).fetchone()
         if not target:
             raise SagaApplyError("application_target_missing", "目标 Saga 不可追加")
@@ -407,7 +417,8 @@ def _apply_candidate_locked(conn, candidate: dict) -> dict:
             "UPDATE memory_sagas SET title=?,summary=?,theme=?,current_stage=?,end_at=?,"
             "significance=?,confidence=?,grouping_fingerprint=?,policy_version=?,"
             "source_episode_ids_json=?,source_hash=?,summary_status=?,summary_protocol_version=?,"
-            "summary_provider_id=?,summary_model=?,summary_evidence_json=?,updated_at=? WHERE id=?",
+            "summary_provider_id=?,summary_model=?,summary_evidence_json=?,updated_at=?,"
+            "revision=revision+1 WHERE id=?",
             (
                 candidate["title"], candidate["summary"], candidate["theme"],
                 candidate["current_stage"], max(item["end_at"] for item in sources),
@@ -452,6 +463,11 @@ def _apply_candidate_locked(conn, candidate: dict) -> dict:
         after = {"id": saga_id, "episode_ids": episode_ids, "source_hash": current_hash}
         _saga_event(conn, saga_id, "created", None, after, "consolidator", now)
     _sync_saga_entities(conn, saga_id, episode_ids, now)
+    _apply_candidate_lifecycle_locked(
+        conn, saga_id, candidate, previous_status=target["status"] if candidate.get("application_mode") == "append" else "active",
+        new_episode_ids=new_ids if candidate.get("application_mode") == "append" else episode_ids,
+        now=now,
+    )
     conn.execute(
         "UPDATE saga_group_candidates SET promoted_saga_id=?,application_attempt_count="
         "application_attempt_count+1,application_error_code=NULL,last_application_at=? WHERE id=?",
@@ -459,6 +475,58 @@ def _apply_candidate_locked(conn, candidate: dict) -> dict:
     )
     row = conn.execute("SELECT * FROM memory_sagas WHERE id=?", (saga_id,)).fetchone()
     return dict(row)
+
+
+def _apply_candidate_lifecycle_locked(
+    conn, saga_id: str, candidate: dict, *, previous_status: str,
+    new_episode_ids: list[str], now: float,
+) -> None:
+    """Apply only lifecycle signals already validated by saga-summary-v1."""
+    from . import saga_lifecycle
+
+    signal = candidate.get("lifecycle_signal") or "active"
+    evidence_ids = candidate.get("completion_evidence_episode_ids") or []
+    if previous_status == "completed" and signal == "active":
+        before = {"status": "completed"}
+        conn.execute(
+            "UPDATE memory_sagas SET status='active',completion_reason='',"
+            "completion_evidence_episode_ids_json='[]',lifecycle_policy_version=?,"
+            "updated_at=?,revision=revision+1"
+            " WHERE id=?", (saga_lifecycle.POLICY_VERSION, now, saga_id),
+        )
+        conn.execute(
+            "UPDATE saga_relationship_delta_suggestions SET status='revoked',"
+            "revocation_reason='saga_reactivated',revoked_at=?"
+            " WHERE saga_id=? AND status='proposed'", (now, saga_id),
+        )
+        saga_lifecycle._event(
+            conn, saga_id, "reactivated", before, {"status": "active"},
+            "new_development_episode", "consolidator",
+            {"evidence_episode_ids": new_episode_ids}, now,
+        )
+    elif signal == "completed" and evidence_ids:
+        was_completed = previous_status == "completed"
+        conn.execute(
+            "UPDATE memory_sagas SET status='completed',completion_reason=?,completed_at=?,"
+            "completion_evidence_episode_ids_json=?,lifecycle_policy_version=?,"
+            "updated_at=?,revision=revision+1"
+            " WHERE id=?",
+            (
+                "grounded_completion_evidence", now, json.dumps(evidence_ids),
+                saga_lifecycle.POLICY_VERSION, now, saga_id,
+            ),
+        )
+        if not was_completed:
+            event_id = saga_lifecycle._event(
+                conn, saga_id, "completed", {"status": "active"},
+                {"status": "completed"}, "grounded_completion_evidence", "consolidator",
+                {"evidence_episode_ids": evidence_ids}, now,
+            )
+            saga_lifecycle._relationship_suggestion(
+                conn, saga_id, event_id, evidence_ids, _significance(
+                    _load_candidate_episodes(conn, candidate["episode_ids"])
+                ), now,
+            )
 
 
 def _sync_saga_entities(conn, saga_id: str, episode_ids: list[str], now: float) -> None:
@@ -746,7 +814,7 @@ def _append_target(conn, conflicts, episode_ids: list[str]) -> str | None:
     saga = conn.execute(
         "SELECT status FROM memory_sagas WHERE id=?", (saga_id,)
     ).fetchone()
-    if not saga or saga["status"] != "active":
+    if not saga or saga["status"] not in {"active", "completed"}:
         return None
     existing = {
         row["episode_id"] for row in conn.execute(

@@ -899,6 +899,35 @@ MIGRATIONS = [
             ON saga_consolidator_events(run_id, created_at, id);
         """,
     ),
+    (
+        22,
+        """
+        ALTER TABLE memory_sagas ADD COLUMN completion_evidence_episode_ids_json TEXT
+            NOT NULL DEFAULT '[]';
+        ALTER TABLE memory_sagas ADD COLUMN lifecycle_policy_version TEXT NOT NULL
+            DEFAULT 'saga-lifecycle-v1';
+        ALTER TABLE memory_sagas ADD COLUMN revision INTEGER NOT NULL DEFAULT 0
+            CHECK(revision >= 0);
+
+        CREATE TABLE saga_relationship_delta_suggestions (
+            id TEXT PRIMARY KEY,
+            saga_id TEXT NOT NULL REFERENCES memory_sagas(id) ON DELETE CASCADE,
+            source_event_id TEXT NOT NULL REFERENCES memory_saga_events(id) ON DELETE RESTRICT,
+            signal_type TEXT NOT NULL CHECK(signal_type IN ('shared_saga_completed')),
+            bond_delta REAL NOT NULL CHECK(bond_delta BETWEEN 0 AND 0.02),
+            trust_delta REAL NOT NULL CHECK(trust_delta BETWEEN 0 AND 0.01),
+            evidence_episode_ids_json TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'proposed' CHECK(status IN ('proposed','revoked')),
+            revocation_reason TEXT,
+            revoked_at REAL,
+            policy_version TEXT NOT NULL,
+            created_at REAL NOT NULL,
+            UNIQUE(saga_id, source_event_id, signal_type)
+        );
+        CREATE INDEX idx_saga_relationship_suggestions_saga
+            ON saga_relationship_delta_suggestions(saga_id, created_at, id);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

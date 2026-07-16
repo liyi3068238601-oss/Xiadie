@@ -14,7 +14,8 @@ from pydantic import BaseModel, Field
 
 from . import (
     companion_state, db, entities, episode_consolidator, episode_summary_service,
-    episodes, llm, lore, memory, saga_consolidator,
+    episodes, llm, lore, memory, saga_consolidator, saga_lifecycle, saga_summary,
+    saga_summary_service,
 )
 from . import memory_observer_service
 from .affect import observer_service as affect_observer_service
@@ -664,6 +665,184 @@ def get_episode(episode_id: str) -> dict:
     if not episode or episode["status"] != "active":
         raise HTTPException(404, "Episode 不存在")
     return episode
+
+
+# ---------------------------------------------------------------- Saga
+class SagaConsolidatorRunIn(BaseModel):
+    trigger: str = "manual"
+    request_key: Optional[str] = None
+
+
+class SagaLifecycleIn(BaseModel):
+    target_status: str
+    reason: str = Field(min_length=1, max_length=240)
+    evidence_episode_ids: list[str] = Field(default_factory=list, max_length=12)
+    expected_revision: int = Field(ge=0)
+
+
+class SagaCorrectionIn(BaseModel):
+    title: Optional[str] = Field(default=None, max_length=80)
+    summary: Optional[str] = Field(default=None, max_length=1200)
+    theme: Optional[str] = Field(default=None, max_length=80)
+    current_stage: Optional[str] = Field(default=None, max_length=300)
+    significance: Optional[int] = Field(default=None, ge=1, le=10)
+    note: str = Field(default="", max_length=240)
+    expected_revision: int = Field(ge=0)
+
+
+class SagaSourceCorrectionIn(BaseModel):
+    episode_ids: list[str] = Field(min_length=2, max_length=12)
+    note: str = Field(min_length=1, max_length=240)
+    expected_revision: int = Field(ge=0)
+
+
+@app.post("/api/saga-consolidator/runs")
+def enqueue_saga_consolidator_run(body: SagaConsolidatorRunIn) -> dict:
+    try:
+        return saga_consolidator.enqueue(trigger=body.trigger, request_key=body.request_key)
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
+
+
+@app.get("/api/saga-consolidator/runs")
+def get_saga_consolidator_runs(limit: int = 50) -> list[dict]:
+    return saga_consolidator.list_runs(limit=limit)
+
+
+@app.get("/api/saga-consolidator/runs/{run_id}")
+def get_saga_consolidator_run(run_id: str) -> dict:
+    run = saga_consolidator.get_run(run_id)
+    if not run:
+        raise HTTPException(404, "Saga 整理任务不存在")
+    return run
+
+
+@app.post("/api/saga-consolidator/runs/{run_id}/cancel")
+def cancel_saga_consolidator_run(run_id: str) -> dict:
+    try:
+        run = saga_consolidator.cancel(run_id)
+    except ValueError as error:
+        raise HTTPException(409, str(error)) from error
+    if not run:
+        raise HTTPException(404, "Saga 整理任务不存在")
+    return run
+
+
+@app.get("/api/saga-summary/model")
+def get_saga_summary_model() -> dict:
+    return saga_summary_service.get_model_config()
+
+
+@app.put("/api/saga-summary/model")
+def set_saga_summary_model(body: ObserverModelIn) -> dict:
+    try:
+        return saga_summary_service.set_model_config(body.mode, body.provider_id, body.model)
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
+
+
+@app.get("/api/sagas")
+def get_sagas(status: Optional[str] = None, limit: int = 50, offset: int = 0) -> list[dict]:
+    try:
+        return saga_lifecycle.list_sagas(status, limit=limit, offset=offset)
+    except saga_lifecycle.SagaLifecycleError as error:
+        raise HTTPException(400, str(error)) from error
+
+
+@app.get("/api/sagas/{saga_id}")
+def get_saga(saga_id: str) -> dict:
+    saga = saga_lifecycle.get_saga(saga_id)
+    if not saga:
+        raise HTTPException(404, "Saga 不存在")
+    return saga
+
+
+@app.get("/api/sagas/{saga_id}/timeline")
+def get_saga_timeline(saga_id: str) -> list[dict]:
+    saga = saga_lifecycle.get_saga(saga_id)
+    if not saga:
+        raise HTTPException(404, "Saga 不存在")
+    return saga["timeline"]
+
+
+@app.get("/api/sagas/{saga_id}/sources")
+def get_saga_sources(saga_id: str) -> list[dict]:
+    saga = saga_lifecycle.get_saga(saga_id)
+    if not saga:
+        raise HTTPException(404, "Saga 不存在")
+    return [item for item in saga["timeline"] if item["removed_at"] is None]
+
+
+@app.get("/api/sagas/{saga_id}/events")
+def get_saga_events(saga_id: str) -> list[dict]:
+    if not saga_lifecycle.get_saga(saga_id):
+        raise HTTPException(404, "Saga 不存在")
+    return saga_lifecycle.list_events(saga_id)
+
+
+@app.get("/api/sagas/{saga_id}/relationship-suggestions")
+def get_saga_relationship_suggestions(saga_id: str) -> list[dict]:
+    if not saga_lifecycle.get_saga(saga_id):
+        raise HTTPException(404, "Saga 不存在")
+    return saga_lifecycle.list_relationship_suggestions(saga_id)
+
+
+@app.post("/api/sagas/{saga_id}/lifecycle")
+def transition_saga(saga_id: str, body: SagaLifecycleIn) -> dict:
+    try:
+        saga = saga_lifecycle.transition(
+            saga_id, body.target_status, reason=body.reason, source="user",
+            evidence_episode_ids=body.evidence_episode_ids,
+            expected_revision=body.expected_revision,
+        )
+    except saga_lifecycle.SagaLifecycleError as error:
+        status = 409 if error.code in {
+            "revision_conflict", "lifecycle_noop", "tombstone_terminal",
+            "illegal_lifecycle_transition",
+        } else 400
+        raise HTTPException(status, str(error)) from error
+    if not saga:
+        raise HTTPException(404, "Saga 不存在")
+    return saga
+
+
+@app.post("/api/sagas/{saga_id}/correct")
+def correct_saga(saga_id: str, body: SagaCorrectionIn) -> dict:
+    try:
+        saga = saga_lifecycle.correct_content(
+            saga_id, title=body.title, summary=body.summary, theme=body.theme,
+            current_stage=body.current_stage, significance=body.significance,
+            note=body.note, expected_revision=body.expected_revision,
+        )
+    except saga_lifecycle.SagaLifecycleError as error:
+        raise HTTPException(
+            409 if error.code in {"revision_conflict", "tombstone_terminal"} else 400,
+            str(error),
+        ) from error
+    if not saga:
+        raise HTTPException(404, "Saga 不存在")
+    return saga
+
+
+@app.post("/api/sagas/{saga_id}/correct-sources")
+def correct_saga_sources(saga_id: str, body: SagaSourceCorrectionIn) -> dict:
+    try:
+        saga = saga_lifecycle.correct_sources(
+            saga_id, body.episode_ids, note=body.note,
+            expected_revision=body.expected_revision,
+        )
+    except (saga_lifecycle.SagaLifecycleError, saga_summary.SagaSummaryValidationError) as error:
+        code = getattr(error, "code", "source_correction_invalid")
+        raise HTTPException(
+            409 if code in {
+                "revision_conflict", "source_cross_saga_conflict",
+                "source_grouping_conflict", "source_correction_noop", "tombstone_terminal",
+            } else 400,
+            str(error),
+        ) from error
+    if not saga:
+        raise HTTPException(404, "Saga 不存在")
+    return saga
 
 
 # ---------------------------------------------------------------- 记忆实体

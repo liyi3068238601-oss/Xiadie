@@ -34,7 +34,7 @@ def test_saga_schema_has_traceability_and_lifecycle_fields():
         version = conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
         ).fetchone()["value"]
-        assert version == "21"
+        assert version == "22"
         tables = {
             row["name"] for row in conn.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'memory_saga%'"
@@ -59,8 +59,13 @@ def test_saga_schema_has_traceability_and_lifecycle_fields():
             "source_episode_ids_json", "source_hash", "summary_status",
             "summary_protocol_version", "summary_evidence_json", "completion_reason",
             "completed_at", "archived_at", "tombstoned_at", "correction_note",
-            "corrected_at", "current_stage",
+            "corrected_at", "current_stage", "completion_evidence_episode_ids_json",
+            "lifecycle_policy_version", "revision",
         } <= columns
+        assert conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table'"
+            " AND name='saga_relationship_delta_suggestions'"
+        ).fetchone()
     finally:
         conn.close()
 

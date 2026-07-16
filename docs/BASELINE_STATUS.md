@@ -35,7 +35,7 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; python -m pytest tests` | 通过：175 passed，1 warning |
+| 后端 | `cd backend; python -m pytest tests` | 通过：183 passed，1 warning |
 | 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：7 项情绪映射/记忆与 Episode 展示契约测试、TypeScript 检查及 Vite 生产构建成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 
@@ -126,7 +126,10 @@ npm.cmd start
 - Saga 阶段 D.4 已完成：schema 21 新增 Saga Consolidator run/event 账本和候选应用审计字段。
 - Episode 落库后只稳定入队；Saga worker 串行整理、三次有限重试、陈旧恢复、协作取消和六天周级懒调度均不阻塞聊天。
 - 新建和增量追加会在单个短事务内复核正式 Episode、单一 Saga 归属、候选指纹、旧来源与整链摘要哈希，并一起提交来源、Entity、事件和 run 终态。
-- 正式 Saga API、生命周期操作、纠错和界面尚未实现；这些由 D.5～D.6 完成。
+- Saga 阶段 D.5 已完成：schema 22 新增完成证据、生命周期 revision 和只读关系 delta 建议账本。
+- 精确状态守卫禁止非法跳级、自动 tombstone 和 tombstone 恢复；可信新 Episode 可使 completed Saga 恢复 active。
+- 正文纠错保持来源链，来源归组纠错重算分组指纹、抽取摘要、Entity 和整链哈希；所有写 API 使用乐观 revision。
+- Saga 列表、详情、时间线、来源、事件、摘要模型及 Consolidator run/cancel API 已开放；正式界面尚未实现，由 D.6 完成。
 
 ### 人格与内置背景知识（2026-07-14）
 
@@ -149,7 +152,7 @@ npm.cmd start
 - 旁观观察器阶段 2.2 已建立受限非流式模型调用、幂等候选审计和失败恢复入队基础。
 - 旁观观察器阶段 2.3 已改为可靠后台 worker：聊天只入队，最多三次指数退避；设置页可选择独立轻量模型，净化候选与事件在同一事务原子应用。
 - 测试数据目录由 `tests/conftest.py` 在模块收集前统一隔离，测试文件顺序不会再接触开发数据库。
-- Saga 已有 D.1～D.4 数据地基、预筛、事实摘要、后台任务和原子应用；API、生命周期、纠错、相对日期校正、矛盾检测和星图尚未实现。
+- Saga 已有 D.1～D.5 数据地基、预筛、事实摘要、后台任务、原子应用、生命周期、纠错和 API；正式界面、相对日期校正、矛盾检测和星图尚未实现。
 
 - Electron：透明置顶桌宠、主窗口、托盘、右键菜单及基础 IPC 联动。
 - Live2D：固定模型加载、动作和状态气泡；九个后端情绪簇控制表情，工作模式独立控制动作，资源缺失时有占位降级。

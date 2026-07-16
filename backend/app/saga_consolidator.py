@@ -157,12 +157,41 @@ async def _process_claimed(row: dict) -> None:
             if item and item.get("summary_status") in {"model_validated", "extractive_fallback"}
         ]
         await asyncio.to_thread(sagas.apply_candidates_for_run, row["id"], candidate_ids)
+    except asyncio.CancelledError:
+        _mark_interrupted(row)
+        raise
     except sagas.SagaApplyError as exc:
         _record_failure_safely(locals().get("candidate_ids", []), exc.code)
         _mark_failure(row, exc.code)
     except Exception:  # noqa: BLE001
         _record_failure_safely(locals().get("candidate_ids", []), "saga_application_failed")
         _mark_failure(row, "saga_application_failed")
+
+
+def _mark_interrupted(row: dict) -> None:
+    """Return a claimed run to recovery immediately during app shutdown."""
+    conn = db.connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        current = conn.execute(
+            "SELECT status FROM saga_consolidator_runs WHERE id=?", (row["id"],)
+        ).fetchone()
+        if not current or current["status"] != "running":
+            conn.rollback()
+            return
+        now = db.now()
+        conn.execute(
+            "UPDATE saga_consolidator_runs SET status='recovery_pending',"
+            "error_code='worker_stopped',next_attempt_at=?,updated_at=? WHERE id=?",
+            (now, now, row["id"]),
+        )
+        sagas._run_event(
+            conn, row["id"], "recovery_scheduled", "running", "recovery_pending",
+            "worker_stopped", {}, now,
+        )
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def recover_stale_runs() -> int:

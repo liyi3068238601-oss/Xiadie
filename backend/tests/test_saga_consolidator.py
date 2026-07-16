@@ -252,3 +252,9 @@ def test_worker_empty_retry_recovery_and_cooperative_cancel(monkeypatch):
         conn.close()
     assert saga_consolidator.recover_stale_runs() == 1
     assert saga_consolidator.get_run(failing["id"])["status"] == "cancelled"
+
+    interrupted = _running_run("shutdown")
+    saga_consolidator._mark_interrupted(interrupted)
+    recovered = saga_consolidator.get_run(interrupted["id"])
+    assert recovered["status"] == "recovery_pending"
+    assert recovered["error_code"] == "worker_stopped"
