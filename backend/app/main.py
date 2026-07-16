@@ -13,7 +13,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from . import (
-    companion_state, db, entities, episode_consolidator, episode_summary_service,
+    archivist, companion_state, db, entities, episode_consolidator, episode_summary_service,
     episodes, llm, lore, memory, saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service,
 )
@@ -216,6 +216,12 @@ async def chat(body: ChatIn) -> StreamingResponse:
             ).fetchone()
             if last:
                 replace_assistant_id = last["id"]
+            last_user = conn.execute(
+                "SELECT id FROM messages WHERE session_id=? AND role='user'"
+                " ORDER BY created_at DESC,id DESC LIMIT 1", (body.session_id,),
+            ).fetchone()
+            if last_user:
+                uid = last_user["id"]
 
         # 构造上下文：人设 + 记忆摘要 + 历史
         digest, recalled_memories = memory.build_digest(body.content)
@@ -269,6 +275,15 @@ async def chat(body: ChatIn) -> StreamingResponse:
         )
         collected: list[str] = []
         try:
+            if recalled_memories and uid:
+                try:
+                    archivist.record_injected_memories(
+                        recalled_memories,
+                        context_key=archivist.recall_context_key(body.session_id, uid),
+                        source_session_id=body.session_id,
+                    )
+                except Exception:  # noqa: BLE001 - 召回审计失败不能让聊天失败
+                    pass
             async for chunk in llm.stream_chat(provider, model, messages):
                 collected.append(chunk)
                 yield _sse("delta", {"text": chunk})

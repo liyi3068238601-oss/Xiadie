@@ -1,8 +1,8 @@
 # 遐蝶自主记忆系统设计书（零基础说明版）
 
-版本：v0.21
+版本：v0.22
 
-状态：设计基线；阶段 A～D 与 E.1 已完成，阶段 E.2～F 待施工
+状态：设计基线；阶段 A～D 与 E.1～E.2 已完成，阶段 E.3～F 待施工
 
 主要参考：[MemoryConstellations](https://github.com/ClaraShafiq/MemoryConstellations)
 适用对象：项目所有者、第一次接触 Agent 的开发者、后续接手实现的 Codex
@@ -956,7 +956,7 @@ POST /api/memory-maintenance/run
 | B 自主 Fragment 写入 | 已完成 | schema 12、原子自主写入、限频提示、详情/纠错界面及旧候选兼容策略均已提交 |
 | C Episode 自动化 | 已完成 | schema 13～17、自动整理、事实校验、原子应用和正式界面均已提交 |
 | D Saga | 已完成 | schema 18～22、评分、事实摘要、原子应用、生命周期、纠错、API、正式界面与总验收均已提交 |
-| E Archivist | E.1 已完成 | schema 23、召回去重账本和无正文生命周期审计地基已提交；尚未启动维护任务 |
+| E Archivist | E.2 已完成 | schema 23、真实注入计数、纯保留评分和跨层保护识别已提交；尚未启动维护任务 |
 | F 用户文件知识库 | 未开始 | 当前仅有界面占位 |
 
 ### 阶段 A：人格与背景分离（本轮已完成）
@@ -1336,13 +1336,29 @@ updated_at 回填进入时间，active 行不伪造历史召回。本阶段没�
 
 #### 阶段 E.2：真实召回计数、保留评分与保护识别
 
-- [ ] 只有实际装入模型上下文才在短事务内写 recall event、计数和 last_recalled_at。
-- [ ] 使用 context_key 保证同一轮同一 Fragment 只计一次；重复提交幂等。
-- [ ] 候选检索、因预算丢弃、详情查看和后台评估均不计召回。
-- [ ] 纯函数实现 importance、饱和 recall、recency、relationship、active Saga、confidence 和 duplicate 分量。
-- [ ] retention_score 各分量归一化、clamp 并带 `fragment-retention-v1` 版本。
-- [ ] 识别稳定边界、当前纠错事实、活跃 Saga 锚点和未完成计划保护原因。
-- [ ] 增加计数并发、同轮去重、从未召回、时间边界、分量上限和保护测试。
+- [x] 只有实际装入模型上下文才在短事务内写 recall event、计数和 last_recalled_at。
+- [x] 使用 context_key 保证同一轮同一 Fragment 只计一次；重复提交幂等。
+- [x] 候选检索、因预算丢弃、详情查看和后台评估均不计召回。
+- [x] 纯函数实现 importance、饱和 recall、recency、relationship、active Saga、confidence 和 duplicate 分量。
+- [x] retention_score 各分量归一化、clamp 并带 `fragment-retention-v1` 版本。
+- [x] 识别稳定边界、当前纠错事实、活跃 Saga 锚点和未完成计划保护原因。
+- [x] 增加计数并发、同轮去重、从未召回、时间边界、分量上限和保护测试。
+
+E.2 开工前审查结论：E.1 review 全项通过且没有返工项。五条建议全部采纳：召回事件与 Fragment
+计数在 `BEGIN IMMEDIATE` 中通过 `INSERT OR IGNORE` 原子提交；保留评分是无数据库副作用的纯函数；
+context key 固定为 `chat:{session_id}:{user_message_id}`；跨层保护使用一个 SQL 快照读取
+Fragment→Episode→Saga；七个分量均增加零值、饱和、时间和 clamp 边界测试。
+
+首次生成、流式重试和 regenerate 只要基于同一条用户消息就共享 context key，避免模型重试把记忆虚假
+养强。只有 active、enabled、normal 且已经被 `build_digest` 放入系统提示词的 Fragment 才能记账；后台
+观察器调用 `search_memories` 不记账。`fragment-retention-v1` 使用 20 次饱和的对数召回强度、180 天
+线性 recency、持久 scope/kind/正式 Episode 关系意义、active Saga bonus、confidence 和最多 0.25 的
+duplicate penalty；即时 emotion 不参与第二次加权。稳定边界第一版定义为重要度至少 0.85 的 preference/
+relationship，此外 L0、当前 correction、active Saga anchor 和 active plan 均产生明确保护原因。
+
+duplicate penalty 的纯评分输入和上限已完成；实际重复关系识别属于 E.6，当前固定输入 0，不提前扫描全库。
+本阶段没有自动状态转换。9 项 E.2 专项测试、E.1～E.2 共 14 项专项、后端 198 项、前端 13 项、生产
+构建和 Electron 脚本检查全部通过。
 
 #### 阶段 E.3：Fragment 精确转换与索引同步
 

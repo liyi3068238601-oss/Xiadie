@@ -35,7 +35,7 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; python -m pytest tests` | 通过：189 passed，1 warning |
+| 后端 | `cd backend; python -m pytest tests` | 通过：198 passed，1 warning |
 | 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：13 项情绪映射、运行可靠性、记忆、Episode 与 Saga 展示契约测试；TypeScript 检查及 Vite 生产构建成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 
@@ -135,6 +135,10 @@ npm.cmd start
 - Archivist 阶段 E.1 已完成 schema 23 数据地基：Fragment 具备真实召回时间/计数、cooling/frozen 时间、生命周期策略版本和 revision。
 - `memory_recall_events` 以同轮 context 唯一约束预防重复计数；`memory_lifecycle_events` 保存无正文的状态、评分分量、原因和策略审计。
 - E.1 尚未执行保留评分、自动冷却、冻结、恢复、归档或物理清理；这些必须在 E.2～E.6 分阶段验收后才启用。
+- Archivist 阶段 E.2 已接入真实上下文注入计数：同一用户消息的首次生成、流式重试和 regenerate 共用 context key，只有新的对话轮次才再次计数。
+- `fragment-retention-v1` 以纯函数输出 importance、饱和召回、180 天 recency、关系意义、active Saga、confidence 和重复惩罚七个分量；不读取即时情绪轴。
+- 保护快照用一个 SQL 识别正式 Episode、active Saga 和 anchor，并明确保护 L0、稳定边界、当前纠错事实、活跃 Saga 锚点和未完成计划。
+- E.2 仍不执行自动冷却、冻结或恢复；duplicate penalty 已有评分输入与上限，实际重复/冲突识别留给 E.6。
 
 ### 人格与内置背景知识（2026-07-14）
 
