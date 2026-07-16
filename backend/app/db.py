@@ -1374,6 +1374,58 @@ MIGRATIONS = [
         END;
         """,
     ),
+    (
+        32,
+        """
+        CREATE TABLE knowledge_chat_retrievals (
+            id TEXT PRIMARY KEY,
+            session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            user_message_id TEXT REFERENCES messages(id) ON DELETE SET NULL,
+            assistant_message_id TEXT REFERENCES messages(id) ON DELETE SET NULL,
+            trigger_reason TEXT NOT NULL,
+            query_sha256 TEXT NOT NULL CHECK(length(query_sha256)=64),
+            candidate_count INTEGER NOT NULL DEFAULT 0 CHECK(candidate_count >= 0),
+            injected_count INTEGER NOT NULL DEFAULT 0 CHECK(injected_count >= 0),
+            knowledge_tokens INTEGER NOT NULL DEFAULT 0 CHECK(knowledge_tokens >= 0),
+            knowledge_token_budget INTEGER NOT NULL CHECK(knowledge_token_budget > 0),
+            lore_tokens INTEGER NOT NULL DEFAULT 0 CHECK(lore_tokens >= 0),
+            memory_tokens INTEGER NOT NULL DEFAULT 0 CHECK(memory_tokens >= 0),
+            status TEXT NOT NULL CHECK(status IN ('no_results','injected','completed','failed')),
+            created_at REAL NOT NULL,
+            finished_at REAL
+        );
+        CREATE INDEX idx_knowledge_chat_retrievals_session
+            ON knowledge_chat_retrievals(session_id,created_at,id);
+        CREATE INDEX idx_knowledge_chat_retrievals_assistant
+            ON knowledge_chat_retrievals(assistant_message_id);
+
+        CREATE TABLE knowledge_message_citations (
+            id TEXT PRIMARY KEY,
+            assistant_message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+            retrieval_id TEXT NOT NULL REFERENCES knowledge_chat_retrievals(id) ON DELETE CASCADE,
+            citation_key TEXT NOT NULL,
+            document_id TEXT NOT NULL,
+            chunk_id TEXT NOT NULL,
+            original_name TEXT NOT NULL,
+            heading_path_json TEXT NOT NULL DEFAULT '[]'
+                CHECK(json_valid(heading_path_json) AND json_type(heading_path_json)='array'),
+            ordinal INTEGER NOT NULL CHECK(ordinal >= 0),
+            paragraph_start INTEGER NOT NULL CHECK(paragraph_start >= 1),
+            paragraph_end INTEGER NOT NULL CHECK(paragraph_end >= paragraph_start),
+            line_start INTEGER NOT NULL CHECK(line_start >= 1),
+            line_end INTEGER NOT NULL CHECK(line_end >= line_start),
+            char_start INTEGER NOT NULL CHECK(char_start >= 0),
+            char_end INTEGER NOT NULL CHECK(char_end > char_start),
+            page_start INTEGER,
+            page_end INTEGER,
+            content_sha256 TEXT NOT NULL CHECK(length(content_sha256)=64),
+            created_at REAL NOT NULL,
+            UNIQUE(assistant_message_id,citation_key)
+        );
+        CREATE INDEX idx_knowledge_message_citations_message
+            ON knowledge_message_citations(assistant_message_id,citation_key);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

@@ -53,6 +53,26 @@ export interface Message {
   model?: string;
   favorite: boolean;
   created_at: number;
+  knowledge_citations?: KnowledgeCitation[];
+}
+export interface KnowledgeCitation {
+  id: string;
+  citation_key: string;
+  document_id: string;
+  chunk_id: string;
+  original_name: string;
+  heading_path: string[];
+  ordinal: number;
+  paragraph_start: number;
+  paragraph_end: number;
+  line_start: number;
+  line_end: number;
+  char_start: number;
+  char_end: number;
+  page_start: number | null;
+  page_end: number | null;
+  content_fingerprint: string;
+  content?: string;
 }
 export interface ObserverModelConfig {
   mode: "current" | "dedicated";
@@ -497,6 +517,8 @@ export const listMessages = (id: string) =>
   j<Message[]>(`/api/sessions/${id}/messages`);
 export const toggleFavorite = (mid: string) =>
   j<{ favorite: boolean }>(`/api/messages/${mid}/favorite`, { method: "POST" });
+export const getKnowledgeCitation = (id: string) =>
+  j<KnowledgeCitation>(`/api/knowledge/citations/${id}`);
 
 // ---- 记忆 ----
 export const listMemories = () => j<Memory[]>("/api/memories");
@@ -752,6 +774,8 @@ export interface ChatCallbacks {
       source_session_id?: string | null;
       source_message_id?: string | null;
     }>;
+    knowledge_used: boolean;
+    knowledge_count: number;
   }) => void;
   onDelta?: (text: string) => void;
   onError?: (message: string, hint: string) => void;
@@ -762,6 +786,8 @@ export interface ChatCallbacks {
     companion_state: CompanionState | null;
     affect_observation?: { id: string; status: string } | null;
     memory_observation?: { id: string; status: string } | null;
+    content: string;
+    knowledge_citations: KnowledgeCitation[];
   }) => void;
 }
 

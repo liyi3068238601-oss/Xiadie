@@ -19,6 +19,7 @@ interface Props {
 interface Streaming {
   text: string;
   memoryCount: number;
+  knowledgeCount: number;
 }
 
 export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, onCompanionState, onSessionsChanged }: Props) {
@@ -74,7 +75,7 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
     }
     setErrorCard(null);
     setMemoryNotice(null);
-    setStreaming({ text: "", memoryCount: 0 });
+    setStreaming({ text: "", memoryCount: 0, knowledgeCount: 0 });
     onMode("thinking");
     api.desktop?.setPetState?.("thinking", "让我想想…", companionCluster);
 
@@ -82,9 +83,13 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
       sessionId,
       content,
       {
-        onMeta: (m) => setStreaming((s) => (s ? { ...s, memoryCount: m.memory_count } : s)),
+        onMeta: (m) => setStreaming((s) => (s ? {
+          ...s, memoryCount: m.memory_count, knowledgeCount: m.knowledge_count,
+        } : s)),
         onDelta: (t) => {
-          setStreaming((s) => (s ? { ...s, text: s.text + t } : { text: t, memoryCount: 0 }));
+          setStreaming((s) => (s ? { ...s, text: s.text + t } : {
+            text: t, memoryCount: 0, knowledgeCount: 0,
+          }));
         },
         onError: (msg, hint) => {
           setStreaming(null);
@@ -204,6 +209,11 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
                   </span>
                 </div>
               )}
+              {streaming.knowledgeCount > 0 && (
+                <div className="msg-meta">
+                  <span className="knowledge-hint">▧ 正在核对 {streaming.knowledgeCount} 条本地资料</span>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -272,6 +282,19 @@ function MessageRow({
   highlighted?: boolean;
   onFavorite: () => void;
 }) {
+  const [source, setSource] = useState<api.KnowledgeCitation | null>(null);
+  const [sourceError, setSourceError] = useState<string | null>(null);
+
+  async function openSource(citation: api.KnowledgeCitation) {
+    try {
+      setSourceError(null);
+      setSource(await api.getKnowledgeCitation(citation.id));
+    } catch (error) {
+      setSource(null);
+      setSourceError(error instanceof api.ApiError ? error.message : "无法读取原始资料");
+    }
+  }
+
   return (
     <div
       id={`message-${m.id}`}
@@ -280,6 +303,29 @@ function MessageRow({
       <div className="avatar">{m.role === "user" ? "你" : "蝶"}</div>
       <div>
         <div className="bubble">{m.content}</div>
+        {!!m.knowledge_citations?.length && (
+          <div className="knowledge-citations" aria-label="本回复引用的资料">
+            {m.knowledge_citations.map((citation) => (
+              <button key={citation.id} onClick={() => void openSource(citation)}>
+                {citation.citation_key} · {citation.original_name} · {citation.content_fingerprint}
+              </button>
+            ))}
+          </div>
+        )}
+        {(source || sourceError) && (
+          <div className="knowledge-source" role="region" aria-label="资料原文">
+            <button className="knowledge-source-close" onClick={() => {
+              setSource(null); setSourceError(null);
+            }}>×</button>
+            {source ? (
+              <>
+                <strong>{source.original_name}</strong>
+                <small>{sourceLocation(source)}</small>
+                <div>{source.content}</div>
+              </>
+            ) : <span>{sourceError}</span>}
+          </div>
+        )}
         <div className="msg-meta">
           {m.model && <span>{m.model}</span>}
           <button onClick={() => navigator.clipboard?.writeText(m.content)}>复制</button>
@@ -288,6 +334,12 @@ function MessageRow({
       </div>
     </div>
   );
+}
+
+function sourceLocation(source: api.KnowledgeCitation): string {
+  const heading = source.heading_path.length ? ` · ${source.heading_path.join(" › ")}` : "";
+  const page = source.page_start ? ` · 第 ${source.page_start}${source.page_end !== source.page_start ? `–${source.page_end}` : ""} 页` : "";
+  return `段落 ${source.paragraph_start}–${source.paragraph_end} · 行 ${source.line_start}–${source.line_end}${page}${heading} · ${source.content_fingerprint}`;
 }
 
 function localMsg(role: "user" | "assistant", content: string): api.Message {

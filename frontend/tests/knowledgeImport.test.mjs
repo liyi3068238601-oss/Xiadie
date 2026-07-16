@@ -16,7 +16,7 @@ test("knowledge import requires an explicit local-only confirmation", async () =
 test("knowledge UI reports admitted files honestly before parsing exists", async () => {
   const page = await readFile(new URL("../src/components/FilesPage.tsx", import.meta.url), "utf8");
   assert.match(page, /已安全保存 · 等待解析/);
-  assert.match(page, /对话引用仍在施工/);
+  assert.match(page, /明确询问资料时可在对话中核对并点击引用来源/);
   assert.doesNotMatch(page, /导入后将自动生成摘要与标签/);
 });
 
@@ -39,8 +39,17 @@ test("knowledge indexing exposes local readiness without claiming dialogue citat
   ]);
   assert.match(page, /索引中|已索引 · 可检索|本地索引已就绪/);
   assert.match(page, /indexing_started|indexing_completed/);
-  assert.match(page, /对话引用仍在施工/);
+  assert.match(page, /明确询问资料时可在对话中核对并点击引用来源/);
   assert.match(api, /searchKnowledge|KnowledgeSearchResult|context_window/);
+});
+
+test("knowledge citations are clickable and backed by the verified source endpoint", async () => {
+  const [chat, api] = await Promise.all([
+    readFile(new URL("../src/components/ChatView.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/api.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(chat, /knowledge_citations|资料原文|content_fingerprint/);
+  assert.match(api, /getKnowledgeCitation|\/api\/knowledge\/citations/);
 });
 
 test("knowledge parsing progress exposes cancellation, recovery and an event timeline", async () => {

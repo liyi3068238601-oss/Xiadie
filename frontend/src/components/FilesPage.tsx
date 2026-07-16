@@ -133,7 +133,7 @@ export function FilesPage() {
     <div className="page">
       <h1>文件与知识</h1>
       <div className="sub">
-        把外部资料交给遐蝶作为可引用知识。当前支持安全接收、解析、稳定切片和本地检索 TXT/Markdown；对话引用仍在施工。
+        把外部资料交给遐蝶作为可引用知识。当前支持安全接收、解析、稳定切片和本地检索 TXT/Markdown；明确询问资料时可在对话中核对并点击引用来源。
       </div>
 
       {/* 拖拽 / 选择区 */}

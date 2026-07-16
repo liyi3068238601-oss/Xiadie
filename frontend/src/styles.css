@@ -353,6 +353,57 @@ textarea {
   color: var(--cyan);
   opacity: 0.8;
 }
+.knowledge-hint {
+  color: var(--violet-soft);
+  opacity: 0.9;
+}
+.knowledge-citations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+.knowledge-citations button {
+  max-width: 280px;
+  padding: 4px 8px;
+  border: 1px solid var(--glass-border-lit);
+  border-radius: 8px;
+  color: var(--violet-soft);
+  background: rgba(124, 92, 255, 0.08);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+}
+.knowledge-citations button:hover {
+  background: rgba(124, 92, 255, 0.16);
+}
+.knowledge-source {
+  position: relative;
+  margin-top: 7px;
+  padding: 11px 32px 11px 12px;
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  background: var(--glass-strong);
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+.knowledge-source strong,
+.knowledge-source small {
+  display: block;
+  margin-bottom: 5px;
+}
+.knowledge-source strong { color: var(--text); }
+.knowledge-source small { color: var(--text-faint); }
+.knowledge-source-close {
+  position: absolute;
+  right: 8px;
+  top: 6px;
+  color: var(--text-faint);
+  font-size: 18px;
+}
 .memory-notice {
   align-self: center;
   display: flex;

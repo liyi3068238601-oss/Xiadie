@@ -3,6 +3,7 @@
 分层职责（需求第 10 节）：模型、会话、任务、记忆、工具，均保存在本地 SQLite。
 不做多窗口调度、不推倒重写。此文件只负责 HTTP 接口与编排。
 """
+import hashlib
 import json
 from contextlib import asynccontextmanager
 from typing import Optional
@@ -15,7 +16,7 @@ from pydantic import BaseModel, Field
 
 from . import (
     archivist, archivist_worker, companion_state, db, entities, episode_consolidator, episode_summary_service,
-    episodes, knowledge, knowledge_search, knowledge_worker, llm, lore, memory, memory_conflicts, saga_consolidator, saga_lifecycle, saga_summary,
+    episodes, knowledge, knowledge_context, knowledge_search, knowledge_worker, llm, lore, memory, memory_conflicts, saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, slow_lifecycle,
 )
 from . import memory_observer_service
@@ -139,7 +140,19 @@ def list_messages(sid: str) -> list[dict]:
         rows = conn.execute(
             "SELECT * FROM messages WHERE session_id = ? ORDER BY created_at", (sid,)
         ).fetchall()
-        return [_msg(r) for r in rows]
+        messages = [_msg(r) for r in rows]
+        by_message: dict[str, list[dict]] = {}
+        citations = conn.execute(
+            "SELECT * FROM knowledge_message_citations WHERE assistant_message_id IN "
+            "(SELECT id FROM messages WHERE session_id=?) ORDER BY assistant_message_id,citation_key",
+            (sid,),
+        ).fetchall()
+        for citation in citations:
+            public = knowledge_context.citation_public(citation)
+            by_message.setdefault(public["assistant_message_id"], []).append(public)
+        for message in messages:
+            message["knowledge_citations"] = by_message.get(message["id"], [])
+        return messages
     finally:
         conn.close()
 
@@ -155,6 +168,38 @@ def toggle_favorite(mid: str) -> dict:
         conn.execute("UPDATE messages SET favorite = ? WHERE id = ?", (newv, mid))
         conn.commit()
         return {"ok": True, "favorite": bool(newv)}
+    finally:
+        conn.close()
+
+
+@app.get("/api/knowledge/citations/{citation_id}")
+def read_knowledge_citation(citation_id: str) -> dict:
+    """只返回仍与保存哈希一致的真实本地切片；快照不能冒充已删除来源。"""
+    conn = db.connect()
+    try:
+        citation = conn.execute(
+            "SELECT * FROM knowledge_message_citations WHERE id=?", (citation_id,),
+        ).fetchone()
+        if not citation:
+            raise HTTPException(404, "引用不存在")
+        source = conn.execute(
+            "SELECT c.content,c.content_sha256,d.status,d.index_version,co.status collection_status "
+            "FROM knowledge_chunks c JOIN knowledge_documents d ON d.id=c.document_id "
+            "JOIN knowledge_collections co ON co.id=d.collection_id "
+            "WHERE c.id=? AND c.document_id=?",
+            (citation["chunk_id"], citation["document_id"]),
+        ).fetchone()
+        if (
+            not source or source["content_sha256"] != citation["content_sha256"]
+            or hashlib.sha256(source["content"].encode("utf-8")).hexdigest()
+            != citation["content_sha256"]
+            or source["status"] != "indexed" or source["index_version"] != knowledge_search.INDEX_VERSION
+            or source["collection_status"] != "active"
+        ):
+            raise HTTPException(410, "原始资料已变化、停用或删除")
+        result = knowledge_context.citation_public(citation)
+        result["content"] = source["content"]
+        return result
     finally:
         conn.close()
 
@@ -249,9 +294,28 @@ async def chat(body: ChatIn) -> StreamingResponse:
         )
         style = companion_state.get_style_guidance(next_state)
         lore_digest = lore.retrieve_lore(body.content)
+        knowledge_retrieval = knowledge_context.prepare(
+            body.content, lore_text=lore_digest, memory_text=digest,
+        )
+        knowledge_block = knowledge_context.prompt_block(knowledge_retrieval)
+        if knowledge_retrieval:
+            conn.execute(
+                "INSERT INTO knowledge_chat_retrievals("
+                "id,session_id,user_message_id,trigger_reason,query_sha256,candidate_count,"
+                "injected_count,knowledge_tokens,knowledge_token_budget,lore_tokens,memory_tokens,"
+                "status,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    knowledge_retrieval["id"], body.session_id, uid, knowledge_retrieval["reason"],
+                    knowledge_retrieval["query_sha256"], knowledge_retrieval["candidate_count"],
+                    len(knowledge_retrieval["results"]), knowledge_retrieval["knowledge_tokens"],
+                    knowledge_retrieval["knowledge_token_budget"], knowledge_retrieval["lore_tokens"],
+                    knowledge_retrieval["memory_tokens"], knowledge_retrieval["status"], db.now(),
+                ),
+            )
+            conn.commit()
         messages = [{
             "role": "system",
-            "content": build_system_prompt(digest, style, lore_digest),
+            "content": build_system_prompt(digest, style, lore_digest, knowledge_block),
         }]
         messages += [{"role": r["role"], "content": r["content"]} for r in history]
     finally:
@@ -281,7 +345,9 @@ async def chat(body: ChatIn) -> StreamingResponse:
                         item for item in used_memories if item["id"] not in failed_reactivations
                     ]
                     used_digest, used_memories = memory.render_digest(used_memories)
-                    messages[0]["content"] = build_system_prompt(used_digest, style, lore_digest)
+                    messages[0]["content"] = build_system_prompt(
+                        used_digest, style, lore_digest, knowledge_block,
+                    )
             # 记账/恢复完成后再报告最终实际注入集合。
             yield _sse(
                 "meta",
@@ -298,18 +364,24 @@ async def chat(body: ChatIn) -> StreamingResponse:
                         }
                         for item in used_memories
                     ],
+                    "knowledge_used": bool(knowledge_retrieval and knowledge_retrieval["results"]),
+                    "knowledge_count": len((knowledge_retrieval or {}).get("results", [])),
                 },
             )
             async for chunk in llm.stream_chat(provider, model, messages):
                 collected.append(chunk)
                 yield _sse("delta", {"text": chunk})
         except llm.LLMError as e:
+            _finish_knowledge_retrieval(knowledge_retrieval, status="failed")
             yield _sse("error", {"message": str(e), "hint": e.hint})
             return
         except Exception:  # noqa: BLE001 兜底：任何未预期异常也作为 error 事件下发，不静默截断流
+            _finish_knowledge_retrieval(knowledge_retrieval, status="failed")
             yield _sse("error", {"message": "生成中断", "hint": "回复生成过程中出现意外错误，请重试。"})
             return
-        full = "".join(collected)
+        full, used_citations = knowledge_context.validate_citations(
+            "".join(collected), knowledge_retrieval,
+        )
         # 持久化助手回复
         c2 = db.connect()
         try:
@@ -320,6 +392,16 @@ async def chat(body: ChatIn) -> StreamingResponse:
             )
             if replace_assistant_id:
                 c2.execute("DELETE FROM messages WHERE id = ?", (replace_assistant_id,))
+            if knowledge_retrieval:
+                for citation in used_citations:
+                    knowledge_context.insert_citation_locked(
+                        c2, assistant_id=aid, retrieval_id=knowledge_retrieval["id"], item=citation,
+                    )
+                c2.execute(
+                    "UPDATE knowledge_chat_retrievals SET assistant_message_id=?,status='completed',"
+                    "finished_at=? WHERE id=?",
+                    (aid, db.now(), knowledge_retrieval["id"]),
+                )
             c2.execute("UPDATE sessions SET updated_at = ? WHERE id = ?", (db.now(), body.session_id))
             c2.commit()
         finally:
@@ -368,6 +450,10 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 "companion_state": saved_companion_state,
                 "affect_observation": affect_observation,
                 "memory_observation": memory_observation,
+                "content": full,
+                "knowledge_citations": [
+                    knowledge_context.citation_public(row) for row in _message_knowledge_citations(aid)
+                ],
             },
         )
 
@@ -1431,6 +1517,31 @@ def write_setting(key: str, body: dict) -> dict:
 # ---------------------------------------------------------------- helpers
 def _sse(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+
+
+def _finish_knowledge_retrieval(prepared: dict | None, *, status: str) -> None:
+    if not prepared:
+        return
+    conn = db.connect()
+    try:
+        conn.execute(
+            "UPDATE knowledge_chat_retrievals SET status=?,finished_at=? WHERE id=?",
+            (status, db.now(), prepared["id"]),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def _message_knowledge_citations(assistant_id: str) -> list:
+    conn = db.connect()
+    try:
+        return conn.execute(
+            "SELECT * FROM knowledge_message_citations WHERE assistant_message_id=? ORDER BY citation_key",
+            (assistant_id,),
+        ).fetchall()
+    finally:
+        conn.close()
 
 
 def _msg(r) -> dict:

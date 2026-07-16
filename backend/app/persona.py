@@ -58,6 +58,7 @@ def build_system_prompt(
     memory_digest: str,
     emotion_guidance: str = "",
     lore_digest: str = "",
+    knowledge_block: str = "",
 ) -> str:
     prompt = PERSONA_PROMPT
     if emotion_guidance:
@@ -78,4 +79,6 @@ def build_system_prompt(
             "自然参考这些已经发生的内容，不要逐条复述，也不要把它们说成原作设定：\n"
             + memory_digest
         )
+    if knowledge_block:
+        prompt += "\n" + knowledge_block
     return prompt
