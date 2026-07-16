@@ -26,6 +26,13 @@ TEXT_WEIGHT = 0.35
 TIME_WEIGHT = 0.15
 COHERENCE_WEIGHT = 0.20
 EPISODE_SCAN_LIMIT = 100
+APPLICATION_BATCH_LIMIT = 5
+
+
+class SagaApplyError(RuntimeError):
+    def __init__(self, code: str, message: str):
+        super().__init__(message)
+        self.code = code
 
 
 def generate_candidates(*, now: float | None = None) -> list[dict]:
@@ -51,7 +58,12 @@ def generate_candidates(*, now: float | None = None) -> list[dict]:
                 continue
             candidate = _record_proposal(conn, proposal, timestamp)
             if candidate["status"] == "qualified":
-                used_episode_ids.update(episode_ids)
+                # A candidate that has already produced a Saga is historical evidence,
+                # not a competitor for this generation pass. Reserving its Episodes
+                # here would hide a longer proposal that appends new Episodes to that
+                # Saga (for example, {A, B} would block {A, B, C}).
+                if candidate.get("promoted_saga_id") is None:
+                    used_episode_ids.update(episode_ids)
                 if candidate.pop("newly_qualified", False):
                     qualified.append(candidate)
         conn.commit()
@@ -99,6 +111,7 @@ def qualified_candidates(limit: int = 20) -> list[dict]:
     try:
         rows = conn.execute(
             "SELECT id FROM saga_group_candidates WHERE status='qualified'"
+            " AND promoted_saga_id IS NULL AND application_attempt_count<3"
             " ORDER BY total_score DESC,first_seen_at,id LIMIT ?",
             (max(1, min(int(limit), 20)),),
         ).fetchall()
@@ -268,6 +281,240 @@ def list_summary_events(candidate_id: str) -> list[dict]:
         conn.close()
 
 
+def apply_candidates_for_run(run_id: str, candidate_ids: list[str]) -> list[dict]:
+    """在一个短事务中创建/追加正式 Saga，并同步提交 run 终态。"""
+    conn = db.connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        run = conn.execute(
+            "SELECT * FROM saga_consolidator_runs WHERE id=?", (run_id,)
+        ).fetchone()
+        if not run or run["status"] != "running":
+            conn.rollback()
+            raise SagaApplyError("application_run_not_running", "Saga 整理任务已不在运行状态")
+        ordered_ids = list(dict.fromkeys(str(value) for value in candidate_ids if value))
+        results = []
+        for candidate_id in ordered_ids[:APPLICATION_BATCH_LIMIT]:
+            row = conn.execute(
+                "SELECT * FROM saga_group_candidates WHERE id=? AND status='qualified'",
+                (candidate_id,),
+            ).fetchone()
+            if not row:
+                continue
+            candidate = _candidate_row(row)
+            if candidate.get("promoted_saga_id"):
+                continue
+            results.append(_apply_candidate_locked(conn, candidate))
+        now = db.now()
+        result_ids = list(dict.fromkeys(item["id"] for item in results))
+        status = "applied" if result_ids else "skipped"
+        conn.execute(
+            "UPDATE saga_consolidator_runs SET status=?,result_saga_ids_json=?,"
+            "candidate_count=?,finished_at=?,updated_at=? WHERE id=?",
+            (status, json.dumps(result_ids), len(ordered_ids), now, now, run_id),
+        )
+        conn.execute(
+            "INSERT INTO settings(key,value) VALUES('last_saga_consolidator_run',?)"
+            " ON CONFLICT(key) DO UPDATE SET value=excluded.value", (str(now),),
+        )
+        _run_event(
+            conn, run_id, "processed", "running", status,
+            "formal_sagas_applied" if result_ids else "no_eligible_group",
+            {"candidate_count": len(ordered_ids), "saga_count": len(result_ids)}, now,
+        )
+        conn.commit()
+        return results
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def record_application_failure(candidate_ids: list[str], error_code: str) -> None:
+    ids = list(dict.fromkeys(candidate_ids))[:APPLICATION_BATCH_LIMIT]
+    if not ids:
+        return
+    conn = db.connect()
+    try:
+        now = db.now()
+        placeholders = ",".join("?" for _ in ids)
+        conn.execute(
+            f"UPDATE saga_group_candidates SET application_attempt_count="
+            f"application_attempt_count+1,application_error_code=?,last_application_at=?"
+            f" WHERE id IN ({placeholders})",
+            (error_code, now, *ids),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def _apply_candidate_locked(conn, candidate: dict) -> dict:
+    episode_ids = candidate["episode_ids"]
+    if grouping_fingerprint(episode_ids) != candidate["grouping_fingerprint"]:
+        raise SagaApplyError("application_fingerprint_changed", "Saga 候选指纹不匹配")
+    if candidate.get("summary_status") not in {"model_validated", "extractive_fallback"}:
+        raise SagaApplyError("application_summary_missing", "Saga 候选尚无安全摘要")
+    sources = _load_candidate_episodes(conn, episode_ids)
+    if len(sources) != len(episode_ids):
+        raise SagaApplyError("application_source_missing", "Saga 来源 Episode 不完整")
+    try:
+        saga_summary.validate_source_chain(sources)
+    except saga_summary.SagaSummaryValidationError as exc:
+        raise SagaApplyError(f"application_{exc.code}", str(exc)) from exc
+    current_hash = saga_summary.source_hash(sources)
+    if current_hash != candidate.get("summary_source_hash"):
+        raise SagaApplyError("application_source_changed", "Saga 来源在应用前发生变化")
+    links = conn.execute(
+        f"SELECT episode_id,saga_id FROM memory_saga_episodes WHERE removed_at IS NULL"
+        f" AND episode_id IN ({','.join('?' for _ in episode_ids)}) ORDER BY episode_id",
+        episode_ids,
+    ).fetchall()
+    now = db.now()
+    if candidate.get("application_mode") == "append":
+        target_id = candidate.get("target_saga_id")
+        target = conn.execute(
+            "SELECT * FROM memory_sagas WHERE id=? AND status='active'", (target_id,)
+        ).fetchone()
+        if not target:
+            raise SagaApplyError("application_target_missing", "目标 Saga 不可追加")
+        existing_rows = conn.execute(
+            "SELECT episode_id,position FROM memory_saga_episodes"
+            " WHERE saga_id=? AND removed_at IS NULL ORDER BY position", (target_id,),
+        ).fetchall()
+        existing_ids = [row["episode_id"] for row in existing_rows]
+        existing_sources = _load_candidate_episodes(conn, existing_ids)
+        if (
+            len(existing_sources) != len(existing_ids)
+            or saga_summary.source_hash(existing_sources) != target["source_hash"]
+        ):
+            raise SagaApplyError("application_target_source_changed", "目标 Saga 的旧来源已经变化")
+        if not set(existing_ids) < set(episode_ids):
+            raise SagaApplyError("application_append_sources_invalid", "追加来源集合不完整")
+        if episode_ids[:len(existing_ids)] != existing_ids:
+            raise SagaApplyError("application_append_order_changed", "追加来源不再是原 Saga 的有序后缀")
+        if any(row["saga_id"] != target_id for row in links):
+            raise SagaApplyError("application_cross_saga_conflict", "Episode 已属于其他 Saga")
+        new_ids = [episode_id for episode_id in episode_ids if episode_id not in set(existing_ids)]
+        for position, episode_id in enumerate(new_ids, start=len(existing_ids)):
+            conn.execute(
+                "INSERT INTO memory_saga_episodes(saga_id,episode_id,position,role,added_at)"
+                " VALUES(?,?,?,'development',?)", (target_id, episode_id, position, now),
+            )
+        before = dict(target)
+        conn.execute(
+            "UPDATE memory_sagas SET title=?,summary=?,theme=?,current_stage=?,end_at=?,"
+            "significance=?,confidence=?,grouping_fingerprint=?,policy_version=?,"
+            "source_episode_ids_json=?,source_hash=?,summary_status=?,summary_protocol_version=?,"
+            "summary_provider_id=?,summary_model=?,summary_evidence_json=?,updated_at=? WHERE id=?",
+            (
+                candidate["title"], candidate["summary"], candidate["theme"],
+                candidate["current_stage"], max(item["end_at"] for item in sources),
+                _significance(sources), candidate["total_score"], candidate["grouping_fingerprint"],
+                POLICY_VERSION, json.dumps(episode_ids), current_hash,
+                candidate["summary_status"], candidate["summary_protocol_version"],
+                candidate.get("summary_provider_id"), candidate.get("summary_model"),
+                json.dumps(candidate["summary_evidence_episode_ids"]), now, target_id,
+            ),
+        )
+        saga_id, action = target_id, "episode_appended"
+        after = {"id": saga_id, "episode_ids": episode_ids, "source_hash": current_hash}
+        _saga_event(conn, saga_id, action, before, after, "consolidator", now)
+    else:
+        if links:
+            raise SagaApplyError("application_cross_saga_conflict", "Episode 已属于有效 Saga")
+        saga_id = db.new_id()
+        conn.execute(
+            "INSERT INTO memory_sagas("
+            "id,title,summary,theme,current_stage,start_at,end_at,significance,confidence,status,source,"
+            "grouping_fingerprint,policy_version,source_episode_ids_json,source_hash,"
+            "summary_status,summary_protocol_version,summary_provider_id,summary_model,"
+            "summary_evidence_json,created_at,updated_at)"
+            " VALUES(?,?,?,?,?,?,?,?,?, 'active','automatic',?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                saga_id, candidate["title"], candidate["summary"], candidate["theme"],
+                candidate["current_stage"], min(item["start_at"] for item in sources),
+                max(item["end_at"] for item in sources),
+                _significance(sources), candidate["total_score"], candidate["grouping_fingerprint"],
+                POLICY_VERSION, json.dumps(episode_ids), current_hash, candidate["summary_status"],
+                candidate["summary_protocol_version"], candidate.get("summary_provider_id"),
+                candidate.get("summary_model"),
+                json.dumps(candidate["summary_evidence_episode_ids"]), now, now,
+            ),
+        )
+        for position, episode_id in enumerate(episode_ids):
+            role = "anchor" if position == 0 else "development"
+            conn.execute(
+                "INSERT INTO memory_saga_episodes(saga_id,episode_id,position,role,added_at)"
+                " VALUES(?,?,?,?,?)", (saga_id, episode_id, position, role, now),
+            )
+        after = {"id": saga_id, "episode_ids": episode_ids, "source_hash": current_hash}
+        _saga_event(conn, saga_id, "created", None, after, "consolidator", now)
+    _sync_saga_entities(conn, saga_id, episode_ids, now)
+    conn.execute(
+        "UPDATE saga_group_candidates SET promoted_saga_id=?,application_attempt_count="
+        "application_attempt_count+1,application_error_code=NULL,last_application_at=? WHERE id=?",
+        (saga_id, now, candidate["id"]),
+    )
+    row = conn.execute("SELECT * FROM memory_sagas WHERE id=?", (saga_id,)).fetchone()
+    return dict(row)
+
+
+def _sync_saga_entities(conn, saga_id: str, episode_ids: list[str], now: float) -> None:
+    rows = conn.execute(
+        f"SELECT DISTINCT ee.entity_id FROM memory_episode_entities ee"
+        f" JOIN memory_entities e ON e.id=ee.entity_id AND e.status='active'"
+        f" WHERE ee.episode_id IN ({','.join('?' for _ in episode_ids)})",
+        episode_ids,
+    ).fetchall()
+    for row in rows:
+        conn.execute(
+            "INSERT INTO memory_saga_entities("
+            "saga_id,entity_id,source,created_at,updated_at) VALUES(?,?,'episode_derived',?,?)"
+            " ON CONFLICT(saga_id,entity_id) DO UPDATE SET updated_at=excluded.updated_at",
+            (saga_id, row["entity_id"], now, now),
+        )
+
+
+def _significance(sources: list[dict]) -> int:
+    value = round(sum(int(item.get("significance") or 4) for item in sources) / len(sources))
+    return max(1, min(10, value))
+
+
+def _saga_event(
+    conn, saga_id: str, action: str, before: dict | None, after: dict,
+    source: str, created_at: float,
+) -> None:
+    if action not in {"created", "episode_appended"}:
+        raise ValueError("非法的 Saga 应用事件")
+    conn.execute(
+        "INSERT INTO memory_saga_events("
+        "id,saga_id,action,before_json,after_json,reason_code,source,policy_version,created_at)"
+        " VALUES(?,?,?,?,?,'qualified_group',?,?,?)",
+        (
+            db.new_id(), saga_id, action,
+            json.dumps(before, ensure_ascii=False) if before is not None else None,
+            json.dumps(after, ensure_ascii=False), source, POLICY_VERSION, created_at,
+        ),
+    )
+
+
+def _run_event(
+    conn, run_id: str, action: str, before_status: str | None, after_status: str,
+    reason_code: str, metadata: dict, created_at: float,
+) -> None:
+    conn.execute(
+        "INSERT INTO saga_consolidator_events("
+        "id,run_id,action,before_status,after_status,reason_code,metadata_json,created_at)"
+        " VALUES(?,?,?,?,?,?,?,?)",
+        (
+            db.new_id(), run_id, action, before_status, after_status, reason_code,
+            json.dumps(metadata, ensure_ascii=False, separators=(",", ":")), created_at,
+        ),
+    )
+
+
 def assess_group(episodes: list[dict], entity_by_episode: dict[str, set[str]]) -> dict:
     """对一个有序 Episode 集合评分；不读写数据库。"""
     if not MIN_GROUP_SIZE <= len(episodes) <= MAX_GROUP_SIZE:
@@ -432,10 +679,12 @@ def _record_proposal(conn, proposal: dict, now: float) -> dict:
         f" WHERE removed_at IS NULL AND episode_id IN ({placeholders}) ORDER BY episode_id",
         episode_ids,
     ).fetchall()
-    status = "conflicted" if conflicts else (
+    append_target = _append_target(conn, conflicts, episode_ids)
+    status = "conflicted" if conflicts and not append_target else (
         "qualified" if proposal["scores"]["qualified"] else "observing"
     )
-    conflict_reason = "episode_already_in_saga" if conflicts else None
+    conflict_reason = "episode_already_in_saga" if conflicts and not append_target else None
+    application_mode = "append" if append_target else "create"
     scores = proposal["scores"]
     if existing:
         newly_qualified = existing["status"] != "qualified" and status == "qualified"
@@ -447,11 +696,12 @@ def _record_proposal(conn, proposal: dict, now: float) -> dict:
             "UPDATE saga_group_candidates SET status=?,shared_entity_ids_json=?,"
             "entity_score=?,text_score=?,time_score=?,coherence_score=?,total_score=?,"
             "score_details_json=?,conflict_reason=?,evaluation_count=evaluation_count+1,"
-            "last_evaluated_at=? WHERE id=?",
+            "last_evaluated_at=?,application_mode=?,target_saga_id=? WHERE id=?",
             (
                 status, json.dumps(proposal["shared_entity_ids"]), scores["entity"],
                 scores["text"], scores["time"], scores["coherence"], scores["total"],
-                json.dumps(scores, separators=(",", ":")), conflict_reason, now, existing["id"],
+                json.dumps(scores, separators=(",", ":")), conflict_reason, now,
+                application_mode, append_target, existing["id"],
             ),
         )
         row = conn.execute(
@@ -476,11 +726,36 @@ def _record_proposal(conn, proposal: dict, now: float) -> dict:
             now, now, now + CANDIDATE_TTL_SECONDS,
         ),
     )
+    if append_target:
+        conn.execute(
+            "UPDATE saga_group_candidates SET application_mode='append',target_saga_id=?"
+            " WHERE id=?", (append_target, candidate_id),
+        )
     result = _candidate_row(conn.execute(
         "SELECT * FROM saga_group_candidates WHERE id=?", (candidate_id,)
     ).fetchone())
     result["newly_qualified"] = status == "qualified"
     return result
+
+
+def _append_target(conn, conflicts, episode_ids: list[str]) -> str | None:
+    saga_ids = {row["saga_id"] for row in conflicts}
+    if len(saga_ids) != 1:
+        return None
+    saga_id = next(iter(saga_ids))
+    saga = conn.execute(
+        "SELECT status FROM memory_sagas WHERE id=?", (saga_id,)
+    ).fetchone()
+    if not saga or saga["status"] != "active":
+        return None
+    existing = {
+        row["episode_id"] for row in conn.execute(
+            "SELECT episode_id FROM memory_saga_episodes"
+            " WHERE saga_id=? AND removed_at IS NULL", (saga_id,),
+        ).fetchall()
+    }
+    proposed = set(episode_ids)
+    return saga_id if len(existing) >= 2 and existing < proposed else None
 
 
 def _load_eligible_episodes(conn) -> list[dict]:

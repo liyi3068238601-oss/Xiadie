@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import re
 
 from . import db, episode_summary
@@ -23,6 +24,7 @@ COHERENCE_WEIGHT = 0.20
 APPLICATION_VERSION = "episode-application-v1"
 AUTOMATIC_BATCH_LIMIT = 20
 APPLICATION_MAX_ATTEMPTS = 3
+_logger = logging.getLogger(__name__)
 
 ROUTINE_HINTS = ("配置", "代码", "报错", "接口", "构建", "测试", "修复", "开发")
 SIGNIFICANT_HINTS = ("第一次", "决定", "完成", "成功", "纪念", "搬到", "旅行", "毕业", "入职")
@@ -279,12 +281,18 @@ def apply_candidates_for_run(run_id: str, candidate_ids: list[str]) -> list[dict
             {"group_count": len(applied), "episode_ids": episode_ids},
         )
         conn.commit()
-        return applied
     except Exception:
         conn.rollback()
         raise
     finally:
         conn.close()
+    if applied:
+        try:
+            from . import saga_consolidator
+            saga_consolidator.enqueue_for_episodes([item["id"] for item in applied])
+        except Exception:  # noqa: BLE001 - Saga 排队失败不能回滚正式 Episode
+            _logger.exception("Failed to enqueue Saga consolidation after Episode apply")
+    return applied
 
 
 def record_application_failure(candidate_ids: list[str], error_code: str) -> None:

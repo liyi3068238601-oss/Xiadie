@@ -848,6 +848,57 @@ MIGRATIONS = [
             ON saga_candidate_summary_events(candidate_id, created_at, id);
         """,
     ),
+    (
+        21,
+        """
+        ALTER TABLE memory_sagas ADD COLUMN current_stage TEXT NOT NULL DEFAULT '';
+        ALTER TABLE saga_group_candidates ADD COLUMN application_mode TEXT NOT NULL
+            DEFAULT 'create' CHECK(application_mode IN ('create','append'));
+        ALTER TABLE saga_group_candidates ADD COLUMN target_saga_id TEXT
+            REFERENCES memory_sagas(id) ON DELETE SET NULL;
+        ALTER TABLE saga_group_candidates ADD COLUMN application_attempt_count INTEGER NOT NULL
+            DEFAULT 0 CHECK(application_attempt_count >= 0);
+        ALTER TABLE saga_group_candidates ADD COLUMN application_error_code TEXT;
+        ALTER TABLE saga_group_candidates ADD COLUMN last_application_at REAL;
+
+        CREATE TABLE saga_consolidator_runs (
+            id TEXT PRIMARY KEY,
+            idempotency_key TEXT NOT NULL UNIQUE,
+            trigger TEXT NOT NULL CHECK(trigger IN ('startup','idle','weekly','manual','episode')),
+            status TEXT NOT NULL CHECK(status IN (
+                'queued','running','cancel_requested','cancelled','applied',
+                'recovery_pending','exhausted','skipped'
+            )),
+            policy_version TEXT NOT NULL,
+            attempt_count INTEGER NOT NULL DEFAULT 0 CHECK(attempt_count BETWEEN 0 AND 3),
+            max_attempts INTEGER NOT NULL DEFAULT 3 CHECK(max_attempts BETWEEN 1 AND 3),
+            next_attempt_at REAL,
+            started_at REAL,
+            finished_at REAL,
+            error_code TEXT,
+            input_episode_ids_json TEXT NOT NULL DEFAULT '[]',
+            result_saga_ids_json TEXT NOT NULL DEFAULT '[]',
+            candidate_count INTEGER NOT NULL DEFAULT 0 CHECK(candidate_count >= 0),
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_saga_consolidator_due
+            ON saga_consolidator_runs(status, next_attempt_at, created_at);
+
+        CREATE TABLE saga_consolidator_events (
+            id TEXT PRIMARY KEY,
+            run_id TEXT NOT NULL REFERENCES saga_consolidator_runs(id) ON DELETE CASCADE,
+            action TEXT NOT NULL,
+            before_status TEXT,
+            after_status TEXT NOT NULL,
+            reason_code TEXT,
+            metadata_json TEXT NOT NULL DEFAULT '{}',
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_saga_consolidator_events_run
+            ON saga_consolidator_events(run_id, created_at, id);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

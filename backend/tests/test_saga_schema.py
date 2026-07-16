@@ -34,7 +34,7 @@ def test_saga_schema_has_traceability_and_lifecycle_fields():
         version = conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
         ).fetchone()["value"]
-        assert version == "20"
+        assert version == "21"
         tables = {
             row["name"] for row in conn.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'memory_saga%'"
@@ -44,6 +44,13 @@ def test_saga_schema_has_traceability_and_lifecycle_fields():
             "memory_sagas", "memory_saga_episodes", "memory_saga_entities",
             "memory_saga_events",
         }
+        worker_tables = {
+            row["name"] for row in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+                " AND name IN ('saga_consolidator_runs','saga_consolidator_events')"
+            ).fetchall()
+        }
+        assert worker_tables == {"saga_consolidator_runs", "saga_consolidator_events"}
         columns = {
             row["name"] for row in conn.execute("PRAGMA table_info(memory_sagas)").fetchall()
         }
@@ -52,7 +59,7 @@ def test_saga_schema_has_traceability_and_lifecycle_fields():
             "source_episode_ids_json", "source_hash", "summary_status",
             "summary_protocol_version", "summary_evidence_json", "completion_reason",
             "completed_at", "archived_at", "tombstoned_at", "correction_note",
-            "corrected_at",
+            "corrected_at", "current_stage",
         } <= columns
     finally:
         conn.close()
@@ -199,6 +206,8 @@ def test_saga_candidate_schema_rejects_invalid_status_score_and_fingerprint_reus
             "completion_evidence_episode_ids_json", "summary_warnings_json",
             "summary_error_code", "summary_source_hash", "summary_prompt_tokens",
             "summary_completion_tokens", "summary_repair_attempted",
+            "application_mode", "target_saga_id", "application_attempt_count",
+            "application_error_code", "last_application_at",
         } <= columns
         conn.execute(statement, values)
         with pytest.raises(sqlite3.IntegrityError):

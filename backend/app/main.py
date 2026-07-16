@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 
 from . import (
     companion_state, db, entities, episode_consolidator, episode_summary_service,
-    episodes, llm, lore, memory,
+    episodes, llm, lore, memory, saga_consolidator,
 )
 from . import memory_observer_service
 from .affect import observer_service as affect_observer_service
@@ -28,9 +28,11 @@ async def lifespan(app: FastAPI):
     await affect_observer_service.start_worker()
     await memory_observer_service.start_worker()
     await episode_consolidator.start_worker()
+    await saga_consolidator.start_worker()
     try:
         yield
     finally:
+        await saga_consolidator.stop_worker()
         await episode_consolidator.stop_worker()
         await memory_observer_service.stop_worker()
         await affect_observer_service.stop_worker()
