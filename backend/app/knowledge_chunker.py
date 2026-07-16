@@ -1,0 +1,184 @@
+"""F.4 稳定知识切片协议：结构边界优先、无重叠、来源定位可复现。"""
+from __future__ import annotations
+
+import hashlib
+import json
+from collections.abc import Callable
+
+CHUNKER_VERSION = "knowledge-structure-chunker-v1"
+TARGET_CHARS = 800
+MAX_CHARS = 1200
+_SENTENCE_END = frozenset("。！？!?；;.!?")
+
+
+class ChunkingCancelled(RuntimeError):
+    pass
+
+
+def chunk_artifact(payload: dict, *, should_cancel: Callable[[], bool] | None = None) -> list[dict]:
+    text, headings = _validate_payload(payload)
+    paragraphs = _paragraphs(text, headings)
+    units: list[dict] = []
+    for paragraph in paragraphs:
+        _checkpoint(should_cancel)
+        units.extend(_split_paragraph(text, paragraph))
+
+    chunks: list[dict] = []
+    pending: list[dict] = []
+    for unit in units:
+        _checkpoint(should_cancel)
+        if pending:
+            combined_length = unit["end"] - pending[0]["start"]
+            if unit["heading_path"] != pending[0]["heading_path"] or combined_length > TARGET_CHARS:
+                chunks.append(_materialize(text, pending, len(chunks)))
+                pending = []
+        pending.append(unit)
+    if pending:
+        chunks.append(_materialize(text, pending, len(chunks)))
+    return chunks
+
+
+def chunk_id(document_id: str, chunk: dict) -> str:
+    stable = (
+        f"{document_id}:{CHUNKER_VERSION}:{chunk['ordinal']}:"
+        f"{chunk['char_start']}:{chunk['char_end']}:{chunk['content_sha256']}"
+    )
+    return hashlib.sha256(stable.encode("utf-8")).hexdigest()
+
+
+def _validate_payload(payload: dict) -> tuple[str, list[dict]]:
+    if not isinstance(payload, dict) or not isinstance(payload.get("normalized_text"), str):
+        raise ValueError("parse_artifact_invalid")
+    text = payload["normalized_text"]
+    digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    if payload.get("normalized_sha256") != digest or payload.get("char_count") != len(text):
+        raise ValueError("parse_artifact_invalid")
+    headings = payload.get("headings")
+    if not isinstance(headings, list):
+        raise ValueError("parse_artifact_invalid")
+    line_count = 0 if not text else text.count("\n") + 1
+    for item in headings:
+        if (
+            not isinstance(item, dict) or not isinstance(item.get("title"), str)
+            or not isinstance(item.get("level"), int) or not 1 <= item["level"] <= 6
+            or not isinstance(item.get("line"), int) or not 1 <= item["line"] <= line_count
+        ):
+            raise ValueError("parse_artifact_invalid")
+    return text, headings
+
+
+def _paragraphs(text: str, headings: list[dict]) -> list[dict]:
+    heading_by_line = {item["line"]: item for item in headings}
+    line_offsets = [0]
+    line_offsets.extend(index + 1 for index, char in enumerate(text) if char == "\n")
+    path: list[str] = []
+    result: list[dict] = []
+    segments: list[tuple[int, int]] = []
+    for start, end in _base_paragraph_spans(text):
+        cuts = [start]
+        cuts.extend(
+            line_offsets[line - 1] for line in sorted(heading_by_line)
+            if start < line_offsets[line - 1] < end
+        )
+        cuts.append(end)
+        segments.extend((cuts[i], cuts[i + 1]) for i in range(len(cuts) - 1))
+    for index, (start, end) in enumerate(segments, start=1):
+        while end > start and text[end - 1] == "\n":
+            end -= 1
+        if end <= start:
+            continue
+        line_start = text.count("\n", 0, start) + 1
+        line_end = text.count("\n", 0, end - 1) + 1
+        heading = heading_by_line.get(line_start)
+        if heading:
+            path = path[: heading["level"] - 1]
+            path.append(heading["title"])
+        result.append({
+            "start": start, "end": end, "paragraph": index,
+            "line_start": line_start, "line_end": line_end, "heading_path": list(path),
+        })
+    return result
+
+
+def _base_paragraph_spans(text: str) -> list[tuple[int, int]]:
+    spans: list[tuple[int, int]] = []
+    start: int | None = None
+    end = 0
+    offset = 0
+    for line in text.splitlines(keepends=True):
+        if line.strip(" \t\n"):
+            if start is None:
+                start = offset
+            end = offset + len(line) - (1 if line.endswith("\n") else 0)
+        elif start is not None:
+            spans.append((start, end))
+            start = None
+        offset += len(line)
+    if start is not None:
+        spans.append((start, end))
+    return spans
+
+
+def _split_paragraph(text: str, paragraph: dict) -> list[dict]:
+    start, end = paragraph["start"], paragraph["end"]
+    pieces: list[dict] = []
+    cursor = start
+    while end - cursor > MAX_CHARS:
+        limit = min(cursor + MAX_CHARS, end)
+        preferred = min(cursor + TARGET_CHARS, limit)
+        split = _sentence_boundary(text, cursor, preferred, limit)
+        if split <= cursor:
+            split = limit
+        pieces.append(_unit(paragraph, cursor, split, text))
+        cursor = split
+        while cursor < end and text[cursor].isspace() and text[cursor] != "\n":
+            cursor += 1
+    if cursor < end:
+        pieces.append(_unit(paragraph, cursor, end, text))
+    return pieces
+
+
+def _sentence_boundary(text: str, start: int, preferred: int, limit: int) -> int:
+    for position in range(preferred, limit):
+        if text[position] in _SENTENCE_END:
+            return position + 1
+    for position in range(preferred - 1, start, -1):
+        if text[position] in _SENTENCE_END:
+            return position + 1
+    return limit
+
+
+def _unit(paragraph: dict, start: int, end: int, text: str) -> dict:
+    return {
+        "start": start, "end": end, "paragraph": paragraph["paragraph"],
+        "line_start": text.count("\n", 0, start) + 1,
+        "line_end": text.count("\n", 0, end - 1) + 1,
+        "heading_path": paragraph["heading_path"],
+    }
+
+
+def _materialize(text: str, units: list[dict], ordinal: int) -> dict:
+    start, end = units[0]["start"], units[-1]["end"]
+    content = text[start:end]
+    return {
+        "ordinal": ordinal,
+        "content": content,
+        "content_sha256": hashlib.sha256(content.encode("utf-8")).hexdigest(),
+        "heading_path_json": json.dumps(
+            units[0]["heading_path"], ensure_ascii=False, separators=(",", ":")
+        ),
+        "paragraph_start": units[0]["paragraph"],
+        "paragraph_end": units[-1]["paragraph"],
+        "line_start": units[0]["line_start"],
+        "line_end": units[-1]["line_end"],
+        "char_start": start,
+        "char_end": end,
+        "page_start": None,
+        "page_end": None,
+        "chunker_version": CHUNKER_VERSION,
+    }
+
+
+def _checkpoint(should_cancel: Callable[[], bool] | None) -> None:
+    if should_cancel and should_cancel():
+        raise ChunkingCancelled()

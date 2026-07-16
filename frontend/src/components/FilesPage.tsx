@@ -43,14 +43,14 @@ export function FilesPage() {
 
   const refresh = () => api.listKnowledgeDocuments().then(setDocuments);
   useEffect(() => { refresh().catch(() => toast("知识文档列表加载失败")); }, []);
-  const hasActiveParsing = documents.some((document) =>
-    !document.parsed_at && ["queued", "parsing"].includes(document.status)
+  const hasActiveProcessing = documents.some((document) =>
+    !document.chunked_at && ["queued", "parsing"].includes(document.status)
   );
   useEffect(() => {
-    if (!hasActiveParsing) return;
+    if (!hasActiveProcessing) return;
     const timer = window.setInterval(() => refresh().catch(() => {}), 1500);
     return () => window.clearInterval(timer);
-  }, [hasActiveParsing]);
+  }, [hasActiveProcessing]);
 
   function choose(file: File) {
     const extension = file.name.toLowerCase().split(".").pop();
@@ -133,7 +133,7 @@ export function FilesPage() {
     <div className="page">
       <h1>文件与知识</h1>
       <div className="sub">
-        把外部资料交给遐蝶作为可引用知识。当前支持安全接收 TXT/Markdown；解析、索引和对话引用仍在施工。
+        把外部资料交给遐蝶作为可引用知识。当前支持安全接收、解析和稳定切片 TXT/Markdown；索引和对话引用仍在施工。
       </div>
 
       {/* 拖拽 / 选择区 */}
@@ -235,9 +235,12 @@ export function FilesPage() {
             <strong>{document.original_name}</strong>
             <div className="sub">{formatBytes(document.size_bytes)} · {documentStatus(document)} ·
               指纹 {document.content_sha256.slice(0, 10)}</div>
-            {document.parsed_at && (
+            {document.parsed_at && !document.chunked_at && (
               <div className="sub">本地解析：{document.parse_line_count} 行 · {document.parse_heading_count} 个标题 ·
                 {document.parse_char_count} 字符；尚未切片或索引</div>
+            )}
+            {document.chunked_at && (
+              <div className="sub">稳定切片：{document.chunk_count} 段；保留标题、段落、行号与字符范围，尚未索引</div>
             )}
             {runDetails[document.id] && (
               <div style={{ marginTop: 8 }}>
@@ -273,6 +276,12 @@ function formatBytes(value: number): string {
 }
 
 function documentStatus(document: api.KnowledgeDocument): string {
+  if (document.chunked_at && document.latest_run?.current_stage === "indexing") {
+    return "切片完成 · 等待索引";
+  }
+  if (document.latest_run?.status === "running" && document.latest_run.current_stage === "chunking") {
+    return `切片中 ${document.latest_run.progress}%`;
+  }
   if (document.parsed_at && document.latest_run?.current_stage === "chunking") {
     return "解析完成 · 等待切片";
   }
@@ -287,6 +296,7 @@ function documentStatus(document: api.KnowledgeDocument): string {
 
 function eventLabel(action: string): string {
   return ({ admitted: "安全接收", parsing_started: "开始解析", parsing_completed: "解析完成",
+    chunking_started: "开始切片", chunking_completed: "切片完成",
     retry_scheduled: "等待重试", recovery_scheduled: "中断恢复", cancel_requested: "请求停止",
     cancelled: "已停止", failed: "解析失败" } as Record<string, string>)[action] || "任务记录";
 }

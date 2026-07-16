@@ -13,7 +13,7 @@ def test_schema_28_has_separate_knowledge_namespace_and_default_collection():
     try:
         assert conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
-        ).fetchone()["value"] == "29"
+        ).fetchone()["value"] == "30"
         tables = {
             row["name"] for row in conn.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'knowledge_%'"
@@ -22,6 +22,7 @@ def test_schema_28_has_separate_knowledge_namespace_and_default_collection():
         assert tables == {
             "knowledge_collections", "knowledge_documents",
             "knowledge_import_runs", "knowledge_import_events", "knowledge_parse_artifacts",
+            "knowledge_chunks",
         }
         default = conn.execute(
             "SELECT * FROM knowledge_collections WHERE id='default'"
@@ -172,5 +173,27 @@ def test_schema_29_upgrades_existing_knowledge_rows_without_rewriting_them():
         assert "parsed_at" in {
             row["name"] for row in conn.execute("PRAGMA table_info(knowledge_documents)")
         }
+    finally:
+        conn.close()
+
+
+def test_schema_30_adds_chunks_without_rewriting_existing_parsed_rows():
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    try:
+        conn.executescript(
+            "PRAGMA foreign_keys=ON;"
+            "CREATE TABLE knowledge_documents(id TEXT PRIMARY KEY,chunk_count INTEGER NOT NULL DEFAULT 0);"
+            "INSERT INTO knowledge_documents VALUES('doc',0);"
+        )
+        migration = next(sql for version, sql in db.MIGRATIONS if version == 30)
+        conn.executescript(migration)
+        row = conn.execute(
+            "SELECT chunk_count,chunked_at FROM knowledge_documents WHERE id='doc'"
+        ).fetchone()
+        assert row["chunk_count"] == 0 and row["chunked_at"] is None
+        assert conn.execute(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='knowledge_chunks'"
+        ).fetchone()[0] == 1
     finally:
         conn.close()

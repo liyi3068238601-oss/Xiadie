@@ -1324,6 +1324,38 @@ MIGRATIONS = [
             ON knowledge_import_runs(status,current_stage,next_attempt_at,created_at);
         """,
     ),
+    (
+        30,
+        """
+        ALTER TABLE knowledge_documents ADD COLUMN chunker_version TEXT;
+        ALTER TABLE knowledge_documents ADD COLUMN chunked_at REAL;
+
+        CREATE TABLE knowledge_chunks (
+            id TEXT PRIMARY KEY,
+            document_id TEXT NOT NULL REFERENCES knowledge_documents(id) ON DELETE CASCADE,
+            ordinal INTEGER NOT NULL CHECK(ordinal >= 0),
+            content TEXT NOT NULL CHECK(length(content) > 0),
+            content_sha256 TEXT NOT NULL CHECK(length(content_sha256)=64),
+            heading_path_json TEXT NOT NULL DEFAULT '[]',
+            paragraph_start INTEGER NOT NULL CHECK(paragraph_start >= 1),
+            paragraph_end INTEGER NOT NULL CHECK(paragraph_end >= paragraph_start),
+            line_start INTEGER NOT NULL CHECK(line_start >= 1),
+            line_end INTEGER NOT NULL CHECK(line_end >= line_start),
+            char_start INTEGER NOT NULL CHECK(char_start >= 0),
+            char_end INTEGER NOT NULL CHECK(char_end > char_start),
+            page_start INTEGER CHECK(page_start IS NULL OR page_start >= 1),
+            page_end INTEGER CHECK(page_end IS NULL OR page_end >= page_start),
+            chunker_version TEXT NOT NULL,
+            created_at REAL NOT NULL,
+            UNIQUE(document_id,ordinal),
+            UNIQUE(document_id,char_start,char_end)
+        );
+        CREATE INDEX idx_knowledge_chunks_document_locator
+            ON knowledge_chunks(document_id,ordinal,char_start,char_end);
+        CREATE INDEX idx_knowledge_chunks_content_hash
+            ON knowledge_chunks(content_sha256);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

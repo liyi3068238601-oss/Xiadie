@@ -218,6 +218,9 @@ export interface KnowledgeDocument {
   parse_char_count?: number;
   parse_line_count?: number;
   parse_heading_count?: number;
+  chunker_version?: string | null;
+  chunked_at?: number | null;
+  chunk_count: number;
   latest_run?: KnowledgeImportRun | null;
   created_at: number;
   updated_at: number;
