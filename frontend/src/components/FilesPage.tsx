@@ -38,19 +38,37 @@ export function FilesPage() {
   const [sensitive, setSensitive] = useState(false);
   const [importing, setImporting] = useState(false);
   const [documents, setDocuments] = useState<api.KnowledgeDocument[]>([]);
+  const [collections, setCollections] = useState<api.KnowledgeCollection[]>([]);
   const [runDetails, setRunDetails] = useState<Record<string, api.KnowledgeImportRun>>({});
+  const [search, setSearch] = useState("");
+  const [collectionFilter, setCollectionFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [editingTags, setEditingTags] = useState<string | null>(null);
+  const [tagDraft, setTagDraft] = useState("");
+  const [actionBusy, setActionBusy] = useState<string | null>(null);
+  const [audits, setAudits] = useState<api.KnowledgeRetrievalAudit[] | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const refresh = () => api.listKnowledgeDocuments().then(setDocuments);
-  useEffect(() => { refresh().catch(() => toast("知识文档列表加载失败")); }, []);
+  const refresh = () => api.listKnowledgeDocuments({
+    collection_id: collectionFilter || undefined,
+    status: statusFilter || undefined,
+    query: search.trim() || undefined,
+  }).then(setDocuments);
+  useEffect(() => {
+    api.listKnowledgeCollections().then(setCollections).catch(() => toast("知识库集合加载失败"));
+  }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => refresh().catch(() => toast("知识文档列表加载失败")), 220);
+    return () => window.clearTimeout(timer);
+  }, [search, collectionFilter, statusFilter]);
   const hasActiveProcessing = documents.some((document) =>
-    !document.indexed_at && ["queued", "parsing"].includes(document.status)
+    ["queued", "parsing", "delete_pending"].includes(document.status)
   );
   useEffect(() => {
     if (!hasActiveProcessing) return;
     const timer = window.setInterval(() => refresh().catch(() => {}), 1500);
     return () => window.clearInterval(timer);
-  }, [hasActiveProcessing]);
+  }, [hasActiveProcessing, search, collectionFilter, statusFilter]);
 
   function choose(file: File) {
     const extension = file.name.toLowerCase().split(".").pop();
@@ -126,6 +144,79 @@ export function FilesPage() {
       await refresh();
     } catch (error: any) {
       toast(error.message || "停止失败");
+    }
+  }
+
+  async function saveTags(document: api.KnowledgeDocument) {
+    const tags = tagDraft.split(/[,，]/).map((tag) => tag.trim()).filter(Boolean);
+    setActionBusy(`tags:${document.id}`);
+    try {
+      await api.updateKnowledgeTags(document.id, tags);
+      toast("标签已保存");
+      setEditingTags(null);
+      await refresh();
+    } catch (error: any) {
+      toast(error.message || "标签保存失败");
+    } finally {
+      setActionBusy(null);
+    }
+  }
+
+  async function reindexDocument(document: api.KnowledgeDocument) {
+    if (!window.confirm(`重建「${document.original_name}」的本地索引吗？重建期间会暂时退出检索。`)) return;
+    setActionBusy(`reindex:${document.id}`);
+    try {
+      await api.reindexKnowledgeDocument(document.id);
+      toast("已开始重建本地索引");
+      await refresh();
+    } catch (error: any) {
+      toast(error.message || "重建启动失败");
+    } finally {
+      setActionBusy(null);
+    }
+  }
+
+  async function deleteDocument(document: api.KnowledgeDocument) {
+    const confirmed = window.confirm(
+      `确定删除「${document.original_name}」吗？\n\n将清除遐蝶应用内的原文副本、切片、索引和解析产物，立即停止召回。应用外的原文件或备份不会同步删除。`,
+    );
+    if (!confirmed) return;
+    setActionBusy(`delete:${document.id}`);
+    try {
+      await api.deleteKnowledgeDocument(document.id);
+      toast("已退出召回，正在清理应用内资料");
+      await refresh();
+    } catch (error: any) {
+      toast(error.message || "删除启动失败");
+    } finally {
+      setActionBusy(null);
+    }
+  }
+
+  async function retryDelete(document: api.KnowledgeDocument) {
+    const runId = document.latest_deletion?.id;
+    if (!runId || !window.confirm("再次尝试清理这份应用内资料吗？外部原文件和备份不受影响。")) return;
+    setActionBusy(`delete:${document.id}`);
+    try {
+      await api.retryKnowledgeDeletion(runId);
+      toast("已重新开始清理");
+      await refresh();
+    } catch (error: any) {
+      toast(error.message || "重试删除失败");
+    } finally {
+      setActionBusy(null);
+    }
+  }
+
+  async function toggleAudits() {
+    if (audits !== null) {
+      setAudits(null);
+      return;
+    }
+    try {
+      setAudits(await api.listKnowledgeRetrievals());
+    } catch (error: any) {
+      toast(error.message || "检索记录加载失败");
     }
   }
 
@@ -225,16 +316,66 @@ export function FilesPage() {
       </div>
 
       {/* 已导入知识条目 */}
-      <div className="section-label">已导入知识条目</div>
+      <div className="section-label">知识文档管理</div>
+      <div className="glass knowledge-toolbar">
+        <input value={search} onChange={(event) => setSearch(event.target.value)}
+          placeholder="按文件名搜索（同名文件用指纹区分）" maxLength={120} />
+        <select value={collectionFilter} onChange={(event) => setCollectionFilter(event.target.value)}>
+          <option value="">全部 collection</option>
+          {collections.map((collection) => (
+            <option key={collection.id} value={collection.id}>{collection.name}</option>
+          ))}
+        </select>
+        <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+          <option value="">全部状态</option>
+          <option value="indexed">已索引</option>
+          <option value="queued">等待处理</option>
+          <option value="parsing">处理中</option>
+          <option value="failed">处理失败</option>
+          <option value="cancelled">已取消</option>
+          <option value="delete_pending">删除中</option>
+          <option value="delete_failed">删除失败</option>
+        </select>
+        <button className="btn ghost" onClick={toggleAudits}>
+          {audits === null ? "查看检索记录" : "收起检索记录"}
+        </button>
+      </div>
+      {audits !== null && (
+        <div className="glass knowledge-audits">
+          <div className="card-title">最近检索审计（不保存查询正文）</div>
+          {audits.length === 0 ? <div className="sub">还没有知识检索记录</div> : audits.map((audit) => (
+            <div className="knowledge-audit-row" key={audit.id}>
+              <span>{new Date(audit.created_at * 1000).toLocaleString("zh-CN")}</span>
+              <span>{audit.candidate_count ? `${audit.injected_count}/${audit.candidate_count} 条注入` : "没有找到资料"}</span>
+              <span>知识 {audit.knowledge_tokens}/{audit.knowledge_token_budget} token</span>
+              <span>指纹 {audit.query_fingerprint}</span>
+              {!audit.session_available && <span className="danger-text">原会话已删除</span>}
+            </div>
+          ))}
+        </div>
+      )}
       {documents.length === 0 ? (
-        <div className="empty">还没有知识条目</div>
+        <div className="empty">没有符合当前条件的知识文档</div>
       ) : documents.map((document) => (
-        <div className="list-row" key={document.id}>
+        <div className="list-row knowledge-document-row" key={document.id}>
           <span className="chip">{document.extension.toUpperCase().replace(".", "")}</span>
           <div style={{ flex: 1 }}>
             <strong>{document.original_name}</strong>
             <div className="sub">{formatBytes(document.size_bytes)} · {documentStatus(document)} ·
               指纹 {document.content_sha256.slice(0, 10)}</div>
+            {document.error_code && <div className="sub danger-text">错误代码：{document.error_code}</div>}
+            {!!document.tags.length && <div className="knowledge-tags">
+              {document.tags.map((tag) => <span className="chip" key={tag}>{tag}</span>)}
+            </div>}
+            {editingTags === document.id && (
+              <div className="knowledge-tag-editor">
+                <input value={tagDraft} maxLength={410} onChange={(event) => setTagDraft(event.target.value)}
+                  placeholder="用逗号分隔，最多 10 项，每项 40 字符" />
+                <button className="btn" disabled={actionBusy === `tags:${document.id}`}
+                  onClick={() => saveTags(document)}>保存</button>
+                <button className="btn ghost" onClick={() => setEditingTags(null)}>取消</button>
+              </div>
+            )}
             {document.parsed_at && !document.chunked_at && (
               <div className="sub">本地解析：{document.parse_line_count} 行 · {document.parse_heading_count} 个标题 ·
                 {document.parse_char_count} 字符；尚未切片或索引</div>
@@ -253,6 +394,14 @@ export function FilesPage() {
                 ))}
               </div>
             )}
+            <details className="knowledge-details">
+              <summary>来源详情</summary>
+              <div>文档 ID：{document.id}</div>
+              <div>Collection：{collections.find((item) => item.id === document.collection_id)?.name || document.collection_id}</div>
+              <div>完整内容指纹：{document.content_sha256}</div>
+              <div>解析器：{document.parser_version || "尚未解析"} · 切片器：{document.chunker_version || "尚未切片"}</div>
+              <div>索引版本：{document.index_version || "尚未索引"} · 导入时间：{new Date(document.created_at * 1000).toLocaleString("zh-CN")}</div>
+            </details>
           </div>
           {document.sensitivity === "sensitive" && <span className="chip danger">敏感 · 仅本地</span>}
           {document.latest_run && <button className="btn ghost" onClick={() => showRun(document)}>进度详情</button>}
@@ -263,6 +412,25 @@ export function FilesPage() {
               onClick={() => cancelRun(document)}>
               {document.latest_run.status === "cancel_requested" ? "停止中…" : "停止处理"}
             </button>
+          )}
+          {!document.status.startsWith("delete_") && (
+            <button className="btn ghost" onClick={() => {
+              setEditingTags(document.id); setTagDraft(document.tags.join("，"));
+            }}>标签</button>
+          )}
+          {["indexed", "failed", "cancelled"].includes(document.status) && (
+            <button className="btn ghost" disabled={actionBusy === `reindex:${document.id}`}
+              onClick={() => reindexDocument(document)}>
+              {document.status === "indexed" ? "重建索引" : "重试处理"}
+            </button>
+          )}
+          {!document.status.startsWith("delete_") && (
+            <button className="btn danger" disabled={actionBusy === `delete:${document.id}`}
+              onClick={() => deleteDocument(document)}>删除</button>
+          )}
+          {document.status === "delete_failed" && document.latest_deletion && (
+            <button className="btn danger" disabled={actionBusy === `delete:${document.id}`}
+              onClick={() => retryDelete(document)}>重试删除</button>
           )}
         </div>
       ))}
@@ -304,7 +472,8 @@ function eventLabel(action: string): string {
     chunking_started: "开始切片", chunking_completed: "切片完成",
     indexing_started: "开始索引", indexing_completed: "索引完成",
     retry_scheduled: "等待重试", recovery_scheduled: "中断恢复", cancel_requested: "请求停止",
-    cancelled: "已停止", failed: "解析失败" } as Record<string, string>)[action] || "任务记录";
+    cancelled: "已停止", failed: "解析失败", reindex_requested: "请求重建索引",
+    delete_requested: "请求删除" } as Record<string, string>)[action] || "任务记录";
 }
 
 function stageLabel(stage: string): string {

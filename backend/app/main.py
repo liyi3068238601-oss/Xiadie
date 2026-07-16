@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 
 from . import (
     archivist, archivist_worker, companion_state, db, entities, episode_consolidator, episode_summary_service,
-    episodes, knowledge, knowledge_context, knowledge_search, knowledge_worker, llm, lore, memory, memory_conflicts, saga_consolidator, saga_lifecycle, saga_summary,
+    episodes, knowledge, knowledge_context, knowledge_management, knowledge_search, knowledge_worker, llm, lore, memory, memory_conflicts, saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, slow_lifecycle,
 )
 from . import memory_observer_service
@@ -539,11 +539,95 @@ def set_memory_observer_model(body: ObserverModelIn) -> dict:
 
 
 @app.get("/api/knowledge/documents")
-def get_knowledge_documents(collection_id: Optional[str] = None) -> list[dict]:
+def get_knowledge_documents(collection_id: Optional[str] = None, status: Optional[str] = None,
+                            query: Optional[str] = None) -> list[dict]:
+    allowed_statuses = {
+        "staged", "queued", "parsing", "indexed", "failed", "cancelled",
+        "delete_pending", "delete_failed",
+    }
+    if status and status not in allowed_statuses:
+        raise HTTPException(400, "知识文档状态筛选无效")
+    if query and len(query) > 120:
+        raise HTTPException(400, "文档搜索最多 120 字符")
     return [
         knowledge.public_document(document)
-        for document in knowledge.list_documents(collection_id=collection_id)
+        for document in knowledge.list_documents(
+            collection_id=collection_id, status=status, query=(query or "").strip() or None,
+        )
     ]
+
+
+@app.get("/api/knowledge/collections")
+def get_knowledge_collections() -> list[dict]:
+    return knowledge_management.list_collections()
+
+
+class KnowledgeTagsIn(BaseModel):
+    tags: list[str] = Field(default_factory=list, max_length=10)
+
+
+@app.patch("/api/knowledge/documents/{document_id}/tags")
+def patch_knowledge_document_tags(document_id: str, body: KnowledgeTagsIn) -> dict:
+    try:
+        result = knowledge_management.update_tags(document_id, body.tags)
+    except knowledge.KnowledgeImportError as error:
+        raise HTTPException(409 if error.code == "document_deleting" else 400, str(error)) from error
+    if not result:
+        raise HTTPException(404, "知识文档不存在")
+    return result
+
+
+@app.post("/api/knowledge/documents/{document_id}/reindex", status_code=202)
+def reindex_knowledge_document(document_id: str) -> dict:
+    try:
+        result = knowledge_management.enqueue_reindex(document_id)
+    except knowledge.KnowledgeImportError as error:
+        raise HTTPException(409, str(error)) from error
+    if not result:
+        raise HTTPException(404, "知识文档不存在")
+    return _public_knowledge_run(result)
+
+
+@app.delete("/api/knowledge/documents/{document_id}", status_code=202)
+def delete_knowledge_document(document_id: str) -> dict:
+    try:
+        result = knowledge_management.enqueue_delete(document_id)
+    except knowledge.KnowledgeImportError as error:
+        raise HTTPException(409, str(error)) from error
+    if not result:
+        raise HTTPException(404, "知识文档不存在")
+    return _public_deletion_run(result)
+
+
+@app.get("/api/knowledge/deletion-runs/{run_id}")
+def get_knowledge_deletion_run(run_id: str) -> dict:
+    result = knowledge_management.get_deletion_run(run_id)
+    if not result:
+        raise HTTPException(404, "知识删除任务不存在")
+    return _public_deletion_run(result)
+
+
+@app.post("/api/knowledge/deletion-runs/{run_id}/retry", status_code=202)
+def retry_knowledge_deletion(run_id: str) -> dict:
+    try:
+        result = knowledge_management.retry_delete(run_id)
+    except knowledge.KnowledgeImportError as error:
+        raise HTTPException(409, str(error)) from error
+    if not result:
+        raise HTTPException(404, "知识删除任务不存在")
+    return _public_deletion_run(result)
+
+
+@app.get("/api/knowledge/retrievals")
+def get_knowledge_retrievals(session_id: Optional[str] = None,
+                             limit: int = 30) -> list[dict]:
+    if limit < 1 or limit > 100:
+        raise HTTPException(400, "审计记录数量须为 1 到 100")
+    rows = knowledge_management.list_retrieval_audits(session_id=session_id, limit=limit)
+    for row in rows:
+        row["session_available"] = bool(row["session_available"])
+        row["query_fingerprint"] = row.pop("query_sha256")[:12]
+    return rows
 
 
 class KnowledgeSearchIn(BaseModel):
@@ -626,6 +710,14 @@ def _public_knowledge_run(run: dict) -> dict:
     allowed = {
         "id", "document_id", "trigger", "status", "current_stage", "progress",
         "attempt_count", "max_attempts", "error_code", "next_attempt_at", "started_at",
+        "finished_at", "created_at", "updated_at", "events",
+    }
+    return {key: value for key, value in run.items() if key in allowed}
+
+
+def _public_deletion_run(run: dict) -> dict:
+    allowed = {
+        "id", "document_id", "status", "attempt_count", "error_code", "started_at",
         "finished_at", "created_at", "updated_at", "events",
     }
     return {key: value for key, value in run.items() if key in allowed}

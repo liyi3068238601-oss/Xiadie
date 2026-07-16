@@ -1426,6 +1426,49 @@ MIGRATIONS = [
             ON knowledge_message_citations(assistant_message_id,citation_key);
         """,
     ),
+    (
+        33,
+        """
+        CREATE TABLE knowledge_deletion_runs (
+            id TEXT PRIMARY KEY,
+            document_id TEXT NOT NULL,
+            collection_id TEXT NOT NULL,
+            content_sha256 TEXT NOT NULL CHECK(length(content_sha256)=64),
+            status TEXT NOT NULL CHECK(status IN ('queued','running','completed','failed')),
+            attempt_count INTEGER NOT NULL DEFAULT 0 CHECK(attempt_count >= 0),
+            error_code TEXT,
+            started_at REAL,
+            finished_at REAL,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_knowledge_deletion_runs_status
+            ON knowledge_deletion_runs(status,created_at,id);
+        CREATE INDEX idx_knowledge_deletion_runs_document
+            ON knowledge_deletion_runs(document_id,created_at,id);
+
+        CREATE TABLE knowledge_deletion_events (
+            id TEXT PRIMARY KEY,
+            run_id TEXT NOT NULL REFERENCES knowledge_deletion_runs(id) ON DELETE CASCADE,
+            action TEXT NOT NULL,
+            before_status TEXT,
+            after_status TEXT NOT NULL,
+            error_code TEXT,
+            metadata_json TEXT NOT NULL DEFAULT '{}'
+                CHECK(json_valid(metadata_json) AND json_type(metadata_json)='object'),
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_knowledge_deletion_events_run
+            ON knowledge_deletion_events(run_id,created_at,id);
+
+        CREATE TRIGGER knowledge_retrieval_finished_guard
+        BEFORE UPDATE OF status,finished_at ON knowledge_chat_retrievals
+        WHEN NEW.status IN ('completed','failed') AND NEW.finished_at IS NULL
+        BEGIN
+            SELECT RAISE(ABORT,'finished knowledge retrieval requires finished_at');
+        END;
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

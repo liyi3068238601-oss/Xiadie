@@ -62,3 +62,23 @@ test("knowledge parsing progress exposes cancellation, recovery and an event tim
   assert.match(page, /parsing_started|parsing_completed|retry_scheduled/);
   assert.match(api, /getKnowledgeImportRun|cancelKnowledgeImportRun|KnowledgeImportEvent/);
 });
+
+test("knowledge management exposes filters, tags, reindex, retry and verified deletion", async () => {
+  const [page, api] = await Promise.all([
+    readFile(new URL("../src/components/FilesPage.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/api.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(page, /按文件名搜索|全部 collection|全部状态|来源详情/);
+  assert.match(page, /标签|重建索引|重试处理|重试删除/);
+  assert.match(page, /应用外的原文件或备份不会同步删除/);
+  assert.match(api, /updateKnowledgeTags|reindexKnowledgeDocument|deleteKnowledgeDocument|retryKnowledgeDeletion/);
+});
+
+test("knowledge retrieval audit UI states that query bodies are not stored", async () => {
+  const [page, api] = await Promise.all([
+    readFile(new URL("../src/components/FilesPage.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/api.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(page, /最近检索审计（不保存查询正文）|没有找到资料|原会话已删除/);
+  assert.match(api, /listKnowledgeRetrievals|query_fingerprint|session_available/);
+});

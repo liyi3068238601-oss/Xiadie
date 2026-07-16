@@ -245,8 +245,53 @@ export interface KnowledgeDocument {
   index_version?: string | null;
   indexed_at?: number | null;
   latest_run?: KnowledgeImportRun | null;
+  latest_deletion?: KnowledgeDeletionRun | null;
   created_at: number;
   updated_at: number;
+}
+export interface KnowledgeCollection {
+  id: string;
+  name: string;
+  description: string;
+  status: "active" | "disabled";
+  created_at: number;
+  updated_at: number;
+}
+export interface KnowledgeDeletionEvent {
+  id: string;
+  action: string;
+  before_status?: string | null;
+  after_status: string;
+  error_code?: string | null;
+  created_at: number;
+}
+export interface KnowledgeDeletionRun {
+  id: string;
+  document_id: string;
+  status: "queued" | "running" | "completed" | "failed";
+  attempt_count: number;
+  error_code?: string | null;
+  events?: KnowledgeDeletionEvent[];
+  created_at: number;
+  updated_at: number;
+}
+export interface KnowledgeRetrievalAudit {
+  id: string;
+  session_id: string;
+  user_message_id?: string | null;
+  assistant_message_id?: string | null;
+  trigger_reason: string;
+  query_fingerprint: string;
+  candidate_count: number;
+  injected_count: number;
+  knowledge_tokens: number;
+  knowledge_token_budget: number;
+  lore_tokens: number;
+  memory_tokens: number;
+  status: "no_results" | "injected" | "completed" | "failed";
+  session_available: boolean;
+  created_at: number;
+  finished_at?: number | null;
 }
 export interface KnowledgeImportEvent {
   id: string;
@@ -560,8 +605,31 @@ export const listArchivistRuns = (limit = 10) =>
   j<ArchivistRun[]>(`/api/archivist/runs?limit=${limit}`);
 
 // ---- 用户文件知识库 ----
-export const listKnowledgeDocuments = () =>
-  j<KnowledgeDocument[]>("/api/knowledge/documents");
+export const listKnowledgeDocuments = (options: {
+  collection_id?: string; status?: string; query?: string;
+} = {}) => {
+  const params = new URLSearchParams();
+  if (options.collection_id) params.set("collection_id", options.collection_id);
+  if (options.status) params.set("status", options.status);
+  if (options.query) params.set("query", options.query);
+  return j<KnowledgeDocument[]>(`/api/knowledge/documents${params.size ? `?${params}` : ""}`);
+};
+export const listKnowledgeCollections = () =>
+  j<KnowledgeCollection[]>("/api/knowledge/collections");
+export const updateKnowledgeTags = (id: string, tags: string[]) =>
+  j<KnowledgeDocument>(`/api/knowledge/documents/${id}/tags`, {
+    method: "PATCH", body: JSON.stringify({ tags }),
+  });
+export const reindexKnowledgeDocument = (id: string) =>
+  j<KnowledgeImportRun>(`/api/knowledge/documents/${id}/reindex`, { method: "POST" });
+export const deleteKnowledgeDocument = (id: string) =>
+  j<KnowledgeDeletionRun>(`/api/knowledge/documents/${id}`, { method: "DELETE" });
+export const retryKnowledgeDeletion = (id: string) =>
+  j<KnowledgeDeletionRun>(`/api/knowledge/deletion-runs/${id}/retry`, { method: "POST" });
+export const getKnowledgeDeletionRun = (id: string) =>
+  j<KnowledgeDeletionRun>(`/api/knowledge/deletion-runs/${id}`);
+export const listKnowledgeRetrievals = (limit = 30) =>
+  j<KnowledgeRetrievalAudit[]>(`/api/knowledge/retrievals?limit=${limit}`);
 export async function importKnowledgeFile(
   file: File, sensitivity: "normal" | "sensitive" = "normal",
 ): Promise<KnowledgeImportResult> {

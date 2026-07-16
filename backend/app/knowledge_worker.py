@@ -9,7 +9,7 @@ import secrets
 from contextlib import suppress
 from pathlib import Path
 
-from . import db, knowledge, knowledge_chunker, knowledge_parser, knowledge_search
+from . import db, knowledge, knowledge_chunker, knowledge_management, knowledge_parser, knowledge_search
 
 RUNNING_STALE_SECONDS = 5 * 60
 FIRST_RETRY_DELAY_SECONDS = 30
@@ -75,6 +75,10 @@ async def process_due(*, limit: int = 3) -> int:
     recover_stale_runs()
     count = 0
     for _ in range(max(1, min(int(limit), 10))):
+        deleted = await asyncio.to_thread(knowledge_management.process_delete_due, limit=1)
+        if deleted:
+            count += deleted
+            continue
         row = _claim_next()
         if not row:
             break
@@ -93,6 +97,9 @@ async def _process_claimed(row: dict) -> None:
             await asyncio.to_thread(_index_run, row)
         else:
             await asyncio.to_thread(_parse_run, row)
+        # 删除/取消可能在阶段计算与提交之间到达；阶段函数使用条件 UPDATE 拒绝覆盖
+        # cancel_requested，这里负责及时完成清理，避免等待五分钟陈旧恢复。
+        _finish_cancel(row["id"])
     except knowledge_chunker.ChunkingCancelled:
         _finish_cancel(row["id"])
     except knowledge_search.IndexingCancelled:
@@ -534,7 +541,11 @@ def _cancel_locked(conn, row, now: float) -> None:
         "parse_line_count=0,parse_heading_count=0,chunker_version=NULL,chunked_at=NULL,"
         "chunk_count=0 WHERE id=?", (row["document_id"],),
     )
-    _set_document_terminal_locked(conn, row["document_id"], "cancelled", "user_cancelled", now)
+    document = conn.execute(
+        "SELECT status FROM knowledge_documents WHERE id=?", (row["document_id"],),
+    ).fetchone()
+    if document and document["status"] not in {"delete_pending", "delete_failed"}:
+        _set_document_terminal_locked(conn, row["document_id"], "cancelled", "user_cancelled", now)
     conn.execute(
         "UPDATE knowledge_import_runs SET status='cancelled',error_code='user_cancelled',"
         "next_attempt_at=NULL,finished_at=?,updated_at=? WHERE id=?",

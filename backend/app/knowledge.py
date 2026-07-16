@@ -168,10 +168,23 @@ def import_file(
         conn.close()
 
 
-def list_documents(*, collection_id: str | None = None) -> list[dict]:
+def list_documents(*, collection_id: str | None = None, status: str | None = None,
+                   query: str | None = None) -> list[dict]:
     conn = db.connect()
     try:
-        where, params = (" WHERE collection_id=?", [collection_id]) if collection_id else ("", [])
+        clauses: list[str] = []
+        params: list[object] = []
+        if collection_id:
+            clauses.append("collection_id=?")
+            params.append(collection_id)
+        if status:
+            clauses.append("status=?")
+            params.append(status)
+        if query:
+            clauses.append("original_name LIKE ? ESCAPE '\\'")
+            escaped = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            params.append(f"%{escaped}%")
+        where = " WHERE " + " AND ".join(clauses) if clauses else ""
         rows = conn.execute(
             "SELECT * FROM knowledge_documents" + where + " ORDER BY updated_at DESC,id",
             params,
@@ -185,6 +198,11 @@ def list_documents(*, collection_id: str | None = None) -> list[dict]:
                 " ORDER BY created_at DESC,id DESC LIMIT 1", (item["id"],),
             ).fetchone()
             item["latest_run"] = dict(latest) if latest else None
+            deletion = conn.execute(
+                "SELECT id,status,attempt_count,error_code,created_at,updated_at FROM knowledge_deletion_runs"
+                " WHERE document_id=? ORDER BY created_at DESC,id DESC LIMIT 1", (item["id"],),
+            ).fetchone()
+            item["latest_deletion"] = dict(deletion) if deletion else None
             documents.append(item)
         return documents
     finally:
