@@ -1,8 +1,8 @@
 # 遐蝶自主记忆系统设计书（零基础说明版）
 
-版本：v0.24
+版本：v0.25
 
-状态：设计基线；阶段 A～D 与 E.1～E.4 已完成，阶段 E.5～F 待施工
+状态：设计基线；阶段 A～D 与 E.1～E.5 已完成，阶段 E.6～F 待施工
 
 主要参考：[MemoryConstellations](https://github.com/ClaraShafiq/MemoryConstellations)
 适用对象：项目所有者、第一次接触 Agent 的开发者、后续接手实现的 Codex
@@ -956,7 +956,7 @@ POST /api/memory-maintenance/run
 | B 自主 Fragment 写入 | 已完成 | schema 12、原子自主写入、限频提示、详情/纠错界面及旧候选兼容策略均已提交 |
 | C Episode 自动化 | 已完成 | schema 13～17、自动整理、事实校验、原子应用和正式界面均已提交 |
 | D Saga | 已完成 | schema 18～22、评分、事实摘要、原子应用、生命周期、纠错、API、正式界面与总验收均已提交 |
-| E Archivist | E.4 已完成 | schema 25、20 小时懒调度、有限预算、失败恢复、取消和 run/event 审计已提交 |
+| E Archivist | E.5 已完成 | schema 26、Episode 四态、Saga 稳定归档、六天慢调度、来源保护与恢复已提交 |
 | F 用户文件知识库 | 未开始 | 当前仅有界面占位 |
 
 ### 阶段 A：人格与背景分离（本轮已完成）
@@ -1416,14 +1416,39 @@ schema 25 新增 Fragment 的 `last_archivist_evaluated_at`、`archivist_runs` �
 
 #### 阶段 E.5：Episode/Saga 慢生命周期
 
-- [ ] 用独立 ADR/迁移补齐 Episode 的 active/completed/archived/tombstone 精确状态边界。
-- [ ] “6 个月成熟、12 个月归档”只作为评估点，significance 与真实召回可以继续保护。
-- [ ] completed Saga 仅在至少 12 个月无追加、纠错、恢复或 revision 变化后成为归档候选。
-- [ ] active Saga 不自动归档；completed 自动归档只接受 Archivist 来源并保留恢复能力。
-- [ ] Saga 周任务距上次成功超过 6 天才懒入队。
-- [ ] Fragment 降温不能删除 Episode/Saga 来源证据。
-- [ ] 复核 ADR-0023 旧 Episode 候选 API 退役条件，只在全部满足时另写删除迁移 ADR。
-- [ ] 增加时间点、重要度保护、用户恢复、新进展恢复、来源纠错和永不自动 tombstone 测试。
+- [x] 用独立 ADR/迁移补齐 Episode 的 active/completed/archived/tombstone 精确状态边界。
+- [x] “6 个月成熟、12 个月归档”只作为评估点，significance 与真实召回可以继续保护。
+- [x] completed Saga 仅在至少 12 个月无追加、纠错、恢复或 revision 变化后成为归档候选。
+- [x] active Saga 不自动归档；completed 自动归档只接受 Archivist 来源并保留恢复能力。
+- [x] Saga 周任务距上次成功超过 6 天才懒入队。
+- [x] Fragment 降温不能删除 Episode/Saga 来源证据。
+- [x] 复核 ADR-0023 旧 Episode 候选 API 退役条件，只在全部满足时另写删除迁移 ADR。
+- [x] 增加时间点、重要度保护、用户恢复、新进展恢复、来源纠错和永不自动 tombstone 测试。
+
+E.5 开工前审查结论：E.4 review 全项通过且没有返工项，但其中对 E.4 API、常量和状态名的部分描述与
+实际提交不一致，本阶段只采纳可由代码验证的建议。采纳事务内完整性复核、独立慢预算和归档集成测试；
+采纳“慢生命周期复用可靠调度”的方向，但挂接到已有 6 天 Saga Consolidator，而不是挤入 20 小时 Fragment
+worker。拒绝“来源 Fragment frozen/tombstone 就把 Episode 标为 orphaned 或自动归档”：frozen 只是退出
+普通召回，正式来源关系必须保留；隐私清除造成的正文/哈希失效会阻止自动归档并进入可审查失败路径。
+
+schema 26 在关闭外键写入的受控迁移窗口重建 `memory_episodes`，保留全部旧列、行、唯一索引和外部来源
+关系，并新增 completed 状态、三类状态时间、策略、revision、最近评估时间及不含正文的生命周期事件。
+active Episode 距 `max(end_at,updated_at)` 至少 180 天才可 completed；completed 再稳定至少 180 天才可
+archived。重要度至少 8、来源 Fragment 在 180 天内真实召回、或仍属于 active Saga 时继续保护。用户和
+可信新证据可恢复 active；纠正 completed/archived Episode 被视为新证据并原子恢复。tombstone 只能由
+携带原因和 revision 的用户操作产生，自动任务永不删除。
+
+completed Saga 归档同时要求：`completed_at` 至少 365 天、`completion_revision == revision`、
+`updated_at <= completed_at`、来源 Episode/Fragment 完整且整链哈希未变、重要度低于 8、近 180 天无真实
+来源召回、没有 observing/qualified 追加候选。归档写入状态、时间、revision 和 Saga 事件于同一事务；
+active Saga 不参与自动归档。用户可恢复 archived Saga，新发展会恢复 completed Saga；恢复时清空旧完成/
+归档时间和 completion revision。归档→恢复→再次完成→再次归档已覆盖。
+
+慢维护由已经稳定运行的 Saga Consolidator 六天懒调度触发，Episode 与 Saga 每轮各扫描最多 10 条，
+互不挤占 Fragment 的 50/10 预算，也不调用模型。ADR-0023 的五项兼容 API 退役条件仍未全部满足：当前
+后台排队与历史候选仍有依赖，且没有经过稳定发布周期，因此不删除表、API 或 candidate_id 来源。
+10 项 E.5 专项、E.1～E.5 共 47 项相关测试、后端 231 项全部通过；前端 13 项、生产构建和 Electron
+检查见本阶段最终验收。
 
 #### 阶段 E.6：冲突、管理界面与总验收
 

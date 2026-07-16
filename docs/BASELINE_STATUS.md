@@ -35,7 +35,7 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; python -m pytest tests` | 通过：221 passed，1 warning |
+| 后端 | `cd backend; python -m pytest tests` | 通过：231 passed，1 warning |
 | 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：13 项情绪映射、运行可靠性、记忆、Episode 与 Saga 展示契约测试；TypeScript 检查及 Vite 生产构建成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 
@@ -147,6 +147,11 @@ npm.cmd start
 - worker 复用串行原子认领、最多三次指数退避、五分钟陈旧恢复、协作取消和优雅停机；每个 Fragment 仍由 E.3 独立短事务评估。
 - 单轮默认最多扫描 50 条、转换 10 条、运行 2 秒、模型调用 0 次；只扫描已到 14/30 天评估点的 Fragment，并优先更久未评估、最久未召回内容，避免受保护记录长期饿死后续候选。
 - `/api/archivist/runs` 提供手动入队、列表、详情事件和取消审计；当前 worker 不调用模型、不触碰 Episode/Saga，慢生命周期留给 E.5。
+- Archivist 阶段 E.5 已完成 schema 26：Episode 具备 active/completed/archived/tombstone 四态、revision、状态时间和无正文事件审计；旧 Episode 行与来源外键保持不变。
+- Episode 满 180 天只进入成熟评估，再满 180 天才进入归档评估；重要度至少 8、近 180 天来源真实召回或 active Saga 来源会继续保护。
+- completed Saga 只有完成后稳定至少 365 天、revision 未变化、整链哈希有效、无高重要度/近期召回/待追加候选时，才由 Archivist 自动归档；active 和 tombstone 永不自动变化。
+- 慢生命周期复用既有 Saga 六天懒调度，但 Episode/Saga 各有 10 条独立预算；Fragment frozen 不删除 Episode/Saga 来源关系。
+- 旧 Episode candidate 兼容 API 的 ADR-0023 退役条件尚未全部满足，本阶段不删除表、API 或历史来源。
 
 ### 人格与内置背景知识（2026-07-14）
 

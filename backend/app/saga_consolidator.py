@@ -141,6 +141,12 @@ async def _process_claimed(row: dict) -> None:
     if _finish_cancel(row["id"]):
         return
     try:
+        from . import slow_lifecycle
+
+        slow_result = await asyncio.to_thread(slow_lifecycle.process_batch)
+        _record_slow_lifecycle_result(row["id"], slow_result)
+        if _finish_cancel(row["id"]):
+            return
         await asyncio.to_thread(sagas.generate_candidates)
         candidates = await asyncio.to_thread(sagas.qualified_candidates, sagas.APPLICATION_BATCH_LIMIT)
         if _finish_cancel(row["id"]):
@@ -166,6 +172,26 @@ async def _process_claimed(row: dict) -> None:
     except Exception:  # noqa: BLE001
         _record_failure_safely(locals().get("candidate_ids", []), "saga_application_failed")
         _mark_failure(row, "saga_application_failed")
+
+
+def _record_slow_lifecycle_result(run_id: str, result: dict) -> None:
+    conn = db.connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT status FROM saga_consolidator_runs WHERE id=?", (run_id,)
+        ).fetchone()
+        if not row or row["status"] != "running":
+            conn.rollback()
+            return
+        now = db.now()
+        sagas._run_event(
+            conn, run_id, "slow_lifecycle_processed", "running", "running",
+            "bounded_slow_lifecycle", result, now,
+        )
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def _mark_interrupted(row: dict) -> None:

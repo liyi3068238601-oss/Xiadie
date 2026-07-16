@@ -1062,6 +1062,97 @@ MIGRATIONS = [
             ON archivist_run_events(run_id, created_at, id);
         """,
     ),
+    (
+        26,
+        """
+        PRAGMA foreign_keys=OFF;
+
+        CREATE TABLE memory_episodes_v26 (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            summary TEXT NOT NULL,
+            start_at REAL NOT NULL,
+            end_at REAL NOT NULL,
+            significance INTEGER NOT NULL DEFAULT 4 CHECK(significance BETWEEN 1 AND 10),
+            confidence REAL NOT NULL DEFAULT 0.7 CHECK(confidence BETWEEN 0 AND 1),
+            status TEXT NOT NULL DEFAULT 'active'
+                CHECK(status IN ('active','completed','archived','tombstone')),
+            source TEXT NOT NULL DEFAULT 'candidate_confirmed',
+            candidate_id TEXT,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            grouping_fingerprint TEXT,
+            policy_version TEXT NOT NULL DEFAULT 'legacy',
+            source_fragment_ids_json TEXT NOT NULL DEFAULT '[]',
+            source_hash TEXT NOT NULL DEFAULT '',
+            summary_status TEXT NOT NULL DEFAULT 'legacy_rule' CHECK(summary_status IN (
+                'legacy_rule','extractive_fallback','model_validated','user_edited'
+            )),
+            summary_protocol_version TEXT NOT NULL DEFAULT 'legacy',
+            summary_provider_id TEXT,
+            summary_model TEXT,
+            summary_evidence_json TEXT NOT NULL DEFAULT '[]',
+            application_version TEXT NOT NULL DEFAULT 'legacy',
+            correction_note TEXT NOT NULL DEFAULT '',
+            corrected_at REAL,
+            completed_at REAL,
+            archived_at REAL,
+            tombstoned_at REAL,
+            lifecycle_policy_version TEXT NOT NULL DEFAULT 'episode-lifecycle-v1',
+            lifecycle_revision INTEGER NOT NULL DEFAULT 0 CHECK(lifecycle_revision >= 0),
+            last_lifecycle_evaluated_at REAL
+        );
+        INSERT INTO memory_episodes_v26(
+            id,title,summary,start_at,end_at,significance,confidence,status,source,candidate_id,
+            created_at,updated_at,grouping_fingerprint,policy_version,source_fragment_ids_json,
+            source_hash,summary_status,summary_protocol_version,summary_provider_id,summary_model,
+            summary_evidence_json,application_version,correction_note,corrected_at
+        ) SELECT
+            id,title,summary,start_at,end_at,significance,confidence,status,source,candidate_id,
+            created_at,updated_at,grouping_fingerprint,policy_version,source_fragment_ids_json,
+            source_hash,summary_status,summary_protocol_version,summary_provider_id,summary_model,
+            summary_evidence_json,application_version,correction_note,corrected_at
+        FROM memory_episodes;
+        DROP TABLE memory_episodes;
+        ALTER TABLE memory_episodes_v26 RENAME TO memory_episodes;
+        CREATE INDEX idx_memory_episodes_status_time
+            ON memory_episodes(status, end_at DESC);
+        CREATE UNIQUE INDEX idx_memory_episodes_candidate_unique
+            ON memory_episodes(candidate_id) WHERE candidate_id IS NOT NULL;
+        CREATE UNIQUE INDEX idx_memory_episodes_grouping_unique
+            ON memory_episodes(grouping_fingerprint) WHERE grouping_fingerprint IS NOT NULL;
+        CREATE INDEX idx_memory_episodes_lifecycle_due
+            ON memory_episodes(status,last_lifecycle_evaluated_at,end_at);
+
+        CREATE TABLE memory_episode_lifecycle_events (
+            id TEXT PRIMARY KEY,
+            episode_id TEXT NOT NULL REFERENCES memory_episodes(id) ON DELETE CASCADE,
+            revision INTEGER NOT NULL CHECK(revision >= 1),
+            from_status TEXT NOT NULL CHECK(from_status IN (
+                'active','completed','archived','tombstone'
+            )),
+            to_status TEXT NOT NULL CHECK(to_status IN (
+                'active','completed','archived','tombstone'
+            )),
+            reason_code TEXT NOT NULL,
+            source TEXT NOT NULL CHECK(source IN ('archivist','new_evidence','user','privacy')),
+            policy_version TEXT NOT NULL,
+            metadata_json TEXT NOT NULL DEFAULT '{}',
+            created_at REAL NOT NULL,
+            UNIQUE(episode_id,revision)
+        );
+        CREATE INDEX idx_memory_episode_lifecycle_events_episode
+            ON memory_episode_lifecycle_events(episode_id,revision);
+
+        ALTER TABLE memory_sagas ADD COLUMN last_lifecycle_evaluated_at REAL;
+        ALTER TABLE memory_sagas ADD COLUMN completion_revision INTEGER;
+        UPDATE memory_sagas SET completion_revision=revision WHERE status='completed';
+        CREATE INDEX idx_memory_sagas_lifecycle_due
+            ON memory_sagas(status,last_lifecycle_evaluated_at,completed_at);
+
+        PRAGMA foreign_keys=ON;
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

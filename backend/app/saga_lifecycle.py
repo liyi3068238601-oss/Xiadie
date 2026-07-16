@@ -118,6 +118,7 @@ def transition(
                 )
             fields.update(
                 completion_reason=note, completed_at=now,
+                completion_revision=int(row["revision"]) + 1,
                 completion_evidence_episode_ids_json=json.dumps(validated_completion),
             )
             action = "completed"
@@ -125,7 +126,9 @@ def transition(
             if source != "user":
                 _validate_new_development(source_ids, sources, evidence_ids)
             fields.update(
-                completion_reason="", completion_evidence_episode_ids_json="[]"
+                completion_reason="", completed_at=None, archived_at=None,
+                completion_revision=None,
+                completion_evidence_episode_ids_json="[]"
             )
             action = "reactivated"
         elif current == "completed" and target_status == "archived":
@@ -137,7 +140,9 @@ def transition(
             if source != "user":
                 raise SagaLifecycleError("automatic_restore_forbidden", "归档 Saga 只能由用户恢复")
             fields.update(
-                completion_reason="", completion_evidence_episode_ids_json="[]"
+                completion_reason="", completed_at=None, archived_at=None,
+                completion_revision=None,
+                completion_evidence_episode_ids_json="[]"
             )
             action = "reactivated"
         elif target_status == "tombstone" and current in {"active", "completed", "archived"}:
@@ -202,7 +207,15 @@ def correct_content(
             raise SagaLifecycleError("tombstone_terminal", "已删除的 Saga 不可纠正")
         _check_revision(row, expected_revision)
         now = db.now()
-        fields: dict[str, object] = {**cleaned, "correction_note": note.strip(), "corrected_at": now}
+        fields: dict[str, object] = {
+            **cleaned, "correction_note": note.strip(), "corrected_at": now,
+            "updated_at": now,
+        }
+        if row["status"] == "completed":
+            fields.update(
+                completed_at=now,
+                completion_revision=int(row["revision"]) + 1,
+            )
         if any(key in cleaned for key in ("title", "summary", "theme", "current_stage")):
             fields.update(
                 summary_status="user_edited", summary_protocol_version="manual-v1",
@@ -319,8 +332,10 @@ def correct_sources(
             "summary_provider_id": None, "summary_model": None,
             "summary_evidence_json": json.dumps(fallback["evidence_episode_ids"]),
             "completion_evidence_episode_ids_json": "[]", "completion_reason": "",
+            "completion_revision": None,
             "lifecycle_policy_version": POLICY_VERSION,
             "correction_note": note.strip(), "corrected_at": now,
+            "updated_at": now,
         }
         _update_fields(conn, saga_id, fields, increment_revision=True)
         conn.execute(

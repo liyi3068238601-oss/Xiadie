@@ -159,19 +159,23 @@ def get_episode(episode_id: str) -> dict | None:
 
 def correct_episode(
     episode_id: str, *, title: str | None = None, summary: str | None = None,
-    significance: int | None = None, note: str = "",
+    significance: int | None = None, note: str = "", expected_revision: int | None = None,
 ) -> dict | None:
     """纠正正式经历；来源关系不变，摘要改写使用独立审计语义。"""
     conn = db.connect()
     try:
         conn.execute("BEGIN IMMEDIATE")
         row = conn.execute(
-            "SELECT * FROM memory_episodes WHERE id=? AND status='active'", (episode_id,)
+            "SELECT * FROM memory_episodes WHERE id=? AND status!='tombstone'", (episode_id,)
         ).fetchone()
         if not row:
             conn.rollback()
             return None
         before = _episode_row(conn, row)
+        if expected_revision is not None and int(row["lifecycle_revision"]) != int(
+            expected_revision
+        ):
+            raise ValueError("Episode 已被其他操作更新，请刷新后重试")
         next_title = before["title"] if title is None else title.strip()
         next_summary = before["summary"] if summary is None else summary.strip()
         if not next_title or not next_summary:
@@ -199,6 +203,26 @@ def correct_episode(
                 episode_id,
             ),
         )
+        if row["status"] in {"completed", "archived"}:
+            from . import slow_lifecycle
+
+            slow_lifecycle._transition_episode_locked(
+                conn, dict(row), "active", reason_code="episode_reactivated_by_correction",
+                source="new_evidence", now=now,
+                metadata={"changed_fields": [
+                    key for key, changed in (
+                        ("title", next_title != before["title"]),
+                        ("summary", next_summary != before["summary"]),
+                        ("significance", next_significance != before["significance"]),
+                    ) if changed
+                ]},
+            )
+        else:
+            conn.execute(
+                "UPDATE memory_episodes SET lifecycle_revision=lifecycle_revision+1,"
+                "lifecycle_policy_version='episode-lifecycle-v1' WHERE id=?",
+                (episode_id,),
+            )
         after = _episode_row(
             conn, conn.execute("SELECT * FROM memory_episodes WHERE id=?", (episode_id,)).fetchone()
         )

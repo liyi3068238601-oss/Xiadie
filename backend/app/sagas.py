@@ -490,7 +490,8 @@ def _apply_candidate_lifecycle_locked(
         before = {"status": "completed"}
         conn.execute(
             "UPDATE memory_sagas SET status='active',completion_reason='',"
-            "completion_evidence_episode_ids_json='[]',lifecycle_policy_version=?,"
+            "completed_at=NULL,archived_at=NULL,completion_evidence_episode_ids_json='[]',"
+            "completion_revision=NULL,lifecycle_policy_version=?,"
             "updated_at=?,revision=revision+1"
             " WHERE id=?", (saga_lifecycle.POLICY_VERSION, now, saga_id),
         )
@@ -508,6 +509,7 @@ def _apply_candidate_lifecycle_locked(
         was_completed = previous_status == "completed"
         conn.execute(
             "UPDATE memory_sagas SET status='completed',completion_reason=?,completed_at=?,"
+            "completion_revision=revision+1,"
             "completion_evidence_episode_ids_json=?,lifecycle_policy_version=?,"
             "updated_at=?,revision=revision+1"
             " WHERE id=?",

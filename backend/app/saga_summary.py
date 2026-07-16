@@ -263,7 +263,7 @@ def _validate_source_chain(episodes: list[dict]) -> None:
     if len(episodes) < 2:
         raise SagaSummaryValidationError("source_episode_missing", "Saga 来源 Episode 不完整")
     for item in episodes:
-        if item.get("status") not in {"active", "completed"}:
+        if item.get("status") not in {"active", "completed", "archived"}:
             raise SagaSummaryValidationError("source_episode_inactive", "Saga 来源 Episode 不可用")
         if not episode_summary.is_safe_source(_episode_text(item)):
             raise SagaSummaryValidationError("unsafe_episode_source", "Episode 来源包含不安全内容")

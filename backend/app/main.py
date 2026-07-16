@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 from . import (
     archivist, archivist_worker, companion_state, db, entities, episode_consolidator, episode_summary_service,
     episodes, llm, lore, memory, saga_consolidator, saga_lifecycle, saga_summary,
-    saga_summary_service,
+    saga_summary_service, slow_lifecycle,
 )
 from . import memory_observer_service
 from .affect import observer_service as affect_observer_service
@@ -684,6 +684,7 @@ class EpisodeCorrectionIn(BaseModel):
     summary: Optional[str] = Field(default=None, max_length=600)
     significance: Optional[int] = None
     note: str = Field(default="", max_length=240)
+    expected_revision: int | None = Field(default=None, ge=0)
 
 
 @app.get("/api/episode-candidates")
@@ -745,6 +746,7 @@ def correct_episode(episode_id: str, body: EpisodeCorrectionIn) -> dict:
         episode = episodes.correct_episode(
             episode_id, title=body.title, summary=body.summary,
             significance=body.significance, note=body.note,
+            expected_revision=body.expected_revision,
         )
     except ValueError as error:
         raise HTTPException(400, str(error)) from error
@@ -756,9 +758,29 @@ def correct_episode(episode_id: str, body: EpisodeCorrectionIn) -> dict:
 @app.get("/api/episodes/{episode_id}")
 def get_episode(episode_id: str) -> dict:
     episode = episodes.get_episode(episode_id)
-    if not episode or episode["status"] != "active":
+    if not episode or episode["status"] == "tombstone":
         raise HTTPException(404, "Episode 不存在")
     return episode
+
+
+class EpisodeLifecycleIn(BaseModel):
+    target_status: str
+    reason: str = Field(default="", max_length=240)
+    expected_revision: int = Field(ge=0)
+
+
+@app.post("/api/episodes/{episode_id}/lifecycle")
+def transition_episode_lifecycle(episode_id: str, body: EpisodeLifecycleIn) -> dict:
+    try:
+        return slow_lifecycle.transition_episode(
+            episode_id, body.target_status, trigger="user", reason=body.reason,
+            expected_revision=body.expected_revision,
+        )
+    except slow_lifecycle.SlowLifecycleError as error:
+        status = 404 if error.code == "missing" else (
+            409 if error.code == "revision_conflict" else 400
+        )
+        raise HTTPException(status, str(error)) from error
 
 
 # ---------------------------------------------------------------- Saga
