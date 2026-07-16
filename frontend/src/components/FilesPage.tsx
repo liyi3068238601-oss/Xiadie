@@ -1,10 +1,8 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import * as api from "./../api";
 import { toast } from "./../store";
 
-// 需求 6.6：文件与知识页。后端索引/检索尚未落地，这里是阶段占位页，
-// 但需要体现最终形态与隐私原则，不能是空白。
-
-const DEV_HINT = "文件导入功能开发中：将支持摘要、标签、引用来源";
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
 // 需求 6.6 的知识库原则
 const PRINCIPLES: { title: string; desc: string }[] = [
@@ -36,12 +34,34 @@ const PRINCIPLES: { title: string; desc: string }[] = [
 
 export function FilesPage() {
   const [dragging, setDragging] = useState(false);
+  const [pending, setPending] = useState<File | null>(null);
+  const [sensitive, setSensitive] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [documents, setDocuments] = useState<api.KnowledgeDocument[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const refresh = () => api.listKnowledgeDocuments().then(setDocuments);
+  useEffect(() => { refresh().catch(() => toast("知识文档列表加载失败")); }, []);
+
+  function choose(file: File) {
+    const extension = file.name.toLowerCase().split(".").pop();
+    if (!extension || !["txt", "md"].includes(extension)) {
+      toast("目前只支持 UTF-8 的 TXT 和 Markdown 文件");
+      return;
+    }
+    if (file.size > MAX_FILE_BYTES) {
+      toast("文件超过 10 MiB 限制");
+      return;
+    }
+    setPending(file);
+    setSensitive(false);
+  }
 
   function onDrop(e: React.DragEvent) {
     e.preventDefault();
     setDragging(false);
-    toast(DEV_HINT);
+    const file = e.dataTransfer.files?.[0];
+    if (file) choose(file);
   }
 
   function onDragOver(e: React.DragEvent) {
@@ -56,16 +76,32 @@ export function FilesPage() {
 
   function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
-    if (f) toast(`已选择「${f.name}」——${DEV_HINT}`);
+    if (f) choose(f);
     // 清空以便再次选择同一文件也能触发
     e.target.value = "";
+  }
+
+  async function confirmImport() {
+    if (!pending) return;
+    setImporting(true);
+    try {
+      const result = await api.importKnowledgeFile(pending, sensitive ? "sensitive" : "normal");
+      toast(result.already_exists ? "相同内容已经在知识库中" : "文件已安全保存，等待后台解析");
+      setPending(null);
+      setSensitive(false);
+      await refresh();
+    } catch (error: any) {
+      toast(error.message || "文件导入失败");
+    } finally {
+      setImporting(false);
+    }
   }
 
   return (
     <div className="page">
       <h1>文件与知识</h1>
       <div className="sub">
-        把资料交给遐蝶，让她记住你的上下文。索引与检索能力属于后续阶段，当前为占位预览。
+        把外部资料交给遐蝶作为可引用知识。当前支持安全接收 TXT/Markdown；解析、索引和对话引用仍在施工。
       </div>
 
       {/* 拖拽 / 选择区 */}
@@ -95,7 +131,7 @@ export function FilesPage() {
           把文件拖到这里，或点击选择
         </div>
         <div style={{ fontSize: 12, color: "var(--text-dim)" }}>
-          支持文档、笔记等；导入后将自动生成摘要与标签（开发中）
+          支持 UTF-8 TXT、Markdown · 单文件不超过 10 MiB
         </div>
         <div className="row" style={{ justifyContent: "center", marginTop: 16 }}>
           <button
@@ -111,10 +147,32 @@ export function FilesPage() {
         <input
           ref={inputRef}
           type="file"
+          accept=".txt,.md,text/plain,text/markdown"
           onChange={onPick}
           style={{ display: "none" }}
         />
       </div>
+
+      {pending && (
+        <div className="glass" style={{ padding: 18, marginBottom: 24 }}>
+          <div className="section-label">导入前确认</div>
+          <div style={{ margin: "8px 0", fontWeight: 600 }}>{pending.name}</div>
+          <div className="sub">
+            类型：{pending.type || "由后端检测"} · 大小：{formatBytes(pending.size)}<br />
+            数据流向：仅复制到遐蝶本地应用数据目录；本阶段不调用远程模型、不生成 Embedding、不扫描原目录。
+          </div>
+          <label style={{ display: "flex", gap: 8, alignItems: "center", margin: "14px 0" }}>
+            <input type="checkbox" checked={sensitive} onChange={(event) => setSensitive(event.target.checked)} />
+            这是敏感资料（将保持禁止远程处理的标记）
+          </label>
+          <div className="row">
+            <button className="btn" disabled={importing} onClick={confirmImport}>
+              {importing ? "安全保存中…" : "确认导入到本地"}
+            </button>
+            <button className="btn ghost" disabled={importing} onClick={() => setPending(null)}>取消</button>
+          </div>
+        </div>
+      )}
 
       {/* 知识库原则 */}
       <div className="section-label">知识库原则（需求 6.6）</div>
@@ -136,12 +194,33 @@ export function FilesPage() {
 
       {/* 已导入知识条目 */}
       <div className="section-label">已导入知识条目</div>
-      <div className="empty">
-        还没有知识条目
-        <div style={{ marginTop: 6, fontSize: 12 }}>
-          文件索引、语义检索与引用来源属于后续阶段能力，敬请期待。
+      {documents.length === 0 ? (
+        <div className="empty">还没有知识条目</div>
+      ) : documents.map((document) => (
+        <div className="list-row" key={document.id}>
+          <span className="chip">{document.extension.toUpperCase().replace(".", "")}</span>
+          <div style={{ flex: 1 }}>
+            <strong>{document.original_name}</strong>
+            <div className="sub">{formatBytes(document.size_bytes)} · {documentStatus(document.status)} ·
+              指纹 {document.content_sha256.slice(0, 10)}</div>
+          </div>
+          {document.sensitivity === "sensitive" && <span className="chip danger">敏感 · 仅本地</span>}
         </div>
-      </div>
+      ))}
     </div>
   );
+}
+
+function formatBytes(value: number): string {
+  if (value < 1024) return `${value} B`;
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KiB`;
+  return `${(value / 1024 / 1024).toFixed(1)} MiB`;
+}
+
+function documentStatus(status: api.KnowledgeDocument["status"]): string {
+  return ({
+    staged: "等待入队", queued: "已安全保存 · 等待解析", parsing: "解析中",
+    indexed: "可检索", failed: "处理失败", cancelled: "已取消",
+    delete_pending: "删除中", delete_failed: "删除待重试",
+  })[status];
 }

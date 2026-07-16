@@ -200,6 +200,27 @@ export interface ArchivistRun {
   created_at: number;
   finished_at?: number | null;
 }
+export interface KnowledgeDocument {
+  id: string;
+  collection_id: string;
+  original_name: string;
+  extension: ".txt" | ".md" | string;
+  mime_type: string;
+  size_bytes: number;
+  content_sha256: string;
+  status: "staged" | "queued" | "parsing" | "indexed" | "failed" | "cancelled" |
+    "delete_pending" | "delete_failed";
+  sensitivity: "normal" | "sensitive";
+  embedding_mode: "none" | "local" | "remote";
+  error_code?: string | null;
+  created_at: number;
+  updated_at: number;
+}
+export interface KnowledgeImportResult {
+  document: KnowledgeDocument;
+  run: null | { id: string; status: string; current_stage: string; progress: number };
+  already_exists: boolean;
+}
 export interface MemoryCandidate {
   id: string;
   content: string;
@@ -451,6 +472,31 @@ export const setMemoryRelationStatus = (
 });
 export const listArchivistRuns = (limit = 10) =>
   j<ArchivistRun[]>(`/api/archivist/runs?limit=${limit}`);
+
+// ---- 用户文件知识库 ----
+export const listKnowledgeDocuments = () =>
+  j<KnowledgeDocument[]>("/api/knowledge/documents");
+export async function importKnowledgeFile(
+  file: File, sensitivity: "normal" | "sensitive" = "normal",
+): Promise<KnowledgeImportResult> {
+  const fallbackMime = file.name.toLowerCase().endsWith(".md") ? "text/markdown" : "text/plain";
+  const response = await fetch(API_BASE + "/api/knowledge/documents/import", {
+    method: "POST",
+    headers: requestHeaders({ headers: {
+      "Content-Type": file.type || fallbackMime,
+      "X-Xiadie-Filename": encodeURIComponent(file.name),
+      "X-Xiadie-Collection": "default",
+      "X-Xiadie-Sensitivity": sensitivity,
+    }}),
+    body: file,
+  });
+  if (!response.ok) {
+    let detail = response.statusText;
+    try { detail = (await response.json()).detail || detail; } catch { /* ignore */ }
+    throw new ApiError(response.status, detail);
+  }
+  return response.json();
+}
 export const listMemoryCandidates = () =>
   j<MemoryCandidate[]>("/api/memory-candidates?status=pending");
 export const acceptMemoryCandidate = (

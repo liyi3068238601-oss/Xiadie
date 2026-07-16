@@ -68,7 +68,7 @@ npm start
 ## 测试与构建
 
 ```bash
-cd backend && python -m pytest tests -q          # 后端 API 与领域回归测试（242 项）
+cd backend && python -m pytest tests -q          # 后端 API 与领域回归测试（256 项）
 cd frontend && npm run build                    # 前端类型检查 + 生产构建
 ```
 
@@ -87,7 +87,7 @@ cd frontend && npm run build                    # 前端类型检查 + 生产构
 
 - **对外发布须替换 Live2D 模型**：当前内置的是用户提供的"遐蝶"桌宠模型，仅个人自用授权（禁止再分发/商用/上传/二改），与需求第 9 节冲突；正式版须换成原创或已授权可再分发的模型（见 [NOTICE.md](NOTICE.md)）。
 - 密钥迁移到 **Electron safeStorage / 系统安全存储**（MODEL-005 正式版要求）。
-- 文件与知识库的**真实索引与检索**（当前为占位页与原则展示）。
+- 文件与知识库的**解析、索引与检索**（TXT/Markdown 安全接收与本地副本已实现，当前仍等待解析）。
 - 工具系统从说明升级为可执行 **ToolRegistry** + 确认卡 + 审计写入。
 - 语音 TTS/ASR、外部平台 QQ/OneBot、桌面自动化 —— 均为需求明确的后置能力。
 - 开机自启、透明窗口点击穿透在 Windows 上的实测。（Windows 打包已就绪，见 [BUILD-WINDOWS.md](BUILD-WINDOWS.md)）

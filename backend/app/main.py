@@ -6,15 +6,16 @@
 import json
 from contextlib import asynccontextmanager
 from typing import Optional
+from urllib.parse import unquote
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from . import (
     archivist, archivist_worker, companion_state, db, entities, episode_consolidator, episode_summary_service,
-    episodes, llm, lore, memory, memory_conflicts, saga_consolidator, saga_lifecycle, saga_summary,
+    episodes, knowledge, llm, lore, memory, memory_conflicts, saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, slow_lifecycle,
 )
 from . import memory_observer_service
@@ -447,6 +448,52 @@ def set_memory_observer_model(body: ObserverModelIn) -> dict:
         )
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
+
+
+@app.get("/api/knowledge/documents")
+def get_knowledge_documents(collection_id: Optional[str] = None) -> list[dict]:
+    return [
+        knowledge.public_document(document)
+        for document in knowledge.list_documents(collection_id=collection_id)
+    ]
+
+
+@app.post("/api/knowledge/documents/import")
+async def import_knowledge_document(request: Request) -> dict:
+    declared_length = request.headers.get("content-length")
+    if declared_length:
+        try:
+            if int(declared_length) > knowledge.MAX_FILE_BYTES:
+                raise HTTPException(413, "文件超过 10 MiB 限制")
+        except ValueError as error:
+            raise HTTPException(400, "Content-Length 无效") from error
+    body = bytearray()
+    async for chunk in request.stream():
+        body.extend(chunk)
+        if len(body) > knowledge.MAX_FILE_BYTES:
+            raise HTTPException(413, "文件超过 10 MiB 限制")
+    filename = unquote(request.headers.get("X-Xiadie-Filename", ""))
+    collection_id = request.headers.get("X-Xiadie-Collection", "default")
+    sensitivity = request.headers.get("X-Xiadie-Sensitivity", "normal")
+    try:
+        return knowledge.public_import_result(
+            knowledge.import_file(
+                filename, request.headers.get("content-type", "application/octet-stream"),
+                bytes(body), collection_id=collection_id, sensitivity=sensitivity,
+            )
+        )
+    except knowledge.KnowledgeImportError as error:
+        status = 413 if error.code in {"file_too_large", "decoded_text_too_large"} else (
+            415 if error.code in {
+                "file_type_unsupported", "mime_type_mismatch", "encoding_unsupported",
+                "binary_content_rejected",
+            } else 409 if error.code in {
+                "document_quota_exceeded", "storage_quota_exceeded",
+            } else 400
+        )
+        raise HTTPException(status, str(error)) from error
+    except OSError as error:
+        raise HTTPException(507, "无法把文件安全保存到本地知识库") from error
 
 
 class MemoryIn(BaseModel):
