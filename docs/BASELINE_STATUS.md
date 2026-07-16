@@ -160,6 +160,12 @@ npm.cmd start
 - Episode 管理页展示 active/completed/archived 四态与生命周期事件；Fragment 隐私清除和 Episode
   tombstone 都要求二次确认并说明本地/外部备份边界。后端 235 项、前端 16 项和生产/Electron 检查通过，
   记忆系统阶段 E 已完成。
+- 用户文件知识库 F.1 已完成 schema 28：`knowledge_collections`、`knowledge_documents`、可取消
+  `knowledge_import_runs` 与无正文事件表已建立，默认 collection 可重复初始化，旧 memory 数据不被迁移改写。
+- ADR-0029 固定用户知识、相处记忆和内置 Lore 三域隔离；首批只接受用户明确选择的 UTF-8 TXT/Markdown，
+  默认仅本地解析/FTS，远程 Embedding 必须逐次披露同意，敏感文档默认禁止远传。
+- 当前仍未读取、复制、解析或索引真实用户文件，文件页继续保持占位语义；F.2 才会实现安全准入和应用内
+  原文副本。当前后端 242 项、前端 16 项、生产构建与 Electron 语法检查通过。
 
 ### 人格与内置背景知识（2026-07-14）
 

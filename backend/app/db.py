@@ -1200,6 +1200,101 @@ MIGRATIONS = [
             ON memory_fragment_relation_events(relation_id,created_at,id);
         """,
     ),
+    (
+        28,
+        """
+        CREATE TABLE knowledge_collections (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL COLLATE NOCASE,
+            description TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','disabled')),
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            UNIQUE(name)
+        );
+        INSERT INTO knowledge_collections(id,name,description,status,created_at,updated_at)
+        VALUES('default','默认知识库','用户明确导入的外部资料','active',
+               CAST(strftime('%s','now') AS REAL),CAST(strftime('%s','now') AS REAL));
+
+        CREATE TABLE knowledge_documents (
+            id TEXT PRIMARY KEY,
+            collection_id TEXT NOT NULL DEFAULT 'default'
+                REFERENCES knowledge_collections(id) ON DELETE RESTRICT,
+            source_type TEXT NOT NULL DEFAULT 'file' CHECK(source_type='file'),
+            original_name TEXT NOT NULL,
+            extension TEXT NOT NULL,
+            mime_type TEXT NOT NULL,
+            size_bytes INTEGER NOT NULL CHECK(size_bytes >= 0),
+            content_sha256 TEXT NOT NULL CHECK(length(content_sha256)=64),
+            storage_key TEXT NOT NULL UNIQUE,
+            status TEXT NOT NULL DEFAULT 'staged' CHECK(status IN (
+                'staged','queued','parsing','indexed','failed','cancelled',
+                'delete_pending','delete_failed'
+            )),
+            sensitivity TEXT NOT NULL DEFAULT 'normal'
+                CHECK(sensitivity IN ('normal','sensitive')),
+            embedding_mode TEXT NOT NULL DEFAULT 'none'
+                CHECK(embedding_mode IN ('none','local','remote')),
+            embedding_provider_id TEXT,
+            embedding_model TEXT,
+            parser_version TEXT,
+            index_version TEXT,
+            page_count INTEGER NOT NULL DEFAULT 0 CHECK(page_count >= 0),
+            chunk_count INTEGER NOT NULL DEFAULT 0 CHECK(chunk_count >= 0),
+            error_code TEXT,
+            indexed_at REAL,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            CHECK(embedding_mode='remote' OR (
+                embedding_provider_id IS NULL AND embedding_model IS NULL
+            )),
+            CHECK(status!='indexed' OR indexed_at IS NOT NULL)
+        );
+        CREATE INDEX idx_knowledge_documents_collection_status
+            ON knowledge_documents(collection_id,status,updated_at);
+        CREATE UNIQUE INDEX uq_knowledge_documents_collection_hash
+            ON knowledge_documents(collection_id,content_sha256);
+
+        CREATE TABLE knowledge_import_runs (
+            id TEXT PRIMARY KEY,
+            document_id TEXT NOT NULL REFERENCES knowledge_documents(id) ON DELETE CASCADE,
+            idempotency_key TEXT NOT NULL UNIQUE,
+            trigger TEXT NOT NULL CHECK(trigger IN ('import','reindex')),
+            status TEXT NOT NULL DEFAULT 'queued' CHECK(status IN (
+                'queued','running','cancel_requested','cancelled','completed',
+                'failed','recovery_pending'
+            )),
+            current_stage TEXT NOT NULL DEFAULT 'validation' CHECK(current_stage IN (
+                'validation','copy','parsing','chunking','indexing','finalizing'
+            )),
+            progress INTEGER NOT NULL DEFAULT 0 CHECK(progress BETWEEN 0 AND 100),
+            attempt_count INTEGER NOT NULL DEFAULT 0 CHECK(attempt_count >= 0),
+            max_attempts INTEGER NOT NULL DEFAULT 3 CHECK(max_attempts BETWEEN 1 AND 5),
+            error_code TEXT,
+            cancel_requested_at REAL,
+            started_at REAL,
+            finished_at REAL,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_knowledge_import_runs_status
+            ON knowledge_import_runs(status,created_at,id);
+
+        CREATE TABLE knowledge_import_events (
+            id TEXT PRIMARY KEY,
+            run_id TEXT NOT NULL REFERENCES knowledge_import_runs(id) ON DELETE CASCADE,
+            action TEXT NOT NULL,
+            before_status TEXT,
+            after_status TEXT NOT NULL,
+            stage TEXT NOT NULL,
+            error_code TEXT,
+            metadata_json TEXT NOT NULL DEFAULT '{}',
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_knowledge_import_events_run
+            ON knowledge_import_events(run_id,created_at,id);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

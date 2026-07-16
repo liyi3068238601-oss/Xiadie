@@ -49,7 +49,7 @@ def test_schema_27_relation_audit_has_no_memory_body():
     try:
         assert conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
-        ).fetchone()["value"] == "27"
+        ).fetchone()["value"] == "28"
         relation_columns = {
             row["name"] for row in conn.execute("PRAGMA table_info(memory_fragment_relations)")
         }
@@ -127,3 +127,10 @@ def test_lifecycle_detail_includes_score_events_and_relations(conflict_objects):
     assert body["evaluation"]["fragment_id"] == older["id"]
     assert "components" in body["evaluation"]
     assert body["relations"][0]["relation_type"] == "superseded"
+
+
+def test_normalization_similarity_edge_inputs_are_predictable():
+    assert memory_conflicts._normalize(" 123-45 ") == "12345"
+    assert memory_conflicts._similarity("甲", "乙") == 0.0
+    assert memory_conflicts._similarity("甲", "甲") == 1.0
+    assert memory_conflicts._classify("like tea", "don't like tea")[0] == "possible_conflict"
