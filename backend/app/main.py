@@ -13,7 +13,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from . import (
-    archivist, companion_state, db, entities, episode_consolidator, episode_summary_service,
+    archivist, archivist_worker, companion_state, db, entities, episode_consolidator, episode_summary_service,
     episodes, llm, lore, memory, saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service,
 )
@@ -30,9 +30,11 @@ async def lifespan(app: FastAPI):
     await memory_observer_service.start_worker()
     await episode_consolidator.start_worker()
     await saga_consolidator.start_worker()
+    await archivist_worker.start_worker()
     try:
         yield
     finally:
+        await archivist_worker.stop_worker()
         await saga_consolidator.stop_worker()
         await episode_consolidator.stop_worker()
         await memory_observer_service.stop_worker()
@@ -497,6 +499,52 @@ def transition_memory_lifecycle(mid: str, body: FragmentLifecycleIn) -> dict:
             409 if exc.code == "revision_conflict" else 400
         )
         raise HTTPException(status, str(exc)) from exc
+
+
+class ArchivistRunIn(BaseModel):
+    trigger: str = "manual"
+    request_key: Optional[str] = Field(default=None, max_length=120)
+    scan_budget: int = Field(default=50, ge=1, le=200)
+    transition_budget: int = Field(default=10, ge=0, le=100)
+    runtime_budget_ms: int = Field(default=2000, ge=100, le=30000)
+    model_call_budget: int = Field(default=0, ge=0, le=20)
+
+
+@app.post("/api/archivist/runs")
+def enqueue_archivist_run(body: ArchivistRunIn) -> dict:
+    try:
+        return archivist_worker.enqueue(
+            trigger=body.trigger, request_key=body.request_key,
+            scan_budget=body.scan_budget, transition_budget=body.transition_budget,
+            runtime_budget_ms=body.runtime_budget_ms,
+            model_call_budget=body.model_call_budget,
+        )
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
+
+
+@app.get("/api/archivist/runs")
+def get_archivist_runs(limit: int = 50) -> list[dict]:
+    return archivist_worker.list_runs(limit=limit)
+
+
+@app.get("/api/archivist/runs/{run_id}")
+def get_archivist_run(run_id: str) -> dict:
+    run = archivist_worker.get_run(run_id)
+    if not run:
+        raise HTTPException(404, "Archivist 任务不存在")
+    return run
+
+
+@app.post("/api/archivist/runs/{run_id}/cancel")
+def cancel_archivist_run(run_id: str) -> dict:
+    try:
+        run = archivist_worker.cancel(run_id)
+    except ValueError as error:
+        raise HTTPException(409, str(error)) from error
+    if not run:
+        raise HTTPException(404, "Archivist 任务不存在")
+    return run
 
 
 class MemoryCorrectionIn(BaseModel):

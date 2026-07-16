@@ -1,8 +1,8 @@
 # 遐蝶自主记忆系统设计书（零基础说明版）
 
-版本：v0.23
+版本：v0.24
 
-状态：设计基线；阶段 A～D 与 E.1～E.3 已完成，阶段 E.4～F 待施工
+状态：设计基线；阶段 A～D 与 E.1～E.4 已完成，阶段 E.5～F 待施工
 
 主要参考：[MemoryConstellations](https://github.com/ClaraShafiq/MemoryConstellations)
 适用对象：项目所有者、第一次接触 Agent 的开发者、后续接手实现的 Codex
@@ -956,7 +956,7 @@ POST /api/memory-maintenance/run
 | B 自主 Fragment 写入 | 已完成 | schema 12、原子自主写入、限频提示、详情/纠错界面及旧候选兼容策略均已提交 |
 | C Episode 自动化 | 已完成 | schema 13～17、自动整理、事实校验、原子应用和正式界面均已提交 |
 | D Saga | 已完成 | schema 18～22、评分、事实摘要、原子应用、生命周期、纠错、API、正式界面与总验收均已提交 |
-| E Archivist | E.3 已完成 | schema 24、精确状态转换、三类恢复、事务审计和 FTS 同步已提交；尚未启动维护 worker |
+| E Archivist | E.4 已完成 | schema 25、20 小时懒调度、有限预算、失败恢复、取消和 run/event 审计已提交 |
 | F 用户文件知识库 | 未开始 | 当前仅有界面占位 |
 
 ### 阶段 A：人格与背景分离（本轮已完成）
@@ -1388,12 +1388,31 @@ FTS5，实际使用 FTS5 特殊 delete 命令，并用 schema 24 的 `fts_indexe
 
 #### 阶段 E.4：Archivist worker、调度与预算
 
-- [ ] 建立 Archivist run/event 账本和幂等 request_key。
-- [ ] 复用串行认领、最多三次指数退避、陈旧恢复、协作取消和优雅停机模式。
-- [ ] `last_archivist_run` 距成功超过 20 小时才懒入队，不连续补跑漏掉的日期。
-- [ ] 单轮限制扫描数、转换数、事务时长和可选模型调用预算。
-- [ ] 模型/索引/worker 失败不阻塞聊天、不提交部分状态、不覆盖用户并发修改。
-- [ ] 启动、空闲、重复入队、失败恢复、取消和预算耗尽测试通过。
+- [x] 建立 Archivist run/event 账本和幂等 request_key。
+- [x] 复用串行认领、最多三次指数退避、陈旧恢复、协作取消和优雅停机模式。
+- [x] `last_archivist_run` 距成功超过 20 小时才懒入队，不连续补跑漏掉的日期。
+- [x] 单轮限制扫描数、转换数、事务时长和可选模型调用预算。
+- [x] 模型/索引/worker 失败不阻塞聊天、不提交部分状态、不覆盖用户并发修改。
+- [x] 启动、空闲、重复入队、失败恢复、取消和预算耗尽测试通过。
+
+E.4 开工前审查结论：E.3 review 全项通过且没有返工项。建议 1、2、4、5 全部采纳：复用 Saga
+Consolidator 已验证的 worker 状态机；每个 Fragment 独立短事务；20 小时空闲/启动懒调度；开放 run/event
+审计 API。建议 3 采纳“E.4 只处理 Fragment，Episode/Saga 留给 E.5”的边界，但不预埋尚无消费者的
+`slow_lifecycle` trigger，避免形成看似可用的空接口。
+
+schema 25 新增 Fragment 的 `last_archivist_evaluated_at`、`archivist_runs` 与不含正文的
+`archivist_run_events`。默认单轮预算为扫描 50 条、转换
+10 条、运行 2000ms、模型调用 0 次，硬上限分别为 200、100、30000ms、20；当前确定性维护不调用模型，
+但任务快照保留模型预算与实际用量字段，后续若引入可选判断也不能越界。候选 SQL 只读取到达 active 14 天
+或 cooling 额外 30 天评估点的记录，先按最近评估时间轮转，时间相同时 cooling 优先、再按真实召回/创建
+时间从旧到新；这样长期受保护的前 50 条不会让后续候选永久饥饿。预算用尽即正常结束，
+剩余候选等待下一个窗口，不在同轮无限续跑。
+
+任务以 `archivist-worker-v1:{trigger}:{request_key}` 幂等；20 小时窗口使用固定 bucket，不补跑错过的窗口。
+失败最多三次并按 5、10 分钟退避，运行/取消状态超过五分钟可恢复；关机把当前 run 标为
+`recovery_pending`，仍在结束的线程会在下一条前停止，当前 Fragment 只可能完整提交或完整回滚。成功或无候选
+才更新 `last_archivist_run`。API 支持手动入队、列表、带事件详情和协作取消。9 项 E.4 专项、E.1～E.4
+共 37 项相关测试、后端 221 项全部通过；前端 13 项、生产构建和 Electron 检查见本阶段最终验收。
 
 #### 阶段 E.5：Episode/Saga 慢生命周期
 

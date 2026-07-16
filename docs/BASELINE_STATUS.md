@@ -35,7 +35,7 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; python -m pytest tests` | 通过：212 passed，1 warning |
+| 后端 | `cd backend; python -m pytest tests` | 通过：221 passed，1 warning |
 | 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：13 项情绪映射、运行可靠性、记忆、Episode 与 Saga 展示契约测试；TypeScript 检查及 Vite 生产构建成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 
@@ -143,6 +143,10 @@ npm.cmd start
 - schema 24 增加 `fts_indexed` 并使用状态感知 FTS 触发器；frozen 会原子退出派生索引，强相关真实召回、新证据或用户操作可恢复 active 并重建索引。
 - 每次转换与 revision、进入时间、评分分量及无正文事件在同一短事务提交；Archivist 永不自动 tombstone，删除与隐私清除仍是独立用户路径。
 - E.3 只提供确定性评估/恢复能力，定时扫描、任务账本和预算控制留给 E.4 worker。
+- Archivist 阶段 E.4 已完成 schema 25 任务/事件账本与后台 worker：启动和空闲时仅在距上次成功至少 20 小时后懒入队，同一时间窗口幂等。
+- worker 复用串行原子认领、最多三次指数退避、五分钟陈旧恢复、协作取消和优雅停机；每个 Fragment 仍由 E.3 独立短事务评估。
+- 单轮默认最多扫描 50 条、转换 10 条、运行 2 秒、模型调用 0 次；只扫描已到 14/30 天评估点的 Fragment，并优先更久未评估、最久未召回内容，避免受保护记录长期饿死后续候选。
+- `/api/archivist/runs` 提供手动入队、列表、详情事件和取消审计；当前 worker 不调用模型、不触碰 Episode/Saga，慢生命周期留给 E.5。
 
 ### 人格与内置背景知识（2026-07-14）
 

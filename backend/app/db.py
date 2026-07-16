@@ -1012,6 +1012,56 @@ MIGRATIONS = [
         END;
         """,
     ),
+    (
+        25,
+        """
+        ALTER TABLE memory_fragments ADD COLUMN last_archivist_evaluated_at REAL;
+        CREATE INDEX idx_memory_fragments_archivist_due
+            ON memory_fragments(status, enabled, last_archivist_evaluated_at);
+
+        CREATE TABLE archivist_runs (
+            id TEXT PRIMARY KEY,
+            idempotency_key TEXT NOT NULL UNIQUE,
+            trigger TEXT NOT NULL CHECK(trigger IN ('startup','idle','manual')),
+            status TEXT NOT NULL CHECK(status IN (
+                'queued','running','cancel_requested','cancelled','completed','skipped',
+                'recovery_pending','exhausted'
+            )),
+            policy_version TEXT NOT NULL,
+            attempt_count INTEGER NOT NULL DEFAULT 0 CHECK(attempt_count BETWEEN 0 AND 3),
+            max_attempts INTEGER NOT NULL DEFAULT 3 CHECK(max_attempts BETWEEN 1 AND 3),
+            next_attempt_at REAL,
+            started_at REAL,
+            finished_at REAL,
+            error_code TEXT,
+            scan_budget INTEGER NOT NULL CHECK(scan_budget BETWEEN 1 AND 200),
+            transition_budget INTEGER NOT NULL CHECK(transition_budget BETWEEN 0 AND 100),
+            runtime_budget_ms INTEGER NOT NULL CHECK(runtime_budget_ms BETWEEN 100 AND 30000),
+            model_call_budget INTEGER NOT NULL DEFAULT 0 CHECK(model_call_budget BETWEEN 0 AND 20),
+            scanned_count INTEGER NOT NULL DEFAULT 0 CHECK(scanned_count >= 0),
+            transitioned_count INTEGER NOT NULL DEFAULT 0 CHECK(transitioned_count >= 0),
+            conflict_count INTEGER NOT NULL DEFAULT 0 CHECK(conflict_count >= 0),
+            model_calls_used INTEGER NOT NULL DEFAULT 0 CHECK(model_calls_used >= 0),
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_archivist_runs_due
+            ON archivist_runs(status, next_attempt_at, created_at);
+
+        CREATE TABLE archivist_run_events (
+            id TEXT PRIMARY KEY,
+            run_id TEXT NOT NULL REFERENCES archivist_runs(id) ON DELETE CASCADE,
+            action TEXT NOT NULL,
+            before_status TEXT,
+            after_status TEXT NOT NULL,
+            reason_code TEXT,
+            metadata_json TEXT NOT NULL DEFAULT '{}',
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_archivist_run_events_run
+            ON archivist_run_events(run_id, created_at, id);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
