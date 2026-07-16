@@ -109,10 +109,10 @@ function createMainWindow() {
     return;
   }
   mainWin = new BrowserWindow({
-    width: 1100,
-    height: 720,
-    minWidth: 900,
-    minHeight: 560,
+    width: 1280,
+    height: 800,
+    minWidth: 1000,
+    minHeight: 640,
     frame: false,
     transparent: true,
     backgroundColor: "#00000000",
