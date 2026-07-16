@@ -346,6 +346,16 @@ export interface KnowledgeRecallDecision {
   created_at: number;
   finished_at?: number | null;
 }
+export interface KnowledgeRecallStats {
+  sample_count: number;
+  scope: "global" | "session";
+  action_counts: Record<"skip" | "retrieve" | "ask", number>;
+  action_rates: Record<"skip" | "retrieve" | "ask", number>;
+  reason_counts: Record<string, number>;
+  latency_ms: { average: number; p50: number; p90: number; p99: number };
+  vector_available_rate: number;
+  timeout_rate: number;
+}
 export interface KnowledgeImportEvent {
   id: string;
   action: string;
@@ -698,6 +708,10 @@ export const listKnowledgeRetrievals = (limit = 30) =>
   j<KnowledgeRetrievalAudit[]>(`/api/knowledge/retrievals?limit=${limit}`);
 export const listKnowledgeRecallDecisions = (limit = 30) =>
   j<KnowledgeRecallDecision[]>(`/api/knowledge/recall-decisions?limit=${limit}`);
+export const getKnowledgeRecallStats = (sessionId?: string) =>
+  j<KnowledgeRecallStats>(`/api/knowledge/recall-decisions/stats${
+    sessionId ? `?session_id=${encodeURIComponent(sessionId)}` : ""
+  }`);
 export async function importKnowledgeFile(
   file: File, sensitivity: "normal" | "sensitive" = "normal",
 ): Promise<KnowledgeImportResult> {

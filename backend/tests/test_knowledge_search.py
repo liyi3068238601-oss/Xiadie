@@ -1,5 +1,6 @@
 """F.5 contentless FTS、原子索引与受限检索测试。"""
 import asyncio
+import hashlib
 import json
 import sqlite3
 
@@ -186,6 +187,29 @@ def test_hybrid_search_allows_vector_only_when_fts_has_no_terms(monkeypatch):
     })
     degraded = knowledge_search.hybrid_search("🦋🦋")
     assert degraded["retrieval_mode"] == "fts_unavailable"
+
+
+def test_hybrid_search_clusters_exact_duplicates_and_overlapping_neighbors(monkeypatch):
+    base = {
+        "document_id": "doc-a", "ordinal": 0, "content": "星港删除规则" * 20,
+        "content_sha256": "a" * 64, "match_type": "primary", "rank": -1.0,
+    }
+    duplicate = {**base, "chunk_id": "chunk-b", "document_id": "doc-b"}
+    first = {**base, "chunk_id": "chunk-a"}
+    neighbor_content = "星港删除规则" * 19 + "补充"
+    neighbor = {**base, "chunk_id": "chunk-c", "ordinal": 1, "content": neighbor_content,
+                "content_sha256": hashlib.sha256(neighbor_content.encode()).hexdigest()}
+    monkeypatch.setattr(knowledge_search, "search", lambda *_a, **_k: {
+        "results": [first, duplicate, neighbor], "result_count": 3,
+    })
+    monkeypatch.setattr(knowledge_embeddings, "search", lambda *_a, **_k: {
+        "results": [], "available": False, "error_code": "embedding_unavailable",
+    })
+    result = knowledge_search.hybrid_search("星港删除")
+    assert [item["chunk_id"] for item in result["results"]] == ["chunk-a"]
+    assert result["results"][0]["duplicate_document_ids"] == ["doc-a", "doc-b"]
+    assert result["diagnostics"]["exact_duplicates_removed"] == 1
+    assert result["diagnostics"]["adjacent_duplicates_removed"] == 1
 
 
 def test_cancel_during_index_preparation_cleans_fts_chunks_and_artifact(monkeypatch):

@@ -48,6 +48,7 @@ export function FilesPage() {
   const [actionBusy, setActionBusy] = useState<string | null>(null);
   const [audits, setAudits] = useState<api.KnowledgeRetrievalAudit[] | null>(null);
   const [recallDecisions, setRecallDecisions] = useState<api.KnowledgeRecallDecision[] | null>(null);
+  const [recallStats, setRecallStats] = useState<api.KnowledgeRecallStats | null>(null);
   const [embeddingStatus, setEmbeddingStatus] = useState<api.KnowledgeEmbeddingStatus | null>(null);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -246,14 +247,16 @@ export function FilesPage() {
     if (audits !== null) {
       setAudits(null);
       setRecallDecisions(null);
+      setRecallStats(null);
       return;
     }
     try {
-      const [retrievals, decisions] = await Promise.all([
-        api.listKnowledgeRetrievals(), api.listKnowledgeRecallDecisions(),
+      const [retrievals, decisions, stats] = await Promise.all([
+        api.listKnowledgeRetrievals(), api.listKnowledgeRecallDecisions(), api.getKnowledgeRecallStats(),
       ]);
       setAudits(retrievals);
       setRecallDecisions(decisions);
+      setRecallStats(stats);
     } catch (error: any) {
       toast(error.message || "检索记录加载失败");
     }
@@ -419,6 +422,16 @@ export function FilesPage() {
       {recallDecisions !== null && (
         <div className="glass knowledge-audits knowledge-shadow-audits">
           <div className="card-title">影子召回判断（不会改变回答或发送资料）</div>
+          {recallStats && (
+            <div className="knowledge-shadow-summary">
+              <span>{recallStats.sample_count} 条样本</span>
+              <span>{Math.round(recallStats.action_rates.skip * 100)}% 跳过</span>
+              <span>{Math.round(recallStats.action_rates.retrieve * 100)}% 建议召回</span>
+              <span>{Math.round(recallStats.action_rates.ask * 100)}% 需要确认</span>
+              <span>P90 {recallStats.latency_ms.p90} ms</span>
+              <span>向量可用 {Math.round(recallStats.vector_available_rate * 100)}%</span>
+            </div>
+          )}
           {recallDecisions.length === 0 ? <div className="sub">还没有影子判断记录</div> : recallDecisions.map((decision) => (
             <div className="knowledge-audit-row knowledge-shadow-row" key={decision.id}>
               <span>{new Date(decision.created_at * 1000).toLocaleString("zh-CN")}</span>

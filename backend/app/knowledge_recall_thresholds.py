@@ -1,0 +1,14 @@
+"""由 K.3 合成固定集基线校准的影子阈值；不足以授权自动注入。"""
+
+THRESHOLD_VERSION = "knowledge-recall-thresholds-v1"
+SOURCE_EVALUATION_PROTOCOL = "knowledge-recall-eval-v2"
+SOURCE_FIXTURE_SHA256 = "73339358569577793f6ec574d023753811019a1e0ef16e364851f2061f62cbb2"
+SOURCE_SAMPLE_COUNT = 23
+
+# 13 个相关样本 top dense 最低 0.477699；3 个无关样本最高 0.466639。
+# 中点仅用于影子候选去噪；样本量不足，semantic 仍保持 medium 且禁止自动注入。
+SEMANTIC_CANDIDATE_MIN_SCORE = 0.472169
+EXACT_TERM_HIGH_MIN_CHARS = 3
+ENTITY_MEDIUM_MIN_CHARS = 2
+SEMANTIC_AUTO_HIGH_ENABLED = False
+AUTOMATIC_INJECTION_ENABLED = False

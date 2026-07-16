@@ -15,6 +15,7 @@ MAX_DOCUMENT_FILTERS = 20
 MAX_TAG_FILTERS = 10
 MAX_LIMIT = 12
 MAX_RESULT_CHARS = 8_000
+ADJACENT_SIMILARITY_THRESHOLD = 0.65
 _CJK_OR_WORD = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]+|[A-Za-z0-9_]+")
 _CJK = re.compile(r"^[\u3400-\u4dbf\u4e00-\u9fff]+$")
 
@@ -241,25 +242,56 @@ def hybrid_search(
             vector = {"results": [], "available": False, "error_code": "embedding_search_failed"}
     scores: dict[str, float] = {}
     items: dict[str, dict] = {}
-    for results in (lexical["results"], vector["results"]):
+    lexical_positions: dict[str, int] = {}
+    vector_positions: dict[str, int] = {}
+    vector_scores: dict[str, float] = {}
+    for source, results in (("fts", lexical["results"]), ("vector", vector["results"])):
         for rank, item in enumerate(results, start=1):
             scores[item["chunk_id"]] = scores.get(item["chunk_id"], 0.0) + 1.0 / (60 + rank)
-            if item["chunk_id"] not in items or item.get("match_type") != "vector":
+            if source == "fts":
+                lexical_positions[item["chunk_id"]] = rank
+            else:
+                vector_positions[item["chunk_id"]] = rank
+                vector_scores[item["chunk_id"]] = float(item.get("vector_score") or 0.0)
+            if item["chunk_id"] not in items or source == "fts":
                 items[item["chunk_id"]] = dict(item)
     ordered = sorted(items.values(), key=lambda item: (-scores[item["chunk_id"]], item["chunk_id"]))
     selected: list[dict] = []
     used_chars = 0
+    adjacent_duplicates_removed = 0
+    duplicate_sizes: dict[str, int] = {}
+    duplicate_documents: dict[str, set[str]] = {}
+    for item in ordered:
+        duplicate_sizes[item["content_sha256"]] = duplicate_sizes.get(item["content_sha256"], 0) + 1
+        duplicate_documents.setdefault(item["content_sha256"], set()).add(item["document_id"])
+    exact_duplicates_removed = sum(max(0, count - 1) for count in duplicate_sizes.values())
+    seen_content: set[str] = set()
     for item in ordered:
         if len(selected) >= max(1, min(int(limit), MAX_LIMIT)):
             break
+        if item["content_sha256"] in seen_content:
+            continue
+        if any(
+            kept["document_id"] == item["document_id"]
+            and abs(int(kept["ordinal"]) - int(item["ordinal"])) <= 1
+            and _text_similarity(kept["content"], item["content"]) >= ADJACENT_SIMILARITY_THRESHOLD
+            for kept in selected
+        ):
+            adjacent_duplicates_removed += 1
+            continue
         if used_chars + len(item["content"]) > max(256, min(int(max_chars), MAX_RESULT_CHARS)):
             continue
-        item["fusion_score"] = scores[item["chunk_id"]]
-        if item["chunk_id"] in {row["chunk_id"] for row in lexical["results"]} and any(
-            row["chunk_id"] == item["chunk_id"] for row in vector["results"]
-        ):
+        chunk_id = item["chunk_id"]
+        item["fusion_score"] = scores[chunk_id]
+        item["fts_position"] = lexical_positions.get(chunk_id)
+        item["dense_position"] = vector_positions.get(chunk_id)
+        item["vector_score"] = vector_scores.get(chunk_id)
+        item["duplicate_count"] = duplicate_sizes[item["content_sha256"]]
+        item["duplicate_document_ids"] = sorted(duplicate_documents[item["content_sha256"]])
+        if chunk_id in lexical_positions and chunk_id in vector_positions:
             item["match_type"] = "hybrid"
         selected.append(item)
+        seen_content.add(item["content_sha256"])
         used_chars += len(item["content"])
     retrieval_mode = "fts"
     if mode == "vector":
@@ -268,11 +300,27 @@ def hybrid_search(
         retrieval_mode = "vector" if vector["available"] else "fts_unavailable"
     elif vector["available"]:
         retrieval_mode = "hybrid"
+    fusion_values = sorted((scores.values()), reverse=True)
     return {
         "query": value, "results": selected, "result_count": len(selected),
         "used_chars": used_chars, "context_window": context_window,
         "retrieval_mode": retrieval_mode, "vector_available": bool(vector["available"]),
         "vector_error_code": vector.get("error_code"),
+        "diagnostics": {
+            "lexical_count": len(lexical["results"]),
+            "dense_count": len(vector["results"]),
+            "fused_count": len(ordered),
+            "selected_count": len(selected),
+            "exact_duplicates_removed": exact_duplicates_removed,
+            "adjacent_duplicates_removed": adjacent_duplicates_removed,
+            "top_fts_rank": lexical["results"][0].get("rank") if lexical["results"] else None,
+            "top_dense_score": max(vector_scores.values()) if vector_scores else None,
+            "top_fusion_score": fusion_values[0] if fusion_values else None,
+            "fusion_score_gap": (
+                fusion_values[0] - fusion_values[1] if len(fusion_values) > 1
+                else fusion_values[0] if fusion_values else None
+            ),
+        },
     }
 
 
@@ -282,6 +330,20 @@ def _match_query(query: str) -> str:
         raise SearchError("knowledge_query_has_no_terms", "检索词不包含可搜索文字")
     terms = list(dict.fromkeys(terms))[:MAX_QUERY_TERMS]
     return " AND ".join(f'"{term}"' for term in terms)
+
+
+def _text_similarity(left: str, right: str) -> float:
+    """仅用于相邻切片去重的轻量字符 3-gram Jaccard；短文本保持保守。"""
+    def grams(value: str) -> set[str]:
+        normalized = re.sub(r"\s+", "", value).casefold()
+        if len(normalized) < 3:
+            return {normalized} if normalized else set()
+        return {normalized[index:index + 3] for index in range(len(normalized) - 2)}
+
+    left_grams, right_grams = grams(left), grams(right)
+    if not left_grams or not right_grams:
+        return 0.0
+    return len(left_grams & right_grams) / len(left_grams | right_grams)
 
 
 def _public_result(item: dict, match_type: str, context_of: str | None, rank: float | None) -> dict:

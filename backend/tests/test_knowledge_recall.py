@@ -1,7 +1,12 @@
 import hashlib
+import json
 import time
+from pathlib import Path
 
-from app import db, knowledge_recall, knowledge_recall_service, knowledge_search
+from app import (
+    db, knowledge_recall, knowledge_recall_evaluation, knowledge_recall_service,
+    knowledge_recall_thresholds, knowledge_search,
+)
 from app.main import app
 from fastapi.testclient import TestClient
 
@@ -97,6 +102,18 @@ def test_remote_candidate_counts_exclude_local_only_documents(monkeypatch):
     assert result["candidate_count"] == 2 and result["eligible_count"] == 1
 
 
+def test_duplicate_cluster_can_use_an_allowed_source_without_consent(monkeypatch):
+    clustered = {**_item("private", "重复资料.md"),
+                 "duplicate_document_ids": ["private", "allowed"]}
+    monkeypatch.setattr(knowledge_search, "hybrid_search", lambda *_a, **_k: _found(results=[clustered]))
+    monkeypatch.setattr(knowledge_recall, "_document_policies", lambda _ids: {
+        "private": {"transmission_policy": "local_only", "policy_revision": 1},
+        "allowed": {"transmission_policy": "remote_allowed", "policy_revision": 2},
+    })
+    result = knowledge_recall.evaluate("重复资料怎么规定？", {"execution_location": "remote"})
+    assert result["action"] == "retrieve" and result["eligible_count"] == 1
+
+
 def test_fts_no_terms_error_is_body_free_failure(monkeypatch):
     def no_terms(*_args, **_kwargs):
         raise knowledge_search.SearchError("knowledge_query_has_no_terms", "no terms")
@@ -160,6 +177,9 @@ def test_recall_diagnostic_api_is_body_free_and_shadow_toggle_is_explicit():
     assert enabled.json() == {
         "shadow_enabled": True,
         "protocol_version": knowledge_recall.PROTOCOL_VERSION,
+        "threshold_version": knowledge_recall_thresholds.THRESHOLD_VERSION,
+        "natural_token_budget": knowledge_recall.NATURAL_TOKEN_BUDGET,
+        "automatic_injection_enabled": False,
         "answer_behavior": "explicit_unchanged",
         "stores_query_or_content": False,
     }
@@ -169,3 +189,87 @@ def test_recall_diagnostic_api_is_body_free_and_shadow_toggle_is_explicit():
     assert "private body" not in serialized
     assert "query_sha256" not in serialized and "policy_snapshot_sha256" not in serialized
     assert CLIENT.get("/api/knowledge/recall-decisions?limit=0").status_code == 400
+
+
+def test_term_strength_semantic_lexical_and_negation_boundaries(monkeypatch):
+    policies = {"doc": {"transmission_policy": "remote_allowed", "policy_revision": 1}}
+    monkeypatch.setattr(knowledge_recall, "_document_policies", lambda _ids: policies)
+
+    def result(name, match_type, **features):
+        return _found(results=[{**_item(name=name, match_type=match_type), **features}])
+
+    monkeypatch.setattr(knowledge_search, "hybrid_search", lambda *_a, **_k: result("项目规范.md", "vector"))
+    assert knowledge_recall.evaluate("项目以后怎么处理？")["reason_code"] == "entity_hit"
+
+    monkeypatch.setattr(knowledge_search, "hybrid_search", lambda *_a, **_k: result("无关标题.md", "vector"))
+    assert knowledge_recall.evaluate("换一种说法描述清理规则")["reason_code"] == "semantic_candidate"
+
+    monkeypatch.setattr(knowledge_search, "hybrid_search", lambda *_a, **_k: result("无关标题.md", "primary"))
+    assert knowledge_recall.evaluate("删除申请确认后副本怎么办")["reason_code"] == "lexical_candidate"
+
+    monkeypatch.setattr(knowledge_search, "hybrid_search", lambda *_a, **_k: result("星港项目.md", "primary"))
+    assert knowledge_recall.evaluate("不要不查知识库，星港项目怎么删除？")["reason_code"] == "explicit_request"
+    assert knowledge_recall.evaluate("如果不知道，就不要查知识库")["reason_code"] == "explicit_forbidden"
+
+
+def test_dense_floor_natural_budget_and_source_conflict(monkeypatch):
+    weak = {**_item(name="弱语义.md", match_type="vector"), "fts_position": None,
+            "dense_position": 1, "vector_score": knowledge_recall_thresholds.SEMANTIC_CANDIDATE_MIN_SCORE - .001,
+            "content": "弱候选", "heading_path": []}
+    strong = {**_item(name="关系表.md", match_type="vector"), "fts_position": None,
+              "dense_position": 1, "vector_score": knowledge_recall_thresholds.SEMANTIC_CANDIDATE_MIN_SCORE + .001,
+              "content": "岚音与澄川是同事", "heading_path": []}
+    monkeypatch.setattr(knowledge_recall, "_document_policies", lambda _ids: {
+        "doc": {"transmission_policy": "remote_allowed", "policy_revision": 1},
+    })
+    monkeypatch.setattr(knowledge_search, "hybrid_search", lambda *_a, **_k: _found(
+        mode="vector", vector=True, results=[weak],
+    ))
+    assert knowledge_recall.evaluate("完全无关的问题")["reason_code"] == "no_candidates"
+
+    monkeypatch.setattr(knowledge_search, "hybrid_search", lambda *_a, **_k: _found(
+        mode="vector", vector=True, results=[strong],
+    ))
+    conflict = knowledge_recall.evaluate("我记得岚音和澄川是姐妹，但资料里怎么写？")
+    assert conflict["reason_code"] == "source_conflict"
+    assert conflict["confidence_band"] == "high"
+
+    candidates = [
+        {"original_name": f"资料{i}.md", "heading_path": [], "content": "知识" * 260}
+        for i in range(6)
+    ]
+    selected, tokens = knowledge_recall.select_natural_candidates(candidates)
+    assert 1 <= len(selected) <= knowledge_recall.MAX_NATURAL_RESULTS
+    assert tokens <= knowledge_recall.NATURAL_TOKEN_BUDGET
+
+
+def test_evaluation_v2_fixture_threshold_evidence_and_reports_are_stable():
+    fixture_path = Path(__file__).parent / "fixtures" / "knowledge_recall_evaluation_v2.json"
+    fixture = knowledge_recall_evaluation.load_fixture(fixture_path)
+    assert len(fixture["cases"]) == knowledge_recall_thresholds.SOURCE_SAMPLE_COUNT
+    fixture_json = json.dumps(fixture, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    assert hashlib.sha256(fixture_json.encode()).hexdigest() == knowledge_recall_thresholds.SOURCE_FIXTURE_SHA256
+    categories = {case["category"] for case in fixture["cases"]}
+    assert {"explicit_recall", "skip", "vector_strong", "negative_dense", "duplicate_sources",
+            "local_only", "prompt_injection", "negation_boundary", "fts_no_terms"} <= categories
+    assert knowledge_recall_thresholds.AUTOMATIC_INJECTION_ENABLED is False
+    assert knowledge_recall_thresholds.SEMANTIC_AUTO_HIGH_ENABLED is False
+
+    reports = Path(__file__).parents[2] / "docs" / "reports"
+    baseline = json.loads((reports / "knowledge-recall-eval-v2-baseline.json").read_text(encoding="utf-8"))
+    calibrated = json.loads((reports / "knowledge-recall-eval-v2-calibrated.json").read_text(encoding="utf-8"))
+    assert baseline["fixture_sha256"] == calibrated["fixture_sha256"] == knowledge_recall_thresholds.SOURCE_FIXTURE_SHA256
+    assert calibrated["metrics"]["recall_trigger_f1"] >= baseline["metrics"]["recall_trigger_f1"]
+    assert calibrated["threshold_decision"]["automatic_injection_enabled"] is False
+    assert calibrated["threshold_decision"]["semantic_auto_high_enabled"] is False
+
+
+def test_decision_stats_endpoint_returns_counts_rates_and_percentiles():
+    response = CLIENT.get("/api/knowledge/recall-decisions/stats")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["scope"] == "global"
+    assert set(payload["action_counts"]) == {"skip", "retrieve", "ask"}
+    assert set(payload["latency_ms"]) == {"average", "p50", "p90", "p99"}
+    assert 0 <= payload["vector_available_rate"] <= 1
+    assert 0 <= payload["timeout_rate"] <= 1

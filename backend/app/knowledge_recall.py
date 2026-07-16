@@ -5,11 +5,14 @@ import hashlib
 import json
 import re
 import time
+from collections.abc import Callable
 
-from . import db, knowledge_context, knowledge_search
+from . import db, knowledge_context, knowledge_recall_thresholds, knowledge_search
 
 PROTOCOL_VERSION = "knowledge-recall-decision-v1"
 TIMEOUT_MS = 1_500
+NATURAL_TOKEN_BUDGET = 700
+MAX_NATURAL_RESULTS = 4
 EMPTY_POLICY_SNAPSHOT = hashlib.sha256(b"[]").hexdigest()
 REASON_CODES = frozenset({
     "queued", "explicit_request", "explicit_forbidden", "companion_smalltalk",
@@ -24,6 +27,8 @@ _FORBID = re.compile(
     r"(?:不要|别|无需|不用).{0,8}(?:(?:查|检索|搜索|引用).{0,6}(?:知识库|资料|文档|文件)|"
     r"(?:知识库|资料|文档|文件).{0,6}(?:查|检索|搜索|引用|找))"
 )
+_DOUBLE_NEGATIVE = re.compile(r"(?:不要|别|无需|不用).{0,2}不(?:查|检索|搜索|引用|找)")
+_SOURCE_CONFLICT = re.compile(r"(?:我记得|记忆|印象).{0,40}(?:资料|文档).{0,12}(?:怎么写|不一样|冲突|却说)")
 _GREETING = re.compile(r"^(?:嗨|你好|您好|早上好|中午好|下午好|晚上好|晚安|在吗)[呀啊哦嘛吗！!，,。\s]*(?:今天)?(?:陪我聊(?:一会儿|会儿)?(?:吧|嘛)?)?[。！!？?\s]*$")
 _EMOTION = re.compile(r"(?:有点|很|太|好)?(?:累|难过|伤心|焦虑|烦|孤独|委屈|害怕|想哭|睡不着|没精神)")
 _SIMPLE_TASK = re.compile(r"^(?:帮我)?(?:翻译|改写|润色|计算|算一下|列个清单|起个标题|写一句).{0,48}$")
@@ -34,6 +39,9 @@ def settings() -> dict:
     return {
         "shadow_enabled": db.get_setting("knowledge_shadow_recall_enabled", "1") == "1",
         "protocol_version": PROTOCOL_VERSION,
+        "threshold_version": knowledge_recall_thresholds.THRESHOLD_VERSION,
+        "natural_token_budget": NATURAL_TOKEN_BUDGET,
+        "automatic_injection_enabled": knowledge_recall_thresholds.AUTOMATIC_INJECTION_ENABLED,
         "answer_behavior": "explicit_unchanged",
         "stores_query_or_content": False,
     }
@@ -79,7 +87,11 @@ def enqueue(*, session_id: str, user_message_id: str | None, user_text: str,
     return decision_id
 
 
-def evaluate(user_text: str, provider: dict | None = None) -> dict:
+def evaluate(
+    user_text: str, provider: dict | None = None, *,
+    search_fn: Callable[..., dict] | None = None,
+    policy_fn: Callable[[set[str]], dict[str, dict]] | None = None,
+) -> dict:
     started = time.perf_counter()
     text = str(user_text or "").strip()
     provider = provider or {}
@@ -89,11 +101,14 @@ def evaluate(user_text: str, provider: dict | None = None) -> dict:
         "candidate_count": 0, "eligible_count": 0, "injected_count": 0,
         "retrieval_mode": "none", "vector_available": False, "vector_error_code": None,
         "policy_snapshot_sha256": EMPTY_POLICY_SNAPSHOT,
+        "natural_selected_count": 0, "natural_tokens": 0,
+        "features": {"term_strength": 0, "search_ms": 0, "policy_ms": 0},
     }
-    if _FORBID.search(text):
+    if _FORBID.search(text) and not _DOUBLE_NEGATIVE.search(text):
         base["recall_mode"] = "explicit"
         return _finish(base, started, "skip", "explicit_forbidden", "high")
-    explicit_query, _ = knowledge_context.retrieval_query(text)
+    query_source = _DOUBLE_NEGATIVE.sub("查", text)
+    explicit_query, _ = knowledge_context.retrieval_query(query_source)
     if explicit_query:
         base["recall_mode"] = "explicit"
     if _GREETING.fullmatch(text):
@@ -106,43 +121,79 @@ def evaluate(user_text: str, provider: dict | None = None) -> dict:
         return _finish(base, started, "skip", "ambiguous_reference", "high")
 
     query = explicit_query or text[:knowledge_search.MAX_QUERY_CHARS]
+    search_started = time.perf_counter()
     try:
-        found = knowledge_search.hybrid_search(query, limit=6, context_window=0, max_chars=4000)
+        found = (search_fn or knowledge_search.hybrid_search)(
+            query, limit=6, context_window=0, max_chars=4000,
+        )
     except knowledge_search.SearchError as error:
         reason = "fts_no_terms" if error.code == "knowledge_query_has_no_terms" else "preflight_search_failed"
         return _finish(base, started, "skip", reason, "low", status="failed")
-    results = found.get("results", [])
-    documents = _document_policies({item["document_id"] for item in results})
+    search_ms = max(0, round((time.perf_counter() - search_started) * 1000, 3))
+    raw_results = found.get("results", [])
+    results = raw_results if explicit_query else [
+        item for item in raw_results if _natural_candidate_admitted(item)
+    ]
+    policy_started = time.perf_counter()
+    document_ids = {
+        document_id for item in results for document_id in _candidate_document_ids(item)
+    }
+    documents = (policy_fn or _document_policies)(document_ids)
+    policy_ms = max(0, round((time.perf_counter() - policy_started) * 1000, 3))
+    natural_results, natural_tokens = select_natural_candidates(results)
     base.update({
         "candidate_count": len(results),
         "retrieval_mode": found.get("retrieval_mode", "fts"),
         "vector_available": bool(found.get("vector_available")),
         "vector_error_code": found.get("vector_error_code"),
         "policy_snapshot_sha256": _policy_snapshot(documents),
+        "natural_selected_count": len(natural_results),
+        "natural_tokens": natural_tokens,
+        "features": {
+            **found.get("diagnostics", {}),
+            "raw_candidate_count": len(raw_results),
+            "admitted_candidate_count": len(results),
+            "term_strength": 0,
+            "search_ms": search_ms,
+            "policy_ms": policy_ms,
+        },
     })
     if not results:
         return _finish(base, started, "skip", "no_candidates", "low")
 
     location = str(provider.get("execution_location") or "unknown")
-    policies = {row["transmission_policy"] for row in documents.values()}
     if location != "local":
-        eligible = {
-            doc_id for doc_id, row in documents.items()
-            if row["transmission_policy"] == "remote_allowed"
-        }
-        base["eligible_count"] = sum(item["document_id"] in eligible for item in results)
-        if "ask_each_time" in policies:
+        eligible_count = 0
+        consent_count = 0
+        local_only_count = 0
+        for item in results:
+            policies = {
+                documents[document_id]["transmission_policy"]
+                for document_id in _candidate_document_ids(item) if document_id in documents
+            }
+            if "remote_allowed" in policies:
+                eligible_count += 1
+            elif "ask_each_time" in policies:
+                consent_count += 1
+            elif "local_only" in policies:
+                local_only_count += 1
+        base["eligible_count"] = eligible_count
+        if not eligible_count and consent_count:
             return _finish(base, started, "ask", "transmission_consent_required", "high")
-        if not eligible and "local_only" in policies:
+        if not eligible_count and local_only_count:
             return _finish(base, started, "ask", "local_only_remote_provider", "high")
     else:
         base["eligible_count"] = len(results)
     if explicit_query:
         return _finish(base, started, "retrieve", "explicit_request", "high")
-    term_strength = _term_strength(text, results)
-    if term_strength >= 3:
+    if _SOURCE_CONFLICT.search(text):
+        return _finish(base, started, "retrieve", "source_conflict", "high")
+    # 标题实体只看融合排序最前的两个已准入候选，避免低位无关标题把普通词误判为实体命中。
+    term_strength = _term_strength(text, results[:2])
+    base["features"]["term_strength"] = term_strength
+    if term_strength >= knowledge_recall_thresholds.EXACT_TERM_HIGH_MIN_CHARS:
         return _finish(base, started, "retrieve", "exact_term_hit", "high")
-    if term_strength == 2:
+    if term_strength >= knowledge_recall_thresholds.ENTITY_MEDIUM_MIN_CHARS:
         return _finish(base, started, "retrieve", "entity_hit", "medium")
     if any(item.get("match_type") in {"vector", "hybrid"} for item in results):
         return _finish(base, started, "retrieve", "semantic_candidate", "medium")
@@ -208,6 +259,71 @@ def get_decision(decision_id: str) -> dict | None:
         conn.close()
 
 
+def decision_stats(*, session_id: str | None = None) -> dict:
+    conn = db.connect()
+    try:
+        where, params = " WHERE status!='queued'", []
+        if session_id:
+            where += " AND session_id=?"
+            params.append(session_id)
+        rows = [dict(row) for row in conn.execute(
+            "SELECT action,reason_code,latency_ms,vector_available,status FROM "
+            "knowledge_recall_decisions" + where + " ORDER BY created_at DESC LIMIT 1000",
+            params,
+        ).fetchall()]
+    finally:
+        conn.close()
+    total = len(rows)
+    action_counts = {key: 0 for key in ("skip", "retrieve", "ask")}
+    reason_counts: dict[str, int] = {}
+    for row in rows:
+        action_counts[row["action"]] += 1
+        reason_counts[row["reason_code"]] = reason_counts.get(row["reason_code"], 0) + 1
+    latencies = sorted(int(row["latency_ms"]) for row in rows)
+    return {
+        "sample_count": total,
+        "scope": "session" if session_id else "global",
+        "action_counts": action_counts,
+        "action_rates": {
+            key: round(value / total, 4) if total else 0.0 for key, value in action_counts.items()
+        },
+        "reason_counts": dict(sorted(reason_counts.items(), key=lambda item: (-item[1], item[0]))),
+        "latency_ms": {
+            "average": round(sum(latencies) / total, 3) if total else 0.0,
+            "p50": _percentile(latencies, 0.50),
+            "p90": _percentile(latencies, 0.90),
+            "p99": _percentile(latencies, 0.99),
+        },
+        "vector_available_rate": round(
+            sum(bool(row["vector_available"]) for row in rows) / total, 4,
+        ) if total else 0.0,
+        "timeout_rate": round(
+            sum(row["status"] == "timed_out" for row in rows) / total, 4,
+        ) if total else 0.0,
+    }
+
+
+def select_natural_candidates(results: list[dict]) -> tuple[list[dict], int]:
+    """K.3 独立自然召回预算；只做选择统计，影子阶段不会注入这些结果。"""
+    selected: list[dict] = []
+    used = 0
+    for item in results:
+        metadata = " ".join([
+            str(item.get("original_name") or ""),
+            " ".join(str(value) for value in item.get("heading_path", [])),
+        ])
+        cost = knowledge_context.estimate_tokens(metadata) + knowledge_context.estimate_tokens(
+            str(item.get("content") or "")
+        ) + 12
+        if used + cost > NATURAL_TOKEN_BUDGET:
+            continue
+        selected.append(item)
+        used += cost
+        if len(selected) >= MAX_NATURAL_RESULTS:
+            break
+    return selected, used
+
+
 def _document_policies(document_ids: set[str]) -> dict[str, dict]:
     if not document_ids:
         return {}
@@ -248,6 +364,21 @@ def _term_strength(text: str, results: list[dict]) -> int:
     return strength
 
 
+def _natural_candidate_admitted(item: dict) -> bool:
+    """FTS 命中保留；纯 dense 需过 K.3 校准下限。旧/测试适配器缺少特征时保守保留。"""
+    if item.get("fts_position") is not None:
+        return True
+    score = item.get("vector_score")
+    if score is None:
+        return "fts_position" not in item and "dense_position" not in item
+    return float(score) >= knowledge_recall_thresholds.SEMANTIC_CANDIDATE_MIN_SCORE
+
+
+def _candidate_document_ids(item: dict) -> set[str]:
+    values = item.get("duplicate_document_ids") or [item["document_id"]]
+    return {str(value) for value in values}
+
+
 def _finish(base: dict, started: float, action: str, reason: str, confidence: str,
             *, status: str = "completed") -> dict:
     return {**base, "action": action, "reason_code": reason, "confidence_band": confidence,
@@ -265,3 +396,10 @@ def _public(item: dict) -> dict:
     item["query_fingerprint"] = item.pop("query_sha256")[:12]
     item["policy_fingerprint"] = item.pop("policy_snapshot_sha256")[:12]
     return item
+
+
+def _percentile(values: list[int], ratio: float) -> int:
+    if not values:
+        return 0
+    index = min(len(values) - 1, max(0, int((len(values) - 1) * ratio + 0.5)))
+    return values[index]

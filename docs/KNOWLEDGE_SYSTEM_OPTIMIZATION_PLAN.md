@@ -4,7 +4,7 @@
 
 制定日期：2026-07-16
 
-状态：施工中；K.0～K.2 已完成，下一阶段 K.3
+状态：施工中；K.0～K.3 已完成，下一阶段 K.4
 适用对象：项目所有者、后续施工的 Codex、第一次接触检索系统的开发者
 
 ---
@@ -694,15 +694,35 @@ K.2 完工记录（2026-07-16）：
 
 ### K.3：评测集、阈值和检索选择
 
-- [ ] 完成应召回/不应召回/边界问题固定集。
-- [ ] 记录 FTS、dense、融合、分数差和实体特征。
-- [ ] 根据数据确定 low/medium/high，不用拍脑袋绝对阈值。
-- [ ] 增加重复内容聚类和相邻 chunk 去重。
-- [ ] 加入自然召回 600～800 token 独立预算。
-- [ ] 输出评测报告模板和每次协议版本的对比结果。
-- [ ] 未达门槛时保持 shadow，不为赶进度开启自动注入。
+- [x] 完成应召回/不应召回/边界问题固定集。
+- [x] 记录 FTS、dense、融合、分数差和实体特征。
+- [x] 根据数据确定 low/medium/high，不用拍脑袋绝对阈值。
+- [x] 增加重复内容聚类和相邻 chunk 去重。
+- [x] 加入自然召回 600～800 token 独立预算。
+- [x] 输出评测报告模板和每次协议版本的对比结果。
+- [x] 未达门槛时保持 shadow，不为赶进度开启自动注入。
 
 验收：每个阈值都有评测依据，旧 FTS/明确检索质量不回退。
+
+K.3 完工记录（2026-07-17）：
+
+- 开工前 review：`knowledge-stage-k2-review/knowledge-stage-k2-review.html`，审查提交 `f45a532`，结论通过。
+- 采纳：评测集 v2 与 reason 对齐、term-strength 四类边界、FTS/dense/策略/总耗时分位数、显式禁止与双重否定边界测试。
+- 调整后采纳：聚合统计不是只按会话提供，而是一个全局/可选 session 过滤的无正文端点；这样既能看总体误触发，也能排查单个会话。
+- 保守处理：双重否定只做确定性窄修正；未引入远程分类器或更宽泛语言规则。Provider 通知继续留在 K.4，审计清理继续留在 K.8。
+- 固定集：新增 `knowledge-recall-eval-v2`，23 条纯合成用例覆盖 explicit、skip、dense 正负例、实体边界、重复来源、local_only、提示注入、英文术语、时间数字、否定边界和 FTS 无词项；fixture SHA-256 为 `73339358569577793f6ec574d023753811019a1e0ef16e364851f2061f62cbb2`。
+- 真实本地基线：同一隔离临时库、FTS 与 BGE-M3 下，阈值前 action/reason accuracy 为 82.61%，trigger precision/recall/F1 为 81.25%/100%/89.66%，相关文档命中率 100%。
+- 数据校准：13 个相关样本 top dense 最低 0.477699，3 个无关样本最高 0.466639；中点 0.472169 只过滤自然影子的纯 dense 弱候选，不作用于 FTS 命中或 explicit 检索。校准后固定集 action/reason/F1/文档命中均为 100%。
+- 置信边界：exact term 至少 3 字符才为 high，2 字符 entity 保持 medium；标题实体只看前两个已准入候选。dense 正负样本只有 13/3，未达到至少 30/15 的升档门槛，因此 semantic 仍为 medium。
+- 去重：相同 content SHA-256 跨来源聚类；同文档相邻 chunk 仅在字符 3-gram Jaccard ≥0.65 时去重。聚类瞬时保留全部来源用于策略选择，RecallDecision 仍不持久化 document/chunk ID。
+- 预算：自然选择独立 700 token、最多 4 条；本阶段只记录 `natural_selected_count/natural_tokens` 供评测，`injected_count` 仍恒为 0。
+- 报告：新增可重复运行脚本、JSON/Markdown 基线与校准报告、前后对比和零基础报告模板；报告只含合成 case ID 与数值，不含真实查询、知识正文或绝对路径。
+- API/UI：新增全局/会话召回统计，返回 action 比例、reason 计数、向量可用率、超时率及 avg/P50/P90/P99；文件页显示样本数、三类动作比例、P90 和向量可用率。
+- ADR：新增 ADR-0039，固定评测协议、阈值证据、去重、预算及继续 shadow 的门槛。
+- 后端测试：340 passed，1 个既有 Starlette/httpx 弃用 warning。
+- 前端测试：27 passed；Vite 生产构建 185 modules；Electron main/preload 语法检查通过。
+- 验收：现有 explicit 检索测试和全量回归通过；`automatic_injection_enabled=false`、`semantic_auto_high_enabled=false`，K.3 没有开启自然知识注入。
+- 剩余风险：固定集规模小且为合成数据，100% 不能外推为真实准确率；K.5 前必须扩大样本并重新校准。当前阈值绑定 BGE-M3 embedding 版本，模型或 pooling 变化必须生成新阈值版本。
 
 ### K.4：一次性授权与确认界面
 

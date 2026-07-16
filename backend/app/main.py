@@ -689,6 +689,11 @@ def get_knowledge_recall_decisions(
     return knowledge_recall.list_decisions(session_id=session_id, limit=limit)
 
 
+@app.get("/api/knowledge/recall-decisions/stats")
+def get_knowledge_recall_decision_stats(session_id: Optional[str] = None) -> dict:
+    return knowledge_recall.decision_stats(session_id=session_id)
+
+
 @app.get("/api/knowledge/recall-decisions/{decision_id}")
 def get_knowledge_recall_decision(decision_id: str) -> dict:
     result = knowledge_recall.get_decision(decision_id)
