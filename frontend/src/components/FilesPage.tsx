@@ -48,6 +48,7 @@ export function FilesPage() {
   const [actionBusy, setActionBusy] = useState<string | null>(null);
   const [audits, setAudits] = useState<api.KnowledgeRetrievalAudit[] | null>(null);
   const [embeddingStatus, setEmbeddingStatus] = useState<api.KnowledgeEmbeddingStatus | null>(null);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const refresh = () => api.listKnowledgeDocuments({
@@ -236,118 +237,52 @@ export function FilesPage() {
     }
   }
 
+  const indexedCount = documents.filter((document) => document.status === "indexed").length;
+  const failedCount = documents.filter((document) => ["failed", "delete_failed"].includes(document.status)).length;
+  const waitingCount = Math.max(0, documents.length - indexedCount - failedCount);
+  const groupedDocuments = collections
+    .map((collection) => ({
+      id: collection.id,
+      name: collection.name,
+      documents: documents.filter((document) => document.collection_id === collection.id),
+    }))
+    .filter((group) => group.documents.length > 0);
+  const ungroupedDocuments = documents.filter(
+    (document) => !collections.some((collection) => collection.id === document.collection_id),
+  );
+  if (ungroupedDocuments.length > 0) {
+    groupedDocuments.push({ id: "other", name: "其他资料", documents: ungroupedDocuments });
+  }
+
   return (
-    <div className="page">
-      <h1>文件与知识</h1>
-      <div className="sub">
-        把外部资料交给遐蝶作为可引用知识。支持 TXT、Markdown、PDF、DOCX 的本地解析、稳定切片与混合检索；PDF 引用保留真实页码，扫描图片暂不做 OCR。
-      </div>
-      <div className="sub" style={{ marginBottom: 16 }}>
-        语义索引：{embeddingStatus?.available
-          ? `本地 BGE-M3 已就绪（${embeddingStatus.dimension} 维，不上传正文）`
-          : "本地 BGE-M3 未就绪，将自动使用全文检索"}
-      </div>
-
-      {/* 拖拽 / 选择区 */}
-      <div
-        className="glass"
-        onDrop={onDrop}
-        onDragOver={onDragOver}
-        onDragLeave={onDragLeave}
-        onClick={() => inputRef.current?.click()}
-        style={{
-          padding: "40px 24px",
-          textAlign: "center",
-          cursor: "pointer",
-          border: `2px dashed ${
-            dragging ? "var(--glass-border-lit)" : "var(--glass-border)"
-          }`,
-          background: dragging
-            ? "rgba(124, 92, 255, 0.12)"
-            : "var(--glass)",
-          boxShadow: dragging ? "var(--glow)" : undefined,
-          transition: "all 0.15s ease",
-          marginBottom: 24,
-        }}
-      >
-        <div style={{ fontSize: 30, marginBottom: 10, opacity: 0.85 }}>📄</div>
-        <div style={{ fontWeight: 600, marginBottom: 6 }}>
-          把文件拖到这里，或点击选择
+    <div className="page knowledge-page">
+      <header className="knowledge-hero">
+        <div>
+          <div className="knowledge-eyebrow">KNOWLEDGE BASE</div>
+          <h1>文件与知识</h1>
+          <p>支持 TXT、Markdown、PDF、DOCX；PDF 引用保留真实页码，扫描图片暂不做 OCR。</p>
         </div>
-        <div style={{ fontSize: 12, color: "var(--text-dim)" }}>
-          支持 UTF-8 TXT、Markdown、PDF、DOCX · 单文件不超过 10 MiB
-        </div>
-        <div className="row" style={{ justifyContent: "center", marginTop: 16 }}>
-          <button
-            className="btn ghost"
-            onClick={(e) => {
-              e.stopPropagation();
-              inputRef.current?.click();
-            }}
-          >
-            选择文件
-          </button>
-        </div>
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".txt,.md,.pdf,.docx,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-          onChange={onPick}
-          style={{ display: "none" }}
-        />
-      </div>
+        <button className="knowledge-history-button" onClick={toggleAudits}>
+          <span aria-hidden="true">◇</span>
+          {audits === null ? "检索记录" : "收起记录"}
+        </button>
+      </header>
 
-      {pending && (
-        <div className="glass" style={{ padding: 18, marginBottom: 24 }}>
-          <div className="section-label">导入前确认</div>
-          <div style={{ margin: "8px 0", fontWeight: 600 }}>{pending.name}</div>
-          <div className="sub">
-            类型：{pending.type || "由后端检测"} · 大小：{formatBytes(pending.size)}<br />
-            数据流向：仅复制到遐蝶本地应用数据目录；解析与 BGE-M3 语义索引均在本机完成，不扫描原目录、不把正文发往远程向量服务。
-          </div>
-          <label style={{ display: "flex", gap: 8, alignItems: "center", margin: "14px 0" }}>
-            <input type="checkbox" checked={sensitive} onChange={(event) => setSensitive(event.target.checked)} />
-            这是敏感资料（将保持禁止远程处理的标记）
-          </label>
-          <div className="row">
-            <button className="btn" disabled={importing} onClick={confirmImport}>
-              {importing ? "安全保存中…" : "确认导入到本地"}
-            </button>
-            <button className="btn ghost" disabled={importing} onClick={() => setPending(null)}>取消</button>
-          </div>
-        </div>
-      )}
-
-      {/* 知识库原则 */}
-      <div className="section-label">知识库原则（需求 6.6）</div>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
-          gap: 10,
-          marginBottom: 24,
-        }}
-      >
-        {PRINCIPLES.map((p) => (
-          <div key={p.title} className="card memory">
-            <div className="card-title">{p.title}</div>
-            <div className="card-hint">{p.desc}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* 已导入知识条目 */}
-      <div className="section-label">知识文档管理</div>
-      <div className="glass knowledge-toolbar">
-        <input value={search} onChange={(event) => setSearch(event.target.value)}
-          placeholder="按文件名搜索（同名文件用指纹区分）" maxLength={120} />
-        <select value={collectionFilter} onChange={(event) => setCollectionFilter(event.target.value)}>
+      <div className="knowledge-searchbar glass">
+        <label className="knowledge-search-field">
+          <span aria-hidden="true">⌕</span>
+          <input value={search} onChange={(event) => setSearch(event.target.value)}
+            placeholder="按文件名搜索（同名文件用指纹区分）" maxLength={120} />
+        </label>
+        <select aria-label="Collection 筛选" value={collectionFilter}
+          onChange={(event) => setCollectionFilter(event.target.value)}>
           <option value="">全部 collection</option>
           {collections.map((collection) => (
             <option key={collection.id} value={collection.id}>{collection.name}</option>
           ))}
         </select>
-        <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+        <select aria-label="状态筛选" value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value)}>
           <option value="">全部状态</option>
           <option value="indexed">已索引</option>
           <option value="queued">等待处理</option>
@@ -357,10 +292,93 @@ export function FilesPage() {
           <option value="delete_pending">删除中</option>
           <option value="delete_failed">删除失败</option>
         </select>
-        <button className="btn ghost" onClick={toggleAudits}>
-          {audits === null ? "查看检索记录" : "收起检索记录"}
-        </button>
       </div>
+
+      <div
+        className={`knowledge-upload-strip ${dragging ? "is-dragging" : ""}`}
+        onDrop={onDrop}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onClick={() => inputRef.current?.click()}
+      >
+        <div className="knowledge-upload-icon" aria-hidden="true">＋</div>
+        <div className="knowledge-upload-copy">
+          <strong>{dragging ? "松开即可准备导入" : "拖入文件，或从本机选择"}</strong>
+          <span>支持 UTF-8 TXT、Markdown、PDF、DOCX · 单文件不超过 10 MiB</span>
+        </div>
+        <button className="knowledge-primary-button" onClick={(event) => {
+          event.stopPropagation();
+          inputRef.current?.click();
+        }}>选择文件</button>
+        <input
+          ref={inputRef}
+          type="file"
+          accept=".txt,.md,.pdf,.docx,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          onChange={onPick}
+          style={{ display: "none" }}
+        />
+      </div>
+
+      <button className="knowledge-privacy-toggle" onClick={() => setPrivacyOpen((current) => !current)}>
+        <span aria-hidden="true">▣</span>
+        隐私与数据流向
+        <span className={privacyOpen ? "is-open" : ""} aria-hidden="true">⌄</span>
+      </button>
+      {privacyOpen && (
+        <div className="knowledge-privacy-panel glass">
+          <p><strong>本地处理：</strong>文件复制、解析、稳定切片和 BGE-M3 索引均在本机完成，不扫描原目录、不把正文发往远程向量服务。</p>
+          <p><strong>自然对话：</strong>若你使用在线聊天模型并命中知识库，本轮需要引用的少量片段会随问题发送给模型；整份文件不会因此上传。</p>
+          <div className="knowledge-principles">
+            {PRINCIPLES.map((principle) => (
+              <div key={principle.title}><strong>{principle.title}</strong><span>{principle.desc}</span></div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {pending && (
+        <section className="knowledge-confirm glass">
+          <div className="knowledge-confirm-mark" aria-hidden="true">✓</div>
+          <div className="knowledge-confirm-copy">
+            <div className="knowledge-confirm-title">导入前确认</div>
+            <strong>{pending.name}</strong>
+            <p>类型：{pending.type || "由后端检测"} · 大小：{formatBytes(pending.size)}</p>
+            <p>数据流向：仅复制到遐蝶本地应用数据目录；解析与 BGE-M3 语义索引均在本机完成。</p>
+            <label className="knowledge-sensitive-check">
+              <input type="checkbox" checked={sensitive}
+                onChange={(event) => setSensitive(event.target.checked)} />
+              这是敏感资料（将保持禁止远程处理的标记）
+            </label>
+          </div>
+          <div className="knowledge-confirm-actions">
+            <button className="knowledge-primary-button" disabled={importing} onClick={confirmImport}>
+              {importing ? "安全保存中…" : "确认导入到本地"}
+            </button>
+            <button className="knowledge-text-button" disabled={importing} onClick={() => setPending(null)}>取消</button>
+          </div>
+        </section>
+      )}
+
+      <div className="knowledge-summary glass">
+        <div><span>文件总数</span><strong>{documents.length}</strong></div>
+        <i />
+        <div><span>已索引</span><strong className="is-ok">{indexedCount}</strong></div>
+        <i />
+        <div><span>处理失败</span><strong className="is-danger">{failedCount}</strong></div>
+        <i />
+        <div><span>等待 / 处理中</span><strong className="is-waiting">{waitingCount}</strong></div>
+      </div>
+
+      <div className="knowledge-section-heading">
+        <div><span>本地文件</span><small>{documents.length} 项</small></div>
+        <div className={`knowledge-engine-pill ${embeddingStatus?.available ? "is-ready" : ""}`}>
+          <i />
+          {embeddingStatus?.available
+            ? `本地 BGE-M3 已就绪 · ${embeddingStatus.dimension} 维 · 不上传正文`
+            : "本地 BGE-M3 未就绪 · 自动使用全文检索"}
+        </div>
+      </div>
+
       {audits !== null && (
         <div className="glass knowledge-audits">
           <div className="card-title">最近检索审计（不保存查询正文）</div>
@@ -375,103 +393,115 @@ export function FilesPage() {
           ))}
         </div>
       )}
+
       {documents.length === 0 ? (
-        <div className="empty">没有符合当前条件的知识文档</div>
-      ) : documents.map((document) => (
-        <div className="list-row knowledge-document-row" key={document.id}>
-          <span className="chip">{document.extension.toUpperCase().replace(".", "")}</span>
-          <div style={{ flex: 1 }}>
-            <strong>{document.original_name}</strong>
-            <div className="sub">{formatBytes(document.size_bytes)} · {documentStatus(document)} ·
-              指纹 {document.content_sha256.slice(0, 10)}</div>
-            {document.error_code && <div className="sub danger-text">错误代码：{document.error_code}</div>}
-            {!!document.tags.length && <div className="knowledge-tags">
-              {document.tags.map((tag) => <span className="chip" key={tag}>{tag}</span>)}
-            </div>}
-            {editingTags === document.id && (
-              <div className="knowledge-tag-editor">
-                <input value={tagDraft} maxLength={410} onChange={(event) => setTagDraft(event.target.value)}
-                  placeholder="用逗号分隔，最多 10 项，每项 40 字符" />
-                <button className="btn" disabled={actionBusy === `tags:${document.id}`}
-                  onClick={() => saveTags(document)}>保存</button>
-                <button className="btn ghost" onClick={() => setEditingTags(null)}>取消</button>
-              </div>
-            )}
-            {document.parsed_at && !document.chunked_at && (
-              <div className="sub">本地解析：{document.parse_line_count} 行 · {document.parse_heading_count} 个标题 ·
-                {document.parse_char_count} 字符；尚未切片或索引</div>
-            )}
-            {document.chunked_at && (
-              <div className="sub">稳定切片：{document.chunk_count} 段；保留标题、段落、行号与字符范围；
-                {document.indexed_at ? "本地索引已就绪" : "尚未索引"}</div>
-            )}
-            {document.status === "indexed" && (
-              <div className="sub">
-                语义索引：{document.embedding_indexed_at
-                  ? `本地 BGE-M3 已就绪 · ${document.embedding_dimension} 维 · ${document.latest_embedding?.vector_count || document.chunk_count} 条向量`
-                  : ["queued", "running"].includes(document.latest_embedding?.status || "")
-                    ? "正在本地建立，期间继续使用全文检索"
-                    : document.embedding_error_code
-                      ? `建立失败（${document.embedding_error_code}），已自动退回全文检索`
-                      : "尚未建立，当前使用全文检索"}
-              </div>
-            )}
-            {runDetails[document.id] && (
-              <div style={{ marginTop: 8 }}>
-                {runDetails[document.id].events?.map((event) => (
-                  <div className="sub" key={event.id}>
-                    {eventLabel(event.action)} · {stageLabel(event.stage)} ·
-                    {new Date(event.created_at * 1000).toLocaleString("zh-CN")}
-                  </div>
-                ))}
-              </div>
-            )}
-            <details className="knowledge-details">
-              <summary>来源详情</summary>
-              <div>文档 ID：{document.id}</div>
-              <div>Collection：{collections.find((item) => item.id === document.collection_id)?.name || document.collection_id}</div>
-              <div>完整内容指纹：{document.content_sha256}</div>
-              <div>解析器：{document.parser_version || "尚未解析"} · 切片器：{document.chunker_version || "尚未切片"}</div>
-              <div>索引版本：{document.index_version || "尚未索引"} · 导入时间：{new Date(document.created_at * 1000).toLocaleString("zh-CN")}</div>
-              <div>语义版本：{document.embedding_version || "尚未建立"}</div>
-            </details>
-          </div>
-          {document.sensitivity === "sensitive" && <span className="chip danger">敏感 · 仅本地</span>}
-          {document.latest_run && <button className="btn ghost" onClick={() => showRun(document)}>进度详情</button>}
-          {document.latest_run && ["queued", "running", "recovery_pending", "cancel_requested"].includes(
-            document.latest_run.status
-          ) && (
-            <button className="btn ghost" disabled={document.latest_run.status === "cancel_requested"}
-              onClick={() => cancelRun(document)}>
-              {document.latest_run.status === "cancel_requested" ? "停止中…" : "停止处理"}
-            </button>
-          )}
-          {!document.status.startsWith("delete_") && (
-            <button className="btn ghost" onClick={() => {
-              setEditingTags(document.id); setTagDraft(document.tags.join("，"));
-            }}>标签</button>
-          )}
-          {["indexed", "failed", "cancelled"].includes(document.status) && (
-            <button className="btn ghost" disabled={actionBusy === `reindex:${document.id}`}
-              onClick={() => reindexDocument(document)}>
-              {document.status === "indexed" ? "重建索引" : "重试处理"}
-            </button>
-          )}
-          {document.status === "indexed" && embeddingStatus?.available && !document.embedding_indexed_at &&
-            !["queued", "running"].includes(document.latest_embedding?.status || "") && (
-            <button className="btn ghost" disabled={actionBusy === `embedding:${document.id}`}
-              onClick={() => buildEmbedding(document)}>建立语义索引</button>
-          )}
-          {!document.status.startsWith("delete_") && (
-            <button className="btn danger" disabled={actionBusy === `delete:${document.id}`}
-              onClick={() => deleteDocument(document)}>删除</button>
-          )}
-          {document.status === "delete_failed" && document.latest_deletion && (
-            <button className="btn danger" disabled={actionBusy === `delete:${document.id}`}
-              onClick={() => retryDelete(document)}>重试删除</button>
-          )}
+        <div className="knowledge-empty">
+          <span aria-hidden="true">□</span>
+          <strong>没有符合当前条件的知识文档</strong>
+          <small>导入一份资料后，解析与索引状态会显示在这里。</small>
         </div>
+      ) : groupedDocuments.map((group) => (
+        <section className="knowledge-group glass" key={group.id}>
+          <div className="knowledge-group-heading">
+            <div><span aria-hidden="true">▱</span><strong>{group.name}</strong></div>
+            <small>{group.documents.length} 个文件</small>
+          </div>
+          {group.documents.map((document) => (
+            <article className="knowledge-file-row" key={document.id}>
+              <div className={`knowledge-file-icon type-${document.extension.toLowerCase().replace(".", "")}`}>
+                {document.extension.toUpperCase().replace(".", "")}
+              </div>
+              <div className="knowledge-file-main">
+                <div className="knowledge-file-titleline">
+                  <strong title={document.original_name}>{document.original_name}</strong>
+                  {document.sensitivity === "sensitive" && <span className="knowledge-sensitive-pill">敏感 · 仅本地</span>}
+                </div>
+                <div className="knowledge-file-meta">
+                  {formatBytes(document.size_bytes)} · {new Date(document.created_at * 1000).toLocaleDateString("zh-CN")} · 指纹 {document.content_sha256.slice(0, 10)}
+                </div>
+                {!!document.tags.length && <div className="knowledge-tags">
+                  {document.tags.map((tag) => <span className="chip" key={tag}>{tag}</span>)}
+                </div>}
+              </div>
+              <span className={`knowledge-status-pill ${documentStatusClass(document)}`}>
+                <i />{documentStatus(document)}
+              </span>
+              <details className="knowledge-file-controls">
+                <summary aria-label={`管理 ${document.original_name}`}>•••</summary>
+                <div className="knowledge-file-details-body">
+                  {document.error_code && <div className="danger-text">错误代码：{document.error_code}</div>}
+                  {document.parsed_at && !document.chunked_at && (
+                    <p>本地解析：{document.parse_line_count} 行 · {document.parse_heading_count} 个标题 ·
+                      {document.parse_char_count} 字符；尚未切片或索引</p>
+                  )}
+                  {document.chunked_at && (
+                    <p>稳定切片：{document.chunk_count} 段；保留标题、段落、行号与字符范围；
+                      {document.indexed_at ? "本地索引已就绪" : "尚未索引"}</p>
+                  )}
+                  {document.status === "indexed" && (
+                    <p>语义索引：{document.embedding_indexed_at
+                      ? `本地 BGE-M3 已就绪 · ${document.embedding_dimension} 维 · ${document.latest_embedding?.vector_count || document.chunk_count} 条向量`
+                      : ["queued", "running"].includes(document.latest_embedding?.status || "")
+                        ? "正在本地建立，期间继续使用全文检索"
+                        : document.embedding_error_code
+                          ? `建立失败（${document.embedding_error_code}），已自动退回全文检索`
+                          : "尚未建立，当前使用全文检索"}</p>
+                  )}
+                  {editingTags === document.id && (
+                    <div className="knowledge-tag-editor">
+                      <input value={tagDraft} maxLength={410} onChange={(event) => setTagDraft(event.target.value)}
+                        placeholder="用逗号分隔，最多 10 项，每项 40 字符" />
+                      <button className="btn" disabled={actionBusy === `tags:${document.id}`}
+                        onClick={() => saveTags(document)}>保存</button>
+                      <button className="btn ghost" onClick={() => setEditingTags(null)}>取消</button>
+                    </div>
+                  )}
+                  {runDetails[document.id] && <div className="knowledge-run-events">
+                    {runDetails[document.id].events?.map((event) => (
+                      <p key={event.id}>{eventLabel(event.action)} · {stageLabel(event.stage)} ·
+                        {new Date(event.created_at * 1000).toLocaleString("zh-CN")}</p>
+                    ))}
+                  </div>}
+                  <details className="knowledge-details">
+                    <summary>来源详情</summary>
+                    <div>文档 ID：{document.id}</div>
+                    <div>Collection：{group.name}</div>
+                    <div>完整内容指纹：{document.content_sha256}</div>
+                    <div>解析器：{document.parser_version || "尚未解析"} · 切片器：{document.chunker_version || "尚未切片"}</div>
+                    <div>索引版本：{document.index_version || "尚未索引"} · 导入时间：{new Date(document.created_at * 1000).toLocaleString("zh-CN")}</div>
+                    <div>语义版本：{document.embedding_version || "尚未建立"}</div>
+                  </details>
+                  <div className="knowledge-row-actions">
+                    {document.latest_run && <button className="btn ghost" onClick={() => showRun(document)}>进度详情</button>}
+                    {document.latest_run && ["queued", "running", "recovery_pending", "cancel_requested"].includes(document.latest_run.status) && (
+                      <button className="btn ghost" disabled={document.latest_run.status === "cancel_requested"}
+                        onClick={() => cancelRun(document)}>{document.latest_run.status === "cancel_requested" ? "停止中…" : "停止处理"}</button>
+                    )}
+                    {!document.status.startsWith("delete_") && <button className="btn ghost" onClick={() => {
+                      setEditingTags(document.id); setTagDraft(document.tags.join("，"));
+                    }}>标签</button>}
+                    {["indexed", "failed", "cancelled"].includes(document.status) && <button className="btn ghost"
+                      disabled={actionBusy === `reindex:${document.id}`} onClick={() => reindexDocument(document)}>
+                      {document.status === "indexed" ? "重建索引" : "重试处理"}</button>}
+                    {document.status === "indexed" && embeddingStatus?.available && !document.embedding_indexed_at &&
+                      !["queued", "running"].includes(document.latest_embedding?.status || "") && <button className="btn ghost"
+                        disabled={actionBusy === `embedding:${document.id}`} onClick={() => buildEmbedding(document)}>建立语义索引</button>}
+                    {!document.status.startsWith("delete_") && <button className="btn danger"
+                      disabled={actionBusy === `delete:${document.id}`} onClick={() => deleteDocument(document)}>删除</button>}
+                    {document.status === "delete_failed" && document.latest_deletion && <button className="btn danger"
+                      disabled={actionBusy === `delete:${document.id}`} onClick={() => retryDelete(document)}>重试删除</button>}
+                  </div>
+                </div>
+              </details>
+            </article>
+          ))}
+        </section>
       ))}
+
+      <div className="knowledge-footnote">
+        <span aria-hidden="true">▣</span>
+        删除知识文档只会清理遐蝶应用内副本、切片与索引；应用外的原文件或备份不会同步删除。
+      </div>
     </div>
   );
 }
@@ -503,6 +533,13 @@ function documentStatus(document: api.KnowledgeDocument): string {
     indexed: "已索引 · 可检索", failed: "处理失败", cancelled: "已取消",
     delete_pending: "删除中", delete_failed: "删除待重试",
   })[document.status];
+}
+
+function documentStatusClass(document: api.KnowledgeDocument): string {
+  if (document.status === "indexed") return "is-indexed";
+  if (["failed", "delete_failed"].includes(document.status)) return "is-failed";
+  if (["cancelled"].includes(document.status)) return "is-cancelled";
+  return "is-processing";
 }
 
 function eventLabel(action: string): string {
