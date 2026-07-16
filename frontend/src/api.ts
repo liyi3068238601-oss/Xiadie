@@ -10,6 +10,16 @@ function requestHeaders(init?: RequestInit): Headers {
   return headers;
 }
 
+export class ApiError extends Error {
+  status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 async function j<T>(path: string, init?: RequestInit): Promise<T> {
   const r = await fetch(API_BASE + path, {
     ...init,
@@ -22,7 +32,7 @@ async function j<T>(path: string, init?: RequestInit): Promise<T> {
     } catch {
       /* ignore */
     }
-    throw new Error(detail);
+    throw new ApiError(r.status, detail);
   }
   return r.status === 204 ? (undefined as T) : r.json();
 }
@@ -171,19 +181,6 @@ export interface MemoryEntity {
 export interface EpisodeFragment extends Memory {
   position: number;
 }
-export interface EpisodeCandidate {
-  id: string;
-  title: string;
-  summary: string;
-  start_at: number;
-  end_at: number;
-  significance: number;
-  confidence: number;
-  status: "pending" | "accepted" | "rejected";
-  resolution_note: string;
-  fragments: EpisodeFragment[];
-  created_at: number;
-}
 export interface MemoryEpisode {
   id: string;
   title: string;
@@ -220,6 +217,83 @@ export interface EpisodeConsolidatorRun {
   group_count: number;
   input_fragment_ids: string[];
   result_episode_ids: string[];
+}
+export type SagaStatus = "active" | "completed" | "archived" | "tombstone";
+export interface SagaEpisodeSource {
+  id: string;
+  title: string;
+  summary: string;
+  start_at: number;
+  end_at: number;
+  status: "active" | "completed" | string;
+  summary_status: MemoryEpisode["summary_status"];
+  source_hash: string;
+  fragments?: EpisodeFragment[];
+}
+export interface SagaTimelineItem {
+  episode_id: string;
+  position: number;
+  role: "anchor" | "development" | "resolution" | string;
+  added_at: number;
+  removed_at: number | null;
+  episode: SagaEpisodeSource | null;
+}
+export interface SagaEvent {
+  id: string;
+  action: string;
+  reason_code: string | null;
+  source: string;
+  policy_version: string;
+  before: Record<string, unknown> | null;
+  after: Record<string, unknown> | null;
+  metadata: Record<string, unknown>;
+  created_at: number;
+}
+export interface MemorySaga {
+  id: string;
+  title: string;
+  summary: string;
+  theme: string;
+  current_stage: string;
+  start_at: number;
+  end_at: number;
+  significance: number;
+  confidence: number;
+  status: SagaStatus;
+  source: string;
+  grouping_fingerprint: string | null;
+  policy_version: string;
+  source_episode_ids: string[];
+  source_hash: string;
+  summary_status: MemoryEpisode["summary_status"];
+  summary_protocol_version: string;
+  summary_provider_id?: string | null;
+  summary_model?: string | null;
+  summary_evidence_episode_ids: string[];
+  completion_evidence_episode_ids: string[];
+  completion_reason: string;
+  correction_note: string;
+  corrected_at?: number | null;
+  completed_at?: number | null;
+  archived_at?: number | null;
+  tombstoned_at?: number | null;
+  revision: number;
+  timeline?: SagaTimelineItem[];
+  entities?: Array<{
+    entity_id: string;
+    name: string;
+    entity_type: string;
+    entity_status: string;
+    relation: string;
+  }>;
+  events?: SagaEvent[];
+}
+export interface SagaConsolidatorRun {
+  id: string;
+  trigger: "startup" | "idle" | "weekly" | "manual" | "episode";
+  status: "queued" | "running" | "cancel_requested" | "cancelled" | "applied" |
+    "recovery_pending" | "exhausted" | "skipped";
+  result_saga_ids: string[];
 }
 export interface Task {
   id: string;
@@ -324,23 +398,9 @@ export const mergeEntity = (targetId: string, source_entity_id: string) =>
   });
 
 // ---- Episode ----
-export const listEpisodeCandidates = () =>
-  j<EpisodeCandidate[]>("/api/episode-candidates?status=pending");
 export const generateEpisodeCandidates = () =>
   j<{ queued: boolean; run: EpisodeConsolidatorRun }>("/api/episode-candidates/generate", {
     method: "POST",
-  });
-export const acceptEpisodeCandidate = (
-  id: string,
-  body: { title: string; summary: string; significance: number; fragment_ids: string[] }
-) => j<MemoryEpisode>(`/api/episode-candidates/${id}/accept`, {
-  method: "POST",
-  body: JSON.stringify(body),
-});
-export const rejectEpisodeCandidate = (id: string, note = "") =>
-  j<EpisodeCandidate>(`/api/episode-candidates/${id}/reject`, {
-    method: "POST",
-    body: JSON.stringify({ note }),
   });
 export const listEpisodes = () => j<MemoryEpisode[]>("/api/episodes");
 export const getEpisode = (id: string) => j<MemoryEpisode>(`/api/episodes/${id}`);
@@ -350,6 +410,53 @@ export const correctEpisode = (
 ) => j<MemoryEpisode>(`/api/episodes/${id}/correct`, {
   method: "POST",
   body: JSON.stringify(body),
+});
+
+// ---- Saga ----
+export const listSagas = (status?: SagaStatus, limit = 100) => {
+  const query = new URLSearchParams({ limit: String(limit) });
+  if (status) query.set("status", status);
+  return j<MemorySaga[]>(`/api/sagas?${query}`);
+};
+export const getSaga = (id: string) =>
+  j<MemorySaga>(`/api/sagas/${encodeURIComponent(id)}`);
+export const enqueueSagaConsolidator = (request_key?: string) =>
+  j<SagaConsolidatorRun>("/api/saga-consolidator/runs", {
+    method: "POST",
+    body: JSON.stringify({ trigger: "manual", request_key }),
+  });
+export const correctSaga = (
+  id: string,
+  body: {
+    title?: string;
+    summary?: string;
+    theme?: string;
+    current_stage?: string;
+    significance?: number;
+    note?: string;
+    expected_revision: number;
+  }
+) => j<MemorySaga>(`/api/sagas/${encodeURIComponent(id)}/correct`, {
+  method: "POST",
+  body: JSON.stringify(body),
+});
+export const correctSagaSources = (
+  id: string,
+  episode_ids: string[],
+  note: string,
+  expected_revision: number
+) => j<MemorySaga>(`/api/sagas/${encodeURIComponent(id)}/correct-sources`, {
+  method: "POST",
+  body: JSON.stringify({ episode_ids, note, expected_revision }),
+});
+export const transitionSaga = (
+  id: string,
+  target_status: SagaStatus,
+  reason: string,
+  expected_revision: number
+) => j<MemorySaga>(`/api/sagas/${encodeURIComponent(id)}/lifecycle`, {
+  method: "POST",
+  body: JSON.stringify({ target_status, reason, expected_revision }),
 });
 
 // ---- 任务 ----

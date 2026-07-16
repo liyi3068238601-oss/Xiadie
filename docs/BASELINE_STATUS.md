@@ -2,7 +2,7 @@
 
 > 最近复核日期：2026-07-16
 >
-> 基线提交：`53c72f3`
+> 基线提交：D.6 工作树（以本文件所在提交为准）
 >
 > 当前版本：`v0.1.0` MVP 骨架
 >
@@ -35,8 +35,8 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; python -m pytest tests` | 通过：183 passed，1 warning |
-| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：7 项情绪映射/记忆与 Episode 展示契约测试、TypeScript 检查及 Vite 生产构建成功 |
+| 后端 | `cd backend; python -m pytest tests` | 通过：184 passed，1 warning |
+| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：13 项情绪映射、运行可靠性、记忆、Episode 与 Saga 展示契约测试；TypeScript 检查及 Vite 生产构建成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 
 已知但不阻断当前开发的警告：
@@ -85,7 +85,7 @@ npm.cmd start
 - SQLite FTS5 trigram 已用于相关记忆召回，并限制为 active、enabled、12 条和 2400 字符。
 - 实体档案支持类型、别名、标签、概述和当前状态；正式记忆按名称/别名及高置信度句式自动关联。
 - 新建实体或新增别名会回补既有明确提及；用户可以手动关联、解除、归档和合并实体。
-- 记忆页已有实体列表与详情管理，以及正式 Episode 列表、来源详情和纠错；Saga 目前只有 D.1 数据地基，聚合服务、API、界面和星图尚未实现。
+- 记忆页已有实体、正式 Episode 和正式 Saga 列表与详情管理；Saga 可查看当前阶段、来源时间线、审计状态和事件，并执行带 revision 保护的内容/来源纠错与合法生命周期操作。星图尚未实现。
 - Episode 基础已实现：共同实体、7 天窗口和文本重合会产生 2~20 条 Fragment 的待确认候选。
 - 用户可修改 Episode 标题、摘要、重要度和 Fragment 选择；接受后继承来源与实体，拒绝和接受均可审计。
 - 自主记忆阶段 B.1 协议地基已完成；schema 11 在其上增加观察耗时与受限修复审计字段。
@@ -129,7 +129,9 @@ npm.cmd start
 - Saga 阶段 D.5 已完成：schema 22 新增完成证据、生命周期 revision 和只读关系 delta 建议账本。
 - 精确状态守卫禁止非法跳级、自动 tombstone 和 tombstone 恢复；可信新 Episode 可使 completed Saga 恢复 active。
 - 正文纠错保持来源链，来源归组纠错重算分组指纹、抽取摘要、Entity 和整链哈希；所有写 API 使用乐观 revision。
-- Saga 列表、详情、时间线、来源、事件、摘要模型及 Consolidator run/cancel API 已开放；正式界面尚未实现，由 D.6 完成。
+- Saga 列表、详情、时间线、来源、事件、摘要模型及 Consolidator run/cancel API 已开放；D.6 正式界面采用最近 100 条上限、非颜色状态文字、窄屏布局和来源对话入口。
+- Saga 写操作遇到 revision 冲突会刷新最新详情并要求用户重新确认，不会自动重放；来源纠错会重建有来源的安全摘要。
+- 旧 Episode 候选的列表/接受/拒绝前端客户端已移除；生成入口与后端兼容 API 暂时保留，退役条件见 ADR-0023。
 
 ### 人格与内置背景知识（2026-07-14）
 
@@ -152,7 +154,7 @@ npm.cmd start
 - 旁观观察器阶段 2.2 已建立受限非流式模型调用、幂等候选审计和失败恢复入队基础。
 - 旁观观察器阶段 2.3 已改为可靠后台 worker：聊天只入队，最多三次指数退避；设置页可选择独立轻量模型，净化候选与事件在同一事务原子应用。
 - 测试数据目录由 `tests/conftest.py` 在模块收集前统一隔离，测试文件顺序不会再接触开发数据库。
-- Saga 已有 D.1～D.5 数据地基、预筛、事实摘要、后台任务、原子应用、生命周期、纠错和 API；正式界面、相对日期校正、矛盾检测和星图尚未实现。
+- Saga 阶段 D.1～D.6 已完成数据地基、预筛、事实摘要、后台任务、原子应用、生命周期、纠错、API、正式界面与总验收；相对日期校正、矛盾检测和星图尚未实现。
 
 - Electron：透明置顶桌宠、主窗口、托盘、右键菜单及基础 IPC 联动。
 - Live2D：固定模型加载、动作和状态气泡；九个后端情绪簇控制表情，工作模式独立控制动作，资源缺失时有占位降级。

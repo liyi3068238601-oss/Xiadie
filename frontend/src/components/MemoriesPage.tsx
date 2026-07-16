@@ -3,6 +3,7 @@ import * as api from "./../api";
 import { toast } from "./../store";
 import { EntitiesSection } from "./EntitiesSection";
 import { EpisodesSection } from "./EpisodesSection";
+import { SagasSection } from "./SagasSection";
 
 type Layer = "L0" | "L1" | "L2";
 
@@ -183,6 +184,7 @@ export function MemoriesPage({ onOpenSource }: Props) {
 
       <EntitiesSection memories={memories} onOpenSource={onOpenSource} />
       <EpisodesSection onOpenSource={onOpenSource} />
+      <SagasSection onOpenSource={onOpenSource} />
 
       {/* 新增记忆 */}
       <div className="list-row memory-add-card" style={{ alignItems: "flex-end", flexWrap: "wrap" }}>

@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import * as api from "./../api";
 import { Mode, toast } from "./../store";
 import { memoryNoticeText, shouldShowMemoryNotice } from "../memoryNotice.mjs";
+import {
+  memoryObserverPollDelay,
+  shouldContinueMemoryObserverPolling,
+} from "../observerPolling.mjs";
 
 interface Props {
   sessionId: string | null;
@@ -105,18 +109,26 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
 
   async function watchMemoryResult(runId: string) {
     const watchId = ++memoryWatchId.current;
-    for (let attempt = 0; attempt < 60 && memoryWatchId.current === watchId; attempt += 1) {
+    const startedAt = Date.now();
+    let consecutiveErrors = 0;
+    while (
+      memoryWatchId.current === watchId
+      && shouldContinueMemoryObserverPolling(Date.now() - startedAt, consecutiveErrors)
+    ) {
       try {
         const result = await api.getMemoryObserverResult(runId);
+        consecutiveErrors = 0;
         if (result.status === "applied") {
           if (result.remembered_count > 0) showRememberedNotice(result.remembered_count);
           return;
         }
         if (result.status === "exhausted" || result.status === "skipped") return;
       } catch {
-        return;
+        consecutiveErrors += 1;
       }
-      await new Promise((resolve) => window.setTimeout(resolve, 1000));
+      if (!shouldContinueMemoryObserverPolling(Date.now() - startedAt, consecutiveErrors)) return;
+      const delay = memoryObserverPollDelay(Date.now() - startedAt);
+      await new Promise((resolve) => window.setTimeout(resolve, delay));
     }
   }
 

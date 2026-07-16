@@ -215,6 +215,8 @@ function setExpression(model: any, idx: number) {
 // 切表情时的"精神一下"：轻微下沉回弹 + 交替左右微倾（用 sprite 变换，稳）
 function perk(model: any) {
   if (!model) return;
+  model.__perkGeneration = (model.__perkGeneration ?? 0) + 1;
+  const generation = model.__perkGeneration;
   const bs = model.__baseScale ?? model.scale.x;
   const by = model.__baseY ?? model.position.y;
   model.__perkDir = model.__perkDir === 1 ? -1 : 1;
@@ -222,6 +224,7 @@ function perk(model: any) {
   const DUR = 480;
   const start = performance.now();
   const step = (now: number) => {
+    if (model.__perkGeneration !== generation) return;
     const t = Math.min(1, (now - start) / DUR);
     const e = Math.sin(t * Math.PI); // 0→1→0 的柔和弹跳
     model.scale.set(bs * (1 + 0.045 * e));
