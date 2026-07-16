@@ -44,7 +44,7 @@ export function FilesPage() {
   const refresh = () => api.listKnowledgeDocuments().then(setDocuments);
   useEffect(() => { refresh().catch(() => toast("知识文档列表加载失败")); }, []);
   const hasActiveProcessing = documents.some((document) =>
-    !document.chunked_at && ["queued", "parsing"].includes(document.status)
+    !document.indexed_at && ["queued", "parsing"].includes(document.status)
   );
   useEffect(() => {
     if (!hasActiveProcessing) return;
@@ -133,7 +133,7 @@ export function FilesPage() {
     <div className="page">
       <h1>文件与知识</h1>
       <div className="sub">
-        把外部资料交给遐蝶作为可引用知识。当前支持安全接收、解析和稳定切片 TXT/Markdown；索引和对话引用仍在施工。
+        把外部资料交给遐蝶作为可引用知识。当前支持安全接收、解析、稳定切片和本地检索 TXT/Markdown；对话引用仍在施工。
       </div>
 
       {/* 拖拽 / 选择区 */}
@@ -240,7 +240,8 @@ export function FilesPage() {
                 {document.parse_char_count} 字符；尚未切片或索引</div>
             )}
             {document.chunked_at && (
-              <div className="sub">稳定切片：{document.chunk_count} 段；保留标题、段落、行号与字符范围，尚未索引</div>
+              <div className="sub">稳定切片：{document.chunk_count} 段；保留标题、段落、行号与字符范围；
+                {document.indexed_at ? "本地索引已就绪" : "尚未索引"}</div>
             )}
             {runDetails[document.id] && (
               <div style={{ marginTop: 8 }}>
@@ -276,6 +277,10 @@ function formatBytes(value: number): string {
 }
 
 function documentStatus(document: api.KnowledgeDocument): string {
+  if (document.status === "indexed" && document.indexed_at) return "已索引 · 可检索";
+  if (document.latest_run?.status === "running" && document.latest_run.current_stage === "indexing") {
+    return `索引中 ${document.latest_run.progress}%`;
+  }
   if (document.chunked_at && document.latest_run?.current_stage === "indexing") {
     return "切片完成 · 等待索引";
   }
@@ -286,10 +291,10 @@ function documentStatus(document: api.KnowledgeDocument): string {
     return "解析完成 · 等待切片";
   }
   if (document.latest_run?.status === "running") return `解析中 ${document.latest_run.progress}%`;
-  if (document.latest_run?.status === "recovery_pending") return "解析暂停 · 等待重试";
+  if (document.latest_run?.status === "recovery_pending") return "处理暂停 · 等待重试";
   return ({
     staged: "等待入队", queued: "已安全保存 · 等待解析", parsing: "解析中",
-    indexed: "可检索", failed: "处理失败", cancelled: "已取消",
+    indexed: "已索引 · 可检索", failed: "处理失败", cancelled: "已取消",
     delete_pending: "删除中", delete_failed: "删除待重试",
   })[document.status];
 }
@@ -297,6 +302,7 @@ function documentStatus(document: api.KnowledgeDocument): string {
 function eventLabel(action: string): string {
   return ({ admitted: "安全接收", parsing_started: "开始解析", parsing_completed: "解析完成",
     chunking_started: "开始切片", chunking_completed: "切片完成",
+    indexing_started: "开始索引", indexing_completed: "索引完成",
     retry_scheduled: "等待重试", recovery_scheduled: "中断恢复", cancel_requested: "请求停止",
     cancelled: "已停止", failed: "解析失败" } as Record<string, string>)[action] || "任务记录";
 }

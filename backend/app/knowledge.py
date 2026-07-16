@@ -196,7 +196,12 @@ def storage_path_for(document: dict) -> Path:
 
 
 def public_document(document: dict) -> dict:
-    return {key: value for key, value in document.items() if key != "storage_key"}
+    result = {
+        key: value for key, value in document.items()
+        if key not in {"storage_key", "tags_json"}
+    }
+    result["tags"] = json.loads(document.get("tags_json") or "[]")
+    return result
 
 
 def public_import_result(result: dict) -> dict:

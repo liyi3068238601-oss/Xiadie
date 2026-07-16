@@ -16,7 +16,7 @@ test("knowledge import requires an explicit local-only confirmation", async () =
 test("knowledge UI reports admitted files honestly before parsing exists", async () => {
   const page = await readFile(new URL("../src/components/FilesPage.tsx", import.meta.url), "utf8");
   assert.match(page, /已安全保存 · 等待解析/);
-  assert.match(page, /索引和对话引用仍在施工/);
+  assert.match(page, /对话引用仍在施工/);
   assert.doesNotMatch(page, /导入后将自动生成摘要与标签/);
 });
 
@@ -30,6 +30,17 @@ test("knowledge chunking stays honest about stable locators and missing index", 
   assert.match(page, /chunking_started|chunking_completed|切片中/);
   assert.doesNotMatch(page, /切片完成 · 可检索/);
   assert.match(api, /chunker_version|chunked_at|chunk_count/);
+});
+
+test("knowledge indexing exposes local readiness without claiming dialogue citations", async () => {
+  const [page, api] = await Promise.all([
+    readFile(new URL("../src/components/FilesPage.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/api.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(page, /索引中|已索引 · 可检索|本地索引已就绪/);
+  assert.match(page, /indexing_started|indexing_completed/);
+  assert.match(page, /对话引用仍在施工/);
+  assert.match(api, /searchKnowledge|KnowledgeSearchResult|context_window/);
 });
 
 test("knowledge parsing progress exposes cancellation, recovery and an event timeline", async () => {

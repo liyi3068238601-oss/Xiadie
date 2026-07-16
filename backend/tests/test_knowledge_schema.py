@@ -13,17 +13,17 @@ def test_schema_28_has_separate_knowledge_namespace_and_default_collection():
     try:
         assert conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
-        ).fetchone()["value"] == "30"
+        ).fetchone()["value"] == "31"
         tables = {
             row["name"] for row in conn.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'knowledge_%'"
             )
         }
-        assert tables == {
+        assert {
             "knowledge_collections", "knowledge_documents",
             "knowledge_import_runs", "knowledge_import_events", "knowledge_parse_artifacts",
-            "knowledge_chunks",
-        }
+            "knowledge_chunks", "knowledge_chunks_fts",
+        } <= tables
         default = conn.execute(
             "SELECT * FROM knowledge_collections WHERE id='default'"
         ).fetchone()

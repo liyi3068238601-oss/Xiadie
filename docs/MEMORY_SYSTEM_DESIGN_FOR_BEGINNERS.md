@@ -1,8 +1,8 @@
 # 遐蝶自主记忆系统设计书（零基础说明版）
 
-版本：v0.30
+版本：v0.31
 
-状态：设计基线；阶段 A～E 与 F.1～F.4 已完成，阶段 F.5～F.8 待施工
+状态：设计基线；阶段 A～E 与 F.1～F.5 已完成，阶段 F.6～F.8 待施工
 
 主要参考：[MemoryConstellations](https://github.com/ClaraShafiq/MemoryConstellations)
 适用对象：项目所有者、第一次接触 Agent 的开发者、后续接手实现的 Codex
@@ -957,7 +957,7 @@ POST /api/memory-maintenance/run
 | C Episode 自动化 | 已完成 | schema 13～17、自动整理、事实校验、原子应用和正式界面均已提交 |
 | D Saga | 已完成 | schema 18～22、评分、事实摘要、原子应用、生命周期、纠错、API、正式界面与总验收均已提交 |
 | E Archivist | 已完成 | schema 23～27、精确生命周期、有限维护、慢归档、保守冲突关系和管理闭环均已提交 |
-| F 用户文件知识库 | F.4 已完成 | schema 30、安全准入、可取消解析、确定性结构切片与稳定来源定位已提交 |
+| F 用户文件知识库 | F.5 已完成 | schema 31、安全准入、稳定切片、contentless FTS 与受限本地检索已提交 |
 
 ### 阶段 A：人格与背景分离（本轮已完成）
 
@@ -1551,10 +1551,32 @@ document 计数并推进任务；失败整批回滚，取消会清理切片、�
 
 #### F.5：本地 FTS5 索引与检索
 
-- [ ] 建立状态感知 FTS5；只有 indexed/active 文档的 active chunk 可被检索。
-- [ ] 支持 collection、document 和标签范围过滤、去重、有限预算及无结果降级。
-- [ ] 索引构建在短事务切换可见性，失败或重建期间不混用新旧半套索引。
-- [ ] 删除/禁用文档后立即退出召回，FTS 无残留。
+- [x] 建立状态感知 FTS5；只有 indexed/active 文档的 active chunk 可被检索。
+- [x] 支持 collection、document 和标签范围过滤、去重、有限预算及无结果降级。
+- [x] 索引构建在短事务切换可见性，失败或重建期间不混用新旧半套索引。
+- [x] 删除/禁用文档后立即退出召回，FTS 无残留。
+
+F.5 开工前审查结论：F.4 review 与提交 `04e259e`、schema 30 和 282 项后端测试一致，无返工
+缺陷。采纳原子索引、索引取消/失败回滚、chunk_count 一致性校验和索引阶段 UI。external-content FTS
+建议按项目实际调整：`knowledge_chunks.id` 是稳定 TEXT ID，而 SQLite external-content 依赖整数 rowid，
+因此 schema 31 使用支持直接 DELETE 的 contentless FTS；内部 rowid 只连接当前 chunk 行，公共身份始终返回
+确定性 chunk ID。相邻切片扩展作为检索选项，默认 0、最大 1，每段保持独立 locator，不拼成伪来源。
+
+`knowledge-fts-terms-v1` 不复制切片正文，只索引派生词项：中文连续文本生成单字和双字词项，英文/数字按
+词处理；查询只由净化后的最多 16 个词项组成，不接受原始 FTS 语法。worker 在事务外校验稳定 chunk ID、
+ordinal、版本和正文哈希并生成词项；短事务内清除旧索引、插入全套词项、核对 FTS 行数等于 chunk_count，
+再原子设置 document `indexed/indexed_at` 和 run `completed`。失败保持 document 非 indexed 并有限重试；
+取消清除 FTS、chunks 和 artifact 但保留原文件。chunk 删除触发器同步清除 FTS，document/collection 状态
+过滤同时要求当前 index_version，并保证禁用或版本过期后立即退出召回。
+
+schema 31 同时为 document 增加受 JSON 数组约束的标签元数据；F.5 检索支持最多 10 个标签的“任一命中”
+过滤，标签编辑入口按原计划留给 F.7 管理界面。受令牌保护的 `POST /api/knowledge/search` 支持 collection、
+最多 20 个 document、最多 10 个标签、最多 12 个主命中、
+0/1 相邻窗口和 256～8000 字符总预算；结果去重并返回真实 chunk 内容、标题路径、段落/行/字符范围和可空
+页码，无结果返回空列表。它仍是本地词法检索 API，不是语义检索，也不会在 F.5 自动注入对话；低权限提示
+隔离和可点击引用留给 F.6。新增 11 项后端测试与 1 项前端契约覆盖中英文词项、单字/双字、标签/范围过滤、
+预算、相邻 locator、状态隔离、取消、事务回滚、数量不一致、删除触发器、API 鉴权和 schema 升级；后端
+293 项、前端 21 项、生产构建、Electron 语法及差异检查通过。详细协议见 ADR-0032。
 
 #### F.6：引用、提示隔离与对话接入
 

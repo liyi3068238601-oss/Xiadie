@@ -1356,6 +1356,24 @@ MIGRATIONS = [
             ON knowledge_chunks(content_sha256);
         """,
     ),
+    (
+        31,
+        """
+        ALTER TABLE knowledge_documents ADD COLUMN tags_json TEXT NOT NULL DEFAULT '[]'
+            CHECK(json_valid(tags_json) AND json_type(tags_json)='array');
+        CREATE VIRTUAL TABLE knowledge_chunks_fts USING fts5(
+            terms,
+            content='',
+            contentless_delete=1,
+            tokenize='unicode61 remove_diacritics 2'
+        );
+        CREATE TRIGGER knowledge_chunks_fts_delete
+        BEFORE DELETE ON knowledge_chunks
+        BEGIN
+            DELETE FROM knowledge_chunks_fts WHERE rowid=OLD.rowid;
+        END;
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

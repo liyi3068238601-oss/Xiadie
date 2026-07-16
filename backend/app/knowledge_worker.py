@@ -9,7 +9,7 @@ import secrets
 from contextlib import suppress
 from pathlib import Path
 
-from . import db, knowledge, knowledge_chunker, knowledge_parser
+from . import db, knowledge, knowledge_chunker, knowledge_parser, knowledge_search
 
 RUNNING_STALE_SECONDS = 5 * 60
 FIRST_RETRY_DELAY_SECONDS = 30
@@ -18,6 +18,8 @@ PARSING_PROGRESS = 25
 PARSED_PROGRESS = 45
 CHUNKING_PROGRESS = 50
 CHUNKED_PROGRESS = 65
+INDEXING_PROGRESS = 75
+INDEXED_PROGRESS = 100
 _worker_task: asyncio.Task | None = None
 _wake_event: asyncio.Event | None = None
 _logger = logging.getLogger(__name__)
@@ -87,26 +89,26 @@ async def _process_claimed(row: dict) -> None:
     try:
         if row["current_stage"] == "chunking":
             await asyncio.to_thread(_chunk_run, row)
+        elif row["current_stage"] == "indexing":
+            await asyncio.to_thread(_index_run, row)
         else:
             await asyncio.to_thread(_parse_run, row)
     except knowledge_chunker.ChunkingCancelled:
+        _finish_cancel(row["id"])
+    except knowledge_search.IndexingCancelled:
         _finish_cancel(row["id"])
     except asyncio.CancelledError:
         _mark_interrupted(row["id"])
         raise
     except knowledge.KnowledgeImportError as error:
         _mark_failure(row, error.code)
+    except knowledge_search.SearchError as error:
+        _mark_failure(row, error.code)
     except (OSError, UnicodeError, ValueError):
-        _mark_failure(
-            row, "knowledge_chunk_failed" if row["current_stage"] == "chunking"
-            else "knowledge_parse_failed",
-        )
+        _mark_failure(row, _stage_failure_code(row["current_stage"]))
     except Exception as error:  # noqa: BLE001
         _logger.error("Knowledge pipeline failed with error type=%s", type(error).__name__)
-        _mark_failure(
-            row, "knowledge_chunk_failed" if row["current_stage"] == "chunking"
-            else "knowledge_parse_failed",
-        )
+        _mark_failure(row, _stage_failure_code(row["current_stage"]))
 
 
 def _claim_next() -> dict | None:
@@ -119,7 +121,7 @@ def _claim_next() -> dict | None:
             " JOIN knowledge_documents d ON d.id=r.document_id"
             " WHERE (r.status='queued' OR (r.status='recovery_pending'"
             " AND COALESCE(r.next_attempt_at,0)<=?))"
-            " AND r.current_stage IN ('validation','copy','parsing','chunking')"
+            " AND r.current_stage IN ('validation','copy','parsing','chunking','indexing')"
             " AND r.attempt_count<r.max_attempts"
             " AND d.status IN ('queued','parsing')"
             " ORDER BY r.created_at,r.id LIMIT 1", (now,),
@@ -128,8 +130,11 @@ def _claim_next() -> dict | None:
             conn.rollback()
             return None
         attempt = int(row["attempt_count"]) + 1
-        stage = "chunking" if row["current_stage"] == "chunking" else "parsing"
-        progress = CHUNKING_PROGRESS if stage == "chunking" else PARSING_PROGRESS
+        stage = row["current_stage"] if row["current_stage"] in {"chunking", "indexing"} else "parsing"
+        progress = {
+            "parsing": PARSING_PROGRESS, "chunking": CHUNKING_PROGRESS,
+            "indexing": INDEXING_PROGRESS,
+        }[stage]
         cursor = conn.execute(
             "UPDATE knowledge_import_runs SET status='running',current_stage=?,"
             "progress=?,attempt_count=?,started_at=COALESCE(started_at,?),next_attempt_at=NULL,"
@@ -323,6 +328,65 @@ def _chunk_run(row: dict) -> None:
         conn.close()
 
 
+def _index_run(row: dict) -> None:
+    document = _get_document(row["document_id"])
+    if not document or not document.get("chunked_at") or int(document.get("chunk_count") or 0) <= 0:
+        raise knowledge.KnowledgeImportError("knowledge_chunks_missing", "稳定切片不存在")
+    if _current_status(row["id"]) == "cancel_requested":
+        _finish_cancel(row["id"])
+        return
+    prepared = knowledge_search.prepare_document_index(
+        document["id"], should_cancel=lambda: _current_status(row["id"]) == "cancel_requested"
+    )
+    if len(prepared) != int(document["chunk_count"]):
+        raise knowledge.KnowledgeImportError("knowledge_chunk_count_mismatch", "知识切片数量不一致")
+    if _current_status(row["id"]) == "cancel_requested":
+        _finish_cancel(row["id"])
+        return
+
+    conn = db.connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        current = conn.execute(
+            "SELECT status,current_stage FROM knowledge_import_runs WHERE id=?", (row["id"],)
+        ).fetchone()
+        latest_document = conn.execute(
+            "SELECT status,chunk_count,chunked_at FROM knowledge_documents WHERE id=?",
+            (document["id"],),
+        ).fetchone()
+        if (
+            not current or current["status"] != "running" or current["current_stage"] != "indexing"
+            or not latest_document or latest_document["status"] != "parsing"
+            or not latest_document["chunked_at"]
+            or int(latest_document["chunk_count"]) != len(prepared)
+        ):
+            conn.rollback()
+            if current and current["status"] == "cancel_requested":
+                _finish_cancel(row["id"])
+            return
+        knowledge_search.apply_document_index_locked(conn, document["id"], prepared)
+        now = db.now()
+        knowledge.assert_document_transition("parsing", "indexed")
+        conn.execute(
+            "UPDATE knowledge_documents SET status='indexed',index_version=?,indexed_at=?,"
+            "error_code=NULL,updated_at=? WHERE id=? AND status='parsing'",
+            (knowledge_search.INDEX_VERSION, now, now, document["id"]),
+        )
+        conn.execute(
+            "UPDATE knowledge_import_runs SET status='completed',current_stage='finalizing',"
+            "progress=?,attempt_count=0,error_code=NULL,finished_at=?,updated_at=?"
+            " WHERE id=? AND status='running' AND current_stage='indexing'",
+            (INDEXED_PROGRESS, now, now, row["id"]),
+        )
+        _event(
+            conn, row["id"], "indexing_completed", "running", "completed", "finalizing", None,
+            {"chunk_count": len(prepared)}, now,
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
 def recover_stale_runs(*, now: float | None = None) -> int:
     at = db.now() if now is None else float(now)
     conn = db.connect()
@@ -351,6 +415,8 @@ def recover_stale_runs(*, now: float | None = None) -> int:
                 (after, error, None if exhausted else at, at if exhausted else None, at, row["id"]),
             )
             if exhausted:
+                if row["current_stage"] == "indexing":
+                    knowledge_search.clear_document_index_locked(conn, row["document_id"])
                 _set_document_terminal_locked(conn, row["document_id"], "failed", error, at)
             _event(conn, row["id"], "failed" if exhausted else "recovery_scheduled",
                    "running", after, row["current_stage"], error, {}, at)
@@ -458,6 +524,7 @@ def _finish_cancel(run_id: str) -> bool:
 
 
 def _cancel_locked(conn, row, now: float) -> None:
+    knowledge_search.clear_document_index_locked(conn, row["document_id"])
     conn.execute("DELETE FROM knowledge_chunks WHERE document_id=?", (row["document_id"],))
     conn.execute(
         "DELETE FROM knowledge_parse_artifacts WHERE document_id=?", (row["document_id"],)
@@ -506,7 +573,10 @@ def _mark_failure(row: dict, code: str) -> None:
             (after, code, next_at, now if exhausted else None, now, row["id"]),
         )
         if exhausted:
-            conn.execute("DELETE FROM knowledge_chunks WHERE document_id=?", (row["document_id"],))
+            if current["current_stage"] == "indexing":
+                knowledge_search.clear_document_index_locked(conn, row["document_id"])
+            else:
+                conn.execute("DELETE FROM knowledge_chunks WHERE document_id=?", (row["document_id"],))
             _set_document_terminal_locked(conn, row["document_id"], "failed", code, now)
         _event(conn, row["id"], "failed" if exhausted else "retry_scheduled", "running",
                after, current["current_stage"], code,
@@ -592,6 +662,13 @@ def _event(conn, run_id: str, action: str, before: str | None, after: str, stage
         (db.new_id(), run_id, action, before, after, stage, error_code,
          json.dumps(metadata, ensure_ascii=False, separators=(",", ":")), now),
     )
+
+
+def _stage_failure_code(stage: str) -> str:
+    return {
+        "chunking": "knowledge_chunk_failed",
+        "indexing": "knowledge_index_failed",
+    }.get(stage, "knowledge_parse_failed")
 
 
 def _run_row(conn, row, *, include_events: bool = False) -> dict:

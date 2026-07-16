@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 
 from . import (
     archivist, archivist_worker, companion_state, db, entities, episode_consolidator, episode_summary_service,
-    episodes, knowledge, knowledge_worker, llm, lore, memory, memory_conflicts, saga_consolidator, saga_lifecycle, saga_summary,
+    episodes, knowledge, knowledge_search, knowledge_worker, llm, lore, memory, memory_conflicts, saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, slow_lifecycle,
 )
 from . import memory_observer_service
@@ -458,6 +458,28 @@ def get_knowledge_documents(collection_id: Optional[str] = None) -> list[dict]:
         knowledge.public_document(document)
         for document in knowledge.list_documents(collection_id=collection_id)
     ]
+
+
+class KnowledgeSearchIn(BaseModel):
+    query: str = Field(min_length=1, max_length=256)
+    collection_id: Optional[str] = None
+    document_ids: list[str] = Field(default_factory=list, max_length=20)
+    tags: list[str] = Field(default_factory=list, max_length=10)
+    limit: int = Field(default=6, ge=1, le=12)
+    context_window: int = Field(default=0, ge=0, le=1)
+    max_chars: int = Field(default=4000, ge=256, le=8000)
+
+
+@app.post("/api/knowledge/search")
+def search_knowledge(body: KnowledgeSearchIn) -> dict:
+    try:
+        return knowledge_search.search(
+            body.query, collection_id=body.collection_id, document_ids=body.document_ids,
+            tags=body.tags,
+            limit=body.limit, context_window=body.context_window, max_chars=body.max_chars,
+        )
+    except knowledge_search.SearchError as error:
+        raise HTTPException(400, str(error)) from error
 
 
 @app.post("/api/knowledge/documents/import")

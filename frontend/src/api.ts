@@ -221,6 +221,9 @@ export interface KnowledgeDocument {
   chunker_version?: string | null;
   chunked_at?: number | null;
   chunk_count: number;
+  tags: string[];
+  index_version?: string | null;
+  indexed_at?: number | null;
   latest_run?: KnowledgeImportRun | null;
   created_at: number;
   updated_at: number;
@@ -252,6 +255,35 @@ export interface KnowledgeImportResult {
   document: KnowledgeDocument;
   run: KnowledgeImportRun | null;
   already_exists: boolean;
+}
+export interface KnowledgeSearchResult {
+  chunk_id: string;
+  document_id: string;
+  collection_id: string;
+  original_name: string;
+  ordinal: number;
+  content: string;
+  content_sha256: string;
+  tags: string[];
+  heading_path: string[];
+  paragraph_start: number;
+  paragraph_end: number;
+  line_start: number;
+  line_end: number;
+  char_start: number;
+  char_end: number;
+  page_start?: number | null;
+  page_end?: number | null;
+  match_type: "primary" | "context";
+  context_of?: string | null;
+  rank?: number | null;
+}
+export interface KnowledgeSearchResponse {
+  query: string;
+  results: KnowledgeSearchResult[];
+  result_count: number;
+  used_chars: number;
+  context_window: number;
 }
 export interface MemoryCandidate {
   id: string;
@@ -533,6 +565,10 @@ export const getKnowledgeImportRun = (id: string) =>
   j<KnowledgeImportRun>(`/api/knowledge/import-runs/${id}`);
 export const cancelKnowledgeImportRun = (id: string) =>
   j<KnowledgeImportRun>(`/api/knowledge/import-runs/${id}/cancel`, { method: "POST" });
+export const searchKnowledge = (query: string, options: Record<string, unknown> = {}) =>
+  j<KnowledgeSearchResponse>("/api/knowledge/search", {
+    method: "POST", body: JSON.stringify({ query, ...options }),
+  });
 export const listMemoryCandidates = () =>
   j<MemoryCandidate[]>("/api/memory-candidates?status=pending");
 export const acceptMemoryCandidate = (
