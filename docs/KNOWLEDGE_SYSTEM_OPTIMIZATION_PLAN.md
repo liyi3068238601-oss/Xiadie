@@ -4,7 +4,7 @@
 
 制定日期：2026-07-16
 
-状态：施工中；K.0 已完成，下一阶段 K.1
+状态：施工中；K.0～K.1 已完成，下一阶段 K.2
 适用对象：项目所有者、后续施工的 Codex、第一次接触检索系统的开发者
 
 ---
@@ -35,7 +35,7 @@
 
 截至制定本计划时：
 
-- 数据库版本：schema 34。
+- 数据库版本：schema 35。
 - 后端测试：317 项通过。
 - 前端测试：25 项通过。
 - 支持格式：TXT、Markdown、PDF、DOCX。
@@ -47,14 +47,14 @@
 - 删除：请求成功后立即退出召回，再清理应用内原文、解析产物、切片、FTS、向量和 document。
 - 远程向量：没有启用；本地建向量不上传正文。
 - 在线聊天：明确检索命中的片段可能随本轮请求发送给当前在线聊天模型。
+- 文档远传策略：普通新文档默认逐次询问，敏感新文档默认仅本地；旧文档保守迁移为逐次询问。
+- Provider 数据位置：local/remote/unknown 已显式版本化，unknown 按 remote 处理。
 
 对应实现基线：ADR-0029～ADR-0035，以及记忆系统设计书阶段 F。
 
 ### 2.1 当前明确没有实现的能力
 
 - 自然对话本地预检。
-- 文档级远传策略。
-- Provider 本地/远程/未知的数据位置声明。
 - 发送片段前的逐次授权凭证。
 - 智能召回影子模式和阈值校准数据集。
 - 知识引用与记忆观察器之间的显式隔离元数据。
@@ -636,15 +636,32 @@ K.0 完工记录（2026-07-16）：
 
 ### K.1：文档策略与 Provider 位置地基
 
-- [ ] 新增文档 `transmission_policy/policy_revision`，旧文档迁移为 ask_each_time。
-- [ ] 新增 Provider `execution_location/location_revision`，unknown 按 remote 处理。
-- [ ] 敏感文档阻止 remote_allowed。
-- [ ] Provider 地址或位置变化使旧授权失效。
-- [ ] 增加设置与文档策略 API，不接入自然召回。
-- [ ] UI 清楚展示策略和数据流向。
-- [ ] 覆盖旧库升级、重复迁移、非法组合和鉴权。
+- [x] 新增文档 `transmission_policy/policy_revision`，旧文档迁移为 ask_each_time。
+- [x] 新增 Provider `execution_location/location_revision`，unknown 按 remote 处理。
+- [x] 敏感文档阻止 remote_allowed。
+- [x] Provider 地址或位置变化使旧授权失效。
+- [x] 增加设置与文档策略 API，不接入自然召回。
+- [x] UI 清楚展示策略和数据流向。
+- [x] 覆盖旧库升级、重复迁移、非法组合和鉴权。
 
 验收：数据策略真实可管理，但聊天行为仍保持 explicit。
+
+K.1 完工记录（2026-07-16）：
+
+- 开工前 review：`knowledge-stage-k0-review.html`，审查范围 `760c344→19dbe77`，结论通过；基线与仓库一致。
+- 采纳：旧库升级、重复初始化、保守默认、非法组合和 revision 变化专项测试。
+- 调整后采纳：Provider 使用内置保守分类、回环 URL 检查和用户明确确认；拒绝保存时主动联网探测，因为连接结果不能证明模型执行位置且会产生额外副作用。
+- 推迟：评测协议版本演进到 K.3；响应式视觉深化按项目安排留到后续 UI 阶段；Provider 位置事件与 collection 批量策略到 K.8。
+- 拒绝：不在 K.1 为消除非阻塞 warning 盲目替换 `httpx` 依赖；不在 K.1 提前实现 K.5 的 recall mode 设置。
+- ADR：新增 ADR-0037，固定 schema 35、迁移默认、敏感组合守卫、位置判定和 revision 语义。
+- schema：35。旧文档为 `ask_each_time`；新普通文档为 `ask_each_time`，新敏感文档为 `local_only`；unknown Provider 后续按 remote。
+- API：新增文档策略 PATCH 和无正文事件 GET；现有 Provider PATCH/GET 返回并管理 execution location/revision，API Key 仍不回传。
+- 后端测试：324 passed，1 个既有 Starlette/httpx 弃用 warning。
+- 前端测试：26 passed。
+- 构建/冻结/打包：Vite 生产构建 185 modules；Electron 语法检查通过。无新运行依赖或模型资源，未重复冻结/安装包。
+- 提交：本计划所在 K.1 提交；开工基线 `19dbe77`。
+- 额外边界：同内容由普通资料重复导入为敏感资料时，只向 `sensitive + local_only` 升级并递增 revision；再次以普通资料导入不会反向降级。
+- 剩余风险：本阶段只有策略地基，尚无 grant，`ask_each_time` 的确认仍由 K.4 实现；聊天仍只在 explicit 意图下查询资料。
 
 ### K.2：本地预检协议与影子模式
 

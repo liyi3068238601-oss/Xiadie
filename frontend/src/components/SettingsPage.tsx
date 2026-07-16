@@ -28,6 +28,7 @@ interface EditForm {
   api_key: string;
   models: string;
   enabled: boolean;
+  execution_location: api.Provider["execution_location"];
 }
 
 export function SettingsPage({ onModelChanged }: { onModelChanged: () => void }) {
@@ -166,6 +167,7 @@ export function SettingsPage({ onModelChanged }: { onModelChanged: () => void })
               api_key: "",
               models: p.models.join(", "),
               enabled: p.enabled,
+              execution_location: p.execution_location,
             },
           }
     );
@@ -202,6 +204,7 @@ export function SettingsPage({ onModelChanged }: { onModelChanged: () => void })
       base_url: f.base_url.trim(),
       models,
       enabled: f.enabled,
+      execution_location: f.execution_location,
     };
     // 密钥安全：输入框为空时不提交 api_key（后端不回传已保存的 key）。
     if (f.api_key.trim()) body.api_key = f.api_key.trim();
@@ -464,6 +467,9 @@ export function SettingsPage({ onModelChanged }: { onModelChanged: () => void })
                       <span className="pname">{p.name}</span>
                       {p.has_key ? <span className="tag-ok">已配置密钥</span> : <span className="tag-off">未配置密钥</span>}
                       <span className="chip">{p.enabled ? "已启用" : "已停用"}</span>
+                      <span className={`chip provider-location ${p.execution_location}`}>
+                        {providerLocationLabel(p.execution_location)} · rev {p.location_revision}
+                      </span>
                       {testing === p.id && <span className="tag-off">测试中…</span>}
                       {t &&
                         (t.ok ? (
@@ -488,6 +494,20 @@ export function SettingsPage({ onModelChanged }: { onModelChanged: () => void })
                             onChange={(e) => patchEdit(p.id, { base_url: e.target.value })}
                             placeholder="https://api.example.com/v1"
                           />
+                        </div>
+                        <div className="field">
+                          <label>模型运行位置</label>
+                          <select value={f.execution_location}
+                            onChange={(e) => patchEdit(p.id, {
+                              execution_location: e.target.value as api.Provider["execution_location"],
+                            })}>
+                            <option value="unknown">未知（按远程处理）</option>
+                            <option value="remote">远程服务</option>
+                            <option value="local">本机服务</option>
+                          </select>
+                          <div className="card-hint" style={{ marginTop: 6 }}>
+                            地址变化会使位置 revision 更新；只有本机回环地址才能确认成“本机服务”。
+                          </div>
                         </div>
                         <div className="field">
                           <label>API Key</label>
@@ -707,6 +727,10 @@ export function SettingsPage({ onModelChanged }: { onModelChanged: () => void })
       )}
     </div>
   );
+}
+
+function providerLocationLabel(location: api.Provider["execution_location"]): string {
+  return ({ local: "本机", remote: "远程", unknown: "未知" })[location];
 }
 
 // 尚无对应后端接口的分组，做成清晰的「开发中」占位区块。

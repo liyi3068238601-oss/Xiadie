@@ -2,7 +2,7 @@
 
 > 最近复核日期：2026-07-16
 >
-> 基线提交：知识库优化 K.0（开工基线 `80e51e9`，以本文件所在提交为准）
+> 基线提交：知识库优化 K.1（开工基线 `19dbe77`，以本文件所在提交为准）
 >
 > 当前版本：`v0.1.0` MVP 骨架
 >
@@ -35,8 +35,8 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests` | 通过：318 passed，1 warning；schema 34 |
-| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：25 项；TypeScript 检查及 Vite 生产构建 187 modules 成功 |
+| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests` | 通过：324 passed，1 warning；schema 35 |
+| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：26 项；TypeScript 检查及 Vite 生产构建 185 modules 成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 
 已知但不阻断当前开发的警告：

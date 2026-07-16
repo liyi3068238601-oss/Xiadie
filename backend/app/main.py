@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 
 from . import (
     archivist, archivist_worker, companion_state, db, entities, episode_consolidator, episode_summary_service,
-    episodes, knowledge, knowledge_context, knowledge_embeddings, knowledge_management, knowledge_search, knowledge_worker, llm, lore, memory, memory_conflicts, saga_consolidator, saga_lifecycle, saga_summary,
+    episodes, knowledge, knowledge_context, knowledge_embeddings, knowledge_management, knowledge_policy, knowledge_search, knowledge_worker, llm, lore, memory, memory_conflicts, saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, slow_lifecycle,
 )
 from . import memory_observer_service
@@ -573,6 +573,34 @@ def patch_knowledge_document_tags(document_id: str, body: KnowledgeTagsIn) -> di
     except knowledge.KnowledgeImportError as error:
         raise HTTPException(409 if error.code == "document_deleting" else 400, str(error)) from error
     if not result:
+        raise HTTPException(404, "知识文档不存在")
+    return result
+
+
+class KnowledgeTransmissionPolicyIn(BaseModel):
+    transmission_policy: str
+
+
+@app.patch("/api/knowledge/documents/{document_id}/transmission-policy")
+def patch_knowledge_document_transmission_policy(
+    document_id: str, body: KnowledgeTransmissionPolicyIn,
+) -> dict:
+    try:
+        result = knowledge_policy.update_document_policy(document_id, body.transmission_policy)
+    except knowledge_policy.KnowledgePolicyError as error:
+        status = 409 if error.code == "document_deleting" else 400
+        raise HTTPException(status, str(error)) from error
+    if not result:
+        raise HTTPException(404, "知识文档不存在")
+    return result
+
+
+@app.get("/api/knowledge/documents/{document_id}/policy-events")
+def get_knowledge_document_policy_events(document_id: str, limit: int = 50) -> list[dict]:
+    if limit < 1 or limit > 100:
+        raise HTTPException(400, "策略事件数量须为 1 到 100")
+    result = knowledge_policy.list_document_policy_events(document_id, limit)
+    if result is None:
         raise HTTPException(404, "知识文档不存在")
     return result
 
@@ -1497,8 +1525,23 @@ def update_provider(pid: str, body: dict) -> dict:
         row = conn.execute("SELECT * FROM providers WHERE id = ?", (pid,)).fetchone()
         if not row:
             raise HTTPException(404, "供应商不存在")
-        if "base_url" in body and body["base_url"] is not None:
-            conn.execute("UPDATE providers SET base_url = ? WHERE id = ?", (body["base_url"], pid))
+        provider = dict(row)
+        base_url = str(body["base_url"]) if body.get("base_url") is not None else provider["base_url"]
+        try:
+            location = knowledge_policy.provider_location_update(
+                provider,
+                base_url=base_url,
+                requested_location=body.get("execution_location"),
+                location_was_requested="execution_location" in body and body["execution_location"] is not None,
+            )
+        except knowledge_policy.KnowledgePolicyError as error:
+            raise HTTPException(400, str(error)) from error
+        conn.execute(
+            "UPDATE providers SET base_url=?,execution_location=?,location_revision=?,"
+            "location_confirmed_at=? WHERE id=?",
+            (base_url, location["execution_location"], location["location_revision"],
+             location["location_confirmed_at"], pid),
+        )
         if body.get("api_key"):  # 只在传了非空 key 时更新，避免误清空
             conn.execute("UPDATE providers SET api_key = ? WHERE id = ?", (body["api_key"], pid))
         if "models" in body and body["models"] is not None:

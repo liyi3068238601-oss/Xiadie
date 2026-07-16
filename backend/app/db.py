@@ -1530,6 +1530,62 @@ MIGRATIONS = [
             ON knowledge_embedding_events(run_id,created_at,id);
         """,
     ),
+    (
+        35,
+        """
+        ALTER TABLE knowledge_documents ADD COLUMN transmission_policy TEXT NOT NULL
+            DEFAULT 'ask_each_time'
+            CHECK(transmission_policy IN ('remote_allowed','ask_each_time','local_only'));
+        ALTER TABLE knowledge_documents ADD COLUMN policy_revision INTEGER NOT NULL DEFAULT 1
+            CHECK(policy_revision >= 1);
+        ALTER TABLE knowledge_documents ADD COLUMN policy_updated_at REAL;
+        UPDATE knowledge_documents SET policy_updated_at=updated_at
+            WHERE policy_updated_at IS NULL;
+
+        ALTER TABLE providers ADD COLUMN execution_location TEXT NOT NULL DEFAULT 'unknown'
+            CHECK(execution_location IN ('local','remote','unknown'));
+        ALTER TABLE providers ADD COLUMN location_revision INTEGER NOT NULL DEFAULT 1
+            CHECK(location_revision >= 1);
+        ALTER TABLE providers ADD COLUMN location_confirmed_at REAL;
+        UPDATE providers SET execution_location='local' WHERE id='mock';
+        UPDATE providers SET execution_location='remote' WHERE id IN (
+            'deepseek','openai','glm','qwen','kimi','openrouter','siliconflow'
+        );
+        UPDATE providers SET execution_location='local'
+            WHERE id='ollama' AND (
+                base_url LIKE 'http://127.0.0.1:%' OR base_url LIKE 'http://localhost:%'
+                OR base_url LIKE 'https://127.0.0.1:%' OR base_url LIKE 'https://localhost:%'
+            );
+
+        CREATE TABLE knowledge_document_policy_events (
+            id TEXT PRIMARY KEY,
+            document_id TEXT NOT NULL REFERENCES knowledge_documents(id) ON DELETE CASCADE,
+            before_policy TEXT NOT NULL
+                CHECK(before_policy IN ('remote_allowed','ask_each_time','local_only')),
+            after_policy TEXT NOT NULL
+                CHECK(after_policy IN ('remote_allowed','ask_each_time','local_only')),
+            policy_revision INTEGER NOT NULL CHECK(policy_revision >= 1),
+            actor TEXT NOT NULL DEFAULT 'user' CHECK(actor IN ('user','migration','system')),
+            reason_code TEXT NOT NULL,
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_knowledge_document_policy_events_document
+            ON knowledge_document_policy_events(document_id,created_at,id);
+
+        CREATE TRIGGER knowledge_document_policy_sensitive_insert_guard
+        BEFORE INSERT ON knowledge_documents
+        WHEN NEW.sensitivity='sensitive' AND NEW.transmission_policy='remote_allowed'
+        BEGIN
+            SELECT RAISE(ABORT,'sensitive document cannot allow remote transmission');
+        END;
+        CREATE TRIGGER knowledge_document_policy_sensitive_update_guard
+        BEFORE UPDATE OF sensitivity,transmission_policy ON knowledge_documents
+        WHEN NEW.sensitivity='sensitive' AND NEW.transmission_policy='remote_allowed'
+        BEGIN
+            SELECT RAISE(ABORT,'sensitive document cannot allow remote transmission');
+        END;
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
@@ -1572,10 +1628,15 @@ def init_db() -> None:
         conn.executescript(SCHEMA)
         _apply_migrations(conn)
         for i, (pid, name, base_url, models, enabled) in enumerate(DEFAULT_PROVIDERS):
+            default_location = (
+                "local" if pid in {"mock", "ollama"}
+                else "unknown" if pid == "custom" else "remote"
+            )
             conn.execute(
-                "INSERT OR IGNORE INTO providers(id, name, base_url, models, enabled, sort)"
-                " VALUES(?,?,?,?,?,?)",
-                (pid, name, base_url, json.dumps(models, ensure_ascii=False), enabled, i),
+                "INSERT OR IGNORE INTO providers("
+                "id,name,base_url,models,enabled,sort,execution_location) VALUES(?,?,?,?,?,?,?)",
+                (pid, name, base_url, json.dumps(models, ensure_ascii=False), enabled, i,
+                 default_location),
             )
         conn.execute(
             "INSERT OR IGNORE INTO settings(key, value) VALUES('current_model', ?)",

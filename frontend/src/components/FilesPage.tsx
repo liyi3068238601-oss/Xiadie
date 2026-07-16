@@ -193,6 +193,22 @@ export function FilesPage() {
     }
   }
 
+  async function updateTransmissionPolicy(
+    document: api.KnowledgeDocument,
+    transmissionPolicy: api.KnowledgeDocument["transmission_policy"],
+  ) {
+    setActionBusy(`policy:${document.id}`);
+    try {
+      await api.updateKnowledgeTransmissionPolicy(document.id, transmissionPolicy);
+      toast("文档远传策略已更新");
+      await refresh();
+    } catch (error: any) {
+      toast(error.message || "远传策略更新失败");
+    } finally {
+      setActionBusy(null);
+    }
+  }
+
   async function deleteDocument(document: api.KnowledgeDocument) {
     const confirmed = window.confirm(
       `确定删除「${document.original_name}」吗？\n\n将清除遐蝶应用内的原文副本、切片、索引和解析产物，立即停止召回。应用外的原文件或备份不会同步删除。`,
@@ -419,6 +435,9 @@ export function FilesPage() {
                 <div className="knowledge-file-meta">
                   {formatBytes(document.size_bytes)} · {new Date(document.created_at * 1000).toLocaleDateString("zh-CN")} · 指纹 {document.content_sha256.slice(0, 10)}
                 </div>
+                <div className={`knowledge-policy-label policy-${document.transmission_policy}`}>
+                  {transmissionPolicyLabel(document.transmission_policy)}
+                </div>
                 {!!document.tags.length && <div className="knowledge-tags">
                   {document.tags.map((tag) => <span className="chip" key={tag}>{tag}</span>)}
                 </div>}
@@ -470,8 +489,22 @@ export function FilesPage() {
                     <div>解析器：{document.parser_version || "尚未解析"} · 切片器：{document.chunker_version || "尚未切片"}</div>
                     <div>索引版本：{document.index_version || "尚未索引"} · 导入时间：{new Date(document.created_at * 1000).toLocaleString("zh-CN")}</div>
                     <div>语义版本：{document.embedding_version || "尚未建立"}</div>
+                    <div>远传策略：{transmissionPolicyLabel(document.transmission_policy)} · revision {document.policy_revision}</div>
                   </details>
                   <div className="knowledge-row-actions">
+                    <label className="knowledge-policy-control">
+                      <span>发送给聊天模型</span>
+                      <select value={document.transmission_policy}
+                        disabled={actionBusy === `policy:${document.id}`}
+                        onChange={(event) => updateTransmissionPolicy(
+                          document,
+                          event.target.value as api.KnowledgeDocument["transmission_policy"],
+                        )}>
+                        <option value="ask_each_time">每次询问</option>
+                        <option value="local_only">仅限本地</option>
+                        {document.sensitivity !== "sensitive" && <option value="remote_allowed">允许发送命中片段</option>}
+                      </select>
+                    </label>
                     {document.latest_run && <button className="btn ghost" onClick={() => showRun(document)}>进度详情</button>}
                     {document.latest_run && ["queued", "running", "recovery_pending", "cancel_requested"].includes(document.latest_run.status) && (
                       <button className="btn ghost" disabled={document.latest_run.status === "cancel_requested"}
@@ -540,6 +573,14 @@ function documentStatusClass(document: api.KnowledgeDocument): string {
   if (["failed", "delete_failed"].includes(document.status)) return "is-failed";
   if (["cancelled"].includes(document.status)) return "is-cancelled";
   return "is-processing";
+}
+
+function transmissionPolicyLabel(policy: api.KnowledgeDocument["transmission_policy"]): string {
+  return ({
+    remote_allowed: "允许按最小预算发送命中片段",
+    ask_each_time: "发送前每次询问",
+    local_only: "仅限本机，不发送给在线模型",
+  })[policy];
 }
 
 function eventLabel(action: string): string {

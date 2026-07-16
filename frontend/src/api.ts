@@ -231,6 +231,9 @@ export interface KnowledgeDocument {
   status: "staged" | "queued" | "parsing" | "indexed" | "failed" | "cancelled" |
     "delete_pending" | "delete_failed";
   sensitivity: "normal" | "sensitive";
+  transmission_policy: "remote_allowed" | "ask_each_time" | "local_only";
+  policy_revision: number;
+  policy_updated_at?: number | null;
   embedding_mode: "none" | "local" | "remote";
   embedding_version?: string | null;
   embedding_indexed_at?: number | null;
@@ -566,6 +569,9 @@ export interface Provider {
   enabled: boolean;
   has_key: boolean;
   sort: number;
+  execution_location: "local" | "remote" | "unknown";
+  location_revision: number;
+  location_confirmed_at?: number | null;
 }
 export interface CurrentModel {
   provider_id: string;
@@ -652,6 +658,11 @@ export const updateKnowledgeTags = (id: string, tags: string[]) =>
   j<KnowledgeDocument>(`/api/knowledge/documents/${id}/tags`, {
     method: "PATCH", body: JSON.stringify({ tags }),
   });
+export const updateKnowledgeTransmissionPolicy = (
+  id: string, transmission_policy: KnowledgeDocument["transmission_policy"],
+) => j<KnowledgeDocument>(`/api/knowledge/documents/${id}/transmission-policy`, {
+  method: "PATCH", body: JSON.stringify({ transmission_policy }),
+});
 export const reindexKnowledgeDocument = (id: string) =>
   j<KnowledgeImportRun>(`/api/knowledge/documents/${id}/reindex`, { method: "POST" });
 export const deleteKnowledgeDocument = (id: string) =>

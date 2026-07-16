@@ -117,6 +117,25 @@ def import_file(
             (collection_id, metadata["content_sha256"]),
         ).fetchone()
         if existing:
+            if sensitivity == "sensitive" and existing["sensitivity"] != "sensitive":
+                now = db.now()
+                revision = int(existing["policy_revision"]) + 1
+                before_policy = str(existing["transmission_policy"])
+                conn.execute(
+                    "UPDATE knowledge_documents SET sensitivity='sensitive',"
+                    "transmission_policy='local_only',policy_revision=?,policy_updated_at=?,"
+                    "updated_at=? WHERE id=?",
+                    (revision, now, now, existing["id"]),
+                )
+                conn.execute(
+                    "INSERT INTO knowledge_document_policy_events("
+                    "id,document_id,before_policy,after_policy,policy_revision,actor,reason_code,"
+                    "created_at) VALUES(?,?,?,'local_only',?,'system','sensitivity_upgrade',?)",
+                    (db.new_id(), existing["id"], before_policy, revision, now),
+                )
+                existing = conn.execute(
+                    "SELECT * FROM knowledge_documents WHERE id=?", (existing["id"],),
+                ).fetchone()
             conn.commit()
             return {"document": _document_row(existing), "run": None, "already_exists": True}
         quota = conn.execute(
@@ -134,16 +153,17 @@ def import_file(
         _atomic_write(final_path, data)
         now = db.now()
         document_id, run_id = db.new_id(), db.new_id()
+        transmission_policy = "local_only" if sensitivity == "sensitive" else "ask_each_time"
         assert_document_transition("staged", "queued")
         conn.execute(
             "INSERT INTO knowledge_documents("
             "id,collection_id,original_name,extension,mime_type,size_bytes,content_sha256,"
-            "storage_key,status,sensitivity,embedding_mode,created_at,updated_at)"
-            " VALUES(?,?,?,?,?,?,?,?,'queued',?,'none',?,?)",
+            "storage_key,status,sensitivity,embedding_mode,transmission_policy,policy_updated_at,"
+            "created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,'queued',?,'none',?,?,?,?)",
             (
                 document_id, collection_id, metadata["original_name"], metadata["extension"],
                 metadata["mime_type"], metadata["size_bytes"], metadata["content_sha256"],
-                storage_key, sensitivity, now, now,
+                storage_key, sensitivity, transmission_policy, now, now, now,
             ),
         )
         conn.execute(

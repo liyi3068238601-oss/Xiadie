@@ -1852,6 +1852,11 @@ textarea {
 .knowledge-file-titleline { display: flex; align-items: center; gap: 7px; min-width: 0; }
 .knowledge-file-titleline > strong { overflow: hidden; color: #d8d3e3; font-size: 11px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .knowledge-file-meta { margin-top: 4px; color: #69627d; font-size: 9px; }
+.knowledge-policy-label { margin-top: 4px; color: #978ead; font-size: 9px; }
+.knowledge-policy-label.policy-local_only { color: #75cfa9; }
+.knowledge-policy-label.policy-remote_allowed { color: #d7b568; }
+.knowledge-policy-control { display: inline-flex; align-items: center; gap: 7px; color: #8f879f; font-size: 9px; }
+.knowledge-policy-control select { min-height: 30px; padding: 4px 8px; border: 1px solid rgba(157,132,255,.18); border-radius: 7px; color: #c9c1d8; background: #17102c; font: inherit; }
 .knowledge-sensitive-pill {
   flex: 0 0 auto;
   padding: 2px 5px;
@@ -2182,6 +2187,9 @@ textarea {
 .settings-page .model-name-chip { border-color: rgba(157,132,255,.24); color: #c9bff0; background: rgba(124,92,255,.1); }
 .settings-page .cap-tags { gap: 5px; }
 .settings-page .cap-tag { border-radius: 999px; font-size: 9px; }
+.settings-page .provider-location.local { color: #79d8ae; border-color: rgba(86,214,160,.25); }
+.settings-page .provider-location.remote { color: #e5bd6a; border-color: rgba(255,207,107,.22); }
+.settings-page .provider-location.unknown { color: #d58ca0; border-color: rgba(255,122,147,.2); }
 
 /* 记忆工作台：四类资料分栏，条目页保留审计与生命周期能力。 */
 .memory-page { max-width: 1080px; margin: 0 auto; padding: 27px 32px 48px; }

@@ -93,3 +93,16 @@ test("knowledge retrieval audit UI states that query bodies are not stored", asy
   assert.match(page, /最近检索审计（不保存查询正文）|没有找到资料|原会话已删除/);
   assert.match(api, /listKnowledgeRetrievals|query_fingerprint|session_available/);
 });
+
+test("knowledge transmission policy and provider location stay explicit", async () => {
+  const [files, settings, api] = await Promise.all([
+    readFile(new URL("../src/components/FilesPage.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/components/SettingsPage.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/api.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(files, /发送前每次询问|仅限本机，不发送给在线模型|允许按最小预算发送命中片段/);
+  assert.match(files, /sensitivity !== "sensitive"/);
+  assert.match(settings, /模型运行位置|未知（按远程处理）|只有本机回环地址/);
+  assert.match(api, /transmission_policy|policy_revision|execution_location|location_revision/);
+  assert.match(api, /updateKnowledgeTransmissionPolicy/);
+});
