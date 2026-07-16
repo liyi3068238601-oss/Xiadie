@@ -1469,6 +1469,67 @@ MIGRATIONS = [
         END;
         """,
     ),
+    (
+        34,
+        """
+        ALTER TABLE knowledge_parse_artifacts ADD COLUMN page_count INTEGER NOT NULL DEFAULT 0
+            CHECK(page_count >= 0);
+        ALTER TABLE knowledge_documents ADD COLUMN embedding_version TEXT;
+        ALTER TABLE knowledge_documents ADD COLUMN embedding_indexed_at REAL;
+        ALTER TABLE knowledge_documents ADD COLUMN embedding_dimension INTEGER
+            CHECK(embedding_dimension IS NULL OR embedding_dimension > 0);
+        ALTER TABLE knowledge_documents ADD COLUMN embedding_error_code TEXT;
+
+        CREATE TABLE knowledge_chunk_embeddings (
+            chunk_id TEXT PRIMARY KEY REFERENCES knowledge_chunks(id) ON DELETE CASCADE,
+            document_id TEXT NOT NULL REFERENCES knowledge_documents(id) ON DELETE CASCADE,
+            provider_id TEXT NOT NULL,
+            model TEXT NOT NULL,
+            embedding_version TEXT NOT NULL,
+            dimension INTEGER NOT NULL CHECK(dimension > 0),
+            vector_blob BLOB NOT NULL CHECK(length(vector_blob)=dimension*4),
+            content_sha256 TEXT NOT NULL CHECK(length(content_sha256)=64),
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_knowledge_chunk_embeddings_document
+            ON knowledge_chunk_embeddings(document_id,embedding_version,chunk_id);
+
+        CREATE TABLE knowledge_embedding_runs (
+            id TEXT PRIMARY KEY,
+            document_id TEXT NOT NULL REFERENCES knowledge_documents(id) ON DELETE CASCADE,
+            provider_id TEXT NOT NULL,
+            model TEXT NOT NULL,
+            embedding_version TEXT NOT NULL,
+            status TEXT NOT NULL CHECK(status IN ('queued','running','completed','failed','skipped')),
+            attempt_count INTEGER NOT NULL DEFAULT 0 CHECK(attempt_count >= 0),
+            max_attempts INTEGER NOT NULL DEFAULT 2 CHECK(max_attempts BETWEEN 1 AND 3),
+            vector_count INTEGER NOT NULL DEFAULT 0 CHECK(vector_count >= 0),
+            error_code TEXT,
+            started_at REAL,
+            finished_at REAL,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_knowledge_embedding_runs_status
+            ON knowledge_embedding_runs(status,created_at,id);
+        CREATE INDEX idx_knowledge_embedding_runs_document
+            ON knowledge_embedding_runs(document_id,created_at,id);
+
+        CREATE TABLE knowledge_embedding_events (
+            id TEXT PRIMARY KEY,
+            run_id TEXT NOT NULL REFERENCES knowledge_embedding_runs(id) ON DELETE CASCADE,
+            action TEXT NOT NULL,
+            before_status TEXT,
+            after_status TEXT NOT NULL,
+            error_code TEXT,
+            metadata_json TEXT NOT NULL DEFAULT '{}'
+                CHECK(json_valid(metadata_json) AND json_type(metadata_json)='object'),
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_knowledge_embedding_events_run
+            ON knowledge_embedding_events(run_id,created_at,id);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
@@ -1530,6 +1591,10 @@ def init_db() -> None:
         conn.execute(
             "INSERT OR IGNORE INTO settings(key, value)"
             " VALUES('memory_observer_model', '{\"mode\":\"current\"}')"
+        )
+        conn.execute(
+            "INSERT OR IGNORE INTO settings(key, value)"
+            " VALUES('knowledge_local_embedding_enabled', '1')"
         )
         conn.commit()
     finally:

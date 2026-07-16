@@ -16,7 +16,7 @@ class ChunkingCancelled(RuntimeError):
 
 
 def chunk_artifact(payload: dict, *, should_cancel: Callable[[], bool] | None = None) -> list[dict]:
-    text, headings = _validate_payload(payload)
+    text, headings, page_spans = _validate_payload(payload)
     paragraphs = _paragraphs(text, headings)
     units: list[dict] = []
     for paragraph in paragraphs:
@@ -30,11 +30,11 @@ def chunk_artifact(payload: dict, *, should_cancel: Callable[[], bool] | None = 
         if pending:
             combined_length = unit["end"] - pending[0]["start"]
             if unit["heading_path"] != pending[0]["heading_path"] or combined_length > TARGET_CHARS:
-                chunks.append(_materialize(text, pending, len(chunks)))
+                chunks.append(_materialize(text, pending, len(chunks), page_spans))
                 pending = []
         pending.append(unit)
     if pending:
-        chunks.append(_materialize(text, pending, len(chunks)))
+        chunks.append(_materialize(text, pending, len(chunks), page_spans))
     return chunks
 
 
@@ -46,7 +46,7 @@ def chunk_id(document_id: str, chunk: dict) -> str:
     return hashlib.sha256(stable.encode("utf-8")).hexdigest()
 
 
-def _validate_payload(payload: dict) -> tuple[str, list[dict]]:
+def _validate_payload(payload: dict) -> tuple[str, list[dict], list[dict]]:
     if not isinstance(payload, dict) or not isinstance(payload.get("normalized_text"), str):
         raise ValueError("parse_artifact_invalid")
     text = payload["normalized_text"]
@@ -64,7 +64,21 @@ def _validate_payload(payload: dict) -> tuple[str, list[dict]]:
             or not isinstance(item.get("line"), int) or not 1 <= item["line"] <= line_count
         ):
             raise ValueError("parse_artifact_invalid")
-    return text, headings
+    page_spans = payload.get("page_spans", [])
+    if not isinstance(page_spans, list):
+        raise ValueError("parse_artifact_invalid")
+    previous_end = 0
+    for expected, item in enumerate(page_spans, start=1):
+        if (
+            not isinstance(item, dict) or item.get("page") != expected
+            or not isinstance(item.get("start"), int) or not isinstance(item.get("end"), int)
+            or item["start"] < previous_end or item["end"] < item["start"] or item["end"] > len(text)
+        ):
+            raise ValueError("parse_artifact_invalid")
+        previous_end = item["end"]
+    if payload.get("page_count", 0) != len(page_spans):
+        raise ValueError("parse_artifact_invalid")
+    return text, headings, page_spans
 
 
 def _paragraphs(text: str, headings: list[dict]) -> list[dict]:
@@ -157,9 +171,10 @@ def _unit(paragraph: dict, start: int, end: int, text: str) -> dict:
     }
 
 
-def _materialize(text: str, units: list[dict], ordinal: int) -> dict:
+def _materialize(text: str, units: list[dict], ordinal: int, page_spans: list[dict]) -> dict:
     start, end = units[0]["start"], units[-1]["end"]
     content = text[start:end]
+    pages = [item["page"] for item in page_spans if item["end"] > start and item["start"] < end]
     return {
         "ordinal": ordinal,
         "content": content,
@@ -173,8 +188,8 @@ def _materialize(text: str, units: list[dict], ordinal: int) -> dict:
         "line_end": units[-1]["line_end"],
         "char_start": start,
         "char_end": end,
-        "page_start": None,
-        "page_end": None,
+        "page_start": min(pages) if pages else None,
+        "page_end": max(pages) if pages else None,
         "chunker_version": CHUNKER_VERSION,
     }
 

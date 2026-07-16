@@ -15,6 +15,7 @@ for pkg in (
     "uvicorn", "fastapi", "starlette", "pydantic", "pydantic_core",
     "anyio", "sniffio", "h11", "click", "annotated_types",
     "httptools", "websockets", "watchfiles", "typing_extensions",
+    "numpy", "onnxruntime", "tokenizers", "pypdf", "docx", "lxml",
 ):
     try:
         d, b, h = collect_all(pkg)
@@ -48,7 +49,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=["tkinter", "matplotlib", "numpy", "PIL", "pytest"],
+    excludes=["tkinter", "matplotlib", "PIL", "pytest"],
     noarchive=False,
 )
 pyz = PYZ(a.pure)

@@ -48,6 +48,7 @@ function startBackend() {
       XIADIE_API_TOKEN: API_TOKEN,
       XIADIE_DATA_DIR: dataDir,
       XIADIE_PARENT_PID: String(process.pid),
+      XIADIE_BGE_M3_DIR: path.join(process.resourcesPath, "models", "bge-m3"),
     },
   });
   // 必须监听 error：否则 ENOENT 会作为未处理的 EventEmitter error 抛出，导致主进程崩溃。

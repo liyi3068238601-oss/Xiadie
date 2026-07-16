@@ -8,7 +8,7 @@ test("knowledge import requires an explicit local-only confirmation", async () =
     readFile(new URL("../src/api.ts", import.meta.url), "utf8"),
   ]);
   assert.match(page, /导入前确认|确认导入到本地|仅复制到遐蝶本地应用数据目录/);
-  assert.match(page, /不调用远程模型、不生成 Embedding、不扫描原目录/);
+  assert.match(page, /本机完成，不扫描原目录、不把正文发往远程向量服务/);
   assert.match(page, /敏感资料|10 MiB|UTF-8/);
   assert.match(api, /X-Xiadie-Filename|X-Xiadie-Sensitivity|importKnowledgeFile/);
 });
@@ -16,7 +16,7 @@ test("knowledge import requires an explicit local-only confirmation", async () =
 test("knowledge UI reports admitted files honestly before parsing exists", async () => {
   const page = await readFile(new URL("../src/components/FilesPage.tsx", import.meta.url), "utf8");
   assert.match(page, /已安全保存 · 等待解析/);
-  assert.match(page, /明确询问资料时可在对话中核对并点击引用来源/);
+  assert.match(page, /PDF 引用保留真实页码，扫描图片暂不做 OCR/);
   assert.doesNotMatch(page, /导入后将自动生成摘要与标签/);
 });
 
@@ -39,8 +39,19 @@ test("knowledge indexing exposes local readiness without claiming dialogue citat
   ]);
   assert.match(page, /索引中|已索引 · 可检索|本地索引已就绪/);
   assert.match(page, /indexing_started|indexing_completed/);
-  assert.match(page, /明确询问资料时可在对话中核对并点击引用来源/);
+  assert.match(page, /本地 BGE-M3 已就绪|自动使用全文检索/);
   assert.match(api, /searchKnowledge|KnowledgeSearchResult|context_window/);
+});
+
+test("knowledge formats and local vectors expose capability and fallback honestly", async () => {
+  const [page, api] = await Promise.all([
+    readFile(new URL("../src/components/FilesPage.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/api.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(page, /txt.*md.*pdf.*docx/i);
+  assert.match(page, /建立失败.*自动退回全文检索/);
+  assert.match(page, /不上传正文|不把正文发往远程向量服务/);
+  assert.match(api, /getKnowledgeEmbeddingStatus|buildKnowledgeEmbedding|retrieval_mode/);
 });
 
 test("knowledge citations are clickable and backed by the verified source endpoint", async () => {

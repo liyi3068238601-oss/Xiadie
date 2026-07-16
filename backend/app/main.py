@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 
 from . import (
     archivist, archivist_worker, companion_state, db, entities, episode_consolidator, episode_summary_service,
-    episodes, knowledge, knowledge_context, knowledge_management, knowledge_search, knowledge_worker, llm, lore, memory, memory_conflicts, saga_consolidator, saga_lifecycle, saga_summary,
+    episodes, knowledge, knowledge_context, knowledge_embeddings, knowledge_management, knowledge_search, knowledge_worker, llm, lore, memory, memory_conflicts, saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, slow_lifecycle,
 )
 from . import memory_observer_service
@@ -638,18 +638,47 @@ class KnowledgeSearchIn(BaseModel):
     limit: int = Field(default=6, ge=1, le=12)
     context_window: int = Field(default=0, ge=0, le=1)
     max_chars: int = Field(default=4000, ge=256, le=8000)
+    mode: str = Field(default="auto", pattern="^(auto|fts|vector)$")
 
 
 @app.post("/api/knowledge/search")
 def search_knowledge(body: KnowledgeSearchIn) -> dict:
     try:
-        return knowledge_search.search(
+        return knowledge_search.hybrid_search(
             body.query, collection_id=body.collection_id, document_ids=body.document_ids,
             tags=body.tags,
             limit=body.limit, context_window=body.context_window, max_chars=body.max_chars,
+            mode=body.mode,
         )
     except knowledge_search.SearchError as error:
         raise HTTPException(400, str(error)) from error
+
+
+@app.get("/api/knowledge/embedding/status")
+def get_knowledge_embedding_status() -> dict:
+    return knowledge_embeddings.availability()
+
+
+@app.post("/api/knowledge/documents/{document_id}/embedding", status_code=202)
+def build_knowledge_document_embedding(document_id: str) -> dict:
+    status = knowledge_embeddings.availability()
+    if not status["available"]:
+        raise HTTPException(409, "本地 BGE-M3 模型或运行依赖不可用，FTS 仍可正常检索")
+    run = knowledge_embeddings.enqueue(document_id)
+    if not run:
+        conn = db.connect()
+        try:
+            document = conn.execute("SELECT status FROM knowledge_documents WHERE id=?", (document_id,)).fetchone()
+        finally:
+            conn.close()
+        if not document:
+            raise HTTPException(404, "知识文档不存在")
+        raise HTTPException(409, "文档尚未完成本地词法索引或向量任务已存在")
+    knowledge_worker.wake_worker()
+    return {key: run.get(key) for key in (
+        "id", "document_id", "provider_id", "model", "embedding_version", "status",
+        "attempt_count", "max_attempts", "vector_count", "error_code", "created_at", "updated_at",
+    )}
 
 
 @app.post("/api/knowledge/documents/import")

@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import os
 import re
 import secrets
+import zipfile
 from contextlib import suppress
 from pathlib import Path
 
@@ -21,6 +23,11 @@ PARSED_DIR = Path(db.DATA_DIR) / "knowledge" / "parsed"
 ALLOWED_MIME_TYPES = {
     ".txt": frozenset({"text/plain", "application/octet-stream"}),
     ".md": frozenset({"text/markdown", "text/plain", "application/octet-stream"}),
+    ".pdf": frozenset({"application/pdf", "application/octet-stream"}),
+    ".docx": frozenset({
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/octet-stream",
+    }),
 }
 DOCUMENT_TRANSITIONS = {
     "staged": frozenset({"queued", "delete_pending"}),
@@ -49,7 +56,7 @@ def validate_file(filename: str, mime_type: str, data: bytes) -> dict:
     name = _validate_filename(filename)
     extension = Path(name).suffix.casefold()
     if extension not in ALLOWED_MIME_TYPES:
-        raise KnowledgeImportError("file_type_unsupported", "目前只支持 UTF-8 的 TXT 和 Markdown 文件")
+        raise KnowledgeImportError("file_type_unsupported", "目前只支持 TXT、Markdown、PDF 和 DOCX 文件")
     mime = (mime_type or "application/octet-stream").split(";", 1)[0].strip().casefold()
     if mime not in ALLOWED_MIME_TYPES[extension]:
         raise KnowledgeImportError("mime_type_mismatch", "文件类型与声明的 MIME 不一致")
@@ -57,26 +64,33 @@ def validate_file(filename: str, mime_type: str, data: bytes) -> dict:
         raise KnowledgeImportError("file_empty", "不能导入空文件")
     if len(data) > MAX_FILE_BYTES:
         raise KnowledgeImportError("file_too_large", "文件超过 10 MiB 限制")
-    if data.startswith((b"\xff\xfe", b"\xfe\xff", b"\xff\xfe\x00\x00", b"\x00\x00\xfe\xff")):
+    if extension == ".pdf":
+        if not data.startswith(b"%PDF-"):
+            raise KnowledgeImportError("pdf_signature_invalid", "PDF 文件头无效")
+        decoded_chars = 0
+    elif extension == ".docx":
+        _validate_docx_archive(data)
+        decoded_chars = 0
+    elif data.startswith((b"\xff\xfe", b"\xfe\xff", b"\xff\xfe\x00\x00", b"\x00\x00\xfe\xff")):
         raise KnowledgeImportError("encoding_unsupported", "目前只支持 UTF-8 或 UTF-8 BOM 编码")
-    if b"\x00" in data:
+    elif b"\x00" in data:
         raise KnowledgeImportError("binary_content_rejected", "检测到二进制内容，不能作为文本知识导入")
-    try:
-        text = data.decode("utf-8-sig", errors="strict")
-    except UnicodeDecodeError as error:
-        raise KnowledgeImportError(
-            "encoding_unsupported", "文件不是有效的 UTF-8 文本"
-        ) from error
-    if len(text) > MAX_DECODED_CHARS:
-        raise KnowledgeImportError("decoded_text_too_large", "解码后的文本超过 2,000,000 字符限制")
-    if _control_ratio(text) > 0.02:
-        raise KnowledgeImportError("binary_content_rejected", "文件包含过多不可见控制字符")
+    else:
+        try:
+            text = data.decode("utf-8-sig", errors="strict")
+        except UnicodeDecodeError as error:
+            raise KnowledgeImportError("encoding_unsupported", "文件不是有效的 UTF-8 文本") from error
+        if len(text) > MAX_DECODED_CHARS:
+            raise KnowledgeImportError("decoded_text_too_large", "解码后的文本超过 2,000,000 字符限制")
+        if _control_ratio(text) > 0.02:
+            raise KnowledgeImportError("binary_content_rejected", "文件包含过多不可见控制字符")
+        decoded_chars = len(text)
     return {
         "original_name": name,
         "extension": extension,
         "mime_type": mime,
         "size_bytes": len(data),
-        "decoded_chars": len(text),
+        "decoded_chars": decoded_chars,
         "content_sha256": hashlib.sha256(data).hexdigest(),
     }
 
@@ -203,6 +217,12 @@ def list_documents(*, collection_id: str | None = None, status: str | None = Non
                 " WHERE document_id=? ORDER BY created_at DESC,id DESC LIMIT 1", (item["id"],),
             ).fetchone()
             item["latest_deletion"] = dict(deletion) if deletion else None
+            embedding = conn.execute(
+                "SELECT id,status,attempt_count,max_attempts,vector_count,error_code,created_at,updated_at"
+                " FROM knowledge_embedding_runs WHERE document_id=?"
+                " ORDER BY created_at DESC,id DESC LIMIT 1", (item["id"],),
+            ).fetchone()
+            item["latest_embedding"] = dict(embedding) if embedding else None
             documents.append(item)
         return documents
     finally:
@@ -251,13 +271,30 @@ def _control_ratio(text: str) -> float:
 
 
 def _storage_path(storage_key: str) -> Path:
-    if not re.fullmatch(r"[0-9a-f]{32}\.(?:txt|md)", storage_key):
+    if not re.fullmatch(r"[0-9a-f]{32}\.(?:txt|md|pdf|docx)", storage_key):
         raise KnowledgeImportError("storage_key_invalid", "知识文件存储键无效")
     root = STORAGE_DIR.resolve()
     path = (root / storage_key).resolve()
     if path.parent != root:
         raise KnowledgeImportError("storage_key_invalid", "知识文件路径越界")
     return path
+
+
+def _validate_docx_archive(data: bytes) -> None:
+    try:
+        with zipfile.ZipFile(io.BytesIO(data)) as archive:
+            infos = archive.infolist()
+            names = {item.filename for item in infos}
+            total = sum(item.file_size for item in infos)
+            compressed = sum(max(1, item.compress_size) for item in infos)
+            if (
+                len(infos) > 2_000 or total > 50 * 1024 * 1024 or total / max(1, compressed) > 200
+                or "[Content_Types].xml" not in names or "word/document.xml" not in names
+                or any(name.startswith("../") or "/../" in name or name.startswith("/") for name in names)
+            ):
+                raise ValueError("unsafe_docx")
+    except (zipfile.BadZipFile, ValueError) as error:
+        raise KnowledgeImportError("docx_archive_invalid", "DOCX 结构无效或解压规模不安全") from error
 
 
 def _atomic_write(path: Path, data: bytes) -> None:

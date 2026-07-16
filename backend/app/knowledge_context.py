@@ -58,7 +58,7 @@ def prepare(user_text: str, *, lore_text: str = "", memory_text: str = "") -> di
     if not query:
         return None
     try:
-        found = knowledge_search.search(
+        found = knowledge_search.hybrid_search(
             query, limit=MAX_INJECTED_RESULTS, context_window=1,
             max_chars=knowledge_search.MAX_RESULT_CHARS,
         )

@@ -197,6 +197,76 @@ def search(
     }
 
 
+def hybrid_search(
+    query: str, *, collection_id: str | None = None,
+    document_ids: list[str] | None = None, tags: list[str] | None = None,
+    limit: int = 6, context_window: int = 0, max_chars: int = 4_000,
+    mode: str = "auto",
+) -> dict:
+    """RRF 合并本地 FTS 与 dense；向量不可用/失败时 FTS 仍完整工作。"""
+    if mode not in {"auto", "fts", "vector"}:
+        raise SearchError("knowledge_search_mode_invalid", "检索模式无效")
+    value = str(query or "").strip()
+    if not value or len(value) > MAX_QUERY_CHARS:
+        raise SearchError("knowledge_query_invalid", "检索词不能为空且最大 256 字符")
+    # Vector-only requests still obey the same filter and textual-input contract as FTS.
+    filters = list(dict.fromkeys(document_ids or []))
+    if len(filters) > MAX_DOCUMENT_FILTERS:
+        raise SearchError("knowledge_document_filter_too_large", "文档筛选最大 20 项")
+    tag_filters = [str(tag).strip() for tag in dict.fromkeys(tags or []) if str(tag).strip()]
+    if len(tag_filters) > MAX_TAG_FILTERS or any(len(tag) > 40 for tag in tag_filters):
+        raise SearchError("knowledge_tag_filter_invalid", "标签筛选最大 10 项且每项最大 40 字符")
+    lexical = {"results": [], "result_count": 0}
+    if mode != "vector":
+        lexical = search(
+            query, collection_id=collection_id, document_ids=document_ids, tags=tags,
+            limit=MAX_LIMIT, context_window=context_window, max_chars=MAX_RESULT_CHARS,
+        )
+    vector = {"results": [], "available": False, "error_code": None}
+    if mode != "fts":
+        try:
+            from . import knowledge_embeddings
+            vector = knowledge_embeddings.search(
+                query, collection_id=collection_id, document_ids=document_ids,
+                tags=tags, limit=MAX_LIMIT,
+            )
+        except Exception:  # noqa: BLE001 - 向量旁路不能使 FTS 热路径失败
+            vector = {"results": [], "available": False, "error_code": "embedding_search_failed"}
+    scores: dict[str, float] = {}
+    items: dict[str, dict] = {}
+    for results in (lexical["results"], vector["results"]):
+        for rank, item in enumerate(results, start=1):
+            scores[item["chunk_id"]] = scores.get(item["chunk_id"], 0.0) + 1.0 / (60 + rank)
+            if item["chunk_id"] not in items or item.get("match_type") != "vector":
+                items[item["chunk_id"]] = dict(item)
+    ordered = sorted(items.values(), key=lambda item: (-scores[item["chunk_id"]], item["chunk_id"]))
+    selected: list[dict] = []
+    used_chars = 0
+    for item in ordered:
+        if len(selected) >= max(1, min(int(limit), MAX_LIMIT)):
+            break
+        if used_chars + len(item["content"]) > max(256, min(int(max_chars), MAX_RESULT_CHARS)):
+            continue
+        item["fusion_score"] = scores[item["chunk_id"]]
+        if item["chunk_id"] in {row["chunk_id"] for row in lexical["results"]} and any(
+            row["chunk_id"] == item["chunk_id"] for row in vector["results"]
+        ):
+            item["match_type"] = "hybrid"
+        selected.append(item)
+        used_chars += len(item["content"])
+    retrieval_mode = "fts"
+    if mode == "vector":
+        retrieval_mode = "vector" if vector["available"] else "fts_unavailable"
+    elif vector["available"]:
+        retrieval_mode = "hybrid"
+    return {
+        "query": value, "results": selected, "result_count": len(selected),
+        "used_chars": used_chars, "context_window": context_window,
+        "retrieval_mode": retrieval_mode, "vector_available": bool(vector["available"]),
+        "vector_error_code": vector.get("error_code"),
+    }
+
+
 def _match_query(query: str) -> str:
     terms = terms_for_text(query).split()
     if not terms:

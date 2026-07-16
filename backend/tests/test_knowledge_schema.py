@@ -13,7 +13,7 @@ def test_schema_28_has_separate_knowledge_namespace_and_default_collection():
     try:
         assert conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
-        ).fetchone()["value"] == "33"
+        ).fetchone()["value"] == "34"
         tables = {
             row["name"] for row in conn.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'knowledge_%'"
@@ -195,5 +195,38 @@ def test_schema_30_adds_chunks_without_rewriting_existing_parsed_rows():
         assert conn.execute(
             "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='knowledge_chunks'"
         ).fetchone()[0] == 1
+    finally:
+        conn.close()
+
+
+def test_schema_34_separates_vector_versions_and_keeps_events_body_free():
+    conn = db.connect()
+    try:
+        tables = {
+            row["name"] for row in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'knowledge_embedding%'"
+            )
+        }
+        assert {"knowledge_embedding_runs", "knowledge_embedding_events"} <= tables
+        assert conn.execute(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='knowledge_chunk_embeddings'"
+        ).fetchone()[0] == 1
+        document_columns = {
+            row["name"] for row in conn.execute("PRAGMA table_info(knowledge_documents)")
+        }
+        assert {
+            "embedding_version", "embedding_indexed_at", "embedding_dimension",
+            "embedding_error_code",
+        } <= document_columns
+        event_columns = {
+            row["name"] for row in conn.execute("PRAGMA table_info(knowledge_embedding_events)")
+        }
+        assert not ({"content", "query", "original_name", "path", "raw_output"} & event_columns)
+        vector_fks = {
+            (row["table"], row["on_delete"]) for row in conn.execute(
+                "PRAGMA foreign_key_list(knowledge_chunk_embeddings)"
+            )
+        }
+        assert {("knowledge_chunks", "CASCADE"), ("knowledge_documents", "CASCADE")} <= vector_fks
     finally:
         conn.close()

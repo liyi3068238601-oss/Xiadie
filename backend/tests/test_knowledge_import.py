@@ -77,7 +77,7 @@ def test_duplicate_hash_is_idempotent_but_same_name_different_content_is_allowed
 @pytest.mark.parametrize(
     ("filename", "mime", "raw", "code"),
     [
-        ("bad.pdf", "application/pdf", b"text", "file_type_unsupported"),
+        ("bad.pdf", "application/pdf", b"text", "pdf_signature_invalid"),
         ("bad.md", "application/pdf", b"text", "mime_type_mismatch"),
         ("bad.txt", "text/plain", b"\xff\xfeA\x00", "encoding_unsupported"),
         ("bad.txt", "text/plain", b"a\x00b", "binary_content_rejected"),

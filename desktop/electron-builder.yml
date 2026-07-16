@@ -19,6 +19,8 @@ extraResources:
     to: frontend
   - from: ../backend/dist/xiadie-backend   # PyInstaller 冻结的后端 → resources/backend/
     to: backend
+  - from: model-stage/bge-m3               # build-windows.ps1 可选暂存的本地 BGE-M3
+    to: models/bge-m3
 
 asar: true
 

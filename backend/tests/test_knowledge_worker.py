@@ -73,7 +73,7 @@ def test_worker_parses_to_private_artifact_then_queues_chunking_without_indexing
 
     assert document["status"] == "parsing"
     assert document["parsed_at"] is not None
-    assert document["parser_version"] == knowledge_parser.PARSER_VERSION
+    assert document["parser_version"] == knowledge_parser.parser_version_for(".md")
     assert document["parse_heading_count"] == 2
     assert document["indexed_at"] is None
     assert run["status"] == "queued" and run["current_stage"] == "chunking"
@@ -216,7 +216,7 @@ def test_schema_29_parse_artifact_is_metadata_only_and_cascades():
     try:
         assert conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
-        ).fetchone()["value"] == "33"
+        ).fetchone()["value"] == "34"
         columns = {
             row["name"] for row in conn.execute("PRAGMA table_info(knowledge_parse_artifacts)")
         }

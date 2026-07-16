@@ -16,6 +16,8 @@ backend/build/
 backend/dist/
 backend/.venv-build/
 dist-installer/
+desktop/model-stage/bge-m3/*
+!desktop/model-stage/bge-m3/README.txt
 
 # Live2D 运行时与模型（体积大 / 授权单独管理，见 NOTICE.md）
 # 如需纳入版本库，注释掉下面两行

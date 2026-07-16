@@ -232,6 +232,10 @@ export interface KnowledgeDocument {
     "delete_pending" | "delete_failed";
   sensitivity: "normal" | "sensitive";
   embedding_mode: "none" | "local" | "remote";
+  embedding_version?: string | null;
+  embedding_indexed_at?: number | null;
+  embedding_dimension?: number | null;
+  embedding_error_code?: string | null;
   error_code?: string | null;
   parser_version?: string | null;
   parsed_at?: number | null;
@@ -246,8 +250,31 @@ export interface KnowledgeDocument {
   indexed_at?: number | null;
   latest_run?: KnowledgeImportRun | null;
   latest_deletion?: KnowledgeDeletionRun | null;
+  latest_embedding?: KnowledgeEmbeddingRun | null;
   created_at: number;
   updated_at: number;
+}
+export interface KnowledgeEmbeddingRun {
+  id: string;
+  status: "queued" | "running" | "completed" | "failed" | "skipped";
+  attempt_count: number;
+  max_attempts: number;
+  vector_count: number;
+  error_code?: string | null;
+  created_at: number;
+  updated_at: number;
+}
+export interface KnowledgeEmbeddingStatus {
+  available: boolean;
+  provider_id: string;
+  model: string;
+  embedding_version: string;
+  model_sha256: string;
+  dimension: number;
+  local_only: boolean;
+  model_path_configured: boolean;
+  dependencies_available: boolean;
+  remote_requires_per_request_consent: boolean;
 }
 export interface KnowledgeCollection {
   id: string;
@@ -339,9 +366,11 @@ export interface KnowledgeSearchResult {
   char_end: number;
   page_start?: number | null;
   page_end?: number | null;
-  match_type: "primary" | "context";
+  match_type: "primary" | "context" | "vector" | "hybrid";
   context_of?: string | null;
   rank?: number | null;
+  vector_score?: number | null;
+  fusion_score?: number | null;
 }
 export interface KnowledgeSearchResponse {
   query: string;
@@ -349,6 +378,9 @@ export interface KnowledgeSearchResponse {
   result_count: number;
   used_chars: number;
   context_window: number;
+  retrieval_mode?: "fts" | "vector" | "hybrid" | "fts_unavailable";
+  vector_available?: boolean;
+  vector_error_code?: string | null;
 }
 export interface MemoryCandidate {
   id: string;
@@ -633,7 +665,10 @@ export const listKnowledgeRetrievals = (limit = 30) =>
 export async function importKnowledgeFile(
   file: File, sensitivity: "normal" | "sensitive" = "normal",
 ): Promise<KnowledgeImportResult> {
-  const fallbackMime = file.name.toLowerCase().endsWith(".md") ? "text/markdown" : "text/plain";
+  const lower = file.name.toLowerCase();
+  const fallbackMime = lower.endsWith(".md") ? "text/markdown" : lower.endsWith(".pdf")
+    ? "application/pdf" : lower.endsWith(".docx")
+      ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" : "text/plain";
   const response = await fetch(API_BASE + "/api/knowledge/documents/import", {
     method: "POST",
     headers: requestHeaders({ headers: {
@@ -655,6 +690,10 @@ export const getKnowledgeImportRun = (id: string) =>
   j<KnowledgeImportRun>(`/api/knowledge/import-runs/${id}`);
 export const cancelKnowledgeImportRun = (id: string) =>
   j<KnowledgeImportRun>(`/api/knowledge/import-runs/${id}/cancel`, { method: "POST" });
+export const getKnowledgeEmbeddingStatus = () =>
+  j<KnowledgeEmbeddingStatus>("/api/knowledge/embedding/status");
+export const buildKnowledgeEmbedding = (id: string) =>
+  j<KnowledgeEmbeddingRun>(`/api/knowledge/documents/${id}/embedding`, { method: "POST" });
 export const searchKnowledge = (query: string, options: Record<string, unknown> = {}) =>
   j<KnowledgeSearchResponse>("/api/knowledge/search", {
     method: "POST", body: JSON.stringify({ query, ...options }),

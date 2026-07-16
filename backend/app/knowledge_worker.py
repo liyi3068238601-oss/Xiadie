@@ -9,7 +9,7 @@ import secrets
 from contextlib import suppress
 from pathlib import Path
 
-from . import db, knowledge, knowledge_chunker, knowledge_management, knowledge_parser, knowledge_search
+from . import db, knowledge, knowledge_chunker, knowledge_embeddings, knowledge_management, knowledge_parser, knowledge_search
 
 RUNNING_STALE_SECONDS = 5 * 60
 FIRST_RETRY_DELAY_SECONDS = 30
@@ -81,6 +81,10 @@ async def process_due(*, limit: int = 3) -> int:
             continue
         row = _claim_next()
         if not row:
+            embedded = await asyncio.to_thread(knowledge_embeddings.process_due, limit=1)
+            if embedded:
+                count += embedded
+                continue
             break
         await _process_claimed(row)
         count += 1
@@ -95,6 +99,7 @@ async def _process_claimed(row: dict) -> None:
             await asyncio.to_thread(_chunk_run, row)
         elif row["current_stage"] == "indexing":
             await asyncio.to_thread(_index_run, row)
+            knowledge_embeddings.enqueue(row["document_id"])
         else:
             await asyncio.to_thread(_parse_run, row)
         # 删除/取消可能在阶段计算与提交之间到达；阶段函数使用条件 UPDATE 拒绝覆盖
@@ -110,6 +115,8 @@ async def _process_claimed(row: dict) -> None:
     except knowledge.KnowledgeImportError as error:
         _mark_failure(row, error.code)
     except knowledge_search.SearchError as error:
+        _mark_failure(row, error.code)
+    except knowledge_parser.ParserError as error:
         _mark_failure(row, error.code)
     except (OSError, UnicodeError, ValueError):
         _mark_failure(row, _stage_failure_code(row["current_stage"]))
@@ -208,23 +215,23 @@ def _parse_run(row: dict) -> None:
             conn.execute(
                 "INSERT INTO knowledge_parse_artifacts("
                 "document_id,artifact_key,parser_version,normalized_sha256,char_count,line_count,"
-                "heading_count,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)"
+                "heading_count,page_count,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)"
                 " ON CONFLICT(document_id) DO UPDATE SET artifact_key=excluded.artifact_key,"
                 "parser_version=excluded.parser_version,normalized_sha256=excluded.normalized_sha256,"
                 "char_count=excluded.char_count,line_count=excluded.line_count,"
-                "heading_count=excluded.heading_count,updated_at=excluded.updated_at",
+                "heading_count=excluded.heading_count,page_count=excluded.page_count,updated_at=excluded.updated_at",
                 (
                     document["id"], artifact_key, parsed["parser_version"],
                     parsed["normalized_sha256"], parsed["char_count"], parsed["line_count"],
-                    parsed["heading_count"], now, now,
+                    parsed["heading_count"], parsed["page_count"], now, now,
                 ),
             )
             conn.execute(
                 "UPDATE knowledge_documents SET parser_version=?,parsed_at=?,parse_char_count=?,"
-                "parse_line_count=?,parse_heading_count=?,error_code=NULL,updated_at=? WHERE id=?",
+                "parse_line_count=?,parse_heading_count=?,page_count=?,error_code=NULL,updated_at=? WHERE id=?",
                 (
                     parsed["parser_version"], now, parsed["char_count"], parsed["line_count"],
-                    parsed["heading_count"], now, document["id"],
+                    parsed["heading_count"], parsed["page_count"], now, document["id"],
                 ),
             )
             conn.execute(
@@ -258,8 +265,11 @@ def _chunk_run(row: dict) -> None:
         return
     try:
         payload = json.loads(artifact_path_for(artifact).read_text("utf-8"))
+        # Re-parse the immutable original, not the normalized artifact.  Text formats
+        # happen to survive the old round-trip, but PDF/DOCX require their container
+        # bytes and would otherwise be reported as corrupt during chunking.
         reparsed = knowledge_parser.parse(
-            payload.get("normalized_text", "").encode("utf-8"),
+            knowledge.storage_path_for(document).read_bytes(),
             extension=document["extension"],
         )
         chunks = knowledge_chunker.chunk_artifact(
@@ -267,15 +277,20 @@ def _chunk_run(row: dict) -> None:
         )
         if (
             payload.get("parser_version") != artifact["parser_version"]
-            or payload.get("parser_version") != knowledge_parser.PARSER_VERSION
+            or payload.get("parser_version") != knowledge_parser.parser_version_for(document["extension"])
             or payload.get("normalized_sha256") != artifact["normalized_sha256"]
             or payload.get("char_count") != artifact["char_count"]
             or len(payload.get("headings", [])) != artifact["heading_count"]
             or payload.get("headings") != reparsed["headings"]
+            or payload.get("page_count", 0) != artifact["page_count"]
+            or payload.get("page_count", 0) != reparsed["page_count"]
+            or payload.get("page_spans", []) != reparsed["page_spans"]
         ):
             raise ValueError("parse_artifact_invalid")
     except knowledge_chunker.ChunkingCancelled:
         raise
+    except knowledge_parser.ParserError as error:
+        raise knowledge.KnowledgeImportError(error.code, str(error)) from error
     except (OSError, UnicodeError, json.JSONDecodeError, ValueError) as error:
         raise knowledge.KnowledgeImportError(
             "parse_artifact_invalid", "解析产物校验失败"
@@ -539,7 +554,7 @@ def _cancel_locked(conn, row, now: float) -> None:
     conn.execute(
         "UPDATE knowledge_documents SET parser_version=NULL,parsed_at=NULL,parse_char_count=0,"
         "parse_line_count=0,parse_heading_count=0,chunker_version=NULL,chunked_at=NULL,"
-        "chunk_count=0 WHERE id=?", (row["document_id"],),
+        "page_count=0,chunk_count=0 WHERE id=?", (row["document_id"],),
     )
     document = conn.execute(
         "SELECT status FROM knowledge_documents WHERE id=?", (row["document_id"],),

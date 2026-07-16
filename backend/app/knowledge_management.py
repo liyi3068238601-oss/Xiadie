@@ -5,7 +5,7 @@ import json
 import re
 from pathlib import Path
 
-from . import db, knowledge, knowledge_search
+from . import db, knowledge, knowledge_embeddings, knowledge_search
 
 MAX_TAGS = 10
 MAX_TAG_CHARS = 40
@@ -53,6 +53,7 @@ def enqueue_reindex(document_id: str) -> dict | None:
         knowledge.assert_document_transition(row["status"], "queued")
         run_id, now = db.new_id(), db.now()
         knowledge_search.clear_document_index_locked(conn, document_id)
+        knowledge_embeddings.clear_document_locked(conn, document_id)
         conn.execute("DELETE FROM knowledge_chunks WHERE document_id=?", (document_id,))
         conn.execute(
             "UPDATE knowledge_documents SET status='queued',index_version=NULL,indexed_at=NULL,"
@@ -95,6 +96,7 @@ def enqueue_delete(document_id: str) -> dict | None:
             knowledge.assert_document_transition(row["status"], "delete_pending")
         now, run_id = db.now(), db.new_id()
         knowledge_search.clear_document_index_locked(conn, document_id)
+        knowledge_embeddings.clear_document_locked(conn, document_id)
         conn.execute(
             "UPDATE knowledge_documents SET status='delete_pending',index_version=NULL,indexed_at=NULL,"
             "error_code=NULL,updated_at=? WHERE id=?", (now, document_id),
@@ -278,6 +280,7 @@ def _delete_claimed(run: dict) -> None:
         if not current or current["status"] != "delete_pending":
             raise knowledge.KnowledgeImportError("delete_source_changed", "删除期间文档状态变化")
         knowledge_search.clear_document_index_locked(conn, run["document_id"])
+        knowledge_embeddings.clear_document_locked(conn, run["document_id"])
         conn.execute("DELETE FROM knowledge_chunks WHERE document_id=?", (run["document_id"],))
         conn.execute("DELETE FROM knowledge_parse_artifacts WHERE document_id=?", (run["document_id"],))
         conn.execute("DELETE FROM knowledge_documents WHERE id=?", (run["document_id"],))

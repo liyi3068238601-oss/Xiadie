@@ -47,6 +47,7 @@ export function FilesPage() {
   const [tagDraft, setTagDraft] = useState("");
   const [actionBusy, setActionBusy] = useState<string | null>(null);
   const [audits, setAudits] = useState<api.KnowledgeRetrievalAudit[] | null>(null);
+  const [embeddingStatus, setEmbeddingStatus] = useState<api.KnowledgeEmbeddingStatus | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const refresh = () => api.listKnowledgeDocuments({
@@ -56,13 +57,15 @@ export function FilesPage() {
   }).then(setDocuments);
   useEffect(() => {
     api.listKnowledgeCollections().then(setCollections).catch(() => toast("知识库集合加载失败"));
+    api.getKnowledgeEmbeddingStatus().then(setEmbeddingStatus).catch(() => {});
   }, []);
   useEffect(() => {
     const timer = window.setTimeout(() => refresh().catch(() => toast("知识文档列表加载失败")), 220);
     return () => window.clearTimeout(timer);
   }, [search, collectionFilter, statusFilter]);
   const hasActiveProcessing = documents.some((document) =>
-    ["queued", "parsing", "delete_pending"].includes(document.status)
+    ["queued", "parsing", "delete_pending"].includes(document.status) ||
+    ["queued", "running"].includes(document.latest_embedding?.status || "")
   );
   useEffect(() => {
     if (!hasActiveProcessing) return;
@@ -72,8 +75,8 @@ export function FilesPage() {
 
   function choose(file: File) {
     const extension = file.name.toLowerCase().split(".").pop();
-    if (!extension || !["txt", "md"].includes(extension)) {
-      toast("目前只支持 UTF-8 的 TXT 和 Markdown 文件");
+    if (!extension || !["txt", "md", "pdf", "docx"].includes(extension)) {
+      toast("目前支持 UTF-8 TXT、Markdown、PDF 和 DOCX 文件");
       return;
     }
     if (file.size > MAX_FILE_BYTES) {
@@ -176,6 +179,19 @@ export function FilesPage() {
     }
   }
 
+  async function buildEmbedding(document: api.KnowledgeDocument) {
+    setActionBusy(`embedding:${document.id}`);
+    try {
+      await api.buildKnowledgeEmbedding(document.id);
+      toast("已开始建立本地语义索引，全文检索仍可正常使用");
+      await refresh();
+    } catch (error: any) {
+      toast(error.message || "本地语义索引启动失败");
+    } finally {
+      setActionBusy(null);
+    }
+  }
+
   async function deleteDocument(document: api.KnowledgeDocument) {
     const confirmed = window.confirm(
       `确定删除「${document.original_name}」吗？\n\n将清除遐蝶应用内的原文副本、切片、索引和解析产物，立即停止召回。应用外的原文件或备份不会同步删除。`,
@@ -224,7 +240,12 @@ export function FilesPage() {
     <div className="page">
       <h1>文件与知识</h1>
       <div className="sub">
-        把外部资料交给遐蝶作为可引用知识。当前支持安全接收、解析、稳定切片和本地检索 TXT/Markdown；明确询问资料时可在对话中核对并点击引用来源。
+        把外部资料交给遐蝶作为可引用知识。支持 TXT、Markdown、PDF、DOCX 的本地解析、稳定切片与混合检索；PDF 引用保留真实页码，扫描图片暂不做 OCR。
+      </div>
+      <div className="sub" style={{ marginBottom: 16 }}>
+        语义索引：{embeddingStatus?.available
+          ? `本地 BGE-M3 已就绪（${embeddingStatus.dimension} 维，不上传正文）`
+          : "本地 BGE-M3 未就绪，将自动使用全文检索"}
       </div>
 
       {/* 拖拽 / 选择区 */}
@@ -254,7 +275,7 @@ export function FilesPage() {
           把文件拖到这里，或点击选择
         </div>
         <div style={{ fontSize: 12, color: "var(--text-dim)" }}>
-          支持 UTF-8 TXT、Markdown · 单文件不超过 10 MiB
+          支持 UTF-8 TXT、Markdown、PDF、DOCX · 单文件不超过 10 MiB
         </div>
         <div className="row" style={{ justifyContent: "center", marginTop: 16 }}>
           <button
@@ -270,7 +291,7 @@ export function FilesPage() {
         <input
           ref={inputRef}
           type="file"
-          accept=".txt,.md,text/plain,text/markdown"
+          accept=".txt,.md,.pdf,.docx,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
           onChange={onPick}
           style={{ display: "none" }}
         />
@@ -282,7 +303,7 @@ export function FilesPage() {
           <div style={{ margin: "8px 0", fontWeight: 600 }}>{pending.name}</div>
           <div className="sub">
             类型：{pending.type || "由后端检测"} · 大小：{formatBytes(pending.size)}<br />
-            数据流向：仅复制到遐蝶本地应用数据目录；本阶段不调用远程模型、不生成 Embedding、不扫描原目录。
+            数据流向：仅复制到遐蝶本地应用数据目录；解析与 BGE-M3 语义索引均在本机完成，不扫描原目录、不把正文发往远程向量服务。
           </div>
           <label style={{ display: "flex", gap: 8, alignItems: "center", margin: "14px 0" }}>
             <input type="checkbox" checked={sensitive} onChange={(event) => setSensitive(event.target.checked)} />
@@ -384,6 +405,17 @@ export function FilesPage() {
               <div className="sub">稳定切片：{document.chunk_count} 段；保留标题、段落、行号与字符范围；
                 {document.indexed_at ? "本地索引已就绪" : "尚未索引"}</div>
             )}
+            {document.status === "indexed" && (
+              <div className="sub">
+                语义索引：{document.embedding_indexed_at
+                  ? `本地 BGE-M3 已就绪 · ${document.embedding_dimension} 维 · ${document.latest_embedding?.vector_count || document.chunk_count} 条向量`
+                  : ["queued", "running"].includes(document.latest_embedding?.status || "")
+                    ? "正在本地建立，期间继续使用全文检索"
+                    : document.embedding_error_code
+                      ? `建立失败（${document.embedding_error_code}），已自动退回全文检索`
+                      : "尚未建立，当前使用全文检索"}
+              </div>
+            )}
             {runDetails[document.id] && (
               <div style={{ marginTop: 8 }}>
                 {runDetails[document.id].events?.map((event) => (
@@ -401,6 +433,7 @@ export function FilesPage() {
               <div>完整内容指纹：{document.content_sha256}</div>
               <div>解析器：{document.parser_version || "尚未解析"} · 切片器：{document.chunker_version || "尚未切片"}</div>
               <div>索引版本：{document.index_version || "尚未索引"} · 导入时间：{new Date(document.created_at * 1000).toLocaleString("zh-CN")}</div>
+              <div>语义版本：{document.embedding_version || "尚未建立"}</div>
             </details>
           </div>
           {document.sensitivity === "sensitive" && <span className="chip danger">敏感 · 仅本地</span>}
@@ -423,6 +456,11 @@ export function FilesPage() {
               onClick={() => reindexDocument(document)}>
               {document.status === "indexed" ? "重建索引" : "重试处理"}
             </button>
+          )}
+          {document.status === "indexed" && embeddingStatus?.available && !document.embedding_indexed_at &&
+            !["queued", "running"].includes(document.latest_embedding?.status || "") && (
+            <button className="btn ghost" disabled={actionBusy === `embedding:${document.id}`}
+              onClick={() => buildEmbedding(document)}>建立语义索引</button>
           )}
           {!document.status.startsWith("delete_") && (
             <button className="btn danger" disabled={actionBusy === `delete:${document.id}`}

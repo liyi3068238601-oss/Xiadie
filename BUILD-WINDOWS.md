@@ -41,6 +41,8 @@
 ```
 
 它会依次：**构建前端 → 冻结后端 → electron-builder 打成 NSIS 安装器**。
+如果仓库外层存在 `bge-m3\onnx\model_quantized.onnx`，脚本会自动把完整模型暂存并打入安装资源；安装包
+会因此增加约 543 MiB。模型文件保持 Git 忽略，不会被误提交。缺少模型时仍可打包，知识库自动使用 FTS。
 完成后安装器在：
 
 ```
@@ -68,9 +70,10 @@ cd desktop  ; npm install ; npm run dist ; cd ..
 └─ resources\
    ├─ app.asar                 # 桌面壳（main.js / preload.js）
    ├─ frontend\                # 前端静态产物（index.html / pet.html / models / libs）
-   └─ backend\
+   ├─ backend\
       ├─ xiadie-backend.exe    # 冻结的 FastAPI 后端
       └─ _internal\            # 冻结依赖
+   └─ models\bge-m3\           # 可选的本地 1024 维 dense 模型
 ```
 
 - 启动时 Electron 拉起 `resources\backend\xiadie-backend.exe`（本地 `127.0.0.1:8756`）。
@@ -82,6 +85,8 @@ cd desktop  ; npm install ; npm run dist ; cd ..
 - **杀毒 / SmartScreen 提示未签名**：未做代码签名的安装器首次运行会被 Windows SmartScreen 拦一下（"更多信息 → 仍要运行"）。正式对外发布建议购买代码签名证书，在 `electron-builder.yml` 里配置签名。
 - **后端起不来**：确认 `backend\dist\xiadie-backend\xiadie-backend.exe` 存在；排障时可把 `backend\xiadie-backend.spec` 里的 `console=False` 改成 `True` 重新冻结，能看到后端控制台日志。
 - **端口占用**：后端固定 `127.0.0.1:8756`；若被占用，改 `backend\run_frozen.py` 与 `desktop\main.js` 里的端口后重打。
+- **electron-builder 提示不能创建 symbolic link**：打开 Windows“开发者模式”，或用具备“创建符号链接”权限的
+  发布构建机再运行。该错误来自签名工具缓存解压，不代表前端、后端或 BGE-M3 资源损坏。
 
 ## ⚠️ 分发前必看：Live2D 模型授权
 
