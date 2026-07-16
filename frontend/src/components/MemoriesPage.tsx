@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as api from "./../api";
 import { toast } from "./../store";
 import { EntitiesSection } from "./EntitiesSection";
@@ -6,6 +6,7 @@ import { EpisodesSection } from "./EpisodesSection";
 import { SagasSection } from "./SagasSection";
 
 type Layer = "L0" | "L1" | "L2";
+type MemoryView = "memories" | "entities" | "episodes" | "sagas";
 
 const LAYERS: { key: Layer; name: string; desc: string }[] = [
   { key: "L0", name: "L0 核心画像", desc: "关于你的长期稳定信息：称呼、身份、重要偏好。" },
@@ -31,6 +32,10 @@ interface Props {
 }
 
 export function MemoriesPage({ onOpenSource }: Props) {
+  const [view, setView] = useState<MemoryView>("memories");
+  const [memorySearch, setMemorySearch] = useState("");
+  const [layerFilter, setLayerFilter] = useState<Layer | "all">("all");
+  const newMemoryRef = useRef<HTMLInputElement>(null);
   const [memories, setMemories] = useState<api.Memory[]>([]);
   const [candidates, setCandidates] = useState<api.MemoryCandidate[]>([]);
   const [candidateEdits, setCandidateEdits] = useState<
@@ -245,19 +250,56 @@ export function MemoriesPage({ onOpenSource }: Props) {
     }
   };
 
+  const visibleMemories = memories.filter((memory) =>
+    (layerFilter === "all" || memory.layer === layerFilter) &&
+    (!memorySearch.trim() || memory.content.toLowerCase().includes(memorySearch.trim().toLowerCase())),
+  );
+
+  const focusNewMemory = () => {
+    setView("memories");
+    window.setTimeout(() => newMemoryRef.current?.focus(), 0);
+  };
+
   return (
     <div className="page memory-page">
-      <div className="memory-page-hero">
-        <div className="memory-page-eyebrow">MEMORY ARCHIVE</div>
-        <h1>记忆与关系</h1>
-        <div className="sub">
-          遐蝶会依据人格自主选择值得留下的事；你仍可以查看来源、编辑、纠正、禁用或删除。
+      <header className="memory-page-hero">
+        <div>
+          <div className="memory-page-eyebrow">MEMORY ARCHIVE</div>
+          <h1>记忆与关系</h1>
+          <p>管理遐蝶留下的记忆、实体档案、共同经历与长期故事。</p>
         </div>
-      </div>
+        <button className="memory-hero-add" onClick={focusNewMemory}>＋ 新增记忆</button>
+      </header>
 
-      <EntitiesSection memories={memories} onOpenSource={onOpenSource} />
-      <EpisodesSection onOpenSource={onOpenSource} />
-      <SagasSection onOpenSource={onOpenSource} />
+      <nav className="memory-view-tabs glass" aria-label="记忆分类">
+        {([
+          ["memories", "❋", "记忆条目"],
+          ["entities", "◇", "实体档案"],
+          ["episodes", "◷", "共同经历"],
+          ["sagas", "✦", "长期故事"],
+        ] as [MemoryView, string, string][]).map(([key, icon, label]) => (
+          <button key={key} className={view === key ? "is-active" : ""} onClick={() => setView(key)}>
+            <span aria-hidden="true">{icon}</span>{label}
+          </button>
+        ))}
+      </nav>
+
+      {view === "entities" && <EntitiesSection memories={memories} onOpenSource={onOpenSource} />}
+      {view === "episodes" && <EpisodesSection onOpenSource={onOpenSource} />}
+      {view === "sagas" && <SagasSection onOpenSource={onOpenSource} />}
+
+      {view === "memories" && <>
+      <div className="memory-search-row glass">
+        <label><span aria-hidden="true">⌕</span><input value={memorySearch}
+          onChange={(event) => setMemorySearch(event.target.value)} placeholder="搜索记忆内容、来源…" /></label>
+        <div className="memory-layer-filters">
+          <button className={layerFilter === "all" ? "is-active" : ""} onClick={() => setLayerFilter("all")}>全部</button>
+          {LAYERS.map((layer) => <button key={layer.key}
+            className={layerFilter === layer.key ? `is-active layer-${layer.key.toLowerCase()}` : ""}
+            onClick={() => setLayerFilter(layer.key)}>{layer.key}</button>)}
+        </div>
+        <small>共 {visibleMemories.length} 条</small>
+      </div>
 
       <section className="memory-section memory-conflict-section">
         <div className="episode-heading">
@@ -306,6 +348,7 @@ export function MemoriesPage({ onOpenSource }: Props) {
         <div className="field" style={{ marginBottom: 0, flex: 1, minWidth: 200 }}>
           <label>内容</label>
           <input
+            ref={newMemoryRef}
             value={newContent}
             placeholder="记录一件遐蝶应该记住的事……"
             onChange={(e) => setNewContent(e.target.value)}
@@ -335,10 +378,14 @@ export function MemoriesPage({ onOpenSource }: Props) {
         </div>
       )}
 
+      {!error && !loading && memories.length > 0 && visibleMemories.length === 0 && (
+        <div className="empty">没有符合当前搜索和层级条件的记忆。</div>
+      )}
+
       {/* 分层展示 */}
       {!error &&
         LAYERS.map((l) => {
-          const group = memories.filter((m) => m.layer === l.key);
+          const group = visibleMemories.filter((m) => m.layer === l.key);
           if (group.length === 0) return null;
           return (
             <div key={l.key} style={{ marginTop: 22 }}>
@@ -591,6 +638,7 @@ export function MemoriesPage({ onOpenSource }: Props) {
           );
         })}
       </details>
+      </>}
     </div>
   );
 }

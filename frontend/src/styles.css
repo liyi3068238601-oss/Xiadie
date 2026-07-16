@@ -2156,3 +2156,71 @@ textarea {
   .saga-event { grid-template-columns: 1fr; }
   .saga-event small { grid-column: 1; }
 }
+
+/* 设置页：紧凑导航与分层玻璃卡片。 */
+.settings-page { max-width: 1080px; margin: 0 auto; padding: 28px 32px 48px; }
+.settings-hero { margin-bottom: 22px; }
+.settings-eyebrow { margin-bottom: 6px; color: var(--cyan); font-size: 9px; font-weight: 700; letter-spacing: .2em; }
+.settings-hero h1 { margin-bottom: 5px; color: #f4f1ff; font-size: 23px; }
+.settings-hero p { color: #9189aa; font-size: 12px; }
+.settings-tabs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; padding: 4px; margin-bottom: 22px; border-radius: 13px; box-shadow: none; }
+.settings-tabs button { min-height: 36px; border: 1px solid transparent; border-radius: 9px; color: #817997; font-size: 11px; transition: 150ms ease; }
+.settings-tabs button:hover { color: #c8c1dc; background: rgba(124,92,255,.06); }
+.settings-tabs button.is-active { border-color: rgba(157,132,255,.28); color: #f2eeff; background: linear-gradient(135deg,rgba(89,60,153,.6),rgba(55,40,105,.58)); box-shadow: 0 0 17px rgba(124,92,255,.17); }
+.settings-page .section-label { margin: 18px 2px 8px; color: #85d6f3; font-size: 9px; font-weight: 700; letter-spacing: .13em; }
+.settings-page .card, .settings-page .list-row { padding: 17px 18px; border-color: rgba(150,120,255,.16); border-radius: 13px; background: linear-gradient(135deg,rgba(45,29,80,.48),rgba(26,18,52,.42)); box-shadow: inset 0 1px 0 rgba(255,255,255,.025),0 8px 25px rgba(0,0,0,.13); }
+.settings-page .card-title { color: #ded8ed; font-size: 12px; }
+.settings-page .card-hint { color: #817992; font-size: 10px; line-height: 1.6; }
+.settings-page select, .settings-page input:not([type="checkbox"]) { min-height: 36px; padding: 8px 10px; border: 1px solid rgba(157,132,255,.2); border-radius: 9px; outline: none; color: #d9d4e7; background: rgba(13,9,29,.58); }
+.settings-page select:focus, .settings-page input:not([type="checkbox"]):focus { border-color: rgba(69,199,255,.45); box-shadow: 0 0 0 3px rgba(69,199,255,.06); }
+.settings-page select option { color: #e8e3f5; background: #17102c; }
+.settings-page .provider-row { min-height: 52px; margin-bottom: 7px; padding: 9px 12px; border-color: rgba(150,120,255,.13); border-radius: 11px; background: rgba(32,21,61,.38); }
+.settings-page .provider-row:hover { border-color: rgba(157,132,255,.28); background: rgba(48,31,82,.46); }
+.settings-page .provider-row .pname { color: #ddd7eb; font-size: 12px; }
+.settings-page .btn { min-height: 34px; padding: 7px 12px; border-radius: 8px; font-size: 10px; }
+.settings-page .model-list-editor { border-radius: 10px; background: rgba(12,8,27,.48); }
+.settings-page .model-name-chip { border-color: rgba(157,132,255,.24); color: #c9bff0; background: rgba(124,92,255,.1); }
+.settings-page .cap-tags { gap: 5px; }
+.settings-page .cap-tag { border-radius: 999px; font-size: 9px; }
+
+/* 记忆工作台：四类资料分栏，条目页保留审计与生命周期能力。 */
+.memory-page { max-width: 1080px; margin: 0 auto; padding: 27px 32px 48px; }
+.memory-page-hero { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 0 2px; margin-bottom: 18px; overflow: visible; border: 0; border-radius: 0; background: none; box-shadow: none; }
+.memory-page-hero h1 { margin: 2px 0 5px; font-size: 23px; letter-spacing: .01em; }
+.memory-page-hero p { color: #958dab; font-size: 12px; }
+.memory-page-eyebrow { margin-bottom: 4px; color: var(--cyan); font-size: 9px; }
+.memory-hero-add { padding: 8px 14px; border-radius: 9px; color: #fff; font-size: 11px; background: linear-gradient(135deg,#7659f3,#5d6fe8); box-shadow: 0 7px 20px rgba(89,65,202,.23); }
+.memory-view-tabs { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 4px; padding: 4px; margin-bottom: 11px; border-radius: 13px; box-shadow: none; }
+.memory-view-tabs button { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 38px; border: 1px solid transparent; border-radius: 9px; color: #7f7894; font-size: 11px; }
+.memory-view-tabs button span { color: #8371c6; }
+.memory-view-tabs button:hover { color: #c8c1dc; background: rgba(124,92,255,.06); }
+.memory-view-tabs button.is-active { border-color: rgba(157,132,255,.25); color: #eee9fb; background: rgba(66,43,112,.5); box-shadow: 0 0 16px rgba(124,92,255,.13); }
+.memory-view-tabs button.is-active span { color: var(--violet-soft); }
+.memory-search-row { display: grid; grid-template-columns: minmax(220px,1fr) auto auto; align-items: center; gap: 10px; padding: 7px 9px; margin-bottom: 12px; border-radius: 12px; box-shadow: none; }
+.memory-search-row > label { display: flex; align-items: center; gap: 7px; min-width: 0; padding-left: 8px; color: #756e8b; }
+.memory-page .memory-search-row input { width: 100%; min-height: 32px; padding: 5px 4px; border: 0; background: transparent; box-shadow: none; font-size: 10px; }
+.memory-layer-filters { display: flex; gap: 4px; }
+.memory-layer-filters button { min-width: 35px; padding: 5px 8px; border: 1px solid rgba(157,132,255,.12); border-radius: 7px; color: #77708b; font-size: 9px; }
+.memory-layer-filters button.is-active { color: #c9bcf8; border-color: rgba(157,132,255,.32); background: rgba(124,92,255,.12); }
+.memory-layer-filters button.layer-l1 { color: #83d4f1; border-color: rgba(69,199,255,.27); background: rgba(69,199,255,.08); }
+.memory-layer-filters button.layer-l2 { color: #bbb4cd; }
+.memory-search-row > small { color: #6d6680; font-size: 9px; white-space: nowrap; }
+.memory-page .memory-section { margin-top: 12px; padding: 15px; border-radius: 13px; }
+.memory-page .memory-add-card { margin-top: 12px; padding: 13px; border-radius: 13px; }
+.memory-page .memory-fragment-card { position: relative; padding: 13px 14px !important; border-radius: 12px; background: rgba(27,18,52,.38); }
+.memory-page .memory-fragment-card:hover { border-color: rgba(157,132,255,.3); background: rgba(42,28,72,.46); }
+.memory-page .memory-fragment-card > div:nth-child(2) { color: #d5cfe0; font-size: 11px; }
+.memory-page .memory-fragment-card .btn { min-height: 30px; padding: 5px 8px; font-size: 9px; }
+.memory-page .section-label { font-size: 12px; }
+.memory-page .sub { margin-bottom: 12px; color: #88809e; font-size: 10px; }
+.memory-page .entity-layout, .memory-page .episode-list, .memory-page .saga-list { margin-top: 0; }
+
+@media (max-width: 760px) {
+  .settings-page, .memory-page { padding: 20px 16px 36px; }
+  .settings-tabs { grid-template-columns: repeat(3,1fr); }
+  .memory-view-tabs { grid-template-columns: repeat(2,1fr); }
+  .memory-search-row { grid-template-columns: 1fr; }
+  .memory-search-row > small { justify-self: end; }
+  .memory-page-hero { align-items: flex-start; }
+  .memory-page-hero p { max-width: 260px; }
+}

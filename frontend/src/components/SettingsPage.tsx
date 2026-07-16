@@ -299,27 +299,25 @@ export function SettingsPage({ onModelChanged }: { onModelChanged: () => void })
   };
 
   return (
-    <div className="page">
-      <h1>设置</h1>
-      <div className="sub">配置模型接口、外观、记忆与权限，让遐蝶更懂你。</div>
+    <div className="page settings-page">
+      <header className="settings-hero">
+        <div className="settings-eyebrow">SETTINGS</div>
+        <h1>设置</h1>
+        <p>配置模型接口、外观、记忆与权限，让遐蝶更懂你。</p>
+      </header>
 
       {/* 顶部小标签切换 */}
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 20 }}>
+      <nav className="settings-tabs glass" aria-label="设置分类">
         {TABS.map((t) => (
           <button
             key={t.key}
-            className="btn ghost"
+            className={tab === t.key ? "is-active" : ""}
             onClick={() => setTab(t.key)}
-            style={
-              tab === t.key
-                ? { background: "rgba(124, 92, 255, 0.22)", color: "var(--text)", borderColor: "var(--glass-border-lit)" }
-                : undefined
-            }
           >
             {t.label}
           </button>
         ))}
-      </div>
+      </nav>
 
       {/* ============ 模型 API ============ */}
       {tab === "model" && (
