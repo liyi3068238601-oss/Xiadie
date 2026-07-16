@@ -141,8 +141,64 @@ export interface Memory {
   evidence_message_ids?: string[];
   source_assistant_message_id?: string | null;
   enabled: boolean;
+  cooling_since?: number | null;
+  frozen_at?: number | null;
+  last_recalled_at?: number | null;
+  recall_count?: number;
+  lifecycle_revision?: number;
+  last_archivist_evaluated_at?: number | null;
   created_at: number;
   updated_at: number;
+}
+export interface MemoryLifecycleEvent {
+  id: string;
+  from_status: string;
+  to_status: string;
+  reason_code: string;
+  source: string;
+  policy_version: string;
+  created_at: number;
+}
+export interface MemoryRelation {
+  id: string;
+  source_fragment_id: string;
+  target_fragment_id: string;
+  source_content: string;
+  target_content: string;
+  entity_name: string;
+  relation_type: "superseded" | "possible_conflict";
+  status: "active" | "resolved" | "dismissed";
+  confidence: number;
+  rule_code: string;
+  detector_version: string;
+  model_version?: string | null;
+  events: Array<{ id: string; action: string; source: string; reason_code: string; created_at: number }>;
+}
+export interface MemoryLifecycleDetail {
+  fragment: Memory;
+  evaluation: null | {
+    fragment_id: string;
+    policy_version: string;
+    score: number;
+    components: Record<string, number>;
+    contributions: Record<string, number>;
+    protection_reasons: string[];
+    dependency_flags: Record<string, boolean>;
+  };
+  events: MemoryLifecycleEvent[];
+  relations: MemoryRelation[];
+}
+export interface ArchivistRun {
+  id: string;
+  status: string;
+  trigger: string;
+  scanned_count: number;
+  transitioned_count: number;
+  conflict_count: number;
+  relation_count: number;
+  reason_code?: string | null;
+  created_at: number;
+  finished_at?: number | null;
 }
 export interface MemoryCandidate {
   id: string;
@@ -189,7 +245,7 @@ export interface MemoryEpisode {
   end_at: number;
   significance: number;
   confidence: number;
-  status: "active" | "archived" | "tombstone";
+  status: "active" | "completed" | "archived" | "tombstone";
   source: "consolidator_auto" | "candidate_confirmed" | string;
   candidate_id?: string | null;
   grouping_fingerprint?: string | null;
@@ -204,6 +260,22 @@ export interface MemoryEpisode {
   application_version: string;
   correction_note: string;
   corrected_at?: number | null;
+  completed_at?: number | null;
+  archived_at?: number | null;
+  tombstoned_at?: number | null;
+  lifecycle_policy_version?: string;
+  lifecycle_revision: number;
+  last_lifecycle_evaluated_at?: number | null;
+  lifecycle_events?: Array<{
+    id: string;
+    revision: number;
+    from_status: MemoryEpisode["status"];
+    to_status: MemoryEpisode["status"];
+    reason_code: string;
+    source: string;
+    policy_version: string;
+    created_at: number;
+  }>;
   fragment_count: number;
   fragments?: EpisodeFragment[];
   entities?: Array<{ id: string; name: string; entity_type: string }>;
@@ -354,6 +426,31 @@ export const correctMemory = (id: string, content: string, note = "") =>
   });
 export const deleteMemory = (id: string) =>
   j<{ ok: boolean }>(`/api/memories/${id}`, { method: "DELETE" });
+export const privacyDeleteMemory = (id: string) =>
+  j<{ ok: boolean; privacy_cleared: boolean }>(`/api/memories/${id}?privacy=true`, {
+    method: "DELETE",
+  });
+export const getMemoryLifecycle = (id: string) =>
+  j<MemoryLifecycleDetail>(`/api/memories/${id}/lifecycle`);
+export const restoreMemory = (id: string, expected_revision?: number, reason = "用户手动恢复") =>
+  j<Memory>(`/api/memories/${id}/lifecycle`, {
+    method: "POST",
+    body: JSON.stringify({ target_status: "active", expected_revision, reason }),
+  });
+export const listMemoryRelations = (status = "active") =>
+  j<MemoryRelation[]>(`/api/memory-relations?status=${encodeURIComponent(status)}`);
+export const scanMemoryRelations = () =>
+  j<{ created_count: number; superseded_count: number; possible_conflict_count: number }>(
+    "/api/memory-relations/scan", { method: "POST" }
+  );
+export const setMemoryRelationStatus = (
+  id: string, status: "resolved" | "dismissed", reason: string
+) => j<MemoryRelation>(`/api/memory-relations/${id}/status`, {
+  method: "POST",
+  body: JSON.stringify({ status, reason }),
+});
+export const listArchivistRuns = (limit = 10) =>
+  j<ArchivistRun[]>(`/api/archivist/runs?limit=${limit}`);
 export const listMemoryCandidates = () =>
   j<MemoryCandidate[]>("/api/memory-candidates?status=pending");
 export const acceptMemoryCandidate = (
@@ -406,10 +503,16 @@ export const listEpisodes = () => j<MemoryEpisode[]>("/api/episodes");
 export const getEpisode = (id: string) => j<MemoryEpisode>(`/api/episodes/${id}`);
 export const correctEpisode = (
   id: string,
-  body: { title?: string; summary?: string; significance?: number; note?: string }
+  body: { title?: string; summary?: string; significance?: number; note?: string; expected_revision?: number }
 ) => j<MemoryEpisode>(`/api/episodes/${id}/correct`, {
   method: "POST",
   body: JSON.stringify(body),
+});
+export const transitionEpisode = (
+  id: string, target_status: MemoryEpisode["status"], expected_revision: number, reason: string
+) => j<MemoryEpisode>(`/api/episodes/${id}/lifecycle`, {
+  method: "POST",
+  body: JSON.stringify({ target_status, expected_revision, reason }),
 });
 
 // ---- Saga ----

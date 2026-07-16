@@ -299,7 +299,7 @@ def _due_episode_ids(now: float, limit: int) -> list[str]:
     try:
         rows = conn.execute(
             "SELECT id FROM memory_episodes WHERE"
-            " (status='active' AND MAX(end_at,updated_at)<=?)"
+            " (status='active' AND (CASE WHEN end_at>updated_at THEN end_at ELSE updated_at END)<=?)"
             " OR (status='completed' AND COALESCE(completed_at,updated_at)<=?)"
             " ORDER BY COALESCE(last_lifecycle_evaluated_at,0),end_at,id LIMIT ?",
             (now - EPISODE_MATURITY_DAYS * 86_400,

@@ -152,6 +152,14 @@ npm.cmd start
 - completed Saga 只有完成后稳定至少 365 天、revision 未变化、整链哈希有效、无高重要度/近期召回/待追加候选时，才由 Archivist 自动归档；active 和 tombstone 永不自动变化。
 - 慢生命周期复用既有 Saga 六天懒调度，但 Episode/Saga 各有 10 条独立预算；Fragment frozen 不删除 Episode/Saga 来源关系。
 - 旧 Episode candidate 兼容 API 的 ADR-0023 退役条件尚未全部满足，本阶段不删除表、API 或历史来源。
+- Archivist 阶段 E.6 已完成 schema 27：只在共享 active Entity、相同 scope/可变 kind 的正常 active
+  Fragment 小集合内建立 `superseded` 或 `possible_conflict`，保存方向、置信度、规则/版本和无正文事件；
+  检测与人工处置均不自动覆盖正文或改变生命周期。
+- Archivist run 现在分别记录 revision 并发 `conflict_count` 与新增关系 `relation_count`；管理页展示
+  Fragment 保留分、保护原因、状态事件、关系处置与最近维护结果，并支持受 revision 保护的恢复。
+- Episode 管理页展示 active/completed/archived 四态与生命周期事件；Fragment 隐私清除和 Episode
+  tombstone 都要求二次确认并说明本地/外部备份边界。后端 235 项、前端 16 项和生产/Electron 检查通过，
+  记忆系统阶段 E 已完成。
 
 ### 人格与内置背景知识（2026-07-14）
 

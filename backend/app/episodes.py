@@ -133,15 +133,20 @@ def pending_candidates(
         conn.close()
 
 
-def list_episodes(status: str = "active") -> list[dict]:
+def list_episodes(status: str | None = "active") -> list[dict]:
+    if status is not None and status not in {"active", "completed", "archived", "tombstone"}:
+        raise ValueError("Episode 状态无效")
     conn = db.connect()
     try:
+        where, params = (" WHERE e.status=?", [status]) if status else (
+            " WHERE e.status!='tombstone'", []
+        )
         rows = conn.execute(
             "SELECT e.*, COUNT(ef.fragment_id) AS fragment_count"
             " FROM memory_episodes e"
             " LEFT JOIN memory_episode_fragments ef ON ef.episode_id=e.id"
-            " WHERE e.status=? GROUP BY e.id ORDER BY e.end_at DESC",
-            (status,),
+            + where + " GROUP BY e.id ORDER BY e.end_at DESC",
+            params,
         ).fetchall()
         return [_episode_list_row(row) for row in rows]
     finally:
@@ -902,6 +907,15 @@ def _episode_row(conn, row) -> dict:
     result["fragments"] = [_fragment_row(fragment) for fragment in fragments]
     result["entities"] = [dict(entity) for entity in entities]
     result["fragment_count"] = len(fragments)
+    lifecycle_events = conn.execute(
+        "SELECT * FROM memory_episode_lifecycle_events WHERE episode_id=?"
+        " ORDER BY revision,id", (result["id"],),
+    ).fetchall()
+    result["lifecycle_events"] = []
+    for event in lifecycle_events:
+        item = dict(event)
+        item["metadata"] = json.loads(item.pop("metadata_json", "{}"))
+        result["lifecycle_events"].append(item)
     return result
 
 

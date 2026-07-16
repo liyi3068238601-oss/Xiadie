@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 
 from . import (
     archivist, archivist_worker, companion_state, db, entities, episode_consolidator, episode_summary_service,
-    episodes, llm, lore, memory, saga_consolidator, saga_lifecycle, saga_summary,
+    episodes, llm, lore, memory, memory_conflicts, saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, slow_lifecycle,
 )
 from . import memory_observer_service
@@ -501,6 +501,49 @@ def transition_memory_lifecycle(mid: str, body: FragmentLifecycleIn) -> dict:
         raise HTTPException(status, str(exc)) from exc
 
 
+@app.get("/api/memories/{mid}/lifecycle")
+def get_memory_lifecycle(mid: str) -> dict:
+    fragment = memory.get_memory(mid)
+    if not fragment or fragment["status"] == "tombstone":
+        raise HTTPException(404, "记忆不存在")
+    evaluations = archivist.evaluate_fragments([mid])
+    return {
+        "fragment": fragment,
+        "evaluation": evaluations[0] if evaluations else None,
+        "events": archivist.list_lifecycle_events(mid),
+        "relations": memory_conflicts.relations_for_fragment(mid),
+    }
+
+
+class MemoryRelationStatusIn(BaseModel):
+    status: str
+    reason: str = Field(min_length=1, max_length=240)
+
+
+@app.get("/api/memory-relations")
+def get_memory_relations(status: Optional[str] = "active", limit: int = 100) -> list[dict]:
+    try:
+        return memory_conflicts.list_relations(status=status or None, limit=limit)
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
+
+
+@app.post("/api/memory-relations/scan")
+def scan_memory_relations(limit: int = 50) -> dict:
+    return memory_conflicts.scan_conflicts(limit=limit)
+
+
+@app.post("/api/memory-relations/{relation_id}/status")
+def set_memory_relation_status(relation_id: str, body: MemoryRelationStatusIn) -> dict:
+    try:
+        result = memory_conflicts.set_status(relation_id, body.status, reason=body.reason)
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
+    if not result:
+        raise HTTPException(404, "冲突关系不存在")
+    return result
+
+
 class ArchivistRunIn(BaseModel):
     trigger: str = "manual"
     request_key: Optional[str] = Field(default=None, max_length=120)
@@ -736,8 +779,11 @@ def reject_episode_candidate(candidate_id: str, body: EpisodeDecisionIn) -> dict
 
 
 @app.get("/api/episodes")
-def get_episodes() -> list[dict]:
-    return episodes.list_episodes()
+def get_episodes(status: Optional[str] = None) -> list[dict]:
+    try:
+        return episodes.list_episodes(status=status)
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
 
 
 @app.post("/api/episodes/{episode_id}/correct")

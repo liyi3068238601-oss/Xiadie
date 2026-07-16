@@ -7,7 +7,7 @@ import logging
 import time
 from contextlib import suppress
 
-from . import archivist, db
+from . import archivist, db, memory_conflicts
 
 POLICY_VERSION = "archivist-worker-v1"
 MAX_ATTEMPTS = 3
@@ -155,9 +155,15 @@ async def _process_claimed(row: dict) -> None:
 
 
 def _evaluate_run(row: dict) -> None:
+    relation_result = memory_conflicts.scan_conflicts(limit=row["scan_budget"])
+    relation_count = relation_result["created_count"]
     fragment_ids = _due_fragment_ids(row["scan_budget"])
     if not fragment_ids:
-        _finish_run(row["id"], "skipped", "no_due_fragments", 0, 0, 0)
+        _finish_run(
+            row["id"], "completed" if relation_count else "skipped",
+            "relations_detected" if relation_count else "no_due_fragments",
+            0, 0, 0, relation_count,
+        )
         return
     started = time.monotonic()
     scanned = transitioned = conflicts = 0
@@ -188,7 +194,9 @@ def _evaluate_run(row: dict) -> None:
             transitioned += 1
     if scanned >= row["scan_budget"]:
         reason = "scan_budget_reached"
-    _finish_run(row["id"], "completed", reason, scanned, transitioned, conflicts)
+    _finish_run(
+        row["id"], "completed", reason, scanned, transitioned, conflicts, relation_count,
+    )
 
 
 def _runtime_exhausted(started: float, budget_ms: int) -> bool:
@@ -232,6 +240,7 @@ def _mark_fragment_evaluated(fragment_id: str) -> None:
 
 def _finish_run(
     run_id: str, status: str, reason: str, scanned: int, transitioned: int, conflicts: int,
+    relation_count: int = 0,
 ) -> None:
     conn = db.connect()
     try:
@@ -243,8 +252,8 @@ def _finish_run(
         now = db.now()
         conn.execute(
             "UPDATE archivist_runs SET status=?,scanned_count=?,transitioned_count=?,"
-            "conflict_count=?,finished_at=?,updated_at=? WHERE id=?",
-            (status, scanned, transitioned, conflicts, now, now, run_id),
+            "conflict_count=?,relation_count=?,finished_at=?,updated_at=? WHERE id=?",
+            (status, scanned, transitioned, conflicts, relation_count, now, now, run_id),
         )
         conn.execute(
             "INSERT INTO settings(key,value) VALUES('last_archivist_run',?)"
@@ -253,7 +262,8 @@ def _finish_run(
         _event(
             conn, run_id, "processed", "running", status, reason,
             {"scanned_count": scanned, "transitioned_count": transitioned,
-             "conflict_count": conflicts, "model_calls_used": 0}, now,
+             "conflict_count": conflicts, "relation_count": relation_count,
+             "model_calls_used": 0}, now,
         )
         conn.commit()
     finally:

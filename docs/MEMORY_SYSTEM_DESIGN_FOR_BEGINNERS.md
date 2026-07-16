@@ -1,8 +1,8 @@
 # 遐蝶自主记忆系统设计书（零基础说明版）
 
-版本：v0.25
+版本：v0.26
 
-状态：设计基线；阶段 A～D 与 E.1～E.5 已完成，阶段 E.6～F 待施工
+状态：设计基线；阶段 A～E 已完成，阶段 F 待施工
 
 主要参考：[MemoryConstellations](https://github.com/ClaraShafiq/MemoryConstellations)
 适用对象：项目所有者、第一次接触 Agent 的开发者、后续接手实现的 Codex
@@ -956,7 +956,7 @@ POST /api/memory-maintenance/run
 | B 自主 Fragment 写入 | 已完成 | schema 12、原子自主写入、限频提示、详情/纠错界面及旧候选兼容策略均已提交 |
 | C Episode 自动化 | 已完成 | schema 13～17、自动整理、事实校验、原子应用和正式界面均已提交 |
 | D Saga | 已完成 | schema 18～22、评分、事实摘要、原子应用、生命周期、纠错、API、正式界面与总验收均已提交 |
-| E Archivist | E.5 已完成 | schema 26、Episode 四态、Saga 稳定归档、六天慢调度、来源保护与恢复已提交 |
+| E Archivist | 已完成 | schema 23～27、精确生命周期、有限维护、慢归档、保守冲突关系和管理闭环均已提交 |
 | F 用户文件知识库 | 未开始 | 当前仅有界面占位 |
 
 ### 阶段 A：人格与背景分离（本轮已完成）
@@ -1452,13 +1452,21 @@ active Saga 不参与自动归档。用户可恢复 archived Saga，新发展会
 
 #### 阶段 E.6：冲突、管理界面与总验收
 
-- [ ] 只对共享 active Entity、相同 scope 和可变 kind 的小集合做冲突预筛。
-- [ ] 明确时间先后变化建立 superseded；不确定冲突只建立 possible_conflict，不覆盖正文。
-- [ ] 冲突关系保存来源、方向、置信度、规则/模型版本和审计事件。
-- [ ] 管理页展示 retention 分量、状态时间、保护原因和生命周期事件，不默认暴露内部原始提示。
-- [ ] 提供人工恢复与隐私删除入口；高风险清理必须二次确认并说明备份边界。
-- [ ] 完成 Fragment→Episode→Saga→Archivist 全链路、重复运行、失败恢复和来源保留总验收。
-- [ ] 更新基线、测试数量和阶段状态；E.1～E.6 全部通过后才标记阶段 E 完成。
+- [x] 只对共享 active Entity、相同 scope 和可变 kind 的小集合做冲突预筛。
+- [x] 明确时间先后变化建立 superseded；不确定冲突只建立 possible_conflict，不覆盖正文。
+- [x] 冲突关系保存来源、方向、置信度、规则/模型版本和审计事件。
+- [x] 管理页展示 retention 分量、状态时间、保护原因和生命周期事件，不默认暴露内部原始提示。
+- [x] 提供人工恢复与隐私删除入口；高风险清理必须二次确认并说明备份边界。
+- [x] 完成 Fragment→Episode→Saga→Archivist 全链路、重复运行、失败恢复和来源保留总验收。
+- [x] 更新基线、测试数量和阶段状态；E.1～E.6 全部通过后才标记阶段 E 完成。
+
+E.6 开工前审查结论：E.5 review 通过。采纳 Episode 生命周期界面、生产迁移影响复核、二值时间比较
+改用 `CASE`、维护冲突数展示与 ADR-0023 五项条件显式跟踪；审查中与代码不符的旧接口描述不作为实现
+依据。schema 27 用确定性小集合预筛建立 `superseded`/`possible_conflict`，只写关系和无正文事件，
+Archivist 记录并发冲突数与新关系数。管理页已经提供 Fragment 保留分/保护/事件、人工恢复、关系处置、
+隐私清除，以及 Episode 四态、恢复、事件和双重确认删除。开发库迁移前检查为 3 Fragment、1 active
+Episode、0 Saga，不存在完成 Saga 批量归档风险。后端 235 项、前端 16 项、生产构建、Electron 语法和
+差异检查通过，阶段 E 完成；详细边界见 ADR-0028。
 
 ### 阶段 F：用户文件知识库
 

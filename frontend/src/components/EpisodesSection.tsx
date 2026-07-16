@@ -19,7 +19,7 @@ export function EpisodesSection({ onOpenSource }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState<CorrectionDraft | null>(null);
-  const [busy, setBusy] = useState<"refresh" | "schedule" | "save" | null>(null);
+  const [busy, setBusy] = useState<"refresh" | "schedule" | "save" | "lifecycle" | null>(null);
 
   const refresh = async () => {
     const existing = await api.listEpisodes();
@@ -94,6 +94,7 @@ export function EpisodesSection({ onOpenSource }: Props) {
         summary: draft.summary.trim(),
         significance: draft.significance,
         note: draft.note.trim(),
+        expected_revision: episodes.find((item) => item.id === episodeId)?.lifecycle_revision,
       });
       setEpisodes((current) => current.map((item) => item.id === episodeId ? corrected : item));
       setEditing(null);
@@ -104,6 +105,36 @@ export function EpisodesSection({ onOpenSource }: Props) {
     } finally {
       setBusy(null);
     }
+  };
+
+  const changeLifecycle = async (
+    episode: api.MemoryEpisode, target: api.MemoryEpisode["status"], reason: string,
+  ) => {
+    setBusy("lifecycle");
+    try {
+      const updated = await api.transitionEpisode(
+        episode.id, target, episode.lifecycle_revision, reason,
+      );
+      setEpisodes((current) => target === "tombstone"
+        ? current.filter((item) => item.id !== episode.id)
+        : current.map((item) => item.id === episode.id ? updated : item));
+      toast(target === "active" ? "经历已恢复" : "经历已删除");
+    } catch (error: any) {
+      toast(error.message || "生命周期操作失败，请刷新后重试");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const removeEpisode = async (episode: api.MemoryEpisode) => {
+    if (!window.confirm(
+      `确定永久删除经历「${episode.title}」吗？\n\n应用不会自动创建备份；应用外已有备份不会被同步清除。`,
+    )) return;
+    if (window.prompt("这是不可恢复操作。请输入 DELETE 继续：") !== "DELETE") {
+      toast("已取消删除");
+      return;
+    }
+    await changeLifecycle(episode, "tombstone", "用户在记忆管理页永久删除");
   };
 
   const copyHash = async (hash: string) => {
@@ -154,6 +185,7 @@ export function EpisodesSection({ onOpenSource }: Props) {
                 <span className="episode-title-group">
                   <strong>{episode.title}</strong>
                   <span className={`episode-status ${presentation.tone}`}>{presentation.label}</span>
+                  <span className="chip">{episodeStatusLabel(episode.status)}</span>
                 </span>
                 <small>
                   {formatDateRange(episode.start_at, episode.end_at)} · {episode.fragment_count} 条来源 · 重要度 {episode.significance}
@@ -169,6 +201,7 @@ export function EpisodesSection({ onOpenSource }: Props) {
                     <div><span>来源校验</span><strong>{shortSourceHash(episode.source_hash)}</strong><small>内容哈希短指纹</small></div>
                     <div><span>整理方式</span><strong>{episode.source === "consolidator_auto" ? "后台自主整理" : "兼容流程"}</strong><small>{episode.application_version}</small></div>
                     <div><span>规则置信度</span><strong>{Math.round(episode.confidence * 100)}%</strong><small>{episode.policy_version}</small></div>
+                    <div><span>生命周期</span><strong>{episodeStatusLabel(episode.status)}</strong><small>修订 {episode.lifecycle_revision}</small></div>
                   </div>
 
                   <div className="episode-detail-actions">
@@ -176,6 +209,15 @@ export function EpisodesSection({ onOpenSource }: Props) {
                       <button className="btn ghost" onClick={() => copyHash(episode.source_hash)}>复制完整校验指纹</button>
                     )}
                     {!isEditing && <button className="btn ghost" onClick={() => beginCorrection(episode)}>纠正这段经历</button>}
+                    {episode.status !== "active" && (
+                      <button className="btn ghost" disabled={busy !== null} onClick={() => changeLifecycle(
+                        episode, "active", "用户在经历管理页手动恢复",
+                      )}>恢复经历</button>
+                    )}
+                    <button
+                      className="btn ghost" disabled={busy !== null}
+                      style={{ color: "var(--danger)" }} onClick={() => removeEpisode(episode)}
+                    >永久删除</button>
                   </div>
 
                   {isEditing && draft && (
@@ -218,6 +260,17 @@ export function EpisodesSection({ onOpenSource }: Props) {
                       最近纠错：{formatDateTime(episode.corrected_at)}{episode.correction_note ? ` · ${episode.correction_note}` : ""}
                     </div>
                   )}
+                  {!!episode.lifecycle_events?.length && (
+                    <details className="episode-lifecycle-events">
+                      <summary>生命周期记录 · {episode.lifecycle_events.length} 条</summary>
+                      {episode.lifecycle_events.map((event) => (
+                        <div className="memory-lifecycle-event" key={event.id}>
+                          {episodeStatusLabel(event.from_status)} → {episodeStatusLabel(event.to_status)}
+                          <small>{formatDateTime(event.created_at)} · {event.reason_code}</small>
+                        </div>
+                      ))}
+                    </details>
+                  )}
                 </div>
               )}
             </article>
@@ -226,6 +279,10 @@ export function EpisodesSection({ onOpenSource }: Props) {
       </div>
     </section>
   );
+}
+
+function episodeStatusLabel(status: api.MemoryEpisode["status"]): string {
+  return ({ active: "活跃", completed: "已成熟", archived: "已归档", tombstone: "已删除" })[status];
 }
 
 function formatDate(value: number): string {

@@ -28,7 +28,7 @@ def test_schema_23_adds_retention_fields_and_minimal_audit_tables():
         version = conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
         ).fetchone()["value"]
-        assert version == "26"
+        assert version == "27"
         columns = {
             row["name"] for row in conn.execute("PRAGMA table_info(memory_fragments)")
         }

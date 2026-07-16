@@ -38,6 +38,10 @@ export function MemoriesPage({ onOpenSource }: Props) {
   >({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lifecycleDetails, setLifecycleDetails] = useState<Record<string, api.MemoryLifecycleDetail>>({});
+  const [expandedLifecycle, setExpandedLifecycle] = useState<string | null>(null);
+  const [relations, setRelations] = useState<api.MemoryRelation[]>([]);
+  const [archivistRuns, setArchivistRuns] = useState<api.ArchivistRun[]>([]);
 
   // 新增表单
   const [newLayer, setNewLayer] = useState<Layer>("L1");
@@ -53,8 +57,10 @@ export function MemoriesPage({ onOpenSource }: Props) {
 
   const refresh = () => {
     setLoading(true);
-    Promise.all([api.listMemories(), api.listMemoryCandidates()])
-      .then(([m, pending]) => {
+    Promise.all([
+      api.listMemories(), api.listMemoryCandidates(), api.listMemoryRelations(), api.listArchivistRuns(),
+    ])
+      .then(([m, pending, activeRelations, runs]) => {
         setMemories(m);
         setCandidates(pending);
         setCandidateEdits(
@@ -66,6 +72,8 @@ export function MemoriesPage({ onOpenSource }: Props) {
           )
         );
         setError(null);
+        setRelations(activeRelations);
+        setArchivistRuns(runs);
       })
       .catch((e) => setError(e.message || "加载失败"))
       .finally(() => setLoading(false));
@@ -172,6 +180,71 @@ export function MemoriesPage({ onOpenSource }: Props) {
     }
   };
 
+  const openLifecycle = async (m: api.Memory) => {
+    if (expandedLifecycle === m.id) {
+      setExpandedLifecycle(null);
+      return;
+    }
+    try {
+      const detail = await api.getMemoryLifecycle(m.id);
+      setLifecycleDetails((current) => ({ ...current, [m.id]: detail }));
+      setExpandedLifecycle(m.id);
+    } catch (e: any) {
+      toast(e.message || "生命周期详情加载失败");
+    }
+  };
+
+  const restore = async (m: api.Memory) => {
+    try {
+      await api.restoreMemory(m.id, m.lifecycle_revision, "用户在记忆管理页手动恢复");
+      toast("记忆已恢复为活跃状态");
+      setExpandedLifecycle(null);
+      refresh();
+    } catch (e: any) {
+      toast(e.message || "恢复失败，请刷新后重试");
+    }
+  };
+
+  const privacyDelete = async (m: api.Memory) => {
+    if (!window.confirm(
+      `永久清除这条记忆及其应用内审计信息？\n\n「${m.content}」\n\n应用不会自动创建备份；应用外已有备份不受影响。`,
+    )) return;
+    if (window.prompt("此操作不可撤销。请输入 DELETE 继续：") !== "DELETE") {
+      toast("已取消永久清除");
+      return;
+    }
+    try {
+      await api.privacyDeleteMemory(m.id);
+      toast("记忆已从本地数据库永久清除");
+      setExpandedLifecycle(null);
+      refresh();
+    } catch (e: any) {
+      toast(e.message || "永久清除失败");
+    }
+  };
+
+  const scanRelations = async () => {
+    try {
+      const result = await api.scanMemoryRelations();
+      toast(`检查完成，新增 ${result.created_count} 条关系`);
+      refresh();
+    } catch (e: any) {
+      toast(e.message || "冲突检查失败");
+    }
+  };
+
+  const disposeRelation = async (relation: api.MemoryRelation, status: "resolved" | "dismissed") => {
+    const reason = window.prompt(status === "resolved" ? "请说明如何解决：" : "请说明为何忽略：");
+    if (!reason?.trim()) return;
+    try {
+      await api.setMemoryRelationStatus(relation.id, status, reason.trim());
+      toast(status === "resolved" ? "已标记解决" : "已忽略这条提示");
+      refresh();
+    } catch (e: any) {
+      toast(e.message || "处理失败");
+    }
+  };
+
   return (
     <div className="page memory-page">
       <div className="memory-page-hero">
@@ -185,6 +258,35 @@ export function MemoriesPage({ onOpenSource }: Props) {
       <EntitiesSection memories={memories} onOpenSource={onOpenSource} />
       <EpisodesSection onOpenSource={onOpenSource} />
       <SagasSection onOpenSource={onOpenSource} />
+
+      <section className="memory-section memory-conflict-section">
+        <div className="episode-heading">
+          <div>
+            <div className="section-label">记忆关系与维护</div>
+            <div className="sub">只提示可能的新旧关系，不会自动改写或删除任何记忆。</div>
+          </div>
+          <button className="btn ghost" onClick={scanRelations}>检查关系</button>
+        </div>
+        {archivistRuns[0] && (
+          <div className="memory-maintenance-summary">
+            最近维护：扫描 {archivistRuns[0].scanned_count} 条 · 状态变化 {archivistRuns[0].transitioned_count} 条 ·
+            并发冲突 {archivistRuns[0].conflict_count} 次 · 新关系 {archivistRuns[0].relation_count} 条
+          </div>
+        )}
+        {relations.length === 0 ? <div className="empty">当前没有待处理的记忆关系。</div> : relations.map((relation) => (
+          <div className="memory-relation-row" key={relation.id}>
+            <div>
+              <strong>{relation.relation_type === "superseded" ? "明确的新旧变化" : "可能存在冲突"}</strong>
+              <small>{relation.entity_name} · 置信度 {Math.round(relation.confidence * 100)}%</small>
+              <div>旧：{relation.source_content}</div><div>新：{relation.target_content}</div>
+            </div>
+            <div className="row">
+              <button className="btn ghost" onClick={() => disposeRelation(relation, "resolved")}>标记已解决</button>
+              <button className="btn ghost" onClick={() => disposeRelation(relation, "dismissed")}>忽略提示</button>
+            </div>
+          </div>
+        ))}
+      </section>
 
       {/* 新增记忆 */}
       <div className="list-row memory-add-card" style={{ alignItems: "flex-end", flexWrap: "wrap" }}>
@@ -248,6 +350,7 @@ export function MemoriesPage({ onOpenSource }: Props) {
                 const isAuto = m.source === "observer" || m.source === "auto" || m.source === "auto_confirmed";
                 const isObserver = m.source === "observer";
                 const isEditing = editingId === m.id;
+                const lifecycle = lifecycleDetails[m.id];
                 return (
                   <div
                     key={m.id}
@@ -344,6 +447,12 @@ export function MemoriesPage({ onOpenSource }: Props) {
                         >
                           {m.enabled ? "禁用" : "启用"}
                         </button>
+                        <button className="btn ghost" onClick={() => openLifecycle(m)}>
+                          {expandedLifecycle === m.id ? "收起生命周期" : "生命周期"}
+                        </button>
+                        {(m.status === "cooling" || m.status === "frozen") && (
+                          <button className="btn ghost" onClick={() => restore(m)}>恢复</button>
+                        )}
                         <button
                           className="btn ghost"
                           style={{ color: "var(--danger)" }}
@@ -373,6 +482,39 @@ export function MemoriesPage({ onOpenSource }: Props) {
                           <span>证据消息：{m.evidence_message_ids?.length || 0} 条</span>
                           <span>置信度：{Math.round((m.confidence || 0) * 100)}%</span>
                         </div>
+                      </div>
+                    )}
+
+                    {expandedLifecycle === m.id && lifecycle && (
+                      <div className="memory-lifecycle-detail">
+                        <div className="memory-detail-tags">
+                          <span>状态：{fragmentStatusLabel(m.status)}</span>
+                          <span>保留分：{Math.round((lifecycle.evaluation?.score || 0) * 100)}%</span>
+                          <span>召回：{m.recall_count || 0} 次</span>
+                          <span>修订：{m.lifecycle_revision || 0}</span>
+                        </div>
+                        <div className="memory-reason">
+                          <strong>保护原因</strong>
+                          <span>{lifecycle.evaluation?.protection_reasons.length
+                            ? lifecycle.evaluation.protection_reasons.join("、") : "无自动保护条件"}</span>
+                        </div>
+                        <div className="memory-provenance">
+                          {Object.entries(lifecycle.evaluation?.components || {}).map(([key, value]) => (
+                            <span key={key}>{key}: {Math.round(value * 100)}%</span>
+                          ))}
+                        </div>
+                        <details>
+                          <summary>状态事件 {lifecycle.events.length} 条 · 关系 {lifecycle.relations.length} 条</summary>
+                          {lifecycle.events.map((event) => (
+                            <div className="memory-lifecycle-event" key={event.id}>
+                              {fragmentStatusLabel(event.from_status)} → {fragmentStatusLabel(event.to_status)}
+                              <small>{new Date(event.created_at * 1000).toLocaleString("zh-CN")} · {event.reason_code}</small>
+                            </div>
+                          ))}
+                        </details>
+                        <button className="btn ghost" style={{ color: "var(--danger)" }} onClick={() => privacyDelete(m)}>
+                          永久清除隐私数据
+                        </button>
                       </div>
                     )}
 
@@ -451,4 +593,8 @@ export function MemoriesPage({ onOpenSource }: Props) {
       </details>
     </div>
   );
+}
+
+function fragmentStatusLabel(status?: api.Memory["status"] | string): string {
+  return ({ active: "活跃", cooling: "冷却", frozen: "冻结", tombstone: "已删除" } as Record<string, string>)[status || "active"] || status || "活跃";
 }

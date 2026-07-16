@@ -724,6 +724,57 @@ textarea {
   border-radius: 11px;
   background: rgba(10, 15, 34, 0.28);
 }
+.memory-lifecycle-detail {
+  flex: 0 0 100%;
+  display: grid;
+  gap: 10px;
+  margin-top: 4px;
+  padding: 13px 14px;
+  border: 1px solid rgba(91, 210, 162, 0.18);
+  border-radius: 11px;
+  background: rgba(12, 34, 35, 0.24);
+}
+.memory-lifecycle-detail summary,
+.episode-lifecycle-events summary { cursor: pointer; color: #bcb5d8; font-size: 11px; }
+.memory-lifecycle-event {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+  color: #cbc5df;
+  border-bottom: 1px solid rgba(150, 120, 255, 0.1);
+  font-size: 11px;
+}
+.memory-lifecycle-event small { color: #8f88ad; }
+.memory-conflict-section { display: grid; gap: 10px; }
+.memory-maintenance-summary {
+  padding: 10px 12px;
+  color: #aaa3c5;
+  border-radius: 10px;
+  background: rgba(13, 9, 29, 0.36);
+  font-size: 11px;
+}
+.memory-relation-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 184, 108, 0.16);
+  border-radius: 11px;
+  background: rgba(50, 33, 54, 0.22);
+  color: #cfc9e4;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.memory-relation-row strong,
+.memory-relation-row small { display: block; }
+.memory-relation-row small { margin: 2px 0 7px; color: #9f98ba; }
+.episode-lifecycle-events { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: rgba(13, 9, 29, 0.28); }
+@media (max-width: 760px) {
+  .memory-relation-row { align-items: stretch; flex-direction: column; }
+  .memory-lifecycle-event { flex-direction: column; gap: 2px; }
+}
 .memory-detail-tags,
 .memory-provenance {
   display: flex;

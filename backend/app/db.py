@@ -1153,6 +1153,53 @@ MIGRATIONS = [
         PRAGMA foreign_keys=ON;
         """,
     ),
+    (
+        27,
+        """
+        ALTER TABLE archivist_runs ADD COLUMN relation_count INTEGER NOT NULL DEFAULT 0
+            CHECK(relation_count >= 0);
+
+        CREATE TABLE memory_fragment_relations (
+            id TEXT PRIMARY KEY,
+            source_fragment_id TEXT NOT NULL REFERENCES memory_fragments(id) ON DELETE CASCADE,
+            target_fragment_id TEXT NOT NULL REFERENCES memory_fragments(id) ON DELETE CASCADE,
+            entity_id TEXT NOT NULL REFERENCES memory_entities(id) ON DELETE CASCADE,
+            relation_type TEXT NOT NULL CHECK(relation_type IN (
+                'superseded','possible_conflict'
+            )),
+            status TEXT NOT NULL DEFAULT 'active' CHECK(status IN (
+                'active','resolved','dismissed'
+            )),
+            confidence REAL NOT NULL CHECK(confidence BETWEEN 0 AND 1),
+            rule_code TEXT NOT NULL,
+            detector_version TEXT NOT NULL,
+            model_version TEXT,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            CHECK(source_fragment_id != target_fragment_id),
+            UNIQUE(source_fragment_id,target_fragment_id,entity_id,relation_type)
+        );
+        CREATE INDEX idx_memory_fragment_relations_status
+            ON memory_fragment_relations(status,relation_type,updated_at);
+        CREATE INDEX idx_memory_fragment_relations_fragments
+            ON memory_fragment_relations(source_fragment_id,target_fragment_id);
+
+        CREATE TABLE memory_fragment_relation_events (
+            id TEXT PRIMARY KEY,
+            relation_id TEXT NOT NULL REFERENCES memory_fragment_relations(id) ON DELETE CASCADE,
+            action TEXT NOT NULL,
+            before_status TEXT,
+            after_status TEXT NOT NULL,
+            reason_code TEXT NOT NULL,
+            source TEXT NOT NULL CHECK(source IN ('archivist','user')),
+            detector_version TEXT NOT NULL,
+            metadata_json TEXT NOT NULL DEFAULT '{}',
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_memory_fragment_relation_events_relation
+            ON memory_fragment_relation_events(relation_id,created_at,id);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
