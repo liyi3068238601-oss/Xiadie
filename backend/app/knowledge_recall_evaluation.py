@@ -7,13 +7,14 @@ import math
 import statistics
 from pathlib import Path
 
-EVALUATION_PROTOCOL_VERSION = "knowledge-recall-eval-v2"
+EVALUATION_PROTOCOL_VERSION = "knowledge-recall-eval-v3"
+SUPPORTED_EVALUATION_PROTOCOLS = frozenset({"knowledge-recall-eval-v2", EVALUATION_PROTOCOL_VERSION})
 REPORT_PROTOCOL_VERSION = "knowledge-recall-report-v1"
 
 
 def load_fixture(path: Path) -> dict:
     payload = json.loads(path.read_text(encoding="utf-8"))
-    if payload.get("protocol_version") != EVALUATION_PROTOCOL_VERSION:
+    if payload.get("protocol_version") not in SUPPORTED_EVALUATION_PROTOCOLS:
         raise ValueError("knowledge evaluation protocol mismatch")
     if payload.get("synthetic_only") is not True:
         raise ValueError("knowledge evaluation fixture must be synthetic")
@@ -63,6 +64,17 @@ def build_report(*, fixture: dict, outcomes: list[dict], environment: dict) -> d
     dense_ceiling = max(negative_dense) if negative_dense else None
     separable = dense_floor is not None and dense_ceiling is not None and dense_floor > dense_ceiling
     recommended_dense = (dense_floor + dense_ceiling) / 2 if separable else None
+    high_auto = [
+        row for row in outcomes
+        if _positive(row["actual_action"]) and row.get("confidence_band") == "high"
+        and row.get("recall_mode") == "smart"
+    ]
+    high_auto_true = sum(bool(row["expected_document_groups"]) for row in high_auto)
+    high_auto_precision = high_auto_true / len(high_auto) if high_auto else 0.0
+    deterministic_high_enabled = bool(
+        len(positive_dense) >= 30 and len(negative_dense) >= 15
+        and high_auto_precision >= 0.98
+    )
     fixture_json = json.dumps(fixture, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return {
         "report_protocol_version": REPORT_PROTOCOL_VERSION,
@@ -92,9 +104,11 @@ def build_report(*, fixture: dict, outcomes: list[dict], environment: dict) -> d
             "negative_top_dense": _distribution(negative_dense),
             "dense_classes_separable": separable,
             "recommended_dense_threshold": _round(recommended_dense) if recommended_dense is not None else None,
+            "high_confidence_auto_sample_count": len(high_auto),
+            "high_confidence_auto_precision": _round(high_auto_precision),
         },
         "threshold_decision": {
-            "version": "knowledge-recall-thresholds-v1",
+            "version": "knowledge-recall-thresholds-v2",
             "exact_term_high_min_chars": 3,
             "entity_medium_min_chars": 2,
             "semantic_auto_high_enabled": bool(
@@ -102,7 +116,7 @@ def build_report(*, fixture: dict, outcomes: list[dict], environment: dict) -> d
                 and len(positive_dense) >= 30 and len(negative_dense) >= 15
             ),
             "semantic_min_dense_score": _round(recommended_dense) if separable else None,
-            "automatic_injection_enabled": False,
+            "automatic_injection_enabled": deterministic_high_enabled,
             "rationale": (
                 "dense_positive_negative_separated" if separable
                 else "dense_score_overlap_keep_semantic_medium"
@@ -121,7 +135,7 @@ def render_markdown(report: dict) -> str:
         and (row["retrieval_hit"] or not row["expected_document_groups"])
     )]
     lines = [
-        "# 知识自然召回 K.3 固定集评测报告",
+        "# 知识自然召回固定集评测报告",
         "",
         f"- 协议：`{report['evaluation_protocol_version']}` / `{report['decision_protocol_version']}`",
         f"- 合成样本：{report['sample_count']} 条（不含用户真实对话或知识正文）",
@@ -147,7 +161,8 @@ def render_markdown(report: dict) -> str:
         f"- entity 中置信最小长度：{threshold['entity_medium_min_chars']}。",
         f"- dense 自动升为 high：{'允许' if threshold['semantic_auto_high_enabled'] else '不允许'}。",
         f"- dense 建议阈值：{threshold['semantic_min_dense_score']}。",
-        "- 自动注入：关闭；K.3 仍保持 shadow。",
+        f"- 确定性 high 自动注入：{'允许' if threshold['automatic_injection_enabled'] else '关闭'}。",
+        f"- 纯语义自动升档：{'允许' if threshold['semantic_auto_high_enabled'] else '关闭'}。",
         "",
         "## 未通过样本",
         "",

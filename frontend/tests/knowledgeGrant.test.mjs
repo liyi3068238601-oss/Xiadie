@@ -20,6 +20,10 @@ test("grant confirmation exposes all four explicit user choices", () => {
   assert.match(chat, /位置：/);
   assert.match(chat, /token_range/);
   assert.match(css, /\.knowledge-grant-card/);
+  assert.match(chat, /aria-modal="true"/);
+  assert.match(chat, /event\.key === "Escape"/);
+  assert.match(chat, /event\.key !== "Tab"/);
+  assert.match(chat, /aria-live="polite"/);
 });
 
 test("structured authorization errors retain backend messages", () => {

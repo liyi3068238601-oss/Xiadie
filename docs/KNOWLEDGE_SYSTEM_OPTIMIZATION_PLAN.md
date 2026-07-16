@@ -4,7 +4,7 @@
 
 制定日期：2026-07-16
 
-状态：施工中；K.0～K.4 已完成，下一阶段 K.5
+状态：施工中；K.0～K.5 已完成，下一阶段 K.6
 适用对象：项目所有者、后续施工的 Codex、第一次接触检索系统的开发者
 
 ---
@@ -756,15 +756,37 @@ K.4 完工记录（2026-07-17）：
 
 ### K.5：智能召回正式接入
 
-- [ ] 增加 off/explicit/smart 设置并保持 explicit 默认。
-- [ ] high confidence + remote_allowed 可最小化自动注入。
-- [ ] ask_each_time 进入确认流程；local_only 只允许本地模型。
-- [ ] medium/low confidence 不自动注入。
-- [ ] SSE meta 区分 explicit/smart/confirmed，不暴露内部正文。
-- [ ] 引用白名单、来源按钮、哈希复核继续复用现有实现。
-- [ ] 用户关闭 smart 后立即停止自然预检。
+- [x] 增加 off/explicit/smart 设置并保持 explicit 默认。
+- [x] high confidence + remote_allowed 可最小化自动注入。
+- [x] ask_each_time 进入确认流程；local_only 只允许本地模型。
+- [x] medium/low confidence 不自动注入。
+- [x] SSE meta 区分 explicit/smart/confirmed，不暴露内部正文。
+- [x] 引用白名单、来源按钮、哈希复核继续复用现有实现。
+- [x] 用户关闭 smart 后立即停止真实自然预检；explicit 下可单独关闭的影子诊断仍保持隔离运行。
 
 验收：自然对话能在正确场景引用资料，同时普通陪伴对话的误触发率达到评测门槛。
+
+K.5 完工记录（2026-07-17）：
+
+- 开工前 review：`knowledge-stage-k4-review/knowledge-stage-k4-review.html`，审查提交 `2dd0bdc`、schema 37、
+  后端 357 和前端 30 的基线均与仓库一致，结论通过。
+- 采纳：smart 直接复用 K.4 授权链；增加 off/explicit/smart 且默认 explicit；增加 allow/deny/filter 固定授权
+  场景；授权卡补焦点、Tab、ESC 和 live status。
+- 调整后采纳：过期 grant 状态扫描接入知识 worker 的 60 秒空闲维护，而不是 20 小时 Archivist；只改状态并清
+  token hash，物理删除仍留 K.8。
+- 拒绝：不因样本数量刚达到 30/15 就开放 pure semantic。v3 中无关最高 dense 0.561615 高于相关最低
+  0.477699，类别重叠；`SEMANTIC_AUTO_HIGH_ENABLED` 继续为 false。
+- 评测：v3 共 52 条纯合成样本，30 个相关 dense、15 个无关 dense；整体 action/reason 98.08%，trigger
+  precision/recall/F1 96.77%/100%/98.36%，检索命中 100%；23 个自然 high 的自动路径 precision 100%。
+- 行为：off 不搜索；explicit 保持旧行为和可单独关闭的影子判断；smart 只真实使用 high，medium/low 没有 prepared context。由 smart 切回 explicit/off 后，真实自然预检立即停止。
+- 安全：smart ask_each_time 经 K.4 grant 后才标记 confirmed；模式、Provider、策略或来源变化使旧授权失效。
+- schema：37 → 38；grant 增加 recall_mode，新增无正文模式变更事件表。
+- API/UI：召回设置可切换三模式；SSE 增加 mode/source；文件页区分影子建议和 smart 实际使用。
+- ADR：ADR-0041 固定确定性 high、dense 不升档和 smart 授权边界。
+- 后端测试：366 passed，1 个既有 Starlette/httpx 弃用 warning。
+- 前端测试：32 passed；Vite 生产构建 188 modules；Electron main/preload 语法检查通过。
+- 提交：`Add high-confidence smart knowledge recall`（本地 main；GitHub 网络恢复后补推）。
+- 剩余风险：固定集仍是合成数据；pure semantic 会漏召回但不会误注入；知识与记忆隔离待 K.6 专项验收。
 
 ### K.6：知识与记忆隔离
 

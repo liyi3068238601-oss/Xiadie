@@ -277,8 +277,10 @@ async def chat(body: ChatIn) -> StreamingResponse:
         )
         style = companion_state.get_style_guidance(next_state)
         lore_digest = lore.retrieve_lore(body.content)
-        knowledge_retrieval = knowledge_context.prepare(
-            body.content, lore_text=lore_digest, memory_text=digest,
+        recall_mode = knowledge_recall.settings()["mode"]
+        knowledge_retrieval, recall_decision = knowledge_context.prepare_for_mode(
+            body.content, mode=recall_mode, provider=provider,
+            lore_text=lore_digest, memory_text=digest,
         )
         try:
             knowledge_retrieval = knowledge_grants.authorize_chat_locked(
@@ -287,6 +289,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 content=body.content, provider=provider, model=model,
                 grant_token=body.knowledge_grant_token,
                 skip_restricted=body.knowledge_skip_restricted,
+                recall_mode=recall_mode,
             )
         except knowledge_grants.GrantError as error:
             if conn.in_transaction:
@@ -309,6 +312,14 @@ async def chat(body: ChatIn) -> StreamingResponse:
                     "UPDATE sessions SET title=? WHERE id=?",
                     (body.content.strip()[:20] or "新对话", body.session_id),
                 )
+
+        if not body.regenerate and uid and recall_mode == "smart" and recall_decision:
+            knowledge_recall.record_actual_locked(
+                conn, session_id=body.session_id, user_message_id=uid,
+                user_text=body.content, provider=provider, result=recall_decision,
+                injected_count=len((knowledge_retrieval or {}).get("results", [])),
+                grant_id=(knowledge_retrieval or {}).get("_grant_id"),
+            )
 
         if replace_assistant_id:
             history = conn.execute(
@@ -344,7 +355,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
     finally:
         conn.close()
 
-    if not body.regenerate and uid:
+    if not body.regenerate and uid and recall_mode == "explicit":
         # 只在后台记录影子判断；绝不修改本轮 messages 或 knowledge_block。
         knowledge_recall.enqueue(
             session_id=body.session_id, user_message_id=uid,
@@ -394,6 +405,12 @@ async def chat(body: ChatIn) -> StreamingResponse:
                     ],
                     "knowledge_used": bool(knowledge_retrieval and knowledge_retrieval["results"]),
                     "knowledge_count": len((knowledge_retrieval or {}).get("results", [])),
+                    "knowledge_source": (
+                        "confirmed" if (knowledge_retrieval or {}).get("confirmed")
+                        else (knowledge_retrieval or {}).get("source_mode", "none")
+                        if (knowledge_retrieval or {}).get("results") else "none"
+                    ),
+                    "knowledge_recall_mode": recall_mode,
                 },
             )
             async for chunk in llm.stream_chat(provider, model, messages):
@@ -687,7 +704,8 @@ def get_knowledge_retrievals(session_id: Optional[str] = None,
 
 
 class KnowledgeRecallSettingsIn(BaseModel):
-    shadow_enabled: bool
+    mode: Optional[str] = Field(default=None, pattern=r"^(off|explicit|smart)$")
+    shadow_enabled: Optional[bool] = None
 
 
 @app.get("/api/knowledge/recall/settings")
@@ -697,7 +715,12 @@ def get_knowledge_recall_settings() -> dict:
 
 @app.patch("/api/knowledge/recall/settings")
 def patch_knowledge_recall_settings(body: KnowledgeRecallSettingsIn) -> dict:
-    return knowledge_recall.set_shadow_enabled(body.shadow_enabled)
+    try:
+        return knowledge_recall.update_settings(
+            mode=body.mode, shadow_enabled=body.shadow_enabled,
+        )
+    except ValueError as error:
+        raise HTTPException(400, str(error)) from error
 
 
 @app.get("/api/knowledge/recall-decisions")
@@ -723,11 +746,12 @@ class KnowledgeRecallPreflightIn(BaseModel):
 @app.post("/api/knowledge/recall/preflight")
 def preflight_knowledge_recall(body: KnowledgeRecallPreflightIn) -> dict:
     provider, model = _current_model()
+    recall_mode = knowledge_recall.settings()["mode"]
     try:
         knowledge_grants.expire_due(limit=50)
         return knowledge_grants.preflight(
             session_id=body.session_id, request_nonce=body.request_nonce,
-            content=body.content, provider=provider, model=model,
+            content=body.content, provider=provider, model=model, recall_mode=recall_mode,
         )
     except knowledge_grants.GrantError as error:
         raise HTTPException(
@@ -746,11 +770,12 @@ class KnowledgeGrantResolveIn(BaseModel):
 @app.post("/api/knowledge/transmission-grants")
 def resolve_knowledge_transmission_grant(body: KnowledgeGrantResolveIn) -> dict:
     provider, model = _current_model()
+    recall_mode = knowledge_recall.settings()["mode"]
     try:
         return knowledge_grants.resolve(
             grant_id=body.grant_id, action=body.action, session_id=body.session_id,
             request_nonce=body.request_nonce, content=body.content,
-            provider=provider, model=model,
+            provider=provider, model=model, recall_mode=recall_mode,
         )
     except knowledge_grants.GrantError as error:
         raise HTTPException(

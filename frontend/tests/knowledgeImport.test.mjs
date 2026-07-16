@@ -112,8 +112,8 @@ test("knowledge shadow recall diagnostics are honest and contain no query body",
     readFile(new URL("../src/components/FilesPage.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/api.ts", import.meta.url), "utf8"),
   ]);
-  assert.match(page, /影子召回判断（不会改变回答或发送资料）/);
-  assert.match(page, /建议召回|需要确认|跳过/);
+  assert.match(page, /知识召回判断（仅 high 会实际影响回答）/);
+  assert.match(page, /建议召回|确认后召回|本轮未使用|跳过/);
   assert.match(api, /KnowledgeRecallDecision|listKnowledgeRecallDecisions|query_fingerprint/);
   assert.match(page, /条样本|P90|向量可用/);
   assert.match(api, /KnowledgeRecallStats|getKnowledgeRecallStats/);

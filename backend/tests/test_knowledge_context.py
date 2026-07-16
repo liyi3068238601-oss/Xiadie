@@ -133,3 +133,75 @@ def test_ordinary_chat_creates_no_knowledge_audit(monkeypatch):
         assert conn.execute("SELECT COUNT(*) FROM knowledge_chat_retrievals").fetchone()[0] == 0
     finally:
         conn.close()
+
+
+def test_smart_high_confidence_recall_is_injected_and_audited(monkeypatch):
+    document = _index("# 星穹密钥说明\n星穹密钥是紫色回声。", "星穹密钥说明.md")
+    # smart 语义召回依赖导入后的独立本地 embedding 任务。
+    assert asyncio.run(knowledge_worker.process_due(limit=1)) == 1
+    conn = db.connect()
+    try:
+        conn.execute(
+            "UPDATE knowledge_documents SET transmission_policy='remote_allowed' WHERE id=?",
+            (document["id"],),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    db.set_setting("current_model", '{"provider_id":"mock","model":"xiadie-mock"}')
+    from app import knowledge_recall
+    knowledge_recall.update_settings(mode="smart", shadow_enabled=True)
+    captured = {}
+
+    async def fake_stream(_provider, _model, messages):
+        captured["system"] = messages[0]["content"]
+        yield "密钥是紫色回声 [资料:K1]"
+
+    monkeypatch.setattr(llm, "stream_chat", fake_stream)
+    session = client.post("/api/sessions", json={}).json()
+    try:
+        with client.stream("POST", "/api/chat", json={
+            "session_id": session["id"], "content": "星穹密钥有什么说明？",
+        }) as response:
+            body = "".join(response.iter_text())
+        assert response.status_code == 200
+        assert '"knowledge_source": "smart"' in body
+        assert '"knowledge_recall_mode": "smart"' in body
+        assert "星穹密钥是紫色回声" in captured["system"]
+        conn = db.connect()
+        try:
+            decision = conn.execute(
+                "SELECT shadow,action,confidence_band,injected_count FROM "
+                "knowledge_recall_decisions WHERE session_id=? ORDER BY created_at DESC LIMIT 1",
+                (session["id"],),
+            ).fetchone()
+            assert tuple(decision) == (0, "retrieve", "high", 1)
+        finally:
+            conn.close()
+    finally:
+        knowledge_recall.update_settings(mode="explicit", shadow_enabled=True)
+
+
+def test_off_mode_disables_even_explicit_knowledge_retrieval(monkeypatch):
+    _index("星穹密钥是紫色回声。", "星穹资料.md")
+    from app import knowledge_recall
+    knowledge_recall.update_settings(mode="off", shadow_enabled=True)
+    captured = {}
+
+    async def fake_stream(_provider, _model, messages):
+        captured["system"] = messages[0]["content"]
+        yield "未使用资料"
+
+    monkeypatch.setattr(llm, "stream_chat", fake_stream)
+    session = client.post("/api/sessions", json={}).json()
+    try:
+        with client.stream("POST", "/api/chat", json={
+            "session_id": session["id"], "content": "请根据文档告诉我星穹密钥",
+        }) as response:
+            body = "".join(response.iter_text())
+        assert response.status_code == 200
+        assert '"knowledge_used": false' in body
+        assert '"knowledge_recall_mode": "off"' in body
+        assert "星穹密钥是紫色回声" not in captured["system"]
+    finally:
+        knowledge_recall.update_settings(mode="explicit", shadow_enabled=True)

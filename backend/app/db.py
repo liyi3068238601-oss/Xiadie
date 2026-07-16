@@ -1698,6 +1698,24 @@ MIGRATIONS = [
             ON knowledge_transmission_grant_events(grant_id,created_at,id);
         """,
     ),
+    (
+        38,
+        """
+        ALTER TABLE knowledge_transmission_grants ADD COLUMN recall_mode TEXT NOT NULL
+            DEFAULT 'explicit' CHECK(recall_mode IN ('off','explicit','smart'));
+
+        CREATE TABLE knowledge_recall_mode_events (
+            id TEXT PRIMARY KEY,
+            before_mode TEXT NOT NULL CHECK(before_mode IN ('off','explicit','smart')),
+            after_mode TEXT NOT NULL CHECK(after_mode IN ('off','explicit','smart')),
+            actor TEXT NOT NULL DEFAULT 'user',
+            reason_code TEXT NOT NULL,
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_knowledge_recall_mode_events_created
+            ON knowledge_recall_mode_events(created_at DESC,id DESC);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
@@ -1772,6 +1790,10 @@ def init_db() -> None:
         conn.execute(
             "INSERT OR IGNORE INTO settings(key, value)"
             " VALUES('knowledge_shadow_recall_enabled', '1')"
+        )
+        conn.execute(
+            "INSERT OR IGNORE INTO settings(key, value)"
+            " VALUES('knowledge_recall_mode', 'explicit')"
         )
         conn.commit()
     finally:

@@ -64,23 +64,107 @@ def prepare(user_text: str, *, lore_text: str = "", memory_text: str = "") -> di
         )
     except knowledge_search.SearchError:
         found = {"results": [], "result_count": 0}
+    return _prepare_results(
+        query=query, reason=reason, results=found["results"],
+        candidate_count=found["result_count"], token_budget=KNOWLEDGE_TOKEN_BUDGET,
+        max_results=MAX_INJECTED_RESULTS, lore_text=lore_text, memory_text=memory_text,
+        source_mode="explicit",
+    )
+
+
+def prepare_for_mode(
+    user_text: str, *, mode: str, provider: dict | None = None,
+    lore_text: str = "", memory_text: str = "",
+) -> tuple[dict | None, dict | None]:
+    """按 off/explicit/smart 准备候选；只让高置信自然判断进入真实上下文。"""
+    if mode == "off":
+        return None, None
+    explicit_query, _reason = retrieval_query(user_text)
+    if mode != "smart":
+        return prepare(user_text, lore_text=lore_text, memory_text=memory_text), None
+    if explicit_query:
+        prepared = prepare(user_text, lore_text=lore_text, memory_text=memory_text)
+        decision = _explicit_decision(user_text, prepared, provider)
+        if prepared:
+            prepared["_recall_decision"] = decision
+        return prepared, decision
+
+    # 局部导入避免 knowledge_recall -> knowledge_context 的模块环。
+    from . import knowledge_recall  # noqa: PLC0415
+    decision = knowledge_recall.evaluate(user_text, provider)
+    results = list(decision.get("_selected_results") or [])
+    if (
+        decision.get("confidence_band") != "high"
+        or decision.get("action") not in {"retrieve", "ask"}
+        or not results
+    ):
+        return None, decision
+    prepared = _prepare_results(
+        query=str(user_text or "")[:knowledge_search.MAX_QUERY_CHARS],
+        reason=f"smart_{decision['reason_code']}", results=results,
+        candidate_count=int(decision.get("candidate_count") or len(results)),
+        token_budget=knowledge_recall.NATURAL_TOKEN_BUDGET,
+        max_results=knowledge_recall.MAX_NATURAL_RESULTS,
+        lore_text=lore_text, memory_text=memory_text, source_mode="smart",
+    )
+    prepared["_recall_decision"] = decision
+    return prepared, decision
+
+
+def _prepare_results(
+    *, query: str, reason: str, results: list[dict], candidate_count: int,
+    token_budget: int, max_results: int, lore_text: str, memory_text: str,
+    source_mode: str,
+) -> dict:
     selected: list[dict] = []
     used = estimate_tokens(_PROMPT_PREAMBLE)
-    for item in found["results"]:
+    for item in results:
         key = f"K{len(selected) + 1}"
         record = _prompt_record(key, item)
         cost = estimate_tokens(json.dumps(record, ensure_ascii=False, separators=(",", ":")))
-        if used + cost > KNOWLEDGE_TOKEN_BUDGET:
+        if used + cost > token_budget:
             continue
         selected.append({**item, "citation_key": key})
         used += cost
+        if len(selected) >= max_results:
+            break
     return {
         "id": db.new_id(), "query": query, "reason": reason,
         "query_sha256": hashlib.sha256(query.encode("utf-8")).hexdigest(),
-        "candidate_count": found["result_count"], "results": selected,
-        "knowledge_tokens": used, "knowledge_token_budget": KNOWLEDGE_TOKEN_BUDGET,
+        "candidate_count": candidate_count, "results": selected,
+        "knowledge_tokens": used, "knowledge_token_budget": token_budget,
         "lore_tokens": estimate_tokens(lore_text), "memory_tokens": estimate_tokens(memory_text),
         "status": "injected" if selected else "no_results",
+        "source_mode": source_mode, "confirmed": False,
+    }
+
+
+def _explicit_decision(user_text: str, prepared: dict | None, provider: dict | None) -> dict:
+    from . import knowledge_recall  # noqa: PLC0415
+    results = list((prepared or {}).get("results", []))
+    documents = knowledge_recall._document_policies({item["document_id"] for item in results})
+    location = str((provider or {}).get("execution_location") or "unknown")
+    eligible = len(results) if location == "local" else sum(
+        documents.get(item["document_id"], {}).get("transmission_policy") == "remote_allowed"
+        for item in results
+    )
+    action, reason = ("retrieve", "explicit_request") if results else ("skip", "no_candidates")
+    if results and location != "local" and eligible == 0:
+        action = "ask"
+        reason = (
+            "transmission_consent_required"
+            if any(row.get("transmission_policy") == "ask_each_time" for row in documents.values())
+            else "local_only_remote_provider"
+        )
+    return {
+        "recall_mode": "explicit", "action": action, "reason_code": reason,
+        "confidence_band": "high" if results else "low",
+        "candidate_count": int((prepared or {}).get("candidate_count") or 0),
+        "eligible_count": int(eligible), "retrieval_mode": "hybrid" if results else "none",
+        "vector_available": False, "vector_error_code": None,
+        "policy_snapshot_sha256": knowledge_recall._policy_snapshot(documents),
+        "latency_ms": 0, "status": "completed", "_selected_results": results,
+        "features": {}, "natural_selected_count": 0, "natural_tokens": 0,
     }
 
 

@@ -216,7 +216,7 @@ def test_schema_29_parse_artifact_is_metadata_only_and_cascades():
     try:
         assert conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
-        ).fetchone()["value"] == "37"
+        ).fetchone()["value"] == "38"
         columns = {
             row["name"] for row in conn.execute("PRAGMA table_info(knowledge_parse_artifacts)")
         }
@@ -353,3 +353,13 @@ def test_chunk_transaction_rolls_back_as_a_unit_and_unexpected_log_hides_details
     assert document["chunked_at"] is None and document["chunk_count"] == 0
     assert run["status"] == "recovery_pending" and run["error_code"] == "knowledge_chunk_failed"
     assert "private body" not in caplog.text and "path" not in caplog.text
+
+
+def test_idle_maintenance_sweeps_expired_grant_states_without_deleting_rows(monkeypatch):
+    calls = []
+    monkeypatch.setattr(
+        knowledge_worker.knowledge_grants, "expire_due",
+        lambda *, limit: calls.append(limit) or 3,
+    )
+    assert knowledge_worker.expire_grants_once() == 3
+    assert calls == [100]

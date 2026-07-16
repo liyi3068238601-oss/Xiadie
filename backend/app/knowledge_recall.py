@@ -22,6 +22,7 @@ REASON_CODES = frozenset({
     "transmission_consent_required", "local_only_remote_provider", "duplicate_candidates",
     "source_conflict", "source_unavailable", "provider_revision_changed",
 })
+RECALL_MODES = frozenset({"off", "explicit", "smart"})
 
 _FORBID = re.compile(
     r"(?:不要|别|无需|不用).{0,8}(?:(?:查|检索|搜索|引用).{0,6}(?:知识库|资料|文档|文件)|"
@@ -36,19 +37,62 @@ _AMBIGUOUS = re.compile(r"^(?:嗯+|哦+|好吧|然后呢|继续|你觉得呢|她
 
 
 def settings() -> dict:
+    mode = db.get_setting("knowledge_recall_mode", "explicit")
+    if mode not in RECALL_MODES:
+        mode = "explicit"
     return {
+        "mode": mode,
         "shadow_enabled": db.get_setting("knowledge_shadow_recall_enabled", "1") == "1",
         "protocol_version": PROTOCOL_VERSION,
         "threshold_version": knowledge_recall_thresholds.THRESHOLD_VERSION,
         "natural_token_budget": NATURAL_TOKEN_BUDGET,
         "automatic_injection_enabled": knowledge_recall_thresholds.AUTOMATIC_INJECTION_ENABLED,
-        "answer_behavior": "explicit_unchanged",
+        "answer_behavior": "disabled" if mode == "off" else (
+            "smart_high_confidence" if mode == "smart" else "explicit_unchanged"
+        ),
         "stores_query_or_content": False,
     }
 
 
 def set_shadow_enabled(enabled: bool) -> dict:
     db.set_setting("knowledge_shadow_recall_enabled", "1" if enabled else "0")
+    return settings()
+
+
+def update_settings(*, mode: str | None = None, shadow_enabled: bool | None = None) -> dict:
+    if mode is not None and mode not in RECALL_MODES:
+        raise ValueError("知识召回模式无效")
+    conn = db.connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        if mode is not None:
+            row = conn.execute(
+                "SELECT value FROM settings WHERE key='knowledge_recall_mode'"
+            ).fetchone()
+            before = row["value"] if row and row["value"] in RECALL_MODES else "explicit"
+            conn.execute(
+                "INSERT INTO settings(key,value) VALUES('knowledge_recall_mode',?)"
+                " ON CONFLICT(key) DO UPDATE SET value=excluded.value", (mode,),
+            )
+            if mode != before:
+                conn.execute(
+                    "INSERT INTO knowledge_recall_mode_events("
+                    "id,before_mode,after_mode,actor,reason_code,created_at)"
+                    " VALUES(?,?,?,'user','user_changed_recall_mode',?)",
+                    (db.new_id(), before, mode, db.now()),
+                )
+        if shadow_enabled is not None:
+            conn.execute(
+                "INSERT INTO settings(key,value) VALUES('knowledge_shadow_recall_enabled',?)"
+                " ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                ("1" if shadow_enabled else "0",),
+            )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
     return settings()
 
 
@@ -71,11 +115,12 @@ def enqueue(*, session_id: str, user_message_id: str | None, user_text: str,
     try:
         conn.execute(
             "INSERT INTO knowledge_recall_decisions("
-            "id,session_id,user_message_id,protocol_version,recall_mode,shadow,action,reason_code,"
+            "id,session_id,user_message_id,protocol_version,threshold_version,recall_mode,shadow,action,reason_code,"
             "confidence_band,query_sha256,policy_snapshot_sha256,provider_id,provider_location,"
-            "provider_location_revision,status,created_at) VALUES(?,?,?,?,?,1,'skip','queued',"
+            "provider_location_revision,status,created_at) VALUES(?,?,?,?,?,?,1,'skip','queued',"
             "'low',?,?,?,?,?,'queued',?)",
-            (decision_id, session_id, user_message_id, PROTOCOL_VERSION, "smart",
+            (decision_id, session_id, user_message_id, PROTOCOL_VERSION,
+             knowledge_recall_thresholds.THRESHOLD_VERSION, "smart",
              _fingerprint(user_text), EMPTY_POLICY_SNAPSHOT, provider_snapshot["id"], location,
              provider_snapshot["location_revision"], db.now()),
         )
@@ -103,6 +148,7 @@ def evaluate(
         "policy_snapshot_sha256": EMPTY_POLICY_SNAPSHOT,
         "natural_selected_count": 0, "natural_tokens": 0,
         "features": {"term_strength": 0, "search_ms": 0, "policy_ms": 0},
+        "_selected_results": [],
     }
     if _FORBID.search(text) and not _DOUBLE_NEGATIVE.search(text):
         base["recall_mode"] = "explicit"
@@ -149,6 +195,7 @@ def evaluate(
         "policy_snapshot_sha256": _policy_snapshot(documents),
         "natural_selected_count": len(natural_results),
         "natural_tokens": natural_tokens,
+        "_selected_results": natural_results,
         "features": {
             **found.get("diagnostics", {}),
             "raw_candidate_count": len(raw_results),
@@ -162,10 +209,9 @@ def evaluate(
         return _finish(base, started, "skip", "no_candidates", "low")
 
     location = str(provider.get("execution_location") or "unknown")
+    consent_count = local_only_count = 0
     if location != "local":
         eligible_count = 0
-        consent_count = 0
-        local_only_count = 0
         for item in results:
             policies = {
                 documents[document_id]["transmission_policy"]
@@ -178,26 +224,32 @@ def evaluate(
             elif "local_only" in policies:
                 local_only_count += 1
         base["eligible_count"] = eligible_count
-        if not eligible_count and consent_count:
-            return _finish(base, started, "ask", "transmission_consent_required", "high")
-        if not eligible_count and local_only_count:
-            return _finish(base, started, "ask", "local_only_remote_provider", "high")
     else:
         base["eligible_count"] = len(results)
     if explicit_query:
-        return _finish(base, started, "retrieve", "explicit_request", "high")
-    if _SOURCE_CONFLICT.search(text):
-        return _finish(base, started, "retrieve", "source_conflict", "high")
-    # 标题实体只看融合排序最前的两个已准入候选，避免低位无关标题把普通词误判为实体命中。
-    term_strength = _term_strength(text, results[:2])
-    base["features"]["term_strength"] = term_strength
-    if term_strength >= knowledge_recall_thresholds.EXACT_TERM_HIGH_MIN_CHARS:
-        return _finish(base, started, "retrieve", "exact_term_hit", "high")
-    if term_strength >= knowledge_recall_thresholds.ENTITY_MEDIUM_MIN_CHARS:
-        return _finish(base, started, "retrieve", "entity_hit", "medium")
-    if any(item.get("match_type") in {"vector", "hybrid"} for item in results):
-        return _finish(base, started, "retrieve", "semantic_candidate", "medium")
-    return _finish(base, started, "retrieve", "lexical_candidate", "medium")
+        action, reason, confidence = "retrieve", "explicit_request", "high"
+    elif _SOURCE_CONFLICT.search(text):
+        action, reason, confidence = "retrieve", "source_conflict", "high"
+    else:
+        # 标题实体只看融合排序最前的两个已准入候选，避免低位无关标题把普通词误判为实体命中。
+        term_strength = _term_strength(text, results[:2])
+        base["features"]["term_strength"] = term_strength
+        if term_strength >= knowledge_recall_thresholds.EXACT_TERM_HIGH_MIN_CHARS:
+            action, reason, confidence = "retrieve", "exact_term_hit", "high"
+        elif term_strength >= knowledge_recall_thresholds.ENTITY_MEDIUM_MIN_CHARS:
+            action, reason, confidence = "retrieve", "entity_hit", "medium"
+        elif any(item.get("match_type") in {"vector", "hybrid"} for item in results):
+            confidence = "high" if knowledge_recall_thresholds.SEMANTIC_AUTO_HIGH_ENABLED else "medium"
+            action, reason = "retrieve", "semantic_candidate"
+        else:
+            action, reason, confidence = "retrieve", "lexical_candidate", "medium"
+    # 远传策略只能限制已经达到 high 的真实候选，绝不能把弱语义候选反向“升格”为 high。
+    if location != "local" and confidence == "high":
+        if consent_count:
+            action, reason = "ask", "transmission_consent_required"
+        elif local_only_count:
+            action, reason = "ask", "local_only_remote_provider"
+    return _finish(base, started, action, reason, confidence)
 
 
 def complete(decision_id: str, result: dict) -> None:
@@ -219,6 +271,51 @@ def complete(decision_id: str, result: dict) -> None:
         conn.commit()
     finally:
         conn.close()
+
+
+def record_actual_locked(
+    conn, *, session_id: str, user_message_id: str, user_text: str,
+    provider: dict | None, result: dict, injected_count: int,
+    grant_id: str | None = None,
+) -> str:
+    """在聊天事务中保存真实 smart 判断；仅保存哈希、计数和枚举。"""
+    reason = str(result.get("reason_code") or "no_candidates")
+    if reason not in REASON_CODES:
+        reason = "preflight_failed"
+    provider = provider or {}
+    location = str(provider.get("execution_location") or "unknown")
+    if location not in {"local", "remote", "unknown"}:
+        location = "unknown"
+    decision_id = db.new_id()
+    now = db.now()
+    conn.execute(
+        "INSERT INTO knowledge_recall_decisions("
+        "id,session_id,user_message_id,protocol_version,threshold_version,recall_mode,shadow,action,reason_code,"
+        "confidence_band,query_sha256,policy_snapshot_sha256,candidate_count,eligible_count,"
+        "injected_count,retrieval_mode,vector_available,vector_error_code,provider_id,"
+        "provider_location,provider_location_revision,latency_ms,status,created_at,finished_at)"
+        " VALUES(?,?,?,?,?,?,0,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        (
+            decision_id, session_id, user_message_id, PROTOCOL_VERSION,
+            knowledge_recall_thresholds.THRESHOLD_VERSION,
+            result.get("recall_mode", "smart"), result.get("action", "skip"), reason,
+            result.get("confidence_band", "low"), _fingerprint(user_text),
+            result.get("policy_snapshot_sha256", EMPTY_POLICY_SNAPSHOT),
+            max(0, int(result.get("candidate_count") or 0)),
+            max(0, int(result.get("eligible_count") or 0)), max(0, int(injected_count)),
+            result.get("retrieval_mode", "none"), int(bool(result.get("vector_available"))),
+            result.get("vector_error_code"), provider.get("id"), location,
+            max(1, int(provider.get("location_revision") or 1)),
+            max(0, int(result.get("latency_ms") or 0)), result.get("status", "completed"),
+            now, now,
+        ),
+    )
+    if grant_id:
+        conn.execute(
+            "UPDATE knowledge_transmission_grants SET recall_decision_id=? WHERE id=?",
+            (decision_id, grant_id),
+        )
+    return decision_id
 
 
 def fail(decision_id: str, *, timed_out: bool = False) -> None:

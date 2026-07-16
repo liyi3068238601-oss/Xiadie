@@ -362,6 +362,16 @@ export interface KnowledgeRecallStats {
   vector_available_rate: number;
   timeout_rate: number;
 }
+export interface KnowledgeRecallSettings {
+  mode: "off" | "explicit" | "smart";
+  shadow_enabled: boolean;
+  protocol_version: string;
+  threshold_version: string;
+  natural_token_budget: number;
+  automatic_injection_enabled: boolean;
+  answer_behavior: "disabled" | "explicit_unchanged" | "smart_high_confidence";
+  stores_query_or_content: false;
+}
 export interface KnowledgeGrantDocument {
   id: string;
   name: string;
@@ -374,6 +384,7 @@ export interface KnowledgeGrantPreflight {
   id: string | null;
   status: "not_needed" | "pending" | "issued" | "consumed" | "denied" | "expired" | "revoked";
   protocol_version?: string;
+  recall_mode: "off" | "explicit" | "smart";
   provider: {
     id: string | null;
     model: string;
@@ -753,6 +764,14 @@ export const getKnowledgeRecallStats = (sessionId?: string) =>
   j<KnowledgeRecallStats>(`/api/knowledge/recall-decisions/stats${
     sessionId ? `?session_id=${encodeURIComponent(sessionId)}` : ""
   }`);
+export const getKnowledgeRecallSettings = () =>
+  j<KnowledgeRecallSettings>("/api/knowledge/recall/settings");
+export const updateKnowledgeRecallSettings = (body: {
+  mode?: KnowledgeRecallSettings["mode"];
+  shadow_enabled?: boolean;
+}) => j<KnowledgeRecallSettings>("/api/knowledge/recall/settings", {
+  method: "PATCH", body: JSON.stringify(body),
+});
 export const preflightKnowledgeTransmission = (
   session_id: string, request_nonce: string, content: string,
 ) => j<KnowledgeGrantPreflight>("/api/knowledge/recall/preflight", {
@@ -993,6 +1012,8 @@ export interface ChatCallbacks {
     }>;
     knowledge_used: boolean;
     knowledge_count: number;
+    knowledge_source: "none" | "explicit" | "smart" | "confirmed";
+    knowledge_recall_mode: "off" | "explicit" | "smart";
   }) => void;
   onDelta?: (text: string) => void;
   onError?: (message: string, hint: string) => void;

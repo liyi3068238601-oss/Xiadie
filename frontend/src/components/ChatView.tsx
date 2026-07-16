@@ -406,8 +406,39 @@ function KnowledgeGrantCard({
 }) {
   const { preview } = pending;
   const remote = preview.provider.location !== "local";
+  const dialogRef = useRef<HTMLElement>(null);
+  const primaryRef = useRef<HTMLButtonElement>(null);
+  const cancelRef = useRef(onCancel);
+  cancelRef.current = onCancel;
+  useEffect(() => {
+    primaryRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        cancelRef.current();
+        return;
+      }
+      if (event.key !== "Tab" || !dialogRef.current) return;
+      const controls = Array.from(dialogRef.current.querySelectorAll<HTMLElement>(
+        "button:not(:disabled), [href], [tabindex]:not([tabindex='-1'])",
+      ));
+      if (!controls.length) return;
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
   return (
-    <section className="knowledge-grant-card" role="dialog" aria-labelledby="knowledge-grant-title">
+    <section ref={dialogRef} className="knowledge-grant-card" role="dialog" aria-modal="true"
+      aria-labelledby="knowledge-grant-title" aria-describedby="knowledge-grant-description">
       <div className="knowledge-grant-head">
         <div className="knowledge-grant-icon" aria-hidden="true">◇</div>
         <div>
@@ -428,7 +459,7 @@ function KnowledgeGrantCard({
         <div className="knowledge-grant-warning">模型位置或配置已变化，请重新确认本次发送范围。</div>
       )}
       {remote && (
-        <p className="knowledge-grant-explain">
+        <p className="knowledge-grant-explain" id="knowledge-grant-description">
           若允许，下面列出的 {preview.chunk_count} 个片段会随本轮消息发送给当前模型服务商；
           授权仅绑定这条消息、这个模型与当前资料版本。
         </p>
@@ -458,6 +489,7 @@ function KnowledgeGrantCard({
 
       <div className="knowledge-grant-actions">
         <button
+          ref={primaryRef}
           className="knowledge-grant-primary"
           disabled={busy || !preview.can_allow_once}
           title={preview.can_allow_once ? "只允许这一次" : "包含仅限本地资料，不能单次放行"}
@@ -474,6 +506,9 @@ function KnowledgeGrantCard({
       <small className="knowledge-grant-footnote">
         “本次不使用资料”会继续发送消息，但从本轮上下文中移除受限片段。
       </small>
+      <span className="sr-only" role="status" aria-live="polite">
+        {busy ? "正在处理资料授权" : "等待选择资料发送方式"}
+      </span>
     </section>
   );
 }

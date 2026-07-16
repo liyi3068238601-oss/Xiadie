@@ -17,7 +17,7 @@ def main() -> int:
     project_root = backend_root.parent
     parser.add_argument(
         "--fixture", type=Path,
-        default=backend_root / "tests" / "fixtures" / "knowledge_recall_evaluation_v2.json",
+        default=backend_root / "tests" / "fixtures" / "knowledge_recall_evaluation_v3.json",
     )
     parser.add_argument(
         "--uncalibrated", action="store_true",
@@ -25,11 +25,11 @@ def main() -> int:
     )
     parser.add_argument(
         "--json-output", type=Path,
-        default=project_root / "docs" / "reports" / "knowledge-recall-eval-v2-calibrated.json",
+        default=project_root / "docs" / "reports" / "knowledge-recall-eval-v3-calibrated.json",
     )
     parser.add_argument(
         "--markdown-output", type=Path,
-        default=project_root / "docs" / "reports" / "knowledge-recall-eval-v2-calibrated.md",
+        default=project_root / "docs" / "reports" / "knowledge-recall-eval-v3-calibrated.md",
     )
     args = parser.parse_args()
 
@@ -85,7 +85,9 @@ def main() -> int:
                 if item["document_id"] in reverse_documents
             }
             expected_groups = case["expected_document_groups"]
-            retrieval_hit = all(retrieved & set(group) for group in expected_groups)
+            retrieval_hit = bool(
+                expected_groups and all(retrieved & set(group) for group in expected_groups)
+            )
             outcomes.append({
                 "case_id": case["id"],
                 "category": case["category"],
@@ -93,6 +95,7 @@ def main() -> int:
                 "actual_action": decision["action"],
                 "expected_reason": case["expected_reason"],
                 "actual_reason": decision["reason_code"],
+                "recall_mode": decision["recall_mode"],
                 "expected_document_groups": expected_groups,
                 "retrieval_hit": bool(retrieval_hit),
                 "retrieved_document_count": len(retrieved),

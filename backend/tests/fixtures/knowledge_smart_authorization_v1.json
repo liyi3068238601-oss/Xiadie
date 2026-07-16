@@ -1,0 +1,33 @@
+{
+  "protocol_version": "knowledge-smart-authorization-eval-v1",
+  "synthetic_only": true,
+  "cases": [
+    {
+      "id": "smart_ask_allow_once",
+      "recall_case_id": "project_confirm_rule",
+      "provider_location": "remote",
+      "document_policy": "ask_each_time",
+      "user_action": "allow_once",
+      "expected_source": "confirmed",
+      "expected_injected": true
+    },
+    {
+      "id": "smart_ask_deny",
+      "recall_case_id": "project_confirm_rule",
+      "provider_location": "remote",
+      "document_policy": "ask_each_time",
+      "user_action": "skip",
+      "expected_source": "none",
+      "expected_injected": false
+    },
+    {
+      "id": "smart_dense_negative_filtered",
+      "recall_case_id": "negative_programming",
+      "provider_location": "remote",
+      "document_policy": "remote_allowed",
+      "user_action": "none",
+      "expected_source": "none",
+      "expected_injected": false
+    }
+  ]
+}

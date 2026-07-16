@@ -98,7 +98,7 @@ def test_remote_candidate_counts_exclude_local_only_documents(monkeypatch):
         "private": {"transmission_policy": "local_only", "policy_revision": 4},
     })
     result = knowledge_recall.evaluate("远程资料的内容", {"execution_location": "remote"})
-    assert result["action"] == "retrieve"
+    assert result["action"] == "ask"
     assert result["candidate_count"] == 2 and result["eligible_count"] == 1
 
 
@@ -175,11 +175,12 @@ def test_recall_diagnostic_api_is_body_free_and_shadow_toggle_is_explicit():
     enabled = CLIENT.patch("/api/knowledge/recall/settings", json={"shadow_enabled": True})
     assert enabled.status_code == 200
     assert enabled.json() == {
+        "mode": "explicit",
         "shadow_enabled": True,
         "protocol_version": knowledge_recall.PROTOCOL_VERSION,
         "threshold_version": knowledge_recall_thresholds.THRESHOLD_VERSION,
         "natural_token_budget": knowledge_recall.NATURAL_TOKEN_BUDGET,
-        "automatic_injection_enabled": False,
+        "automatic_injection_enabled": True,
         "answer_behavior": "explicit_unchanged",
         "stores_query_or_content": False,
     }
@@ -243,24 +244,34 @@ def test_dense_floor_natural_budget_and_source_conflict(monkeypatch):
     assert tokens <= knowledge_recall.NATURAL_TOKEN_BUDGET
 
 
-def test_evaluation_v2_fixture_threshold_evidence_and_reports_are_stable():
-    fixture_path = Path(__file__).parent / "fixtures" / "knowledge_recall_evaluation_v2.json"
-    fixture = knowledge_recall_evaluation.load_fixture(fixture_path)
-    assert len(fixture["cases"]) == knowledge_recall_thresholds.SOURCE_SAMPLE_COUNT
+def test_evaluation_v3_fixture_threshold_evidence_and_reports_are_stable():
+    fixtures = Path(__file__).parent / "fixtures"
+    fixture = knowledge_recall_evaluation.load_fixture(
+        fixtures / "knowledge_recall_evaluation_v3.json"
+    )
+    assert len(fixture["cases"]) == knowledge_recall_thresholds.SOURCE_SAMPLE_COUNT == 52
     fixture_json = json.dumps(fixture, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     assert hashlib.sha256(fixture_json.encode()).hexdigest() == knowledge_recall_thresholds.SOURCE_FIXTURE_SHA256
     categories = {case["category"] for case in fixture["cases"]}
     assert {"explicit_recall", "skip", "vector_strong", "negative_dense", "duplicate_sources",
-            "local_only", "prompt_injection", "negation_boundary", "fts_no_terms"} <= categories
-    assert knowledge_recall_thresholds.AUTOMATIC_INJECTION_ENABLED is False
+            "local_only", "prompt_injection", "negation_boundary", "fts_no_terms",
+            "expanded_positive", "expanded_negative"} <= categories
+    assert knowledge_recall_thresholds.AUTOMATIC_INJECTION_ENABLED is True
     assert knowledge_recall_thresholds.SEMANTIC_AUTO_HIGH_ENABLED is False
 
     reports = Path(__file__).parents[2] / "docs" / "reports"
     baseline = json.loads((reports / "knowledge-recall-eval-v2-baseline.json").read_text(encoding="utf-8"))
-    calibrated = json.loads((reports / "knowledge-recall-eval-v2-calibrated.json").read_text(encoding="utf-8"))
-    assert baseline["fixture_sha256"] == calibrated["fixture_sha256"] == knowledge_recall_thresholds.SOURCE_FIXTURE_SHA256
-    assert calibrated["metrics"]["recall_trigger_f1"] >= baseline["metrics"]["recall_trigger_f1"]
-    assert calibrated["threshold_decision"]["automatic_injection_enabled"] is False
+    old = json.loads((reports / "knowledge-recall-eval-v2-calibrated.json").read_text(encoding="utf-8"))
+    assert baseline["fixture_sha256"] == old["fixture_sha256"]
+    calibrated = json.loads(
+        (reports / "knowledge-recall-eval-v3-calibrated.json").read_text(encoding="utf-8")
+    )
+    assert calibrated["fixture_sha256"] == knowledge_recall_thresholds.SOURCE_FIXTURE_SHA256
+    assert calibrated["score_evidence"]["positive_top_dense"]["sample_count"] == 30
+    assert calibrated["score_evidence"]["negative_top_dense"]["sample_count"] == 15
+    assert calibrated["score_evidence"]["dense_classes_separable"] is False
+    assert calibrated["score_evidence"]["high_confidence_auto_precision"] == 1.0
+    assert calibrated["threshold_decision"]["automatic_injection_enabled"] is True
     assert calibrated["threshold_decision"]["semantic_auto_high_enabled"] is False
 
 
@@ -273,3 +284,62 @@ def test_decision_stats_endpoint_returns_counts_rates_and_percentiles():
     assert set(payload["latency_ms"]) == {"average", "p50", "p90", "p99"}
     assert 0 <= payload["vector_available_rate"] <= 1
     assert 0 <= payload["timeout_rate"] <= 1
+
+
+def test_recall_modes_default_to_explicit_and_changes_are_body_free_audited():
+    original = knowledge_recall.update_settings(mode="explicit", shadow_enabled=True)
+    assert original["mode"] == "explicit"
+    smart = CLIENT.patch("/api/knowledge/recall/settings", json={"mode": "smart"})
+    assert smart.status_code == 200
+    assert smart.json()["mode"] == "smart"
+    assert smart.json()["answer_behavior"] == "smart_high_confidence"
+    off = CLIENT.patch("/api/knowledge/recall/settings", json={"mode": "off"})
+    assert off.status_code == 200 and off.json()["answer_behavior"] == "disabled"
+    invalid = CLIENT.patch("/api/knowledge/recall/settings", json={"mode": "unsafe"})
+    assert invalid.status_code == 422
+    conn = db.connect()
+    try:
+        columns = {
+            row["name"] for row in conn.execute("PRAGMA table_info(knowledge_recall_mode_events)")
+        }
+        assert {"before_mode", "after_mode", "actor", "reason_code"} <= columns
+        assert not ({"query", "content", "path", "token"} & columns)
+        events = conn.execute(
+            "SELECT before_mode,after_mode FROM knowledge_recall_mode_events ORDER BY created_at"
+        ).fetchall()
+        assert ("explicit", "smart") in [tuple(row) for row in events]
+        assert ("smart", "off") in [tuple(row) for row in events]
+    finally:
+        conn.close()
+        knowledge_recall.update_settings(mode="explicit", shadow_enabled=True)
+
+
+def test_k5_authorization_fixture_is_synthetic_and_covers_allow_deny_filter():
+    path = Path(__file__).parent / "fixtures" / "knowledge_smart_authorization_v1.json"
+    fixture = json.loads(path.read_text(encoding="utf-8"))
+    assert fixture["protocol_version"] == "knowledge-smart-authorization-eval-v1"
+    assert fixture["synthetic_only"] is True
+    assert {case["user_action"] for case in fixture["cases"]} == {
+        "allow_once", "skip", "none",
+    }
+    assert {case["expected_source"] for case in fixture["cases"]} == {"confirmed", "none"}
+    serialized = json.dumps(fixture, ensure_ascii=False).lower()
+    assert "grant_token" not in serialized and "api_key" not in serialized
+
+
+def test_smart_medium_candidate_never_enters_real_prepared_context(monkeypatch):
+    candidate = {
+        "document_id": "doc", "chunk_id": "chunk", "original_name": "测试资料.md",
+        "heading_path": [], "content": "不应注入", "content_sha256": hashlib.sha256(
+            "不应注入".encode()
+        ).hexdigest(),
+    }
+    monkeypatch.setattr(knowledge_recall, "evaluate", lambda *_args, **_kwargs: {
+        "recall_mode": "smart", "action": "retrieve", "reason_code": "semantic_candidate",
+        "confidence_band": "medium", "_selected_results": [candidate],
+    })
+    from app import knowledge_context
+    prepared, decision = knowledge_context.prepare_for_mode(
+        "换一种说法", mode="smart", provider={"execution_location": "local"},
+    )
+    assert prepared is None and decision["confidence_band"] == "medium"

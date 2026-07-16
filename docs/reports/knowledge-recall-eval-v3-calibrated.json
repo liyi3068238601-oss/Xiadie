@@ -1,0 +1,4548 @@
+{
+  "report_protocol_version": "knowledge-recall-report-v1",
+  "evaluation_protocol_version": "knowledge-recall-eval-v3",
+  "decision_protocol_version": "knowledge-recall-decision-v1",
+  "fixture_sha256": "1b9beb3fc3ff947243f3e14bb8f19778f9d68df4358b5fa23989586d51415a3d",
+  "synthetic_only": true,
+  "environment": {
+    "python": "3.12.10",
+    "platform": "windows",
+    "embedding_available": true,
+    "embedding_version": "bge-m3-onnx-int8-dense-cls-v1:0826f8c1ab9e",
+    "search_index_version": "knowledge-fts-terms-v1"
+  },
+  "sample_count": 52,
+  "metrics": {
+    "action_accuracy": 0.980769,
+    "reason_accuracy": 0.980769,
+    "recall_trigger_precision": 0.967742,
+    "recall_trigger_recall": 1.0,
+    "recall_trigger_f1": 0.983607,
+    "retrieval_case_hit_rate": 1.0
+  },
+  "reason_metrics": {
+    "ambiguous_reference": {
+      "sample_count": 1,
+      "expected_match_rate": 1.0,
+      "action_accuracy": 1.0
+    },
+    "companion_smalltalk": {
+      "sample_count": 1,
+      "expected_match_rate": 1.0,
+      "action_accuracy": 1.0
+    },
+    "emotional_support": {
+      "sample_count": 1,
+      "expected_match_rate": 1.0,
+      "action_accuracy": 1.0
+    },
+    "entity_hit": {
+      "sample_count": 1,
+      "expected_match_rate": 1.0,
+      "action_accuracy": 1.0
+    },
+    "exact_term_hit": {
+      "sample_count": 22,
+      "expected_match_rate": 1.0,
+      "action_accuracy": 1.0
+    },
+    "explicit_forbidden": {
+      "sample_count": 3,
+      "expected_match_rate": 1.0,
+      "action_accuracy": 1.0
+    },
+    "explicit_request": {
+      "sample_count": 3,
+      "expected_match_rate": 1.0,
+      "action_accuracy": 1.0
+    },
+    "no_candidates": {
+      "sample_count": 14,
+      "expected_match_rate": 1.0,
+      "action_accuracy": 1.0
+    },
+    "semantic_candidate": {
+      "sample_count": 4,
+      "expected_match_rate": 0.75,
+      "action_accuracy": 0.75
+    },
+    "simple_task": {
+      "sample_count": 1,
+      "expected_match_rate": 1.0,
+      "action_accuracy": 1.0
+    },
+    "source_conflict": {
+      "sample_count": 1,
+      "expected_match_rate": 1.0,
+      "action_accuracy": 1.0
+    }
+  },
+  "performance_ms": {
+    "total": {
+      "sample_count": 52,
+      "average": 23.961538,
+      "p50": 27.0,
+      "p90": 31.9,
+      "p99": 34.49,
+      "min": 0.0,
+      "max": 35.0
+    },
+    "deterministic_rules": {
+      "sample_count": 7,
+      "average": 0.0,
+      "p50": 0.0,
+      "p90": 0.0,
+      "p99": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "search": {
+      "sample_count": 52,
+      "average": 22.039115,
+      "p50": 25.0055,
+      "p90": 27.761,
+      "p99": 30.9385,
+      "min": 0.0,
+      "max": 31.474
+    },
+    "policy_lookup": {
+      "sample_count": 52,
+      "average": 1.71125,
+      "p50": 2.2415,
+      "p90": 3.4505,
+      "p99": 3.75376,
+      "min": 0.0,
+      "max": 3.766
+    }
+  },
+  "score_evidence": {
+    "positive_top_dense": {
+      "sample_count": 30,
+      "average": 0.71391,
+      "p50": 0.743114,
+      "p90": 0.808464,
+      "p99": 0.826521,
+      "min": 0.477699,
+      "max": 0.828966
+    },
+    "negative_top_dense": {
+      "sample_count": 15,
+      "average": 0.389081,
+      "p50": 0.384218,
+      "p90": 0.453009,
+      "p99": 0.548319,
+      "min": 0.301833,
+      "max": 0.561615
+    },
+    "dense_classes_separable": false,
+    "recommended_dense_threshold": null,
+    "high_confidence_auto_sample_count": 23,
+    "high_confidence_auto_precision": 1.0
+  },
+  "threshold_decision": {
+    "version": "knowledge-recall-thresholds-v2",
+    "exact_term_high_min_chars": 3,
+    "entity_medium_min_chars": 2,
+    "semantic_auto_high_enabled": false,
+    "semantic_min_dense_score": null,
+    "automatic_injection_enabled": true,
+    "rationale": "dense_score_overlap_keep_semantic_medium"
+  },
+  "outcomes": [
+    {
+      "case_id": "explicit_project",
+      "category": "explicit_recall",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "explicit_request",
+      "actual_reason": "explicit_request",
+      "recall_mode": "explicit",
+      "expected_document_groups": [
+        [
+          "doc_project",
+          "doc_project_copy"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 6,
+      "natural_selected_count": 4,
+      "natural_tokens": 205,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "high",
+      "latency_ms": 31,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.7658669948577881,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 6,
+        "term_strength": 0,
+        "search_ms": 24.829,
+        "policy_ms": 3.198
+      },
+      "candidate_features": [
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.7658669948577881,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.663568913936615,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.4923871159553528,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.45109206438064575,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.44803938269615173,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.4247228801250458,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "forbid_project",
+      "category": "explicit_forbidden",
+      "expected_action": "skip",
+      "actual_action": "skip",
+      "expected_reason": "explicit_forbidden",
+      "actual_reason": "explicit_forbidden",
+      "recall_mode": "explicit",
+      "expected_document_groups": [],
+      "retrieval_hit": false,
+      "retrieved_document_count": 0,
+      "candidate_count": 0,
+      "natural_selected_count": 0,
+      "natural_tokens": 0,
+      "retrieval_mode": "none",
+      "confidence_band": "high",
+      "latency_ms": 0,
+      "features": {
+        "term_strength": 0,
+        "search_ms": 0,
+        "policy_ms": 0
+      },
+      "candidate_features": []
+    },
+    {
+      "case_id": "greeting",
+      "category": "skip",
+      "expected_action": "skip",
+      "actual_action": "skip",
+      "expected_reason": "companion_smalltalk",
+      "actual_reason": "companion_smalltalk",
+      "recall_mode": "smart",
+      "expected_document_groups": [],
+      "retrieval_hit": false,
+      "retrieved_document_count": 0,
+      "candidate_count": 0,
+      "natural_selected_count": 0,
+      "natural_tokens": 0,
+      "retrieval_mode": "none",
+      "confidence_band": "high",
+      "latency_ms": 0,
+      "features": {
+        "term_strength": 0,
+        "search_ms": 0,
+        "policy_ms": 0
+      },
+      "candidate_features": []
+    },
+    {
+      "case_id": "emotion",
+      "category": "skip",
+      "expected_action": "skip",
+      "actual_action": "skip",
+      "expected_reason": "emotional_support",
+      "actual_reason": "emotional_support",
+      "recall_mode": "smart",
+      "expected_document_groups": [],
+      "retrieval_hit": false,
+      "retrieved_document_count": 0,
+      "candidate_count": 0,
+      "natural_selected_count": 0,
+      "natural_tokens": 0,
+      "retrieval_mode": "none",
+      "confidence_band": "high",
+      "latency_ms": 0,
+      "features": {
+        "term_strength": 0,
+        "search_ms": 0,
+        "policy_ms": 0
+      },
+      "candidate_features": []
+    },
+    {
+      "case_id": "simple_task",
+      "category": "skip",
+      "expected_action": "skip",
+      "actual_action": "skip",
+      "expected_reason": "simple_task",
+      "actual_reason": "simple_task",
+      "recall_mode": "smart",
+      "expected_document_groups": [],
+      "retrieval_hit": false,
+      "retrieved_document_count": 0,
+      "candidate_count": 0,
+      "natural_selected_count": 0,
+      "natural_tokens": 0,
+      "retrieval_mode": "none",
+      "confidence_band": "high",
+      "latency_ms": 0,
+      "features": {
+        "term_strength": 0,
+        "search_ms": 0,
+        "policy_ms": 0
+      },
+      "candidate_features": []
+    },
+    {
+      "case_id": "ambiguous",
+      "category": "ambiguous_context",
+      "expected_action": "skip",
+      "actual_action": "skip",
+      "expected_reason": "ambiguous_reference",
+      "actual_reason": "ambiguous_reference",
+      "recall_mode": "smart",
+      "expected_document_groups": [],
+      "retrieval_hit": false,
+      "retrieved_document_count": 0,
+      "candidate_count": 0,
+      "natural_selected_count": 0,
+      "natural_tokens": 0,
+      "retrieval_mode": "none",
+      "confidence_band": "high",
+      "latency_ms": 0,
+      "features": {
+        "term_strength": 0,
+        "search_ms": 0,
+        "policy_ms": 0
+      },
+      "candidate_features": []
+    },
+    {
+      "case_id": "exact_four_chars",
+      "category": "lexical_strong",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "exact_term_hit",
+      "actual_reason": "exact_term_hit",
+      "recall_mode": "smart",
+      "expected_document_groups": [
+        [
+          "doc_project",
+          "doc_project_copy"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 2,
+      "natural_selected_count": 2,
+      "natural_tokens": 114,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "high",
+      "latency_ms": 33,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.7544847726821899,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 2,
+        "term_strength": 4,
+        "search_ms": 27.81,
+        "policy_ms": 3.452
+      },
+      "candidate_features": [
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.7544847726821899,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.6526312828063965,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.4633588194847107,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.4520311951637268,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.42153459787368774,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.3806455135345459,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "duplicate_sources",
+      "category": "duplicate_sources",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "exact_term_hit",
+      "actual_reason": "exact_term_hit",
+      "recall_mode": "smart",
+      "expected_document_groups": [
+        [
+          "doc_project",
+          "doc_project_copy"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 3,
+      "natural_selected_count": 3,
+      "natural_tokens": 166,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "high",
+      "latency_ms": 30,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.7710837125778198,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 3,
+        "term_strength": 6,
+        "search_ms": 26.217,
+        "policy_ms": 3.172
+      },
+      "candidate_features": [
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.7710837125778198,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.6876569986343384,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.489996075630188,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.4468762278556824,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.44067078828811646,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.3961822986602783,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "entity_two_chars",
+      "category": "entity_boundary",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "entity_hit",
+      "actual_reason": "entity_hit",
+      "recall_mode": "smart",
+      "expected_document_groups": [
+        [
+          "doc_project",
+          "doc_project_copy"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 3,
+      "natural_selected_count": 3,
+      "natural_tokens": 166,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "medium",
+      "latency_ms": 28,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.5932868123054504,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 3,
+        "term_strength": 2,
+        "search_ms": 24.884,
+        "policy_ms": 3.437
+      },
+      "candidate_features": [
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.5932868123054504,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.5620879530906677,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.47753262519836426,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.4144948720932007,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.3991914391517639,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.39501795172691345,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "semantic_cleanup",
+      "category": "vector_strong",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "semantic_candidate",
+      "actual_reason": "semantic_candidate",
+      "recall_mode": "smart",
+      "expected_document_groups": [
+        [
+          "doc_project",
+          "doc_project_copy"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 3,
+      "natural_selected_count": 3,
+      "natural_tokens": 166,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "medium",
+      "latency_ms": 29,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.5737020373344421,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 3,
+        "term_strength": 0,
+        "search_ms": 26.389,
+        "policy_ms": 2.211
+      },
+      "candidate_features": [
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.5737020373344421,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.5613717436790466,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.5499663949012756,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.44921061396598816,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.4433835744857788,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.33212798833847046,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "lexical_delete",
+      "category": "semantic_candidate",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "semantic_candidate",
+      "actual_reason": "semantic_candidate",
+      "recall_mode": "smart",
+      "expected_document_groups": [
+        [
+          "doc_project",
+          "doc_project_copy"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 4,
+      "natural_selected_count": 4,
+      "natural_tokens": 204,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "medium",
+      "latency_ms": 27,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.7199327349662781,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 4,
+        "term_strength": 0,
+        "search_ms": 23.781,
+        "policy_ms": 3.345
+      },
+      "candidate_features": [
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.7199327349662781,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.700812578201294,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.5895594358444214,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.47477662563323975,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.42954909801483154,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.4269402325153351,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "source_conflict",
+      "category": "memory_conflict",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "source_conflict",
+      "actual_reason": "source_conflict",
+      "recall_mode": "smart",
+      "expected_document_groups": [
+        [
+          "doc_lore"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 1,
+      "natural_selected_count": 1,
+      "natural_tokens": 41,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "high",
+      "latency_ms": 31,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.8192967176437378,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 1,
+        "term_strength": 0,
+        "search_ms": 27.32,
+        "policy_ms": 3.301
+      },
+      "candidate_features": [
+        {
+          "document": "doc_lore",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.8192967176437378,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.38984864950180054,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.37064844369888306,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.34150731563568115,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.31649693846702576,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.3114188015460968,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "private_remote",
+      "category": "local_only",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "semantic_candidate",
+      "actual_reason": "semantic_candidate",
+      "recall_mode": "smart",
+      "expected_document_groups": [
+        [
+          "doc_private"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 1,
+      "natural_selected_count": 1,
+      "natural_tokens": 38,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "medium",
+      "latency_ms": 28,
+      "features": {
+        "lexical_count": 1,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": -27.147400774609256,
+        "top_dense_score": 0.8205342292785645,
+        "top_fusion_score": 0.03278688524590164,
+        "fusion_score_gap": 0.016657852987837125,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 1,
+        "term_strength": 0,
+        "search_ms": 24.256,
+        "policy_ms": 3.292
+      },
+      "candidate_features": [
+        {
+          "document": "doc_private",
+          "match_type": "hybrid",
+          "fts_position": 1,
+          "dense_position": 1,
+          "vector_score": 0.8205342292785645,
+          "fusion_score": 0.03278688524590164,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.3889562487602234,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.3778724670410156,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.3734308183193207,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.32934892177581787,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.31899142265319824,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "prompt_injection_data",
+      "category": "prompt_injection",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "explicit_request",
+      "actual_reason": "explicit_request",
+      "recall_mode": "explicit",
+      "expected_document_groups": [
+        [
+          "doc_injection"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 6,
+      "natural_selected_count": 4,
+      "natural_tokens": 202,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "high",
+      "latency_ms": 27,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.4776986241340637,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 6,
+        "term_strength": 0,
+        "search_ms": 25.088,
+        "policy_ms": 2.243
+      },
+      "candidate_features": [
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.4776986241340637,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.4728075861930847,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.4639974534511566,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.43366822600364685,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.41724103689193726,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.39961451292037964,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "baking_exact",
+      "category": "domain_fact",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "exact_term_hit",
+      "actual_reason": "exact_term_hit",
+      "recall_mode": "smart",
+      "expected_document_groups": [
+        [
+          "doc_baking"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 1,
+      "natural_selected_count": 1,
+      "natural_tokens": 40,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "high",
+      "latency_ms": 28,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.7690601944923401,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 1,
+        "term_strength": 6,
+        "search_ms": 24.375,
+        "policy_ms": 3.259
+      },
+      "candidate_features": [
+        {
+          "document": "doc_baking",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.7690601944923401,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.4089985191822052,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.374064177274704,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.36979588866233826,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.36101168394088745,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.357319712638855,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "english_term",
+      "category": "english_term",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "exact_term_hit",
+      "actual_reason": "exact_term_hit",
+      "recall_mode": "smart",
+      "expected_document_groups": [
+        [
+          "doc_glossary"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 1,
+      "natural_selected_count": 1,
+      "natural_tokens": 36,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "high",
+      "latency_ms": 28,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.8072599172592163,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 1,
+        "term_strength": 6,
+        "search_ms": 25.545,
+        "policy_ms": 2.202
+      },
+      "candidate_features": [
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.8072599172592163,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.3845134973526001,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.3564784824848175,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.33486831188201904,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.32438424229621887,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.3172307014465332,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "number_date",
+      "category": "number_time",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "exact_term_hit",
+      "actual_reason": "exact_term_hit",
+      "recall_mode": "smart",
+      "expected_document_groups": [
+        [
+          "doc_schedule"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 1,
+      "natural_selected_count": 1,
+      "natural_tokens": 39,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "high",
+      "latency_ms": 28,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.7999540567398071,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 1,
+        "term_strength": 4,
+        "search_ms": 25.211,
+        "policy_ms": 2.975
+      },
+      "candidate_features": [
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.7999540567398071,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.3620111346244812,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.3516845107078552,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.3161155879497528,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.3103303611278534,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.30628272891044617,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "unrelated_weather",
+      "category": "negative_dense",
+      "expected_action": "skip",
+      "actual_action": "skip",
+      "expected_reason": "no_candidates",
+      "actual_reason": "no_candidates",
+      "recall_mode": "smart",
+      "expected_document_groups": [],
+      "retrieval_hit": false,
+      "retrieved_document_count": 6,
+      "candidate_count": 0,
+      "natural_selected_count": 0,
+      "natural_tokens": 0,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "low",
+      "latency_ms": 26,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.42228472232818604,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 0,
+        "term_strength": 0,
+        "search_ms": 25.523,
+        "policy_ms": 0.001
+      },
+      "candidate_features": [
+        {
+          "document": "doc_lore",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.42228472232818604,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.4108874499797821,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.39021414518356323,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.36996686458587646,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.3612075448036194,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.3578723669052124,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "unrelated_companion",
+      "category": "negative_dense",
+      "expected_action": "skip",
+      "actual_action": "skip",
+      "expected_reason": "no_candidates",
+      "actual_reason": "no_candidates",
+      "recall_mode": "smart",
+      "expected_document_groups": [],
+      "retrieval_hit": false,
+      "retrieved_document_count": 6,
+      "candidate_count": 0,
+      "natural_selected_count": 0,
+      "natural_tokens": 0,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "low",
+      "latency_ms": 25,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.34166663885116577,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 0,
+        "term_strength": 0,
+        "search_ms": 24.923,
+        "policy_ms": 0.001
+      },
+      "candidate_features": [
+        {
+          "document": "doc_lore",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.34166663885116577,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.3265383243560791,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.31128910183906555,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_baking",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.2984510660171509,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.2977451682090759,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.2828381657600403,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "double_negative",
+      "category": "negation_boundary",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "explicit_request",
+      "actual_reason": "explicit_request",
+      "recall_mode": "explicit",
+      "expected_document_groups": [
+        [
+          "doc_project",
+          "doc_project_copy"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 6,
+      "natural_selected_count": 4,
+      "natural_tokens": 205,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "high",
+      "latency_ms": 26,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.7190706729888916,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 6,
+        "term_strength": 0,
+        "search_ms": 23.421,
+        "policy_ms": 2.719
+      },
+      "candidate_features": [
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.7190706729888916,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.6390207409858704,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.4823727607727051,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.43292853236198425,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.41947755217552185,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.4073732793331146,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "conditional_forbid",
+      "category": "negation_boundary",
+      "expected_action": "skip",
+      "actual_action": "skip",
+      "expected_reason": "explicit_forbidden",
+      "actual_reason": "explicit_forbidden",
+      "recall_mode": "explicit",
+      "expected_document_groups": [],
+      "retrieval_hit": false,
+      "retrieved_document_count": 0,
+      "candidate_count": 0,
+      "natural_selected_count": 0,
+      "natural_tokens": 0,
+      "retrieval_mode": "none",
+      "confidence_band": "high",
+      "latency_ms": 0,
+      "features": {
+        "term_strength": 0,
+        "search_ms": 0,
+        "policy_ms": 0
+      },
+      "candidate_features": []
+    },
+    {
+      "case_id": "other_system_forbid",
+      "category": "negation_boundary",
+      "expected_action": "skip",
+      "actual_action": "skip",
+      "expected_reason": "explicit_forbidden",
+      "actual_reason": "explicit_forbidden",
+      "recall_mode": "explicit",
+      "expected_document_groups": [],
+      "retrieval_hit": false,
+      "retrieved_document_count": 0,
+      "candidate_count": 0,
+      "natural_selected_count": 0,
+      "natural_tokens": 0,
+      "retrieval_mode": "none",
+      "confidence_band": "high",
+      "latency_ms": 0,
+      "features": {
+        "term_strength": 0,
+        "search_ms": 0,
+        "policy_ms": 0
+      },
+      "candidate_features": []
+    },
+    {
+      "case_id": "emoji_only",
+      "category": "fts_no_terms",
+      "expected_action": "skip",
+      "actual_action": "skip",
+      "expected_reason": "no_candidates",
+      "actual_reason": "no_candidates",
+      "recall_mode": "smart",
+      "expected_document_groups": [],
+      "retrieval_hit": false,
+      "retrieved_document_count": 6,
+      "candidate_count": 0,
+      "natural_selected_count": 0,
+      "natural_tokens": 0,
+      "retrieval_mode": "vector",
+      "confidence_band": "low",
+      "latency_ms": 19,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.46663928031921387,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 0,
+        "term_strength": 0,
+        "search_ms": 18.486,
+        "policy_ms": 0.001
+      },
+      "candidate_features": [
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.46663928031921387,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.46328192949295044,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.4206342101097107,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.401317834854126,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_lore",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.40041011571884155,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_baking",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.3806787133216858,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "project_confirm_rule",
+      "category": "expanded_positive",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "exact_term_hit",
+      "actual_reason": "exact_term_hit",
+      "recall_mode": "smart",
+      "expected_document_groups": [
+        [
+          "doc_project",
+          "doc_project_copy"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 4,
+      "natural_selected_count": 4,
+      "natural_tokens": 205,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "high",
+      "latency_ms": 29,
+      "features": {
+        "lexical_count": 1,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": -15.206106390578752,
+        "top_dense_score": 0.8289656043052673,
+        "top_fusion_score": 0.03278688524590164,
+        "fusion_score_gap": 0.016657852987837125,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 4,
+        "term_strength": 4,
+        "search_ms": 26.733,
+        "policy_ms": 2.286
+      },
+      "candidate_features": [
+        {
+          "document": "doc_project",
+          "match_type": "hybrid",
+          "fts_position": 1,
+          "dense_position": 1,
+          "vector_score": 0.8289656043052673,
+          "fusion_score": 0.03278688524590164,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.6938256025314331,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.5333068370819092,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.48331594467163086,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.42249393463134766,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.41821134090423584,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "project_index_exit",
+      "category": "expanded_positive",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "exact_term_hit",
+      "actual_reason": "exact_term_hit",
+      "recall_mode": "smart",
+      "expected_document_groups": [
+        [
+          "doc_project",
+          "doc_project_copy"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 4,
+      "natural_selected_count": 4,
+      "natural_tokens": 205,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "high",
+      "latency_ms": 31,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.7236741781234741,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 4,
+        "term_strength": 6,
+        "search_ms": 27.08,
+        "policy_ms": 3.742
+      },
+      "candidate_features": [
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.7236741781234741,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.7134497165679932,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.5036622285842896,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.48377397656440735,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.42641568183898926,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.3995838165283203,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "project_copy_exit",
+      "category": "expanded_positive",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "exact_term_hit",
+      "actual_reason": "exact_term_hit",
+      "recall_mode": "smart",
+      "expected_document_groups": [
+        [
+          "doc_project",
+          "doc_project_copy"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 2,
+      "natural_selected_count": 2,
+      "natural_tokens": 114,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "high",
+      "latency_ms": 32,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.7357871532440186,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 2,
+        "term_strength": 4,
+        "search_ms": 29.717,
+        "policy_ms": 2.229
+      },
+      "candidate_features": [
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.7357871532440186,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.7185707092285156,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.45591604709625244,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.44878214597702026,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.44698837399482727,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.44477176666259766,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "project_chunks_exit",
+      "category": "expanded_positive",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "exact_term_hit",
+      "actual_reason": "exact_term_hit",
+      "recall_mode": "smart",
+      "expected_document_groups": [
+        [
+          "doc_project",
+          "doc_project_copy"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 3,
+      "natural_selected_count": 3,
+      "natural_tokens": 166,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "high",
+      "latency_ms": 29,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.7407674789428711,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 3,
+        "term_strength": 6,
+        "search_ms": 26.201,
+        "policy_ms": 2.24
+      },
+      "candidate_features": [
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.7407674789428711,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.6887193322181702,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.4760919213294983,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.4539303183555603,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.4247162938117981,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.3886248469352722,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "project_recall_after_delete",
+      "category": "expanded_positive",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "exact_term_hit",
+      "actual_reason": "exact_term_hit",
+      "recall_mode": "smart",
+      "expected_document_groups": [
+        [
+          "doc_project",
+          "doc_project_copy"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 3,
+      "natural_selected_count": 3,
+      "natural_tokens": 166,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "high",
+      "latency_ms": 34,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.783108651638031,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 3,
+        "term_strength": 6,
+        "search_ms": 30.424,
+        "policy_ms": 3.476
+      },
+      "candidate_features": [
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.783108651638031,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.7470096945762634,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.4864855408668518,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.4450134038925171,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.43789243698120117,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.4207155108451843,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "lore_colleague",
+      "category": "expanded_positive",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "exact_term_hit",
+      "actual_reason": "exact_term_hit",
+      "recall_mode": "smart",
+      "expected_document_groups": [
+        [
+          "doc_lore"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 1,
+      "natural_selected_count": 1,
+      "natural_tokens": 41,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "high",
+      "latency_ms": 35,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.7454597353935242,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 1,
+        "term_strength": 7,
+        "search_ms": 31.474,
+        "policy_ms": 3.766
+      },
+      "candidate_features": [
+        {
+          "document": "doc_lore",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.7454597353935242,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.2748887836933136,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.24382194876670837,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.24141302704811096,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.22530297935009003,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.22235286235809326,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "lore_not_sisters",
+      "category": "expanded_positive",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "exact_term_hit",
+      "actual_reason": "exact_term_hit",
+      "recall_mode": "smart",
+      "expected_document_groups": [
+        [
+          "doc_lore"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 1,
+      "natural_selected_count": 1,
+      "natural_tokens": 41,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "high",
+      "latency_ms": 32,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.5665997266769409,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 1,
+        "term_strength": 7,
+        "search_ms": 28.618,
+        "policy_ms": 3.462
+      },
+      "candidate_features": [
+        {
+          "document": "doc_lore",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.5665997266769409,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.38335293531417847,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.34299802780151367,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.32070496678352356,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.28877562284469604,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.2687682807445526,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "lore_tide_research",
+      "category": "expanded_positive",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "exact_term_hit",
+      "actual_reason": "exact_term_hit",
+      "recall_mode": "smart",
+      "expected_document_groups": [
+        [
+          "doc_lore"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 1,
+      "natural_selected_count": 1,
+      "natural_tokens": 41,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "high",
+      "latency_ms": 29,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.6391637325286865,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 1,
+        "term_strength": 7,
+        "search_ms": 25.701,
+        "policy_ms": 3.179
+      },
+      "candidate_features": [
+        {
+          "document": "doc_lore",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.6391637325286865,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.29446911811828613,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.27657750248908997,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.270351767539978,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.2429545521736145,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.23849380016326904,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "baking_preheat",
+      "category": "expanded_positive",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "exact_term_hit",
+      "actual_reason": "exact_term_hit",
+      "recall_mode": "smart",
+      "expected_document_groups": [
+        [
+          "doc_baking"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 1,
+      "natural_selected_count": 1,
+      "natural_tokens": 40,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "high",
+      "latency_ms": 34,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.6081364750862122,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 1,
+        "term_strength": 6,
+        "search_ms": 30.101,
+        "policy_ms": 3.534
+      },
+      "candidate_features": [
+        {
+          "document": "doc_baking",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.6081364750862122,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.442848801612854,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.4363895058631897,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.39100557565689087,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.38260418176651,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.3819846510887146,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "baking_duration",
+      "category": "expanded_positive",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "exact_term_hit",
+      "actual_reason": "exact_term_hit",
+      "recall_mode": "smart",
+      "expected_document_groups": [
+        [
+          "doc_baking"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 1,
+      "natural_selected_count": 1,
+      "natural_tokens": 40,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "high",
+      "latency_ms": 29,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.6140985488891602,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 1,
+        "term_strength": 6,
+        "search_ms": 25.349,
+        "policy_ms": 3.19
+      },
+      "candidate_features": [
+        {
+          "document": "doc_baking",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.6140985488891602,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.44144922494888306,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.4235023856163025,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.3884153962135315,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.38449832797050476,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.3841592073440552,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "baking_bread",
+      "category": "expanded_positive",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "exact_term_hit",
+      "actual_reason": "exact_term_hit",
+      "recall_mode": "smart",
+      "expected_document_groups": [
+        [
+          "doc_baking"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 1,
+      "natural_selected_count": 1,
+      "natural_tokens": 40,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "high",
+      "latency_ms": 27,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.7497681975364685,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 1,
+        "term_strength": 6,
+        "search_ms": 24.796,
+        "policy_ms": 2.303
+      },
+      "candidate_features": [
+        {
+          "document": "doc_baking",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.7497681975364685,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.391157329082489,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.38451993465423584,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.37698930501937866,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.36985838413238525,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.35336387157440186,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "nebula_retries",
+      "category": "expanded_positive",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "exact_term_hit",
+      "actual_reason": "exact_term_hit",
+      "recall_mode": "smart",
+      "expected_document_groups": [
+        [
+          "doc_glossary"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 2,
+      "natural_selected_count": 2,
+      "natural_tokens": 92,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "high",
+      "latency_ms": 27,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.6487690806388855,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 2,
+        "term_strength": 6,
+        "search_ms": 24.138,
+        "policy_ms": 2.307
+      },
+      "candidate_features": [
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.6487690806388855,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.5056530833244324,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.45831069350242615,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.4306468367576599,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.40660005807876587,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.3588178753852844,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "nebula_backoff",
+      "category": "expanded_positive",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "exact_term_hit",
+      "actual_reason": "exact_term_hit",
+      "recall_mode": "smart",
+      "expected_document_groups": [
+        [
+          "doc_glossary"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 1,
+      "natural_selected_count": 1,
+      "natural_tokens": 36,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "high",
+      "latency_ms": 28,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.6652489900588989,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 1,
+        "term_strength": 6,
+        "search_ms": 25.218,
+        "policy_ms": 2.298
+      },
+      "candidate_features": [
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.6652489900588989,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.4704165458679199,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.44754648208618164,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.392071008682251,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.347088098526001,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_lore",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.3085746169090271,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "nebula_budget",
+      "category": "expanded_positive",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "exact_term_hit",
+      "actual_reason": "exact_term_hit",
+      "recall_mode": "smart",
+      "expected_document_groups": [
+        [
+          "doc_glossary"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 1,
+      "natural_selected_count": 1,
+      "natural_tokens": 36,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "high",
+      "latency_ms": 27,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.7637261748313904,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 1,
+        "term_strength": 6,
+        "search_ms": 23.936,
+        "policy_ms": 2.905
+      },
+      "candidate_features": [
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.7637261748313904,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.4592008888721466,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.4244435727596283,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.4193609952926636,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.40934157371520996,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.40856748819351196,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "schedule_acceptance",
+      "category": "expanded_positive",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "exact_term_hit",
+      "actual_reason": "exact_term_hit",
+      "recall_mode": "smart",
+      "expected_document_groups": [
+        [
+          "doc_schedule"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 1,
+      "natural_selected_count": 1,
+      "natural_tokens": 39,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "high",
+      "latency_ms": 30,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.7730614542961121,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 1,
+        "term_strength": 4,
+        "search_ms": 27.192,
+        "policy_ms": 2.216
+      },
+      "candidate_features": [
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.7730614542961121,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.3828364610671997,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.3802432417869568,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.3547273874282837,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.3531249761581421,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.31136786937713623,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "schedule_august",
+      "category": "expanded_positive",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "exact_term_hit",
+      "actual_reason": "exact_term_hit",
+      "recall_mode": "smart",
+      "expected_document_groups": [
+        [
+          "doc_schedule"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 1,
+      "natural_selected_count": 1,
+      "natural_tokens": 39,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "high",
+      "latency_ms": 29,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.7475934624671936,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 1,
+        "term_strength": 4,
+        "search_ms": 26.67,
+        "policy_ms": 2.334
+      },
+      "candidate_features": [
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.7475934624671936,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.39764517545700073,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.3885805010795593,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.3670540750026703,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.33947551250457764,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.3089717626571655,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "schedule_day",
+      "category": "expanded_positive",
+      "expected_action": "retrieve",
+      "actual_action": "retrieve",
+      "expected_reason": "exact_term_hit",
+      "actual_reason": "exact_term_hit",
+      "recall_mode": "smart",
+      "expected_document_groups": [
+        [
+          "doc_schedule"
+        ]
+      ],
+      "retrieval_hit": true,
+      "retrieved_document_count": 6,
+      "candidate_count": 1,
+      "natural_selected_count": 1,
+      "natural_tokens": 39,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "high",
+      "latency_ms": 28,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.692132830619812,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 1,
+        "term_strength": 4,
+        "search_ms": 25.423,
+        "policy_ms": 2.258
+      },
+      "candidate_features": [
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.692132830619812,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.33128297328948975,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.32534506916999817,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.3213158845901489,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.3059214949607849,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.26742833852767944,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "negative_quantum",
+      "category": "expanded_negative",
+      "expected_action": "skip",
+      "actual_action": "skip",
+      "expected_reason": "no_candidates",
+      "actual_reason": "no_candidates",
+      "recall_mode": "smart",
+      "expected_document_groups": [],
+      "retrieval_hit": false,
+      "retrieved_document_count": 6,
+      "candidate_count": 0,
+      "natural_selected_count": 0,
+      "natural_tokens": 0,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "low",
+      "latency_ms": 25,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.4298330545425415,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 0,
+        "term_strength": 0,
+        "search_ms": 24.668,
+        "policy_ms": 0.001
+      },
+      "candidate_features": [
+        {
+          "document": "doc_lore",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.4298330545425415,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.3977343440055847,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.37331560254096985,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.37248897552490234,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.3598788380622864,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.33988136053085327,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "negative_gardening",
+      "category": "expanded_negative",
+      "expected_action": "skip",
+      "actual_action": "skip",
+      "expected_reason": "no_candidates",
+      "actual_reason": "no_candidates",
+      "recall_mode": "smart",
+      "expected_document_groups": [],
+      "retrieval_hit": false,
+      "retrieved_document_count": 6,
+      "candidate_count": 0,
+      "natural_selected_count": 0,
+      "natural_tokens": 0,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "low",
+      "latency_ms": 27,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.3491531014442444,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 0,
+        "term_strength": 0,
+        "search_ms": 26.932,
+        "policy_ms": 0.001
+      },
+      "candidate_features": [
+        {
+          "document": "doc_baking",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.3491531014442444,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.3437751233577728,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.32458361983299255,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.32105809450149536,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.3193327784538269,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_lore",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.31104719638824463,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "negative_train",
+      "category": "expanded_negative",
+      "expected_action": "skip",
+      "actual_action": "skip",
+      "expected_reason": "no_candidates",
+      "actual_reason": "no_candidates",
+      "recall_mode": "smart",
+      "expected_document_groups": [],
+      "retrieval_hit": false,
+      "retrieved_document_count": 6,
+      "candidate_count": 0,
+      "natural_selected_count": 0,
+      "natural_tokens": 0,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "low",
+      "latency_ms": 26,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.38755738735198975,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 0,
+        "term_strength": 0,
+        "search_ms": 25.696,
+        "policy_ms": 0.001
+      },
+      "candidate_features": [
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.38755738735198975,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_baking",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.32448428869247437,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.3226277232170105,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.30252745747566223,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_lore",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.28871577978134155,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.2885061204433441,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "negative_exercise",
+      "category": "expanded_negative",
+      "expected_action": "skip",
+      "actual_action": "skip",
+      "expected_reason": "no_candidates",
+      "actual_reason": "no_candidates",
+      "recall_mode": "smart",
+      "expected_document_groups": [],
+      "retrieval_hit": false,
+      "retrieved_document_count": 6,
+      "candidate_count": 0,
+      "natural_selected_count": 0,
+      "natural_tokens": 0,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "low",
+      "latency_ms": 22,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.37330126762390137,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 0,
+        "term_strength": 0,
+        "search_ms": 21.732,
+        "policy_ms": 0.001
+      },
+      "candidate_features": [
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.37330126762390137,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_baking",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.36188212037086487,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.3251783847808838,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.318069189786911,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.31713369488716125,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.29470282793045044,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "negative_music",
+      "category": "expanded_negative",
+      "expected_action": "skip",
+      "actual_action": "skip",
+      "expected_reason": "no_candidates",
+      "actual_reason": "no_candidates",
+      "recall_mode": "smart",
+      "expected_document_groups": [],
+      "retrieval_hit": false,
+      "retrieved_document_count": 6,
+      "candidate_count": 0,
+      "natural_selected_count": 0,
+      "natural_tokens": 0,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "low",
+      "latency_ms": 22,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.31651967763900757,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 0,
+        "term_strength": 0,
+        "search_ms": 22.008,
+        "policy_ms": 0.002
+      },
+      "candidate_features": [
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.31651967763900757,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_lore",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.28551560640335083,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.2752966582775116,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.26057159900665283,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.24647624790668488,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_baking",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.23871293663978577,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "negative_painting",
+      "category": "expanded_negative",
+      "expected_action": "skip",
+      "actual_action": "skip",
+      "expected_reason": "no_candidates",
+      "actual_reason": "no_candidates",
+      "recall_mode": "smart",
+      "expected_document_groups": [],
+      "retrieval_hit": false,
+      "retrieved_document_count": 6,
+      "candidate_count": 0,
+      "natural_selected_count": 0,
+      "natural_tokens": 0,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "low",
+      "latency_ms": 26,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.3842175006866455,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 0,
+        "term_strength": 0,
+        "search_ms": 26.362,
+        "policy_ms": 0.001
+      },
+      "candidate_features": [
+        {
+          "document": "doc_lore",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.3842175006866455,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.34985172748565674,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_baking",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.3472641110420227,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.30719441175460815,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.29895129799842834,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.2835775911808014,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "negative_finance",
+      "category": "expanded_negative",
+      "expected_action": "skip",
+      "actual_action": "skip",
+      "expected_reason": "no_candidates",
+      "actual_reason": "no_candidates",
+      "recall_mode": "smart",
+      "expected_document_groups": [],
+      "retrieval_hit": false,
+      "retrieved_document_count": 6,
+      "candidate_count": 0,
+      "natural_selected_count": 0,
+      "natural_tokens": 0,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "low",
+      "latency_ms": 24,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.43256452679634094,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 0,
+        "term_strength": 0,
+        "search_ms": 23.918,
+        "policy_ms": 0.001
+      },
+      "candidate_features": [
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.43256452679634094,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.3698047995567322,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.3589481711387634,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.3544098138809204,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.3243864178657532,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_lore",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.31907403469085693,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "negative_astronomy",
+      "category": "expanded_negative",
+      "expected_action": "skip",
+      "actual_action": "skip",
+      "expected_reason": "no_candidates",
+      "actual_reason": "no_candidates",
+      "recall_mode": "smart",
+      "expected_document_groups": [],
+      "retrieval_hit": false,
+      "retrieved_document_count": 6,
+      "candidate_count": 0,
+      "natural_selected_count": 0,
+      "natural_tokens": 0,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "low",
+      "latency_ms": 24,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.3337650001049042,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 0,
+        "term_strength": 0,
+        "search_ms": 24.159,
+        "policy_ms": 0.001
+      },
+      "candidate_features": [
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.3337650001049042,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.3266494572162628,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.3134689927101135,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.3015710115432739,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.286458283662796,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.2707151174545288,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "negative_geography",
+      "category": "expanded_negative",
+      "expected_action": "skip",
+      "actual_action": "skip",
+      "expected_reason": "no_candidates",
+      "actual_reason": "no_candidates",
+      "recall_mode": "smart",
+      "expected_document_groups": [],
+      "retrieval_hit": false,
+      "retrieved_document_count": 6,
+      "candidate_count": 0,
+      "natural_selected_count": 0,
+      "natural_tokens": 0,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "low",
+      "latency_ms": 23,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.3361623287200928,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 0,
+        "term_strength": 0,
+        "search_ms": 23.344,
+        "policy_ms": 0.001
+      },
+      "candidate_features": [
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.3361623287200928,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_lore",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.3349543511867523,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.271133154630661,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.2485959231853485,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.2459041029214859,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.2452389895915985,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "negative_history",
+      "category": "expanded_negative",
+      "expected_action": "skip",
+      "actual_action": "skip",
+      "expected_reason": "no_candidates",
+      "actual_reason": "no_candidates",
+      "recall_mode": "smart",
+      "expected_document_groups": [],
+      "retrieval_hit": false,
+      "retrieved_document_count": 6,
+      "candidate_count": 0,
+      "natural_selected_count": 0,
+      "natural_tokens": 0,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "low",
+      "latency_ms": 25,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.3018333911895752,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 0,
+        "term_strength": 0,
+        "search_ms": 25.28,
+        "policy_ms": 0.001
+      },
+      "candidate_features": [
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.3018333911895752,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_lore",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.29466456174850464,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.2595690190792084,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.2385694980621338,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_baking",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.23259404301643372,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_schedule",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.22068502008914948,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "negative_programming",
+      "category": "expanded_negative",
+      "expected_action": "skip",
+      "actual_action": "retrieve",
+      "expected_reason": "no_candidates",
+      "actual_reason": "semantic_candidate",
+      "recall_mode": "smart",
+      "expected_document_groups": [],
+      "retrieval_hit": false,
+      "retrieved_document_count": 6,
+      "candidate_count": 4,
+      "natural_selected_count": 4,
+      "natural_tokens": 202,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "medium",
+      "latency_ms": 26,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.5616154670715332,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 4,
+        "term_strength": 0,
+        "search_ms": 23.049,
+        "policy_ms": 2.439
+      },
+      "candidate_features": [
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.5616154670715332,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.5279189944267273,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.5234063863754272,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.4759414792060852,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.36476701498031616,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_lore",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.3465884029865265,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    },
+    {
+      "case_id": "negative_coffee",
+      "category": "expanded_negative",
+      "expected_action": "skip",
+      "actual_action": "skip",
+      "expected_reason": "no_candidates",
+      "actual_reason": "no_candidates",
+      "recall_mode": "smart",
+      "expected_document_groups": [],
+      "retrieval_hit": false,
+      "retrieved_document_count": 6,
+      "candidate_count": 0,
+      "natural_selected_count": 0,
+      "natural_tokens": 0,
+      "retrieval_mode": "hybrid",
+      "confidence_band": "low",
+      "latency_ms": 22,
+      "features": {
+        "lexical_count": 0,
+        "dense_count": 8,
+        "fused_count": 8,
+        "selected_count": 6,
+        "exact_duplicates_removed": 0,
+        "adjacent_duplicates_removed": 0,
+        "top_fts_rank": null,
+        "top_dense_score": 0.3991015553474426,
+        "top_fusion_score": 0.01639344262295082,
+        "fusion_score_gap": 0.00026441036488630484,
+        "raw_candidate_count": 6,
+        "admitted_candidate_count": 0,
+        "term_strength": 0,
+        "search_ms": 22.057,
+        "policy_ms": 0.001
+      },
+      "candidate_features": [
+        {
+          "document": "doc_baking",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 1,
+          "vector_score": 0.3991015553474426,
+          "fusion_score": 0.01639344262295082,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_private",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 2,
+          "vector_score": 0.36369290947914124,
+          "fusion_score": 0.016129032258064516,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_glossary",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 3,
+          "vector_score": 0.35071420669555664,
+          "fusion_score": 0.015873015873015872,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_lore",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 4,
+          "vector_score": 0.3464898467063904,
+          "fusion_score": 0.015625,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_injection",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 5,
+          "vector_score": 0.31700605154037476,
+          "fusion_score": 0.015384615384615385,
+          "duplicate_count": 1
+        },
+        {
+          "document": "doc_project_copy",
+          "match_type": "vector",
+          "fts_position": null,
+          "dense_position": 6,
+          "vector_score": 0.3038809299468994,
+          "fusion_score": 0.015151515151515152,
+          "duplicate_count": 1
+        }
+      ]
+    }
+  ]
+}

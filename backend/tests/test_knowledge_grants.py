@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 import pytest
 from fastapi.testclient import TestClient
 
-from app import db, knowledge, knowledge_worker, llm
+from app import db, knowledge, knowledge_recall, knowledge_search, knowledge_worker, llm
 from app.main import app
 
 
@@ -36,10 +36,12 @@ def clean_grant_data():
     db.set_setting("current_model", json.dumps({
         "provider_id": "deepseek", "model": "deepseek-chat",
     }))
+    knowledge_recall.update_settings(mode="explicit", shadow_enabled=True)
     yield
     db.set_setting("current_model", json.dumps({
         "provider_id": "mock", "model": "xiadie-mock",
     }))
+    knowledge_recall.update_settings(mode="explicit", shadow_enabled=True)
     conn = db.connect()
     try:
         conn.execute("DELETE FROM sessions")
@@ -84,12 +86,12 @@ def _chat(payload: dict):
         return response.status_code, "".join(response.iter_text())
 
 
-def test_schema_37_grants_are_body_and_plaintext_token_free():
+def test_schema_38_grants_are_body_and_plaintext_token_free():
     conn = db.connect()
     try:
         assert conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
-        ).fetchone()[0] == "37"
+        ).fetchone()[0] == "38"
         decision_columns = {
             row["name"] for row in conn.execute("PRAGMA table_info(knowledge_recall_decisions)")
         }
@@ -388,3 +390,80 @@ def test_persistent_policy_choice_is_revisioned_and_audited(action, expected_pol
         assert grant_status == "revoked"
     finally:
         conn.close()
+
+
+def test_smart_natural_ask_reuses_grant_and_records_confirmed_source(monkeypatch):
+    # 使用标题中的强实体形成 high-confidence 自然召回；第四个任务建立本地向量索引。
+    imported = knowledge.import_file(
+        "星穹密钥说明.md", "text/markdown", CONTENT.encode("utf-8"),
+    )
+    assert asyncio.run(knowledge_worker.process_due(limit=3)) == 3
+    assert asyncio.run(knowledge_worker.process_due(limit=1)) == 1
+    assert imported["document"]["transmission_policy"] == "ask_each_time"
+    knowledge_recall.update_settings(mode="smart", shadow_enabled=True)
+    session = _session()
+    natural_query = "星穹密钥说明里记录了什么？"
+    preflight = client.post("/api/knowledge/recall/preflight", json={
+        "session_id": session["id"], "request_nonce": NONCE, "content": natural_query,
+    })
+    assert preflight.status_code == 200
+    grant = preflight.json()
+    assert grant["status"] == "pending" and grant["recall_mode"] == "smart"
+    issued_response = client.post("/api/knowledge/transmission-grants", json={
+        "grant_id": grant["id"], "action": "allow_once", "session_id": session["id"],
+        "request_nonce": NONCE, "content": natural_query,
+    })
+    assert issued_response.status_code == 200
+
+    async def fake_stream(*_args):
+        yield "已确认资料 [资料:K1]"
+
+    monkeypatch.setattr(llm, "stream_chat", fake_stream)
+    status, body = _chat({
+        "session_id": session["id"], "content": natural_query, "request_nonce": NONCE,
+        "knowledge_grant_token": issued_response.json()["token"],
+    })
+    assert status == 200
+    assert '"knowledge_source": "confirmed"' in body
+    assert '"knowledge_recall_mode": "smart"' in body
+    conn = db.connect()
+    try:
+        row = conn.execute(
+            "SELECT recall_decision_id,status FROM knowledge_transmission_grants WHERE id=?",
+            (grant["id"],),
+        ).fetchone()
+        assert row["status"] == "consumed" and row["recall_decision_id"]
+        decision = conn.execute(
+            "SELECT shadow,action,confidence_band,injected_count FROM knowledge_recall_decisions "
+            "WHERE id=?", (row["recall_decision_id"],),
+        ).fetchone()
+        assert tuple(decision) == (0, "ask", "high", 1)
+    finally:
+        conn.close()
+
+
+def test_recall_mode_change_invalidates_pending_grant():
+    _index()
+    session = _session()
+    grant = _preflight(session["id"])
+    knowledge_recall.update_settings(mode="smart", shadow_enabled=True)
+    response = client.post("/api/knowledge/transmission-grants", json={
+        "grant_id": grant["id"], "action": "allow_once", "session_id": session["id"],
+        "request_nonce": NONCE, "content": QUERY,
+    })
+    assert response.status_code == 409
+    assert "grant_binding_changed" in response.text
+
+
+def test_off_mode_preflight_does_not_run_search(monkeypatch):
+    _index()
+    session = _session()
+    knowledge_recall.update_settings(mode="off", shadow_enabled=True)
+
+    def forbidden_search(*_args, **_kwargs):
+        raise AssertionError("off mode must not search")
+
+    monkeypatch.setattr(knowledge_search, "hybrid_search", forbidden_search)
+    result = _preflight(session["id"])
+    assert result["status"] == "not_needed"
+    assert result["recall_mode"] == "off"

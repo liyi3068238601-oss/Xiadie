@@ -50,6 +50,7 @@ export function FilesPage() {
   const [recallDecisions, setRecallDecisions] = useState<api.KnowledgeRecallDecision[] | null>(null);
   const [recallStats, setRecallStats] = useState<api.KnowledgeRecallStats | null>(null);
   const [embeddingStatus, setEmbeddingStatus] = useState<api.KnowledgeEmbeddingStatus | null>(null);
+  const [recallSettings, setRecallSettings] = useState<api.KnowledgeRecallSettings | null>(null);
   const [privacyOpen, setPrivacyOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -61,6 +62,7 @@ export function FilesPage() {
   useEffect(() => {
     api.listKnowledgeCollections().then(setCollections).catch(() => toast("知识库集合加载失败"));
     api.getKnowledgeEmbeddingStatus().then(setEmbeddingStatus).catch(() => {});
+    api.getKnowledgeRecallSettings().then(setRecallSettings).catch(() => {});
   }, []);
   useEffect(() => {
     const timer = window.setTimeout(() => refresh().catch(() => toast("知识文档列表加载失败")), 220);
@@ -262,6 +264,20 @@ export function FilesPage() {
     }
   }
 
+  async function changeRecallMode(mode: api.KnowledgeRecallSettings["mode"]) {
+    if (!recallSettings || mode === recallSettings.mode) return;
+    setActionBusy("recall-mode");
+    try {
+      setRecallSettings(await api.updateKnowledgeRecallSettings({ mode }));
+      toast(mode === "off" ? "已关闭知识召回" : mode === "smart"
+        ? "已启用高置信智能召回" : "已恢复仅明确请求时召回");
+    } catch (error: any) {
+      toast(error.message || "召回模式修改失败");
+    } finally {
+      setActionBusy(null);
+    }
+  }
+
   const indexedCount = documents.filter((document) => document.status === "indexed").length;
   const failedCount = documents.filter((document) => ["failed", "delete_failed"].includes(document.status)).length;
   const waitingCount = Math.max(0, documents.length - indexedCount - failedCount);
@@ -361,6 +377,26 @@ export function FilesPage() {
         </div>
       )}
 
+      {recallSettings && (
+        <section className="knowledge-recall-mode glass" aria-labelledby="knowledge-recall-mode-title">
+          <div>
+            <div className="knowledge-eyebrow">RECALL MODE</div>
+            <strong id="knowledge-recall-mode-title">对话中的知识召回</strong>
+            <p>{recallModeDescription(recallSettings.mode)}</p>
+          </div>
+          <div className="knowledge-recall-mode-options" role="radiogroup" aria-label="知识召回模式">
+            {(["off", "explicit", "smart"] as const).map((mode) => (
+              <button key={mode} role="radio" aria-checked={recallSettings.mode === mode}
+                className={recallSettings.mode === mode ? "is-active" : ""}
+                disabled={actionBusy === "recall-mode"}
+                onClick={() => void changeRecallMode(mode)}>
+                {mode === "off" ? "关闭" : mode === "explicit" ? "明确请求" : "智能召回"}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
       {pending && (
         <section className="knowledge-confirm glass">
           <div className="knowledge-confirm-mark" aria-hidden="true">✓</div>
@@ -421,12 +457,16 @@ export function FilesPage() {
 
       {recallDecisions !== null && (
         <div className="glass knowledge-audits knowledge-shadow-audits">
-          <div className="card-title">影子召回判断（不会改变回答或发送资料）</div>
+          <div className="card-title">
+            {recallSettings?.mode === "smart"
+              ? "知识召回判断（仅 high 会实际影响回答）"
+              : "影子召回判断（不会改变回答或发送资料）"}
+          </div>
           {recallStats && (
             <div className="knowledge-shadow-summary">
               <span>{recallStats.sample_count} 条样本</span>
               <span>{Math.round(recallStats.action_rates.skip * 100)}% 跳过</span>
-              <span>{Math.round(recallStats.action_rates.retrieve * 100)}% 建议召回</span>
+              <span>{Math.round(recallStats.action_rates.retrieve * 100)}% 召回判断</span>
               <span>{Math.round(recallStats.action_rates.ask * 100)}% 需要确认</span>
               <span>P90 {recallStats.latency_ms.p90} ms</span>
               <span>向量可用 {Math.round(recallStats.vector_available_rate * 100)}%</span>
@@ -436,7 +476,7 @@ export function FilesPage() {
             <div className="knowledge-audit-row knowledge-shadow-row" key={decision.id}>
               <span>{new Date(decision.created_at * 1000).toLocaleString("zh-CN")}</span>
               <span className={`shadow-action action-${decision.action}`}>
-                {decision.action === "retrieve" ? "建议召回" : decision.action === "ask" ? "需要确认" : "跳过"}
+                {recallDecisionLabel(decision)}
               </span>
               <span>{decision.reason_code} · {decision.confidence_band}</span>
               <span>{decision.candidate_count}/{decision.eligible_count} 候选 · {decision.retrieval_mode}</span>
@@ -579,6 +619,20 @@ function formatBytes(value: number): string {
   if (value < 1024) return `${value} B`;
   if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KiB`;
   return `${(value / 1024 / 1024).toFixed(1)} MiB`;
+}
+
+function recallModeDescription(mode: api.KnowledgeRecallSettings["mode"]): string {
+  if (mode === "off") return "完全不查询知识库，即使消息里明确提到文档也不会召回。";
+  if (mode === "smart") return "明确请求照常处理；自然对话仅在高置信命中时使用，远传仍遵守逐次授权。";
+  return "默认模式：只有你明确提到知识库、资料或文档时才会查询；后台影子判断不会改变回答。";
+}
+
+function recallDecisionLabel(decision: api.KnowledgeRecallDecision): string {
+  if (decision.shadow) {
+    return decision.action === "retrieve" ? "建议召回" : decision.action === "ask" ? "建议确认" : "跳过";
+  }
+  if (decision.injected_count > 0) return decision.action === "ask" ? "确认后召回" : "已召回";
+  return decision.action === "ask" ? "本轮未使用" : "跳过";
 }
 
 function documentStatus(document: api.KnowledgeDocument): string {

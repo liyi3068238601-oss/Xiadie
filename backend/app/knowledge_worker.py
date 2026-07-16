@@ -9,7 +9,10 @@ import secrets
 from contextlib import suppress
 from pathlib import Path
 
-from . import db, knowledge, knowledge_chunker, knowledge_embeddings, knowledge_management, knowledge_parser, knowledge_search
+from . import (
+    db, knowledge, knowledge_chunker, knowledge_embeddings, knowledge_grants,
+    knowledge_management, knowledge_parser, knowledge_search,
+)
 
 RUNNING_STALE_SECONDS = 5 * 60
 FIRST_RETRY_DELAY_SECONDS = 30
@@ -63,12 +66,21 @@ async def _worker_loop() -> None:
         if processed:
             continue
         try:
+            # 只推进过期状态并清空 token hash；物理删除仍由 K.8 生命周期统一处理。
+            await asyncio.to_thread(expire_grants_once)
+        except Exception:  # noqa: BLE001 - 维护失败不能停止知识解析 worker
+            _logger.exception("Knowledge grant expiry sweep failed")
+        try:
             if _wake_event:
                 await asyncio.wait_for(_wake_event.wait(), timeout=WORKER_IDLE_SECONDS)
             else:
                 await asyncio.sleep(WORKER_IDLE_SECONDS)
         except asyncio.TimeoutError:
             pass
+
+
+def expire_grants_once() -> int:
+    return knowledge_grants.expire_due(limit=100)
 
 
 async def process_due(*, limit: int = 3) -> int:

@@ -30,19 +30,22 @@ class Plan:
 
 
 def preflight(*, session_id: str, request_nonce: str, content: str,
-              provider: dict | None, model: str, recall_decision_id: str | None = None) -> dict:
+              provider: dict | None, model: str, recall_mode: str = "explicit",
+              recall_decision_id: str | None = None) -> dict:
     _validate_nonce(request_nonce)
     _require_session(session_id)
     provider = _provider_snapshot(provider)
-    prepared = knowledge_context.prepare(content)
+    prepared, _decision = knowledge_context.prepare_for_mode(
+        content, mode=recall_mode, provider=provider,
+    )
     plan = _plan(prepared, provider["execution_location"])
     if provider["execution_location"] == "local" or not (plan.ask or plan.local_only):
-        return _not_needed(provider, model, plan)
+        return _not_needed(provider, model, plan, recall_mode)
     now = db.now()
     grant_id = db.new_id()
     binding = _binding(
         session_id=session_id, request_nonce=request_nonce, content=content,
-        provider=provider, model=model, plan=plan,
+        provider=provider, model=model, plan=plan, recall_mode=recall_mode,
     )
     conn = db.connect()
     try:
@@ -60,15 +63,16 @@ def preflight(*, session_id: str, request_nonce: str, content: str,
             "INSERT INTO knowledge_transmission_grants("
             "id,recall_decision_id,session_id,request_nonce,user_content_sha256,query_sha256,"
             "provider_id,model,provider_location,provider_location_revision,plan_sha256,"
-            "policy_snapshot_sha256,threshold_version,status,document_count,chunk_count,"
+            "policy_snapshot_sha256,threshold_version,recall_mode,status,document_count,chunk_count,"
             "token_min,token_max,expires_at,created_at,updated_at)"
-            " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?,?,?)",
+            " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,'pending',?,?,?,?,?,?,?)",
             (
                 grant_id, recall_decision_id, session_id, request_nonce,
                 binding["user_content_sha256"], binding["query_sha256"], provider["id"], model,
                 provider["execution_location"], provider["location_revision"],
                 binding["plan_sha256"], binding["policy_snapshot_sha256"],
                 knowledge_recall_thresholds.THRESHOLD_VERSION,
+                recall_mode,
                 len({item["document_id"] for item in plan.ask + plan.local_only}),
                 len(plan.ask + plan.local_only), binding["token_min"], binding["token_max"],
                 now + GRANT_TTL_SECONDS, now, now,
@@ -101,15 +105,18 @@ def preflight(*, session_id: str, request_nonce: str, content: str,
 
 
 def resolve(*, grant_id: str, action: str, session_id: str, request_nonce: str,
-            content: str, provider: dict | None, model: str) -> dict:
+            content: str, provider: dict | None, model: str,
+            recall_mode: str = "explicit") -> dict:
     if action not in {"allow_once", "always_allow", "local_only"}:
         raise GrantError("grant_action_invalid", "授权操作无效", status_code=400)
     provider = _provider_snapshot(provider)
-    prepared = knowledge_context.prepare(content)
+    prepared, _decision = knowledge_context.prepare_for_mode(
+        content, mode=recall_mode, provider=provider,
+    )
     plan = _plan(prepared, provider["execution_location"])
     binding = _binding(
         session_id=session_id, request_nonce=request_nonce, content=content,
-        provider=provider, model=model, plan=plan,
+        provider=provider, model=model, plan=plan, recall_mode=recall_mode,
     )
     conn = db.connect()
     try:
@@ -203,7 +210,7 @@ def deny(grant_id: str) -> dict:
 def authorize_chat_locked(
     conn, *, prepared: dict | None, session_id: str, user_message_id: str,
     request_nonce: str | None, content: str, provider: dict | None, model: str,
-    grant_token: str | None, skip_restricted: bool,
+    grant_token: str | None, skip_restricted: bool, recall_mode: str = "explicit",
 ) -> dict | None:
     provider = _provider_snapshot(provider)
     plan = _plan(prepared, provider["execution_location"])
@@ -216,7 +223,7 @@ def authorize_chat_locked(
         raise GrantError("knowledge_grant_required", "这些资料发送给当前模型前需要你的确认")
     binding = _binding(
         session_id=session_id, request_nonce=request_nonce, content=content,
-        provider=provider, model=model, plan=plan,
+        provider=provider, model=model, plan=plan, recall_mode=recall_mode,
     )
     conn.execute("BEGIN IMMEDIATE")
     row = conn.execute(
@@ -258,7 +265,11 @@ def authorize_chat_locked(
     _event(conn, grant["id"], "grant_consumed", "issued", "consumed", "chat_request_started",
            len(stored_items))
     granted_ids = {item[1] for item in stored_items}
-    return knowledge_context.filter_prepared(prepared, allowed_ids | granted_ids)
+    authorized = knowledge_context.filter_prepared(prepared, allowed_ids | granted_ids)
+    if authorized:
+        authorized["confirmed"] = True
+        authorized["_grant_id"] = grant["id"]
+    return authorized
 
 
 def expire_due(*, limit: int = 100) -> int:
@@ -320,7 +331,7 @@ def _plan(prepared: dict | None, provider_location: str) -> Plan:
 
 
 def _binding(*, session_id: str, request_nonce: str, content: str, provider: dict,
-             model: str, plan: Plan) -> dict:
+             model: str, plan: Plan, recall_mode: str) -> dict:
     restricted = plan.ask + plan.local_only
     query_sha = (plan.prepared or {}).get("query_sha256") or _hash("")
     policy_payload = [
@@ -340,6 +351,7 @@ def _binding(*, session_id: str, request_nonce: str, content: str, provider: dic
         "provider_id": provider["id"], "model": model,
         "provider_location": provider["execution_location"],
         "provider_location_revision": provider["location_revision"],
+        "recall_mode": recall_mode,
         "plan_sha256": _json_hash(plan_payload), "policy_snapshot_sha256": _json_hash(policy_payload),
         "token_min": max(0, int(token_total * 0.9)), "token_max": max(0, int(token_total * 1.1) + 1),
     }
@@ -355,7 +367,7 @@ def _validate_binding(grant: dict, binding: dict) -> None:
     for key in (
         "session_id", "request_nonce", "user_content_sha256", "query_sha256", "provider_id",
         "model", "provider_location", "provider_location_revision", "plan_sha256",
-        "policy_snapshot_sha256",
+        "policy_snapshot_sha256", "recall_mode",
     ):
         if grant.get(key) != binding.get(key):
             raise GrantError("grant_binding_changed", "请求、模型、位置或资料计划已经变化，请重新确认")
@@ -417,6 +429,7 @@ def _public_grant(conn, grant: dict, *, provider: dict | None = None, model: str
     ).fetchall()]
     return {
         "id": grant["id"], "status": grant["status"], "protocol_version": GRANT_PROTOCOL_VERSION,
+        "recall_mode": grant.get("recall_mode", "explicit"),
         "provider": {
             "id": grant["provider_id"], "model": model or grant["model"],
             "location": grant["provider_location"],
@@ -436,9 +449,10 @@ def _public_grant(conn, grant: dict, *, provider: dict | None = None, model: str
     }
 
 
-def _not_needed(provider: dict, model: str, plan: Plan) -> dict:
+def _not_needed(provider: dict, model: str, plan: Plan, recall_mode: str) -> dict:
     return {
         "status": "not_needed", "id": None,
+        "recall_mode": recall_mode,
         "provider": {"id": provider["id"], "model": model,
                      "location": provider["execution_location"],
                      "location_revision": provider["location_revision"]},
