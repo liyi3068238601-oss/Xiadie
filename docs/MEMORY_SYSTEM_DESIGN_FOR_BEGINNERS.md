@@ -1,8 +1,8 @@
 # 遐蝶自主记忆系统设计书（零基础说明版）
 
-版本：v0.20
+版本：v0.21
 
-状态：设计基线；阶段 A～D 已完成，阶段 E～F 待施工
+状态：设计基线；阶段 A～D 与 E.1 已完成，阶段 E.2～F 待施工
 
 主要参考：[MemoryConstellations](https://github.com/ClaraShafiq/MemoryConstellations)
 适用对象：项目所有者、第一次接触 Agent 的开发者、后续接手实现的 Codex
@@ -956,7 +956,7 @@ POST /api/memory-maintenance/run
 | B 自主 Fragment 写入 | 已完成 | schema 12、原子自主写入、限频提示、详情/纠错界面及旧候选兼容策略均已提交 |
 | C Episode 自动化 | 已完成 | schema 13～17、自动整理、事实校验、原子应用和正式界面均已提交 |
 | D Saga | 已完成 | schema 18～22、评分、事实摘要、原子应用、生命周期、纠错、API、正式界面与总验收均已提交 |
-| E Archivist | 未开始 | 只有生命周期设计，尚无维护任务 |
+| E Archivist | E.1 已完成 | schema 23、召回去重账本和无正文生命周期审计地基已提交；尚未启动维护任务 |
 | F 用户文件知识库 | 未开始 | 当前仅有界面占位 |
 
 ### 阶段 A：人格与背景分离（本轮已完成）
@@ -1312,21 +1312,79 @@ Fragment→正式 Episode→Saga 创建→追加→证据完成→用户恢复�
 
 ### 阶段 E：Archivist
 
-- [ ] 写 ADR：生命周期事务、保留策略版本、物理清理和备份边界。
-- [ ] 新增 last_recalled_at、recall_count、冷却时间、策略版本和状态事件字段。
-- [ ] 只有实际注入上下文才计召回；候选检索和同轮重复命中不计数。
-- [ ] 实现第 14.2 节 retention_score 的各个可解释分量。
-- [ ] 实现 active → cooling 和 cooling → frozen 的最短时间与分数门槛。
-- [ ] 实现 cooling/frozen → active 恢复、事件记录和索引重建。
-- [ ] 保护稳定边界、当前纠错事实、活跃 Saga 锚点和未完成计划。
-- [ ] 自动维护永远不能产生 tombstone。
-- [ ] 用户删除/隐私清除立即退出索引，并按第 14.7 节执行正文清理。
-- [ ] 实现共享实体 + scope/kind 的冲突预筛和 superseded/possible_conflict 关系。
-- [ ] 实现 `last_archivist_run` 超过 20 小时的懒调度和失败退避。
-- [ ] 实现 Saga 周任务超过 6 天的懒调度。
-- [ ] 增加单次处理条数、耗时和模型调用预算。
-- [ ] 所有转换保存旧状态、新状态、分数分量、原因和策略版本。
-- [ ] 增加 14 天、30 天、90 天、恢复、保护、重复运行和永不自动 tombstone 测试。
+#### 阶段 E.1：生命周期决策与数据地基
+
+- [x] 开工前读取 D.6 review，逐条记录采纳、暂缓和所属阶段。
+- [x] 写 ADR：Fragment/Episode/Saga 生命周期事务、保留版本、自动归档、物理清理和备份边界。
+- [x] schema 23 新增 last_recalled_at、recall_count、cooling/frozen 时间、策略版本和 revision。
+- [x] 新增同轮幂等的真实注入账本；候选检索、管理页查看和后台扫描没有写入口。
+- [x] 新增不含正文的生命周期事件表，约束状态、分数范围和同 Fragment revision 唯一。
+- [x] 旧 cooling/frozen 数据用 updated_at 回填进入时间；active 不伪造历史召回。
+- [x] 本阶段不执行任何自动转换、自动归档或物理清理。
+- [x] 空库、旧库、重复初始化、约束、去重和无正文审计测试通过。
+- [x] 全量后端、前端生产构建和 Electron 脚本检查通过后才更新基线并完成 E.1。
+
+E.1 开工前审查结论：D.6 review 全项通过且没有返工项。采纳复用 D.4/D.5 worker 与短事务模式，
+具体实现留给 E.3/E.4；采纳 completed Saga 自动归档边界，在 ADR-0024 固定为至少 12 个月无追加、
+纠错、恢复或 revision 变化后才允许评估，并继续受 significance、真实召回和重要关系保护。旧 Episode
+候选 API 仍按 ADR-0023 五项条件复核，不因进入 Archivist 阶段而提前删除。Saga 搜索与星图属于后续
+检索/展示设计，本阶段不采纳。
+
+schema 23 只增加安全默认字段、召回去重账本、无正文生命周期事件和索引；旧 cooling/frozen 行用原
+updated_at 回填进入时间，active 行不伪造历史召回。本阶段没有任何自动状态转换、归档或物理清理入口。
+5 项 E.1 专项测试、后端 189 项、前端 13 项、TypeScript/Vite 生产构建和 Electron 脚本检查通过。
+
+#### 阶段 E.2：真实召回计数、保留评分与保护识别
+
+- [ ] 只有实际装入模型上下文才在短事务内写 recall event、计数和 last_recalled_at。
+- [ ] 使用 context_key 保证同一轮同一 Fragment 只计一次；重复提交幂等。
+- [ ] 候选检索、因预算丢弃、详情查看和后台评估均不计召回。
+- [ ] 纯函数实现 importance、饱和 recall、recency、relationship、active Saga、confidence 和 duplicate 分量。
+- [ ] retention_score 各分量归一化、clamp 并带 `fragment-retention-v1` 版本。
+- [ ] 识别稳定边界、当前纠错事实、活跃 Saga 锚点和未完成计划保护原因。
+- [ ] 增加计数并发、同轮去重、从未召回、时间边界、分量上限和保护测试。
+
+#### 阶段 E.3：Fragment 精确转换与索引同步
+
+- [ ] 实现 active → cooling 的 14 天最短年龄、`<0.45` 分数和保护守卫。
+- [ ] 实现 cooling → frozen 的额外 30 天、`<0.30` 分数和未完成内容守卫。
+- [ ] 实现 cooling/frozen 在强相关真实注入、新证据或人工操作下恢复 active。
+- [ ] 状态、时间、revision 和事件在同一个 `BEGIN IMMEDIATE` 短事务提交。
+- [ ] 每次事件保存旧/新状态、分数分量、原因、来源和策略版本。
+- [ ] cooling/frozen 退出普通召回；frozen 派生索引可安全移除并在恢复时重建。
+- [ ] Archivist 的目标状态集合在代码层和数据库层都排除 tombstone。
+- [ ] 用户删除/隐私清除继续走独立路径，并按第 14.7 节退出索引和清理正文。
+- [ ] 增加 14/30/90 天、恢复、保护、并发 revision、回滚和永不自动 tombstone 测试。
+
+#### 阶段 E.4：Archivist worker、调度与预算
+
+- [ ] 建立 Archivist run/event 账本和幂等 request_key。
+- [ ] 复用串行认领、最多三次指数退避、陈旧恢复、协作取消和优雅停机模式。
+- [ ] `last_archivist_run` 距成功超过 20 小时才懒入队，不连续补跑漏掉的日期。
+- [ ] 单轮限制扫描数、转换数、事务时长和可选模型调用预算。
+- [ ] 模型/索引/worker 失败不阻塞聊天、不提交部分状态、不覆盖用户并发修改。
+- [ ] 启动、空闲、重复入队、失败恢复、取消和预算耗尽测试通过。
+
+#### 阶段 E.5：Episode/Saga 慢生命周期
+
+- [ ] 用独立 ADR/迁移补齐 Episode 的 active/completed/archived/tombstone 精确状态边界。
+- [ ] “6 个月成熟、12 个月归档”只作为评估点，significance 与真实召回可以继续保护。
+- [ ] completed Saga 仅在至少 12 个月无追加、纠错、恢复或 revision 变化后成为归档候选。
+- [ ] active Saga 不自动归档；completed 自动归档只接受 Archivist 来源并保留恢复能力。
+- [ ] Saga 周任务距上次成功超过 6 天才懒入队。
+- [ ] Fragment 降温不能删除 Episode/Saga 来源证据。
+- [ ] 复核 ADR-0023 旧 Episode 候选 API 退役条件，只在全部满足时另写删除迁移 ADR。
+- [ ] 增加时间点、重要度保护、用户恢复、新进展恢复、来源纠错和永不自动 tombstone 测试。
+
+#### 阶段 E.6：冲突、管理界面与总验收
+
+- [ ] 只对共享 active Entity、相同 scope 和可变 kind 的小集合做冲突预筛。
+- [ ] 明确时间先后变化建立 superseded；不确定冲突只建立 possible_conflict，不覆盖正文。
+- [ ] 冲突关系保存来源、方向、置信度、规则/模型版本和审计事件。
+- [ ] 管理页展示 retention 分量、状态时间、保护原因和生命周期事件，不默认暴露内部原始提示。
+- [ ] 提供人工恢复与隐私删除入口；高风险清理必须二次确认并说明备份边界。
+- [ ] 完成 Fragment→Episode→Saga→Archivist 全链路、重复运行、失败恢复和来源保留总验收。
+- [ ] 更新基线、测试数量和阶段状态；E.1～E.6 全部通过后才标记阶段 E 完成。
 
 ### 阶段 F：用户文件知识库
 

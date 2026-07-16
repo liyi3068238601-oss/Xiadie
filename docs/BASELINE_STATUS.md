@@ -35,7 +35,7 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; python -m pytest tests` | 通过：184 passed，1 warning |
+| 后端 | `cd backend; python -m pytest tests` | 通过：189 passed，1 warning |
 | 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：13 项情绪映射、运行可靠性、记忆、Episode 与 Saga 展示契约测试；TypeScript 检查及 Vite 生产构建成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 
@@ -132,6 +132,9 @@ npm.cmd start
 - Saga 列表、详情、时间线、来源、事件、摘要模型及 Consolidator run/cancel API 已开放；D.6 正式界面采用最近 100 条上限、非颜色状态文字、窄屏布局和来源对话入口。
 - Saga 写操作遇到 revision 冲突会刷新最新详情并要求用户重新确认，不会自动重放；来源纠错会重建有来源的安全摘要。
 - 旧 Episode 候选的列表/接受/拒绝前端客户端已移除；生成入口与后端兼容 API 暂时保留，退役条件见 ADR-0023。
+- Archivist 阶段 E.1 已完成 schema 23 数据地基：Fragment 具备真实召回时间/计数、cooling/frozen 时间、生命周期策略版本和 revision。
+- `memory_recall_events` 以同轮 context 唯一约束预防重复计数；`memory_lifecycle_events` 保存无正文的状态、评分分量、原因和策略审计。
+- E.1 尚未执行保留评分、自动冷却、冻结、恢复、归档或物理清理；这些必须在 E.2～E.6 分阶段验收后才启用。
 
 ### 人格与内置背景知识（2026-07-14）
 

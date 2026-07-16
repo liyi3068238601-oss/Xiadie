@@ -928,6 +928,60 @@ MIGRATIONS = [
             ON saga_relationship_delta_suggestions(saga_id, created_at, id);
         """,
     ),
+    (
+        23,
+        """
+        ALTER TABLE memory_fragments ADD COLUMN last_recalled_at REAL;
+        ALTER TABLE memory_fragments ADD COLUMN recall_count INTEGER NOT NULL DEFAULT 0
+            CHECK(recall_count >= 0);
+        ALTER TABLE memory_fragments ADD COLUMN cooling_since REAL;
+        ALTER TABLE memory_fragments ADD COLUMN frozen_at REAL;
+        ALTER TABLE memory_fragments ADD COLUMN lifecycle_policy_version TEXT NOT NULL
+            DEFAULT 'fragment-retention-v1';
+        ALTER TABLE memory_fragments ADD COLUMN lifecycle_revision INTEGER NOT NULL DEFAULT 0
+            CHECK(lifecycle_revision >= 0);
+
+        UPDATE memory_fragments SET cooling_since=updated_at
+            WHERE status='cooling' AND cooling_since IS NULL;
+        UPDATE memory_fragments SET frozen_at=updated_at
+            WHERE status='frozen' AND frozen_at IS NULL;
+
+        CREATE INDEX idx_memory_fragments_retention_due
+            ON memory_fragments(status, enabled, last_recalled_at, created_at);
+
+        CREATE TABLE memory_recall_events (
+            id TEXT PRIMARY KEY,
+            fragment_id TEXT NOT NULL REFERENCES memory_fragments(id) ON DELETE RESTRICT,
+            context_key TEXT NOT NULL,
+            source_session_id TEXT REFERENCES sessions(id) ON DELETE SET NULL,
+            token_estimate INTEGER NOT NULL DEFAULT 0 CHECK(token_estimate >= 0),
+            policy_version TEXT NOT NULL,
+            injected_at REAL NOT NULL,
+            UNIQUE(fragment_id, context_key)
+        );
+        CREATE INDEX idx_memory_recall_events_fragment
+            ON memory_recall_events(fragment_id, injected_at, id);
+
+        CREATE TABLE memory_lifecycle_events (
+            id TEXT PRIMARY KEY,
+            fragment_id TEXT NOT NULL REFERENCES memory_fragments(id) ON DELETE RESTRICT,
+            revision INTEGER NOT NULL CHECK(revision >= 1),
+            from_status TEXT NOT NULL
+                CHECK(from_status IN ('active','cooling','frozen','tombstone')),
+            to_status TEXT NOT NULL
+                CHECK(to_status IN ('active','cooling','frozen','tombstone')),
+            retention_score REAL CHECK(retention_score BETWEEN 0 AND 1),
+            score_components_json TEXT NOT NULL DEFAULT '{}',
+            reason_code TEXT NOT NULL,
+            source TEXT NOT NULL,
+            policy_version TEXT NOT NULL,
+            created_at REAL NOT NULL,
+            UNIQUE(fragment_id, revision)
+        );
+        CREATE INDEX idx_memory_lifecycle_events_fragment
+            ON memory_lifecycle_events(fragment_id, created_at, id);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

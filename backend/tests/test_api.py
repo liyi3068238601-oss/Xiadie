@@ -883,7 +883,7 @@ def test_schema_migration_is_idempotent():
         version = conn.execute(
             "SELECT value FROM schema_meta WHERE key = 'schema_version'"
         ).fetchone()["value"]
-        assert version == "22"
+        assert version == "23"
         assert conn.execute("SELECT COUNT(*) c FROM companion_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM affect_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM relationship_state").fetchone()["c"] <= 1
@@ -941,6 +941,8 @@ def test_schema_migration_is_idempotent():
         assert {
             "scope", "kind", "importance", "emotion", "inner_reason", "observer_version",
             "evidence_message_ids", "source_assistant_message_id", "idempotency_key",
+            "last_recalled_at", "recall_count", "cooling_since", "frozen_at",
+            "lifecycle_policy_version", "lifecycle_revision",
         } <= fragment_columns
         tables = {
             row["name"] for row in conn.execute(
@@ -949,7 +951,8 @@ def test_schema_migration_is_idempotent():
         }
         assert {
             "memory_fragments", "memory_candidates", "memory_entities",
-            "memory_fragment_entities", "memory_events",
+            "memory_fragment_entities", "memory_events", "memory_recall_events",
+            "memory_lifecycle_events",
         } <= tables
         assert {
             "memory_sagas", "memory_saga_episodes", "memory_saga_entities",
