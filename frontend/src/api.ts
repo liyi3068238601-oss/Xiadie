@@ -213,12 +213,41 @@ export interface KnowledgeDocument {
   sensitivity: "normal" | "sensitive";
   embedding_mode: "none" | "local" | "remote";
   error_code?: string | null;
+  parser_version?: string | null;
+  parsed_at?: number | null;
+  parse_char_count?: number;
+  parse_line_count?: number;
+  parse_heading_count?: number;
+  latest_run?: KnowledgeImportRun | null;
   created_at: number;
   updated_at: number;
 }
+export interface KnowledgeImportEvent {
+  id: string;
+  action: string;
+  before_status?: string | null;
+  after_status: string;
+  stage: string;
+  error_code?: string | null;
+  metadata: Record<string, number | string>;
+  created_at: number;
+}
+export interface KnowledgeImportRun {
+  id: string;
+  document_id?: string;
+  status: "queued" | "running" | "cancel_requested" | "cancelled" | "completed" |
+    "failed" | "recovery_pending";
+  current_stage: "validation" | "copy" | "parsing" | "chunking" | "indexing" | "finalizing";
+  progress: number;
+  attempt_count?: number;
+  max_attempts?: number;
+  error_code?: string | null;
+  next_attempt_at?: number | null;
+  events?: KnowledgeImportEvent[];
+}
 export interface KnowledgeImportResult {
   document: KnowledgeDocument;
-  run: null | { id: string; status: string; current_stage: string; progress: number };
+  run: KnowledgeImportRun | null;
   already_exists: boolean;
 }
 export interface MemoryCandidate {
@@ -497,6 +526,10 @@ export async function importKnowledgeFile(
   }
   return response.json();
 }
+export const getKnowledgeImportRun = (id: string) =>
+  j<KnowledgeImportRun>(`/api/knowledge/import-runs/${id}`);
+export const cancelKnowledgeImportRun = (id: string) =>
+  j<KnowledgeImportRun>(`/api/knowledge/import-runs/${id}/cancel`, { method: "POST" });
 export const listMemoryCandidates = () =>
   j<MemoryCandidate[]>("/api/memory-candidates?status=pending");
 export const acceptMemoryCandidate = (

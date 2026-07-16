@@ -13,7 +13,7 @@ def test_schema_28_has_separate_knowledge_namespace_and_default_collection():
     try:
         assert conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
-        ).fetchone()["value"] == "28"
+        ).fetchone()["value"] == "29"
         tables = {
             row["name"] for row in conn.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'knowledge_%'"
@@ -21,7 +21,7 @@ def test_schema_28_has_separate_knowledge_namespace_and_default_collection():
         }
         assert tables == {
             "knowledge_collections", "knowledge_documents",
-            "knowledge_import_runs", "knowledge_import_events",
+            "knowledge_import_runs", "knowledge_import_events", "knowledge_parse_artifacts",
         }
         default = conn.execute(
             "SELECT * FROM knowledge_collections WHERE id='default'"
@@ -146,4 +146,31 @@ def test_document_removal_cascades_run_and_body_free_events():
     finally:
         conn.execute("DELETE FROM knowledge_documents WHERE id=?", (document_id,))
         conn.commit()
+        conn.close()
+
+
+def test_schema_29_upgrades_existing_knowledge_rows_without_rewriting_them():
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    try:
+        conn.executescript(
+            "PRAGMA foreign_keys=ON;"
+            "CREATE TABLE knowledge_documents(id TEXT PRIMARY KEY,original_name TEXT NOT NULL);"
+            "CREATE TABLE knowledge_import_runs(id TEXT PRIMARY KEY,document_id TEXT NOT NULL,"
+            "status TEXT NOT NULL,current_stage TEXT NOT NULL,created_at REAL NOT NULL);"
+            "INSERT INTO knowledge_documents VALUES('doc','原文.md');"
+            "INSERT INTO knowledge_import_runs VALUES('run','doc','queued','validation',1);"
+        )
+        migration = next(sql for version, sql in db.MIGRATIONS if version == 29)
+        conn.executescript(migration)
+        assert conn.execute(
+            "SELECT original_name FROM knowledge_documents WHERE id='doc'"
+        ).fetchone()["original_name"] == "原文.md"
+        assert conn.execute(
+            "SELECT status FROM knowledge_import_runs WHERE id='run'"
+        ).fetchone()["status"] == "queued"
+        assert "parsed_at" in {
+            row["name"] for row in conn.execute("PRAGMA table_info(knowledge_documents)")
+        }
+    finally:
         conn.close()

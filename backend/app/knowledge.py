@@ -6,6 +6,7 @@ import json
 import os
 import re
 import secrets
+from contextlib import suppress
 from pathlib import Path
 
 from . import db
@@ -16,6 +17,7 @@ MAX_DOCUMENTS = 100
 MAX_TOTAL_BYTES = 250 * 1024 * 1024
 MAX_FILENAME_CHARS = 240
 STORAGE_DIR = Path(db.DATA_DIR) / "knowledge" / "originals"
+PARSED_DIR = Path(db.DATA_DIR) / "knowledge" / "parsed"
 ALLOWED_MIME_TYPES = {
     ".txt": frozenset({"text/plain", "application/octet-stream"}),
     ".md": frozenset({"text/markdown", "text/plain", "application/octet-stream"}),
@@ -146,12 +148,17 @@ def import_file(
                 now,
             ),
         )
-        conn.commit()
         document = conn.execute(
             "SELECT * FROM knowledge_documents WHERE id=?", (document_id,)
         ).fetchone()
         run = conn.execute("SELECT * FROM knowledge_import_runs WHERE id=?", (run_id,)).fetchone()
-        return {"document": _document_row(document), "run": dict(run), "already_exists": False}
+        result = {"document": _document_row(document), "run": dict(run), "already_exists": False}
+        conn.commit()
+        # 唤醒只用于降低排队延迟，不能反向破坏已经提交的本地副本。
+        with suppress(Exception):
+            from . import knowledge_worker
+            knowledge_worker.wake_worker()
+        return result
     except Exception:
         conn.rollback()
         if final_path is not None:
@@ -169,7 +176,17 @@ def list_documents(*, collection_id: str | None = None) -> list[dict]:
             "SELECT * FROM knowledge_documents" + where + " ORDER BY updated_at DESC,id",
             params,
         ).fetchall()
-        return [_document_row(row) for row in rows]
+        documents = []
+        for row in rows:
+            item = _document_row(row)
+            latest = conn.execute(
+                "SELECT id,status,current_stage,progress,error_code,attempt_count,max_attempts"
+                " FROM knowledge_import_runs WHERE document_id=?"
+                " ORDER BY created_at DESC,id DESC LIMIT 1", (item["id"],),
+            ).fetchone()
+            item["latest_run"] = dict(latest) if latest else None
+            documents.append(item)
+        return documents
     finally:
         conn.close()
 

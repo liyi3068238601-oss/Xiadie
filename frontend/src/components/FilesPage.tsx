@@ -38,10 +38,19 @@ export function FilesPage() {
   const [sensitive, setSensitive] = useState(false);
   const [importing, setImporting] = useState(false);
   const [documents, setDocuments] = useState<api.KnowledgeDocument[]>([]);
+  const [runDetails, setRunDetails] = useState<Record<string, api.KnowledgeImportRun>>({});
   const inputRef = useRef<HTMLInputElement>(null);
 
   const refresh = () => api.listKnowledgeDocuments().then(setDocuments);
   useEffect(() => { refresh().catch(() => toast("知识文档列表加载失败")); }, []);
+  const hasActiveParsing = documents.some((document) =>
+    !document.parsed_at && ["queued", "parsing"].includes(document.status)
+  );
+  useEffect(() => {
+    if (!hasActiveParsing) return;
+    const timer = window.setInterval(() => refresh().catch(() => {}), 1500);
+    return () => window.clearInterval(timer);
+  }, [hasActiveParsing]);
 
   function choose(file: File) {
     const extension = file.name.toLowerCase().split(".").pop();
@@ -94,6 +103,29 @@ export function FilesPage() {
       toast(error.message || "文件导入失败");
     } finally {
       setImporting(false);
+    }
+  }
+
+  async function showRun(document: api.KnowledgeDocument) {
+    const runId = document.latest_run?.id;
+    if (!runId) return;
+    try {
+      const run = await api.getKnowledgeImportRun(runId);
+      setRunDetails((current) => ({ ...current, [document.id]: run }));
+    } catch (error: any) {
+      toast(error.message || "任务详情加载失败");
+    }
+  }
+
+  async function cancelRun(document: api.KnowledgeDocument) {
+    const runId = document.latest_run?.id;
+    if (!runId || !window.confirm(`停止处理「${document.original_name}」吗？原文件副本仍会保留。`)) return;
+    try {
+      await api.cancelKnowledgeImportRun(runId);
+      toast("已请求停止处理");
+      await refresh();
+    } catch (error: any) {
+      toast(error.message || "停止失败");
     }
   }
 
@@ -201,10 +233,33 @@ export function FilesPage() {
           <span className="chip">{document.extension.toUpperCase().replace(".", "")}</span>
           <div style={{ flex: 1 }}>
             <strong>{document.original_name}</strong>
-            <div className="sub">{formatBytes(document.size_bytes)} · {documentStatus(document.status)} ·
+            <div className="sub">{formatBytes(document.size_bytes)} · {documentStatus(document)} ·
               指纹 {document.content_sha256.slice(0, 10)}</div>
+            {document.parsed_at && (
+              <div className="sub">本地解析：{document.parse_line_count} 行 · {document.parse_heading_count} 个标题 ·
+                {document.parse_char_count} 字符；尚未切片或索引</div>
+            )}
+            {runDetails[document.id] && (
+              <div style={{ marginTop: 8 }}>
+                {runDetails[document.id].events?.map((event) => (
+                  <div className="sub" key={event.id}>
+                    {eventLabel(event.action)} · {stageLabel(event.stage)} ·
+                    {new Date(event.created_at * 1000).toLocaleString("zh-CN")}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           {document.sensitivity === "sensitive" && <span className="chip danger">敏感 · 仅本地</span>}
+          {document.latest_run && <button className="btn ghost" onClick={() => showRun(document)}>进度详情</button>}
+          {document.latest_run && ["queued", "running", "recovery_pending", "cancel_requested"].includes(
+            document.latest_run.status
+          ) && (
+            <button className="btn ghost" disabled={document.latest_run.status === "cancel_requested"}
+              onClick={() => cancelRun(document)}>
+              {document.latest_run.status === "cancel_requested" ? "停止中…" : "停止处理"}
+            </button>
+          )}
         </div>
       ))}
     </div>
@@ -217,10 +272,26 @@ function formatBytes(value: number): string {
   return `${(value / 1024 / 1024).toFixed(1)} MiB`;
 }
 
-function documentStatus(status: api.KnowledgeDocument["status"]): string {
+function documentStatus(document: api.KnowledgeDocument): string {
+  if (document.parsed_at && document.latest_run?.current_stage === "chunking") {
+    return "解析完成 · 等待切片";
+  }
+  if (document.latest_run?.status === "running") return `解析中 ${document.latest_run.progress}%`;
+  if (document.latest_run?.status === "recovery_pending") return "解析暂停 · 等待重试";
   return ({
     staged: "等待入队", queued: "已安全保存 · 等待解析", parsing: "解析中",
     indexed: "可检索", failed: "处理失败", cancelled: "已取消",
     delete_pending: "删除中", delete_failed: "删除待重试",
-  })[status];
+  })[document.status];
+}
+
+function eventLabel(action: string): string {
+  return ({ admitted: "安全接收", parsing_started: "开始解析", parsing_completed: "解析完成",
+    retry_scheduled: "等待重试", recovery_scheduled: "中断恢复", cancel_requested: "请求停止",
+    cancelled: "已停止", failed: "解析失败" } as Record<string, string>)[action] || "任务记录";
+}
+
+function stageLabel(stage: string): string {
+  return ({ validation: "校验", copy: "本地副本", parsing: "解析", chunking: "等待切片",
+    indexing: "索引", finalizing: "收尾" } as Record<string, string>)[stage] || stage;
 }

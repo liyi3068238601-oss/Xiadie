@@ -1295,6 +1295,35 @@ MIGRATIONS = [
             ON knowledge_import_events(run_id,created_at,id);
         """,
     ),
+    (
+        29,
+        """
+        ALTER TABLE knowledge_documents ADD COLUMN parsed_at REAL;
+        ALTER TABLE knowledge_documents ADD COLUMN parse_char_count INTEGER NOT NULL DEFAULT 0
+            CHECK(parse_char_count >= 0);
+        ALTER TABLE knowledge_documents ADD COLUMN parse_line_count INTEGER NOT NULL DEFAULT 0
+            CHECK(parse_line_count >= 0);
+        ALTER TABLE knowledge_documents ADD COLUMN parse_heading_count INTEGER NOT NULL DEFAULT 0
+            CHECK(parse_heading_count >= 0);
+        ALTER TABLE knowledge_import_runs ADD COLUMN next_attempt_at REAL;
+
+        CREATE TABLE knowledge_parse_artifacts (
+            document_id TEXT PRIMARY KEY REFERENCES knowledge_documents(id) ON DELETE CASCADE,
+            artifact_key TEXT NOT NULL UNIQUE,
+            parser_version TEXT NOT NULL,
+            normalized_sha256 TEXT NOT NULL CHECK(length(normalized_sha256)=64),
+            char_count INTEGER NOT NULL CHECK(char_count >= 0),
+            line_count INTEGER NOT NULL CHECK(line_count >= 0),
+            heading_count INTEGER NOT NULL CHECK(heading_count >= 0),
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_knowledge_parse_artifacts_version
+            ON knowledge_parse_artifacts(parser_version,updated_at);
+        CREATE INDEX idx_knowledge_import_runs_due
+            ON knowledge_import_runs(status,current_stage,next_attempt_at,created_at);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

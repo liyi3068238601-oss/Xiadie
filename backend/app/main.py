@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field
 
 from . import (
     archivist, archivist_worker, companion_state, db, entities, episode_consolidator, episode_summary_service,
-    episodes, knowledge, llm, lore, memory, memory_conflicts, saga_consolidator, saga_lifecycle, saga_summary,
+    episodes, knowledge, knowledge_worker, llm, lore, memory, memory_conflicts, saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, slow_lifecycle,
 )
 from . import memory_observer_service
@@ -32,9 +32,11 @@ async def lifespan(app: FastAPI):
     await episode_consolidator.start_worker()
     await saga_consolidator.start_worker()
     await archivist_worker.start_worker()
+    await knowledge_worker.start_worker()
     try:
         yield
     finally:
+        await knowledge_worker.stop_worker()
         await archivist_worker.stop_worker()
         await saga_consolidator.stop_worker()
         await episode_consolidator.stop_worker()
@@ -494,6 +496,31 @@ async def import_knowledge_document(request: Request) -> dict:
         raise HTTPException(status, str(error)) from error
     except OSError as error:
         raise HTTPException(507, "无法把文件安全保存到本地知识库") from error
+
+
+@app.get("/api/knowledge/import-runs/{run_id}")
+def get_knowledge_import_run(run_id: str) -> dict:
+    run = knowledge_worker.get_run(run_id)
+    if not run:
+        raise HTTPException(404, "知识导入任务不存在")
+    return _public_knowledge_run(run)
+
+
+@app.post("/api/knowledge/import-runs/{run_id}/cancel")
+def cancel_knowledge_import_run(run_id: str) -> dict:
+    run = knowledge_worker.cancel(run_id)
+    if not run:
+        raise HTTPException(404, "知识导入任务不存在")
+    return _public_knowledge_run(run)
+
+
+def _public_knowledge_run(run: dict) -> dict:
+    allowed = {
+        "id", "document_id", "trigger", "status", "current_stage", "progress",
+        "attempt_count", "max_attempts", "error_code", "next_attempt_at", "started_at",
+        "finished_at", "created_at", "updated_at", "events",
+    }
+    return {key: value for key, value in run.items() if key in allowed}
 
 
 class MemoryIn(BaseModel):

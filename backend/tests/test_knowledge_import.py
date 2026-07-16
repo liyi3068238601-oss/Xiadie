@@ -1,5 +1,6 @@
 """F.2 TXT/Markdown 安全准入、配额与原子本地副本。"""
 import json
+from concurrent.futures import ThreadPoolExecutor
 from urllib.parse import quote
 
 import pytest
@@ -193,3 +194,39 @@ def test_document_transition_guard_rejects_skips_and_allows_declared_path():
     with pytest.raises(knowledge.KnowledgeImportError) as caught:
         knowledge.assert_document_transition("staged", "indexed")
     assert caught.value.code == "document_transition_invalid"
+
+
+def test_begin_immediate_serializes_concurrent_document_quota(monkeypatch):
+    monkeypatch.setattr(knowledge, "MAX_DOCUMENTS", 1)
+
+    def admit(item):
+        name, raw = item
+        try:
+            return knowledge.import_file(name, "text/plain", raw)["already_exists"]
+        except knowledge.KnowledgeImportError as error:
+            return error.code
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(pool.map(admit, [("a.txt", b"one"), ("b.txt", b"two")]))
+    assert sorted(str(result) for result in results) == ["False", "document_quota_exceeded"]
+    assert len(knowledge.list_documents()) == 1
+
+
+def test_worker_wake_failure_does_not_undo_committed_import(monkeypatch):
+    from app import knowledge_worker
+
+    def fail_wake():
+        raise RuntimeError("wake failed")
+
+    monkeypatch.setattr(knowledge_worker, "wake_worker", fail_wake)
+    result = knowledge.import_file("kept.txt", "text/plain", b"still committed")
+
+    assert result["document"]["status"] == "queued"
+    assert knowledge.storage_path_for(result["document"]).read_bytes() == b"still committed"
+    conn = db.connect()
+    try:
+        assert conn.execute(
+            "SELECT COUNT(*) FROM knowledge_documents WHERE id=?", (result["document"]["id"],)
+        ).fetchone()[0] == 1
+    finally:
+        conn.close()
