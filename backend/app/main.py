@@ -15,8 +15,10 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from . import (
-    archivist, archivist_worker, companion_state, db, entities, episode_consolidator, episode_summary_service,
-    episodes, knowledge, knowledge_context, knowledge_embeddings, knowledge_grants, knowledge_management, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search, knowledge_worker, llm, lore, memory, memory_conflicts, saga_consolidator, saga_lifecycle, saga_summary,
+    archivist, archivist_worker, companion_state, context_budget, db, entities, episode_consolidator,
+    episode_summary_service, episodes, knowledge, knowledge_context, knowledge_embeddings, knowledge_grants,
+    knowledge_management, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search,
+    knowledge_worker, llm, lore, memory, memory_conflicts, saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, secret_store, slow_lifecycle,
 )
 from . import memory_observer_service
@@ -347,9 +349,21 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 ),
             )
         conn.commit()
+        system_prompt = build_system_prompt(digest, style, lore_digest, knowledge_block)
+        context_window = context_budget.get_context_window(provider)
+        system_tokens = context_budget.estimate_tokens(system_prompt)
+        history_tokens = context_budget.count_history_tokens(history)
+        available = max(512, context_window - system_tokens)
+        trimmed_count = 0
+        if history_tokens > available:
+            full = [dict(r) for r in history]
+            trimmed = context_budget.trim_history(full, available)
+            trimmed_count = len(full) - len(trimmed)
+            history = trimmed
+
         messages = [{
             "role": "system",
-            "content": build_system_prompt(digest, style, lore_digest, knowledge_block),
+            "content": system_prompt,
         }]
         messages += [{"role": r["role"], "content": r["content"]} for r in history]
     finally:
@@ -411,6 +425,8 @@ async def chat(body: ChatIn) -> StreamingResponse:
                         if (knowledge_retrieval or {}).get("results") else "none"
                     ),
                     "knowledge_recall_mode": recall_mode,
+                    "context_trimmed": trimmed_count > 0,
+                    "context_trimmed_messages": trimmed_count,
                 },
             )
             async for chunk in llm.stream_chat(provider, model, messages):
