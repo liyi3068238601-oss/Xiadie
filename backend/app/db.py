@@ -1716,6 +1716,19 @@ MIGRATIONS = [
             ON knowledge_recall_mode_events(created_at DESC,id DESC);
         """,
     ),
+    (
+        39,
+        """
+        ALTER TABLE knowledge_documents ADD COLUMN recall_count INTEGER NOT NULL DEFAULT 0;
+        ALTER TABLE knowledge_documents ADD COLUMN last_recalled_at REAL;
+
+        CREATE INDEX IF NOT EXISTS idx_knowledge_recall_decisions_created
+            ON knowledge_recall_decisions(created_at);
+
+        CREATE INDEX IF NOT EXISTS idx_knowledge_chat_retrievals_created
+            ON knowledge_chat_retrievals(created_at);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

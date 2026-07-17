@@ -64,7 +64,7 @@ def test_schema_33_deletion_ledger_has_no_filename_path_or_body():
         event_columns = {row["name"] for row in conn.execute("PRAGMA table_info(knowledge_deletion_events)")}
         assert {"document_id", "content_sha256", "status", "error_code"} <= columns
         assert not ({"filename", "path", "content", "query"} & (columns | event_columns))
-        assert conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0] == "38"
+        assert conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0] == "39"
     finally:
         conn.close()
 

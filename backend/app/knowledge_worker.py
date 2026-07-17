@@ -10,8 +10,8 @@ from contextlib import suppress
 from pathlib import Path
 
 from . import (
-    db, knowledge, knowledge_chunker, knowledge_embeddings, knowledge_grants,
-    knowledge_management, knowledge_parser, knowledge_search,
+    db, knowledge, knowledge_chunker, knowledge_cleanup, knowledge_embeddings,
+    knowledge_grants, knowledge_management, knowledge_parser, knowledge_search,
 )
 
 RUNNING_STALE_SECONDS = 5 * 60
@@ -66,10 +66,14 @@ async def _worker_loop() -> None:
         if processed:
             continue
         try:
-            # 只推进过期状态并清空 token hash；物理删除仍由 K.8 生命周期统一处理。
+            # 只推进过期状态并清空 token hash；物理删除由审计清理统一处理。
             await asyncio.to_thread(expire_grants_once)
         except Exception:  # noqa: BLE001 - 维护失败不能停止知识解析 worker
             _logger.exception("Knowledge grant expiry sweep failed")
+        try:
+            await asyncio.to_thread(knowledge_cleanup.run_once)
+        except Exception:  # noqa: BLE001
+            _logger.exception("Knowledge audit cleanup sweep failed")
         try:
             if _wake_event:
                 await asyncio.wait_for(_wake_event.wait(), timeout=WORKER_IDLE_SECONDS)

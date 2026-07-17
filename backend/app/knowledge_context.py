@@ -250,3 +250,9 @@ def insert_citation_locked(conn, *, assistant_id: str, retrieval_id: str, item: 
             item["page_end"], item["content_sha256"], db.now(),
         ),
     )
+    # 更新文档级别的召回计数和时间戳（K.8.1）
+    conn.execute(
+        "UPDATE knowledge_documents SET recall_count = recall_count + 1,"
+        " last_recalled_at = ?, updated_at = ? WHERE id = ?",
+        (db.now(), db.now(), item["document_id"]),
+    )
