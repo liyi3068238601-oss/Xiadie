@@ -2,7 +2,7 @@
 
 版本：v1.0
 制定日期：2026-07-17
-状态：执行中
+状态：阶段一（K.6~K.9 知识库收尾）已完成，阶段二（SEC.1 API Key 加密存储）已完成
 适用对象：项目所有者、Codex、后续协作者
 
 ---
@@ -17,17 +17,17 @@
 本计划整合以下仍在生效的文档，将其拆分为可逐个执行的小步骤：
 
 - `XIADIE_LONG_TERM_ROADMAP.md`（应用版本路线）
-- `KNOWLEDGE_SYSTEM_OPTIMIZATION_PLAN.md`（K.6~K.9 尚未完成）
+- `KNOWLEDGE_SYSTEM_OPTIMIZATION_PLAN.md`（K.0~K.9 已全部完成）
 - `CODEX_PROJECT_CONTEXT.md`（冻结决策与规则）
 
 ### 当前真实基线（2026-07-17）
 
 | 项目 | 状态 |
 |---|---|
-| 后端测试 | 366 passed，1 warning |
+| 后端测试 | 374 passed，1 warning |
 | 前端测试 | 32 passed |
-| 数据库 schema | v38 |
-| 后端文件 | `main.py` 1865 行，`db.py` 1840 行（需拆分） |
+| 数据库 schema | v39 |
+| SecretStore | 接口 + 开发期 SqliteSecretStore 已就绪 |
 | 前端文件 | `App.tsx` 266 行，`styles.css` 2738 行（未拆分） |
 | ToolRegistry | **未实现**（grep 为空） |
 | API Key 存储 | **明文**在 SQLite |
