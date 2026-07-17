@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field
 from . import (
     archivist, archivist_worker, companion_state, db, entities, episode_consolidator, episode_summary_service,
     episodes, knowledge, knowledge_context, knowledge_embeddings, knowledge_grants, knowledge_management, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search, knowledge_worker, llm, lore, memory, memory_conflicts, saga_consolidator, saga_lifecycle, saga_summary,
-    saga_summary_service, slow_lifecycle,
+    saga_summary_service, secret_store, slow_lifecycle,
 )
 from . import memory_observer_service
 from .affect import observer_service as affect_observer_service
@@ -1695,6 +1695,8 @@ def update_provider(pid: str, body: dict) -> dict:
         )
         if body.get("api_key"):  # 只在传了非空 key 时更新，避免误清空
             conn.execute("UPDATE providers SET api_key = ? WHERE id = ?", (body["api_key"], pid))
+            secret_store.get_store().store(f"provider:{pid}", body["api_key"])
+            # 旧的 api_key 明文仍然在 providers 表中，迁移会用 _migrate_key_to_secret_store 清除
         if "models" in body and body["models"] is not None:
             conn.execute("UPDATE providers SET models = ? WHERE id = ?",
                          (json.dumps(body["models"], ensure_ascii=False), pid))
