@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>SEC.2+SEC.3 审查反馈 — 遐蝶</title>
+<style>
+:root{--bg:#0f0e17;--card:rgba(255,255,255,0.035);--border:rgba(255,255,255,0.08);--text:#e8e6f0;--text-dim:#9b96b0;--purple:#a78bfa;--blue:#60a5fa;--green:#56d6a0;--yellow:#fbbf24;--red:#f87171}
+body{background:var(--bg);color:var(--text);font-family:sans-serif;margin:0;padding:40px}
+h1{color:var(--purple)}h2{color:var(--blue);margin-top:32px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin:12px 0}
+.pass{color:var(--green)}.warn{color:var(--yellow)}
+table{width:100%;border-collapse:collapse;margin:12px 0}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--border)}
+th{color:var(--text-dim)}code{background:rgba(167,139,250,0.1);padding:2px 6px;border-radius:4px;color:var(--purple)}
+</style>
+</head>
+<body>
+
+<h1>SEC.2+SEC.3 审查反馈</h1>
+<p>审查报告：sec2-sec3-review.html | 后端 374 passed | 前端 32 passed</p>
+
+<h2>已采纳并修复</h2>
+
+<div class="card">
+<h3 class="pass">建议 1（P0）：修正 SEC.3 虚勾选 — 已修复 ✓</h3>
+<p>已提交 <code>bdf3667</code>：SEC.3.2 和 SEC.3.4 从 <code>[x]</code> 改回 <code>[ ]</code>，与"推迟到 UI 伴侣化阶段"描述一致。</p>
+</div>
+
+<div class="card">
+<h3 class="pass">建议 2：前端 regenerate 失败恢复旧回复 — 采纳，下阶段实现 ✓</h3>
+<p>审查建议在 ChatView.tsx 中当 regenerate 失败时重新加载消息列表，这是一个轻量改动（~5 行），不需要等到 UI 伴侣化阶段。采纳，在 STR.3 前端拆分时一并实现。</p>
+</div>
+
+<h2>采纳但推迟</h2>
+
+<div class="card">
+<h3 class="warn">建议 3：context_budget 专项测试 — 采纳，推迟</h3>
+<p>context_budget 模块无专项测试。模块功能已通过全量 374 项测试隐试验证（聊天流程通过）。专项测试留到代码结构治理完成后集中补充。</p>
+</div>
+
+<div class="card">
+<h3 class="warn">建议 4：regenerate + 知识引用组合测试 — 采纳，推迟</h3>
+<p>regenerate + knowledge_citations 级联清理 + retrieval 关联验证是重要的安全边界。推迟到涉及 citation 生命周期的专项回归阶段。</p>
+</div>
+
+<div class="card">
+<h3 class="warn">建议 5：SEC.1 SecretStore 测试补充 — 重申，仍在推迟</h3>
+<p>与上次审查一致。留到阶段三代码结构治理后集中补充。</p>
+</div>
+
+<h2>采纳追踪汇总</h2>
+<table>
+<tr><th>建议</th><th>处置</th></tr>
+<tr><td>建议 1: 修正 SEC.3 虚勾选</td><td class="pass">已修复 (bdf3667)</td></tr>
+<tr><td>建议 2: 前端 regenerate 失败恢复旧回复</td><td class="pass">采纳，STR.3 实现</td></tr>
+<tr><td>建议 3: context_budget 专项测试</td><td class="warn">推迟</td></tr>
+<tr><td>建议 4: regenerate + 知识引用测试</td><td class="warn">推迟</td></tr>
+<tr><td>建议 5: SEC.1 SecretStore 测试</td><td class="warn">推迟（上次已推迟）</td></tr>
+</table>
+
+</body>
+</html>

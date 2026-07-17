@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>SEC.2 + SEC.3 审查报告 — 遐蝶</title>
+<link rel="stylesheet" href="_shared/fonts.css">
+<style>
+:root{
+  --bg:#0f0e17;--bg2:#1a1830;--card:rgba(255,255,255,0.035);--card-hover:rgba(255,255,255,0.05);
+  --border:rgba(255,255,255,0.08);--text:#e8e6f0;--text-dim:#9b96b0;--text-faint:#6b6680;
+  --purple:#a78bfa;--blue:#60a5fa;--green:#56d6a0;--yellow:#fbbf24;--red:#f87171;
+  --mono:'JetBrains Mono','Cascadia Code',Consolas,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif;
+  line-height:1.7;font-size:14px;min-height:100vh;
+  background-image:radial-gradient(ellipse at 20% 0%,rgba(167,139,250,0.08) 0%,transparent 50%),
+    radial-gradient(ellipse at 80% 100%,rgba(96,165,250,0.06) 0%,transparent 50%);}
+.container{max-width:960px;margin:0 auto;padding:40px 24px 80px}
+.hero{text-align:center;padding:48px 0 40px}
+.hero h1{font-size:28px;font-weight:700;background:linear-gradient(135deg,var(--purple),var(--blue));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
+.hero .subtitle{color:var(--text-dim);font-size:15px}
+.hero .meta{display:flex;justify-content:center;gap:12px;margin-top:18px;flex-wrap:wrap}
+.badge{padding:5px 14px;border-radius:999px;font-size:12px;border:1px solid var(--border);background:var(--card)}
+.badge.pass{color:var(--green);border-color:rgba(86,214,160,0.25);background:rgba(86,214,160,0.06)}
+.badge.info{color:var(--blue);border-color:rgba(96,165,250,0.25);background:rgba(96,165,250,0.06)}
+.badge.warn{color:var(--yellow);border-color:rgba(251,191,36,0.25);background:rgba(251,191,36,0.06)}
+.badge.fail{color:var(--red);border-color:rgba(248,113,113,0.25);background:rgba(248,113,113,0.06)}
+.section{margin-top:36px}
+.section-title{font-size:18px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px;
+  padding-bottom:10px;border-bottom:1px solid var(--border)}
+.section-title .icon{font-size:20px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:14px;
+  transition:background .2s}
+.card:hover{background:var(--card-hover)}
+.card-title{font-weight:600;font-size:15px;margin-bottom:10px;color:var(--text)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border)}
+th{color:var(--text-dim);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+td code,th code,.card code{background:rgba(167,139,250,0.1);padding:1px 6px;border-radius:4px;
+  font-family:var(--mono);font-size:12px;color:var(--purple)}
+.pass-cell{color:var(--green)}
+.skip-cell{color:var(--yellow)}
+.fail-cell{color:var(--red)}
+.checklist-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04)}
+.checklist-item:last-child{border-bottom:none}
+.check-icon{flex-shrink:0;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;margin-top:1px}
+.check-icon.pass{background:rgba(86,214,160,0.15);color:var(--green)}
+.check-icon.skip{background:rgba(251,191,36,0.15);color:var(--yellow)}
+.check-icon.fail{background:rgba(248,113,113,0.15);color:var(--red)}
+.check-text{flex:1}
+.check-text .label{font-weight:600;font-size:13px}
+.check-text .detail{font-size:13px;color:var(--text-dim);margin-top:3px;line-height:1.6}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:8px}
+.metric{background:rgba(255,255,255,0.025);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center}
+.metric .value{font-size:22px;font-weight:700;color:var(--purple)}
+.metric .label{font-size:11px;color:var(--text-faint);margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+.metric.green .value{color:var(--green)}
+.metric.blue .value{color:var(--blue)}
+.metric.yellow .value{color:var(--yellow)}
+.metric.red .value{color:var(--red)}
+.code-block{background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;padding:14px 16px;
+  font-family:var(--mono);font-size:12px;line-height:1.6;overflow-x:auto;margin:10px 0;color:#c4b5fd}
+.code-block .comment{color:var(--text-faint)}
+.suggestion{padding:16px 20px;border-radius:8px;background:rgba(96,165,250,0.06);
+  border:1px solid rgba(96,165,250,0.2);margin-bottom:12px}
+.suggestion-title{font-weight:700;color:var(--blue);font-size:14px;margin-bottom:6px}
+.suggestion-body{font-size:13px;color:var(--text-dim);line-height:1.7}
+.suggestion-body code{background:rgba(96,165,250,0.1);padding:1px 6px;border-radius:4px;
+  font-family:var(--mono);font-size:12px;color:var(--blue)}
+.issue-box{padding:16px 20px;border-radius:8px;background:rgba(248,113,113,0.06);
+  border:1px solid rgba(248,113,113,0.2);margin-bottom:14px}
+.issue-title{font-weight:700;color:var(--red);font-size:14px;margin-bottom:6px}
+.issue-body{font-size:13px;color:var(--text-dim);line-height:1.7}
+.footer{text-align:center;padding:40px 0 0;color:var(--text-dim);font-size:13px;border-top:1px solid var(--border)}
+.note{font-size:12px;color:var(--text-faint);margin-top:6px;padding-left:4px}
+@media(max-width:640px){.container{padding:20px 14px 60px}.hero h1{font-size:22px}}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="hero">
+  <h1>SEC.2 上下文预算 + SEC.3 重新生成安全化 审查报告</h1>
+  <div class="subtitle">上下文窗口管理 · Token 估算与裁剪 · regenerate 原子替换</div>
+  <div class="meta">
+    <span class="badge pass">SEC.2 通过</span>
+    <span class="badge warn">SEC.3 部分通过</span>
+    <span class="badge fail">2 项虚勾选</span>
+    <span class="badge info">后端 374 passed</span>
+    <span class="badge info">前端 32 passed</span>
+    <span class="badge info">构建 188 模块 1.64s</span>
+  </div>
+</div>
+
+<!-- 审查结论 -->
+<div class="section">
+  <div class="section-title"><span class="icon">📋</span> 审查结论</div>
+  <div class="card">
+    <div class="card-title">总体判定：SEC.2 通过，SEC.3 有 2 项虚勾选</div>
+    <p style="font-size:13px;color:var(--text-dim);line-height:1.7">
+      SEC.2（上下文预算与长会话管理）10 项勾选全部真实通过，<code>context_budget</code> 模块完整实现。
+      SEC.3（重新生成安全化）4 项中 2 项真实通过、<strong>2 项虚勾选</strong>——计划书中标注"推迟到 UI 伴侣化阶段"
+      但仍打 <code>[x]</code>。后端 374 项测试通过，前端 32 项测试通过，生产构建 188 模块（1.64s）。
+      N1–N15 全部已修复，无新问题。
+    </p>
+  </div>
+</div>
+
+<!-- SEC.3 虚勾选问题 -->
+<div class="section">
+  <div class="section-title"><span class="icon">⚠️</span> SEC.3 虚勾选问题</div>
+  <div class="issue-box">
+    <div class="issue-title">SEC.3 第 2 项和第 4 项标注"推迟"但打 [x] 勾选</div>
+    <div class="issue-body">
+      <strong>计划书原文</strong>：<br>
+      <code>- [x] 前端增加"查看上一版回复"入口（推迟到 UI 伴侣化阶段）</code><br>
+      <code>- [x] 前端错误卡在重新生成失败时显示"旧回复已保留"（推迟到 UI 伴侣化阶段）</code><br><br>
+      <strong>代码验证</strong>：<br>
+      前端 <code>ChatView.tsx</code> 中无"上一版"/"查看上一版"/"旧回复"任何相关代码。
+      <code>regenerate</code> 失败时前端只展示 <code>event: error</code> 的通用错误消息，
+      无"旧回复已保留"的专属提示。<br><br>
+      <strong>结论</strong>：这两项确实未实现，"推迟到 UI 伴侣化阶段"意味着当前不做。
+      但 <code>[x]</code> 勾选表示已完成。<strong>勾选与文字描述自相矛盾</strong>。<br><br>
+      <strong>建议</strong>：将这两项改为 <code>[ ]</code>（未勾选）或 <code>[~]</code>（部分完成），
+      与 SEC.2.4"推迟到后续版本"的处理方式保持一致（SEC.2.4 虽然也推迟但其勾选含义为"评估后决定推迟"，
+      不是"已完成功能"）。
+    </div>
+  </div>
+</div>
+
+<!-- SEC.2 验证 -->
+<div class="section">
+  <div class="section-title"><span class="icon">✅</span> SEC.2 上下文预算验证（10/10 通过）</div>
+  <div class="card">
+    <div class="card-title">SEC.2.1 — 上下文能力定义（3/3 通过）</div>
+    <div class="checklist-item">
+      <div class="check-icon pass">✓</div>
+      <div class="check-text">
+        <div class="label">为每个已知 Provider 定义上下文窗口大小</div>
+        <div class="detail">
+          <code>context_budget.py</code> 中 <code>CONTEXT_WINDOWS</code> 字典定义了已知 Provider 的窗口大小。
+          <code>main.py:353</code> 调用 <code>context_budget.get_context_window(provider)</code> 获取。
+        </div>
+      </div>
+    </div>
+    <div class="checklist-item">
+      <div class="check-icon pass">✓</div>
+      <div class="check-text">
+        <div class="label">自定义 Provider 默认 4096</div>
+        <div class="detail">未知 Provider 的 <code>get_context_window()</code> 返回 <code>4096</code> 作为保守默认值。</div>
+      </div>
+    </div>
+    <div class="checklist-item">
+      <div class="check-icon pass">✓</div>
+      <div class="check-text">
+        <div class="label">get_context_window(provider) 查询函数</div>
+        <div class="detail">已实现并接入聊天热路径（<code>main.py:353</code>）。</div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">SEC.2.2 — Token 计数（3/3 通过）</div>
+    <div class="checklist-item">
+      <div class="check-icon pass">✓</div>
+      <div class="check-text">
+        <div class="label">本地 token 估算（复用 knowledge_context.estimate_tokens）</div>
+        <div class="detail"><code>context_budget.estimate_tokens()</code> 复用知识库的 token 估算逻辑。</div>
+      </div>
+    </div>
+    <div class="checklist-item">
+      <div class="check-icon pass">✓</div>
+      <div class="check-text">
+        <div class="label">计算系统提示词 + Lore + 记忆摘要 + 知识注入 + 历史消息的总 token</div>
+        <div class="detail">
+          <code>main.py:354-355</code>：<code>system_tokens = context_budget.estimate_tokens(system_prompt)</code> +
+          <code>history_tokens = context_budget.count_history_tokens(history)</code>。
+        </div>
+      </div>
+    </div>
+    <div class="checklist-item">
+      <div class="check-icon pass">✓</div>
+      <div class="check-text">
+        <div class="label">在 SSE 流开始前检查预算，超限时裁剪</div>
+        <div class="detail">
+          <code>main.py:356-362</code>：<code>available = max(512, context_window - system_tokens)</code>，
+          <code>if history_tokens > available: trimmed = context_budget.trim_history(full, available)</code>。
+          裁剪在 <code>gen()</code> 流式开始前完成。
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">SEC.2.3 — 上下文裁剪策略（3/3 通过）</div>
+    <div class="checklist-item">
+      <div class="check-icon pass">✓</div>
+      <div class="check-text">
+        <div class="label">优先保留：最近 keep_min_rounds 轮对话</div>
+        <div class="detail"><code>trim_history()</code> 从最早轮次逐轮裁剪，保留最近的对话。</div>
+      </div>
+    </div>
+    <div class="checklist-item">
+      <div class="check-icon pass">✓</div>
+      <div class="check-text">
+        <div class="label">从最早轮次逐轮裁剪，超出预算时丢弃早期轮次</div>
+        <div class="detail">裁剪逻辑按轮次（user+assistant 对）从最早开始移除，直到 token 总量在预算内。</div>
+      </div>
+    </div>
+    <div class="checklist-item">
+      <div class="check-icon pass">✓</div>
+      <div class="check-text">
+        <div class="label">裁剪后在 SSE meta 中告知用户</div>
+        <div class="detail">
+          <code>main.py:428-429</code>：SSE meta 包含 <code>"context_trimmed": trimmed_count > 0</code> 和
+          <code>"context_trimmed_messages": trimmed_count</code>。
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">SEC.2.4 — 长会话摘要（合理推迟）</div>
+    <div class="checklist-item">
+      <div class="check-icon skip">○</div>
+      <div class="check-text">
+        <div class="label">推迟到后续版本（上下文裁剪已足够控制 token 用量）</div>
+        <div class="detail">
+          合理决策。当前裁剪策略足以防止上下文溢出。摘要功能留到有实际长会话需求时再评估。
+          SEC.2.4 的 [x] 表示"评估后决定推迟"，与 SEC.3 的"推迟但声称完成"不同。
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SEC.3 验证 -->
+<div class="section">
+  <div class="section-title"><span class="icon">🔍</span> SEC.3 重新生成安全化验证（2/4 真实通过，2/4 虚勾选）</div>
+  <div class="card">
+    <div class="checklist-item">
+      <div class="check-icon pass">✓</div>
+      <div class="check-text">
+        <div class="label">SEC.3.1 — 复核 regenerate 逻辑：新回复完整落库后，事务替换旧回复。失败保留旧内容</div>
+        <div class="detail">
+          <strong>真实通过</strong>。<code>main.py:448-467</code> 中的关键逻辑：
+          <div class="code-block">
+<span class="comment"># 1. 生成新 ID</span>
+aid = db.new_id()
+<span class="comment"># 2. 先 INSERT 新回复</span>
+c2.execute("INSERT INTO messages(id,...) VALUES(...)", (aid, ...))
+<span class="comment"># 3. 再 DELETE 旧回复（同一事务）</span>
+if replace_assistant_id:
+    c2.execute("DELETE FROM messages WHERE id = ?", (replace_assistant_id,))
+<span class="comment"># 4. 提交事务</span>
+c2.commit()
+          </div>
+          <code>replace_assistant_id</code> 在 <code>main.py:264</code> 设置为最后一条 assistant 消息的 ID。
+          如果 LLM 生成失败（<code>LLMError</code> 在 <code>main.py:435</code> 捕获），<code>gen()</code> 直接 return，
+          不会执行到 INSERT/DELETE/COMMIT，旧回复保留。
+        </div>
+      </div>
+    </div>
+    <div class="checklist-item">
+      <div class="check-icon fail">✗</div>
+      <div class="check-text">
+        <div class="label">SEC.3.2 — 前端增加"查看上一版回复"入口（推迟到 UI 伴侣化阶段）— 虚勾选</div>
+        <div class="detail">
+          <strong>未实现</strong>。前端 <code>ChatView.tsx</code> 中无"上一版"/"查看上一版"相关代码。
+          regenerate 操作直接用新回复替换旧回复的显示，不保留旧版本供查看。
+          计划书标注"推迟到 UI 伴侣化阶段"但勾选为 <code>[x]</code>，与实际状态矛盾。
+        </div>
+      </div>
+    </div>
+    <div class="checklist-item">
+      <div class="check-icon pass">✓</div>
+      <div class="check-text">
+        <div class="label">SEC.3.3 — 覆盖测试：test_failed_regeneration_keeps_previous_reply</div>
+        <div class="detail">
+          <strong>真实通过</strong>。<code>test_api.py:855</code>：
+          <div class="code-block">
+<span class="comment"># 1. 生成旧回复</span>
+with client.stream("POST", "/api/chat", json={...}) as response:
+    "".join(response.iter_text())
+old_reply = next(item for item in before if item["role"] == "assistant")
+
+<span class="comment"># 2. monkeypatch LLM 失败</span>
+async def failing_stream(*_args, **_kwargs):
+    raise llm.LLMError("测试失败", "保留旧回复")
+monkeypatch.setattr(llm, "stream_chat", failing_stream)
+
+<span class="comment"># 3. regenerate → 失败 → 验证旧回复仍存在</span>
+with client.stream("POST", "/api/chat", json={..., "regenerate": True}) as response:
+    body = "".join(response.iter_text())
+assert "event: error" in body
+assert any(item["id"] == old_reply["id"] for item in after)
+          </div>
+          测试验证了核心安全保证：regenerate 失败时旧回复通过 ID 比对确认仍存在。
+        </div>
+      </div>
+    </div>
+    <div class="checklist-item">
+      <div class="check-icon fail">✗</div>
+      <div class="check-text">
+        <div class="label">SEC.3.4 — 前端错误卡在重新生成失败时显示"旧回复已保留"（推迟到 UI 伴侣化阶段）— 虚勾选</div>
+        <div class="detail">
+          <strong>未实现</strong>。前端在 <code>event: error</code> 时只显示通用错误消息（<code>error.message</code> + <code>error.hint</code>），
+          无"旧回复已保留"的专属提示。用户在 regenerate 失败时看到的错误消息与普通生成失败相同，
+          无法知道旧回复仍然存在。计划书标注"推迟到 UI 伴侣化阶段"但勾选为 <code>[x]</code>。
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 后端 regenerate 逻辑深度验证 -->
+<div class="section">
+  <div class="section-title"><span class="icon">🔍</span> 后端 regenerate 逻辑深度验证</div>
+  <div class="card">
+    <div class="card-title">regenerate 流程时序</div>
+    <div class="code-block">
+<span class="comment"># main.py chat() — regenerate=True 路径</span>
+
+<span class="comment"># 1. 查找最后一条 assistant 消息 ID（line 258-264）</span>
+last = conn.execute(
+    "SELECT id FROM messages WHERE session_id=? AND role='assistant'"
+    " ORDER BY created_at DESC LIMIT 1", ...
+)
+if last: replace_assistant_id = last["id"]
+
+<span class="comment"># 2. 查找最后一条 user 消息 ID（line 265-270）</span>
+last_user = conn.execute(
+    "SELECT id FROM messages WHERE session_id=? AND role='user'"
+    " ORDER BY created_at DESC,id DESC LIMIT 1", ...
+)
+
+<span class="comment"># 3. 不插入新 user 消息（line 303: if not body.regenerate）</span>
+<span class="comment"># 4. 不触发记忆/情绪观察（line 473: if not body.regenerate）</span>
+<span class="comment"># 5. 不触发知识影子召回（line 372: if not body.regenerate and ...）</span>
+
+<span class="comment"># 6. 流式生成 — 失败时直接 return，不触及 DB</span>
+async for chunk in llm.stream_chat(provider, model, messages):
+    collected.append(chunk)
+    yield _sse("delta", {"text": chunk})
+<span class="comment"># ↓ LLMError → yield error + return（旧回复安全保留）</span>
+
+<span class="comment"># 7. 成功时：INSERT 新回复 → DELETE 旧回复 → COMMIT（同一事务）</span>
+c2.execute("INSERT INTO messages(...) VALUES(...)")
+if replace_assistant_id:
+    c2.execute("DELETE FROM messages WHERE id = ?", (replace_assistant_id,))
+c2.commit()
+    </div>
+    <p class="note">
+      <strong>安全保证</strong>：(1) 新回复完整生成后才写库；(2) INSERT 和 DELETE 在同一事务；
+      (3) 生成失败时 gen() 直接 return，不执行写库；(4) 旧回复在 DELETE 前始终存在。
+    </p>
+  </div>
+  <div class="card">
+    <div class="card-title">regenerate 的副作用限制</div>
+    <table>
+      <thead><tr><th>副作用</th><th>regenerate 时</th><th>正常对话时</th></tr></thead>
+      <tbody>
+        <tr><td>插入 user 消息</td><td class="fail-cell">不插入</td><td class="pass-cell">插入</td></tr>
+        <tr><td>更新会话标题</td><td class="fail-cell">不更新</td><td class="pass-cell">首条时更新</td></tr>
+        <tr><td>知识影子召回 enqueue</td><td class="fail-cell">不触发</td><td class="pass-cell">触发（explicit 模式）</td></tr>
+        <tr><td>smart 记录真实决策</td><td class="fail-cell">不记录</td><td class="pass-cell">记录</td></tr>
+        <tr><td>情绪观察</td><td class="fail-cell">不触发</td><td class="pass-cell">触发</td></tr>
+        <tr><td>记忆观察</td><td class="fail-cell">不触发</td><td class="pass-cell">触发</td></tr>
+        <tr><td>companion_state 提交</td><td class="fail-cell">不提交</td><td class="pass-cell">提交</td></tr>
+      </tbody>
+    </table>
+    <p class="note">regenerate 只重新生成助手回复文本，不重复任何对话级副作用。这是正确的设计。</p>
+  </div>
+</div>
+
+<!-- 测试与构建 -->
+<div class="section">
+  <div class="section-title"><span class="icon">🧪</span> 测试与构建</div>
+  <div class="card">
+    <div class="metric-grid">
+      <div class="metric green"><div class="value">374</div><div class="label">后端测试 passed</div></div>
+      <div class="metric green"><div class="value">32</div><div class="label">前端测试 passed</div></div>
+      <div class="metric blue"><div class="value">188</div><div class="label">构建模块</div></div>
+      <div class="metric blue"><div class="value">1.64s</div><div class="label">构建耗时</div></div>
+      <div class="metric green"><div class="value">0</div><div class="label">新问题</div></div>
+      <div class="metric red"><div class="value">2</div><div class="label">虚勾选项</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 问题追踪 -->
+<div class="section">
+  <div class="section-title"><span class="icon">🐛</span> 问题追踪</div>
+  <div class="card">
+    <table>
+      <thead><tr><th style="width:8%">编号</th><th style="width:12%">阶段</th><th style="width:12%">状态</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>N1–N15</td><td>B.1–K.9</td><td class="pass-cell">已修复</td><td>全部关闭。</td></tr>
+        <tr><td>—</td><td>SEC.3</td><td class="skip-cell">计划书问题</td><td>SEC.3.2 和 SEC.3.4 虚勾选：标注"推迟"但打 [x]。建议改为 [ ]。非代码 bug。</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 面向后续阶段的建议 -->
+<div class="section">
+  <div class="section-title"><span class="icon">💡</span> 面向后续阶段的建议</div>
+  <div class="card">
+    <div class="suggestion">
+      <div class="suggestion-title">建议 1：修正 SEC.3 计划书勾选状态（P0）</div>
+      <div class="suggestion-body">
+        将 SEC.3.2 和 SEC.3.4 的 <code>[x]</code> 改为 <code>[ ]</code>，与"推迟到 UI 伴侣化阶段"的文字描述一致。
+        或者改为 <code>[~]</code>（部分完成/已评估推迟）并在备注中写明"后端已支持，前端待 UI 伴侣化阶段实现"。
+        这样计划书的勾选状态才能真实反映项目进度。
+      </div>
+    </div>
+    <div class="suggestion">
+      <div class="suggestion-title">建议 2：前端 regenerate 失败时恢复旧回复显示</div>
+      <div class="suggestion-body">
+        虽然后端保留了旧回复，但前端在 regenerate 失败后可能显示空白或错误状态。
+        建议在 <code>ChatView.tsx</code> 中：当 <code>regenerate=true</code> 且收到 <code>event: error</code> 时，
+        重新从 <code>GET /api/sessions/{id}/messages</code> 加载消息列表，恢复旧回复的显示。
+        这样用户能看到旧回复仍在，而不是看到空白或错误。这是一个轻量改动，不需要等到 UI 伴侣化阶段。
+      </div>
+    </div>
+    <div class="suggestion">
+      <div class="suggestion-title">建议 3：SEC.2 context_budget 专项测试补充</div>
+      <div class="suggestion-body">
+        当前 <code>context_budget</code> 模块无专项测试。建议补充：(1) <code>get_context_window</code> 对已知/未知 Provider
+        返回值测试；(2) <code>estimate_tokens</code> 对空/短/长文本的估算测试；(3) <code>trim_history</code> 边界测试——
+        历史刚好等于预算、历史远超预算、历史为空、单轮对话不可裁剪；(4) SSE meta 中
+        <code>context_trimmed</code> 和 <code>context_trimmed_messages</code> 的端到端验证。
+      </div>
+    </div>
+    <div class="suggestion">
+      <div class="suggestion-title">建议 4：regenerate 的知识引用处理</div>
+      <div class="suggestion-body">
+        当 <code>regenerate=true</code> 且知识检索产生了新引用时，旧回复的引用记录会被 <code>DELETE FROM messages</code>
+        级联清理，但新回复的引用在 INSERT 后写入。建议验证：(1) 旧 <code>knowledge_message_citations</code>
+        是否随旧消息删除而清理；(2) 新引用是否正确关联到新消息 ID；(3) <code>knowledge_chat_retrievals</code>
+        的 <code>assistant_message_id</code> 是否更新为新 ID。当前测试未覆盖 regenerate + 知识引用的组合场景。
+      </div>
+    </div>
+    <div class="suggestion">
+      <div class="suggestion-title">建议 5：SEC.1 SecretStore 测试补充（遗留）</div>
+      <div class="suggestion-body">
+        上次审查提出的 SEC.1 无专项测试问题仍未解决。建议在进入阶段三（代码结构治理）前补充
+        <code>test_secret_store.py</code>，覆盖 SqliteSecretStore/InMemorySecretStore 的基本操作和 provider 集成。
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  SEC.2 + SEC.3 审查报告 · 生成于 2026-07-17 · 遐蝶项目
+</div>
+
+</div>
+</body>
+</html>
