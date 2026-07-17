@@ -194,9 +194,16 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
         },
         onError: (msg, hint) => {
           setStreaming(null);
-          setErrorCard({ msg, hint });
+          const finalHint = options.regenerate
+            ? (hint ? hint + " · 旧回复已保留" : "旧回复已保留")
+            : hint;
+          setErrorCard({ msg, hint: finalHint });
           onMode("companion");
           api.desktop?.setPetState?.("idle", undefined, companionCluster);
+          // 重新生成失败时重新加载消息列表，恢复旧回复的显示
+          if (options.regenerate && sessionId) {
+            api.listMessages(sessionId).then(setMessages);
+          }
         },
         onDone: (d) => {
           setStreaming(null);
