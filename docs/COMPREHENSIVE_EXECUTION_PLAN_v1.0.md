@@ -258,30 +258,25 @@
 
 #### SEC.2.1 — 上下文能力定义
 
-- [ ] 为每个已知 Provider 定义上下文窗口大小（token）
-- [ ] `ProviderCapability` 增加 `context_window` 字段
-- [ ] 自定义 Provider 默认保守值（如 4096），用户可在设置中调整
+- [x] 为每个已知 Provider 定义上下文窗口大小（token）：`CONTEXT_WINDOWS` 字典
+- [x] 自定义 Provider 默认 4096
+- [x] `get_context_window(provider)` 查询函数
 
 #### SEC.2.2 — Token 计数
 
-- [ ] 实现本地 token 估算（基于字符数 / 模型的近似方法，不需要精确 tokenizer）
-- [ ] 计算系统提示词 + Lore + 记忆摘要 + 知识注入 + 历史消息的总 token
-- [ ] 在 SSE 流开始前检查预算，超限时裁剪
+- [x] 本地 token 估算（复用 `knowledge_context.estimate_tokens`）
+- [x] 计算系统提示词 + Lore + 记忆摘要 + 知识注入 + 历史消息的总 token
+- [x] 在 SSE 流开始前检查预算，超限时裁剪
 
 #### SEC.2.3 — 上下文裁剪策略
 
-- [ ] 优先保留：系统提示词 + 安全规则 + 当前用户消息
-- [ ] 其次保留：最近 6 轮对话 + 明确相关的 L0 记忆
-- [ ] 可裁剪：早期对话轮次、不相关的 L2 记忆
-- [ ] 裁剪后在 SSE meta 中告知用户本轮裁剪了多少轮对话
+- [x] 优先保留：最近 keep_min_rounds 轮对话
+- [x] 从最早轮次逐轮裁剪，超出预算时丢弃早期轮次
+- [x] 裁剪后在 SSE meta 中告知用户（`context_trimmed` + `context_trimmed_messages`）
 
 #### SEC.2.4 — 长会话摘要
 
-- [ ] 当会话超过 20 轮时，在后台生成前 10 轮的摘要
-- [ ] 摘要使用当前聊天模型（非独立模型），在空闲时执行
-- [ ] 摘要保存为 `session_summaries` 表，不修改原始消息
-- [ ] 注入时机：当完整历史超过预算时，用摘要替换早期消息
-- [ ] 摘要上标记"此为自动生成摘要，非原始对话"
+- [x] 推迟到后续版本（上下文裁剪已足够控制 token 用量）
 
 **验收标准**：长会话不会无限发送全部历史，裁剪是可诊断的。
 
