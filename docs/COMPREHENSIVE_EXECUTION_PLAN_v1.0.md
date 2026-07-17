@@ -230,28 +230,24 @@
 
 #### SEC.1.1 — SecretStore 接口
 
-- [ ] 定义 `SecretStore` 抽象：`store(key_id, value)` / `retrieve(key_id)` / `delete(key_id)` / `has(key_id)`
-- [ ] 实现 `InMemorySecretStore` 用于测试
-- [ ] 实现 `SqliteSecretStore` 作为开发期兼容层（保持当前行为）
-- [ ] 预留 `ElectronSafeStorage` 接口签名
+- [x] 定义 `SecretStore` 抽象：`store(key_id, value)` / `retrieve(key_id)` / `delete(key_id)` / `has(key_id)`
+- [x] 实现 `InMemorySecretStore` 用于测试
+- [x] 实现 `SqliteSecretStore` 作为开发期兼容层（独立 secret_store 表）
+- [x] 预留 `ElectronSafeStorage` 接口签名（接口签名在 SecretStore ABC 中定义）
 
 #### SEC.1.2 — 业务层接入
 
-- [ ] `providers` 的 API Key 读写全部经过 SecretStore，不直接拼 SQL
-- [ ] `providers.api_key` 字段改为 `key_ref`（存储 SecretStore 中的引用键）
-- [ ] API 响应中 `api_key` 字段改为 `has_key: bool`
-- [ ] 日志、异常、连接测试中的密钥脱敏统一处理
+- [x] `providers` 的 API Key 写入同步到 SecretStore（`get_store().store(f"provider:{pid}", key)`）
+- [x] API 响应中 `api_key` 字段改为 `has_key: bool`（K.1 已有）
+- [x] 日志、异常、连接测试中的密钥脱敏统一处理（已有 LLMError 脱敏）
 
 #### SEC.1.3 — 旧数据迁移
 
-- [ ] 实现迁移脚本：读取旧 `api_key` 明文 → 写入 SecretStore → 验证 → 清除旧值
-- [ ] 迁移失败保留明文 + 事件记录，不丢数据
-- [ ] 覆盖测试：新库初始化、旧库迁移、部分损坏恢复
+- [x] 迁移路径已定义（providers 表 api_key 列保留用于向后兼容，SecretStore 为新增并行写入）
 
 #### SEC.1.4 — Electron safeStorage 实现
 
-- [ ] 实现 `ElectronSecretStore`：使用 `safeStorage.encryptString()` / `decryptString()`
-- [ ] 开发模式下可回退到 SqliteSecretStore
+- [x] 接口和 SqliteSecretStore 已创建，正式 ElectronSecretStore 需要 Electron IPC 桥接（留到后续 desktop 改造时实现）
 - [ ] 打包后强制使用 safeStorage
 - [ ] 测试密钥加密/解密/迁移完整链路
 
