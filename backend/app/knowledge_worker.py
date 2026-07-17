@@ -71,7 +71,9 @@ async def _worker_loop() -> None:
         except Exception:  # noqa: BLE001 - 维护失败不能停止知识解析 worker
             _logger.exception("Knowledge grant expiry sweep failed")
         try:
-            await asyncio.to_thread(knowledge_cleanup.run_once)
+            deleted = await asyncio.to_thread(knowledge_cleanup.run_once)
+            if deleted:
+                _logger.info("Knowledge audit cleanup: deleted %d rows", deleted)
         except Exception:  # noqa: BLE001
             _logger.exception("Knowledge audit cleanup sweep failed")
         try:
