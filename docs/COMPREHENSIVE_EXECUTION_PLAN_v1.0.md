@@ -28,9 +28,8 @@
 | 前端测试 | 32 passed |
 | 数据库 schema | v39 |
 | SecretStore | 接口 + 开发期 SqliteSecretStore 已就绪 |
-| 前端文件 | `App.tsx` 266 行，`styles.css` 2738 行（未拆分） |
-| ToolRegistry | **未实现**（grep 为空） |
-| API Key 存储 | **明文**在 SQLite |
+| 前端文件 | `App.tsx` 266 行，`styles.css` 2738 行 |
+| ToolRegistry | **未实现** |
 | 上下文预算 | **无** |
 | 知识库自然召回 | K.0~K.5 已完成，当前 explicit 默认，smart 可选 |
 | 记忆系统 | A~F 全 6 阶段已完成（Fragment→Episode→Saga→Archivist） |
