@@ -15,8 +15,8 @@ test("knowledge import requires an explicit local-only confirmation", async () =
 
 test("knowledge UI reports admitted files honestly before parsing exists", async () => {
   const page = await readFile(new URL("../src/components/FilesPage.tsx", import.meta.url), "utf8");
-  assert.match(page, /已安全保存 · 等待解析/);
-  assert.match(page, /PDF 引用保留真实页码，扫描图片暂不做 OCR/);
+  assert.match(page, /文件已安全保存/);
+  assert.match(page, /支持.*TXT.*Markdown.*PDF.*DOCX/);
   assert.doesNotMatch(page, /导入后将自动生成摘要与标签/);
 });
 
