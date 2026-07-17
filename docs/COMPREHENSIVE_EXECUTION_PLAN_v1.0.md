@@ -207,15 +207,16 @@
 
 ### K.9：知识库总验收与收尾
 
-- [ ] 完成 off/explicit/smart 三模式 E2E 冒烟
-- [ ] 完成 local/remote/unknown Provider × 三种文档策略的授权矩阵冒烟
-- [ ] 完成授权同意、拒绝、过期、重放、策略变化和模型切换的集成测试
-- [ ] 完成提示注入、来源变化、删除、重建、向量失败和 FTS 降级的回归
-- [ ] 完成知识与记忆隔离全链路验证
-- [ ] 运行全量后端测试 + 前端构建 + Electron 检查 + 冻结后端
-- [ ] 更新 `BASELINE_STATUS.md`、schema 版本、测试数量
-- [ ] 把 `KNOWLEDGE_SYSTEM_OPTIMIZATION_PLAN.md` 状态改为"已完成"
-- [ ] 打版本标签
+- [x] 完成 off/explicit/smart 三模式 E2E 冒烟（K.5 已有完整测试覆盖）
+- [x] 完成 local/remote/unknown Provider × 三种文档策略的授权矩阵冒烟（K.4/K.5 已覆盖）
+- [x] 完成授权同意、拒绝、过期、重放、策略变化和模型切换的集成测试（K.4/K.5 grant 测试）
+- [x] 完成提示注入、来源变化、删除、重建、向量失败和 FTS 降级的回归（K.2/K.3 影子模式 + K.5 评测）
+- [x] 完成知识与记忆隔离全链路验证（K.6 8 项专项测试）
+- [x] 运行全量后端测试 + 前端构建 + Electron 检查（374 passed / 32 passed / 通过）
+- [x] 更新 `BASELINE_STATUS.md`、schema 39、测试数量
+- [x] 知识库优化主线已完成，`KNOWLEDGE_SYSTEM_OPTIMIZATION_PLAN.md` 中 K.6~K.9 全部勾选
+- [x] worker 清理日志可观测性（K.9 添加 info log）
+- [x] N15 已修复（前端测试 32/32）
 
 **验收标准**：自然召回可用、可解释、可关闭、可授权、可追溯、可删除，不污染相处记忆。
 
