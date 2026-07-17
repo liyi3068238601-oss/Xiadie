@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>K.8 审查反馈 — 遐蝶</title>
+<style>
+:root{--bg:#0f0e17;--bg2:#1a1830;--card:rgba(255,255,255,0.035);--border:rgba(255,255,255,0.08);--text:#e8e6f0;--text-dim:#9b96b0;--purple:#a78bfa;--blue:#60a5fa;--green:#56d6a0;--yellow:#fbbf24;--red:#f87171}
+body{background:var(--bg);color:var(--text);font-family:sans-serif;margin:0;padding:40px}
+h1{color:var(--purple)}h2{color:var(--blue);margin-top:32px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin:12px 0}
+.pass{color:var(--green)}.warn{color:var(--yellow)}.info{color:var(--blue)}
+table{width:100%;border-collapse:collapse;margin:12px 0}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--border)}
+th{color:var(--text-dim)}code{background:rgba(167,139,250,0.1);padding:2px 6px;border-radius:4px;color:var(--purple)}
+</style>
+</head>
+<body>
+
+<h1>K.8 审查反馈</h1>
+<p>审查报告：knowledge-stage-k8-review.html | 提交 799b187 | Schema 39 | 后端 374 passed</p>
+
+<h2>已采纳并修复</h2>
+
+<div class="card">
+<h3 class="pass">建议 1（P0）：修复 N15 — 前端测试文案同步 ✓ 已修复</h3>
+<p>提交 <code>ff74476</code> 已修复 N15：</p>
+<ul>
+  <li><code>knowledgeImport.test.mjs</code> 正则从 <code>/已安全保存 · 等待解析/</code> 改为 <code>/文件已安全保存/</code></li>
+  <li>PDF 文案断言从 <code>/PDF 引用保留真实页码，扫描图片暂不做 OCR/</code> 改为 <code>/支持.*TXT.*Markdown.*PDF.*DOCX/</code></li>
+  <li>前端测试恢复 32/32 passed</li>
+</ul>
+</div>
+
+<div class="card">
+<h3 class="pass">建议 4（采纳）：清理日志可观测性 ✓ 采纳但推迟</h3>
+<p><code>knowledge_cleanup.run_once()</code> 已返回删除计数，worker 中已有 try/except log 结构。
+添加具体日志行为变更很小（1行 logger.info），但管理 API 暴露清理统计属于独立功能。
+采纳 worker 日志部分，在 K.9 总验收时一并添加；管理 API 部分推迟到 v0.5 数据导出阶段。</p>
+</div>
+
+<h2>推迟到 K.9 统一处理</h2>
+
+<div class="card">
+<h3 class="warn">建议 2：K.8 专项测试 — 推迟到 K.9</h3>
+<p>K.8 无专项测试（retention boundary、recall_count 递增、pending grant 保护）。
+这些测试与 K.9 的集成测试和总验收高度重叠，在 K.9 集中添加更高效。</p>
+</div>
+
+<div class="card">
+<h3 class="warn">建议 3：K.8.5 UI 一致性验收 — 推迟到 K.9</h3>
+<p>影子诊断 vs 实际使用标记一致、检索模式切换统计口径对应、状态标签跨页面一致 —
+三项均为 UI 验收性质，在 K.9 全链路 E2E 中统一验证。</p>
+</div>
+
+<div class="card">
+<h3 class="warn">建议 5：K.6/K.7 遗留建议收尾 — 推迟到 K.9</h3>
+<p>clean_query 接入、检索协议版本、knowledge_discarded 可观测性、K.6.5 崩溃测试 —
+均在 K.9 总验收阶段集中处置，确保知识库优化收尾完整。</p>
+</div>
+
+<h2>采纳追踪汇总</h2>
+<table>
+<tr><th>建议来源</th><th>建议</th><th>处置</th></tr>
+<tr><td>K.6/K.7 建议 1</td><td>修复 N15</td><td class="pass">已修复 (ff74476)</td></tr>
+<tr><td>K.6/K.7 建议 2</td><td>K.6.5 崩溃测试</td><td class="warn">推迟到 K.9</td></tr>
+<tr><td>K.6/K.7 建议 3</td><td>clean_query 接入</td><td class="warn">推迟到 K.9</td></tr>
+<tr><td>K.6/K.7 建议 4</td><td>检索协议版本</td><td class="warn">推迟到 K.9</td></tr>
+<tr><td>K.6/K.7 建议 5</td><td>knowledge_discarded 可观测性</td><td class="warn">推迟到 K.9</td></tr>
+<tr><td>K.8 建议 1</td><td>修复 N15</td><td class="pass">已修复 (ff74476)</td></tr>
+<tr><td>K.8 建议 2</td><td>K.8 专项测试</td><td class="warn">推迟到 K.9</td></tr>
+<tr><td>K.8 建议 3</td><td>K.8.5 UI 一致性</td><td class="warn">推迟到 K.9</td></tr>
+<tr><td>K.8 建议 4</td><td>清理日志可观测性</td><td class="info">部分采纳（日志）+ 推迟（管理 API）</td></tr>
+<tr><td>K.8 建议 5</td><td>遗留建议收尾</td><td class="warn">推迟到 K.9</td></tr>
+</table>
+
+<p style="margin-top:24px;color:var(--text-dim)">所有未关闭建议集中在 K.9 总验收阶段一次性收尾。</p>
+
+</body>
+</html>
