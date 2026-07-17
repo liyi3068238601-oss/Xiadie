@@ -1100,6 +1100,8 @@ export const desktop = (window as any).xiadie as
       openMain: () => void;
       hideMain: () => void;
       minimizeMain: () => void;
+      maximizeMain: () => void;
+      onWindowMaximized: (cb: (maximized: boolean) => void) => void;
       hidePet: () => void;
       resetPet: () => void;
       quit: () => void;

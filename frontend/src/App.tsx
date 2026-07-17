@@ -33,6 +33,7 @@ export default function App() {
   const [focusMessageId, setFocusMessageId] = useState<string | null>(null);
   const [companionState, setCompanionState] = useState<api.CompanionState | null>(null);
   const [stateReason, setStateReason] = useState<string | null>(null);
+  const [isMaximized, setIsMaximized] = useState(false);
   const { model, refresh: refreshModel } = useCurrentModel();
   const toastMsg = useToast();
 
@@ -93,6 +94,10 @@ export default function App() {
     const timer = setInterval(refreshCompanionState, 10_000);
     return () => clearInterval(timer);
   }, [refreshCompanionState]);
+
+  useEffect(() => {
+    api.desktop?.onWindowMaximized?.(setIsMaximized);
+  }, []);
 
   useEffect(() => {
     const cluster = companionState?.derived.cluster;
@@ -167,20 +172,37 @@ export default function App() {
         <button className="win-btn no-drag" title="设置" onClick={() => setView("settings")}>
           ✦
         </button>
-        <button
-          className="win-btn no-drag"
-          title="最小化"
-          onClick={() => api.desktop?.minimizeMain?.()}
-        >
-          —
-        </button>
-        <button
-          className="win-btn no-drag"
-          title="隐藏到托盘"
-          onClick={() => api.desktop?.hideMain?.()}
-        >
-          ✕
-        </button>
+        {/* 窗口控制按钮组 */}
+        <span className="win-controls no-drag">
+          <button
+            className="win-btn"
+            title="最小化"
+            onClick={() => api.desktop?.minimizeMain?.()}
+            aria-label="最小化"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12"><rect y="5" width="12" height="1.5" rx="0.75" fill="currentColor"/></svg>
+          </button>
+          <button
+            className="win-btn"
+            title={isMaximized ? "还原" : "最大化"}
+            onClick={() => api.desktop?.maximizeMain?.()}
+            aria-label={isMaximized ? "还原" : "最大化"}
+          >
+            {isMaximized ? (
+              <svg width="12" height="12" viewBox="0 0 12 12"><rect x="1.5" y="3" width="7" height="7" rx="1" fill="none" stroke="currentColor" strokeWidth="1.3"/><rect x="3.5" y="1" width="7" height="7" rx="1" fill="var(--glass-strong, rgba(28,16,54,0.9))" stroke="currentColor" strokeWidth="1.3"/></svg>
+            ) : (
+              <svg width="12" height="12" viewBox="0 0 12 12"><rect x="0.75" y="0.75" width="10.5" height="10.5" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.5"/></svg>
+            )}
+          </button>
+          <button
+            className="win-btn win-btn-close"
+            title="隐藏到托盘"
+            onClick={() => api.desktop?.hideMain?.()}
+            aria-label="关闭"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12"><line x1="1" y1="1" x2="11" y2="11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><line x1="11" y1="1" x2="1" y2="11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+          </button>
+        </span>
       </div>
 
       {/* 三栏 */}

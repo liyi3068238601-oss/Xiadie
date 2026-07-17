@@ -102,6 +102,8 @@ function createPetWindow() {
 }
 
 // ---------------------------------------------------------------- 主窗口
+let normalBounds = null;
+
 function createMainWindow() {
   if (mainWin) {
     if (mainWin.isMinimized()) mainWin.restore();
@@ -110,8 +112,8 @@ function createMainWindow() {
     return;
   }
   mainWin = new BrowserWindow({
-    width: 1280,
-    height: 800,
+    width: 1360,
+    height: 880,
     minWidth: 1000,
     minHeight: 640,
     frame: false,
@@ -125,6 +127,20 @@ function createMainWindow() {
   });
   mainWin.loadURL(frontendUrl("index.html"));
   mainWin.once("ready-to-show", () => mainWin.show());
+  mainWin.on("resize", () => {
+    if (!mainWin || !normalBounds) return;
+    const { width: sw, height: sh } = screen.getPrimaryDisplay().workAreaSize;
+    const { width: ww, height: wh } = mainWin.getBounds();
+    // 窗口接近屏幕 → 最大化了，不覆盖 normalBounds
+    if (ww >= sw - 8 && wh >= sh - 8) return;
+    normalBounds = mainWin.getBounds();
+  });
+  mainWin.on("maximize", () => {
+    mainWin?.webContents.send("window-maximized", true);
+  });
+  mainWin.on("unmaximize", () => {
+    mainWin?.webContents.send("window-maximized", false);
+  });
   mainWin.on("closed", () => (mainWin = null));
 }
 
@@ -184,6 +200,21 @@ function quit() {
 ipcMain.on("open-main", () => createMainWindow());
 ipcMain.on("hide-main", () => mainWin && mainWin.hide());
 ipcMain.on("minimize-main", () => mainWin && mainWin.minimize());
+ipcMain.on("maximize-main", () => {
+  if (!mainWin) return;
+  const { width: sw, height: sh } = screen.getPrimaryDisplay().workAreaSize;
+  const { width: ww, height: wh } = mainWin.getBounds();
+  // 窗口宽高接近屏幕宽高 → 已处于最大化，还原
+  if (ww >= sw - 8 && wh >= sh - 8 && normalBounds) {
+    mainWin.setBounds(normalBounds);
+    normalBounds = null;
+    mainWin.webContents.send("window-maximized", false);
+  } else {
+    normalBounds = mainWin.getBounds();
+    mainWin.setBounds({ x: 0, y: 0, width: sw, height: sh });
+    mainWin.webContents.send("window-maximized", true);
+  }
+});
 ipcMain.on("hide-pet", () => petWin && petWin.hide());
 ipcMain.on("reset-pet", () => resetPet());
 ipcMain.on("quit", () => quit());

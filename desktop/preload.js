@@ -7,6 +7,9 @@ contextBridge.exposeInMainWorld("xiadie", {
   openMain: () => ipcRenderer.send("open-main"),
   hideMain: () => ipcRenderer.send("hide-main"),
   minimizeMain: () => ipcRenderer.send("minimize-main"),
+  maximizeMain: () => ipcRenderer.send("maximize-main"),
+  onWindowMaximized: (cb) =>
+    ipcRenderer.on("window-maximized", (_e, value) => cb(value)),
   hidePet: () => ipcRenderer.send("hide-pet"),
   resetPet: () => ipcRenderer.send("reset-pet"),
   quit: () => ipcRenderer.send("quit"),
