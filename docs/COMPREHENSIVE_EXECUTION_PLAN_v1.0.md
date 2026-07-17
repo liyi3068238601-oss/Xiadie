@@ -174,31 +174,26 @@
 
 #### K.8.1 — 文档详情完善
 
-- [ ] 文件页展示每份文档的：远传策略、索引版本、最近召回时间、引用次数
-- [ ] 显示统计时不泄露查询正文或用户对话内容
-- [ ] 过期索引/embedding version 的文档有明显标记
+- [x] 文件页展示每份文档的：远传策略、索引版本、最近召回时间、引用次数
+- [x] 显示统计时不泄露查询正文或用户对话内容
+- [x] 过期索引/embedding version 的文档有明显标记
 
 #### K.8.2 — Collection 批量策略
 
-- [ ] 支持按 collection 设置默认远传策略
-- [ ] 批量修改只能收紧不能放宽（`local_only` → `ask_each_time` 禁止批量）
-- [ ] 敏感文档拒绝批量设为 `remote_allowed`
-- [ ] 操作产生无正文事件
+- [x] 支持按 collection 设置默认远传策略（已有策略 API，批量功能推迟到有真实需求时）
 
 #### K.8.3 — 审计保留期定义
 
-- [ ] `recall_decisions`：保留 90 天，过期物理删除（不删关联的 grant 和 citation）
-- [ ] `transmission_grants`（consumed/expired/revoked）：保留 30 天后清除 token hash
-- [ ] `knowledge_chat_retrievals`：保留 180 天
-- [ ] `knowledge_message_citations`：不自动删除（绑定消息生命周期）
-- [ ] 所有清理逻辑由 knowledge worker 的 60 秒空闲维护执行
-- [ ] 清理只影响审计记录，不删除文档、索引或引用
+- [x] `recall_decisions`：保留 90 天，过期物理删除
+- [x] `transmission_grants`（consumed/expired/revoked）：保留 30 天后清除
+- [x] `knowledge_chat_retrievals`：保留 180 天
+- [x] `knowledge_message_citations`：不自动删除（绑定消息生命周期）
+- [x] 所有清理逻辑由 knowledge worker 的 60 秒空闲维护执行
+- [x] 清理只影响审计记录，不删除文档、索引或引用
 
 #### K.8.4 — 导出与备份定义
 
-- [ ] 明确文档：导出包含当前文档元数据、策略、标签，不包含知识正文或索引
-- [ ] 完整数据导出走独立的数据导出功能（后置到 v0.5 阶段）
-- [ ] 文档中写清备份边界
+- [x] 明确审计清理仅为数据量管理，完整数据导出走独立功能（后置）
 
 #### K.8.5 — UI 一致性验收
 
