@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>K.9+SEC.1 审查反馈 — 遐蝶</title>
+<style>
+:root{--bg:#0f0e17;--card:rgba(255,255,255,0.035);--border:rgba(255,255,255,0.08);--text:#e8e6f0;--text-dim:#9b96b0;--purple:#a78bfa;--blue:#60a5fa;--green:#56d6a0;--yellow:#fbbf24;--red:#f87171}
+body{background:var(--bg);color:var(--text);font-family:sans-serif;margin:0;padding:40px}
+h1{color:var(--purple)}h2{color:var(--blue);margin-top:32px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin:12px 0}
+.pass{color:var(--green)}.warn{color:var(--yellow)}.info{color:var(--blue)}
+table{width:100%;border-collapse:collapse;margin:12px 0}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--border)}
+th{color:var(--text-dim)}code{background:rgba(167,139,250,0.1);padding:2px 6px;border-radius:4px;color:var(--purple)}
+</style>
+</head>
+<body>
+
+<h1>K.9+SEC.1 审查反馈</h1>
+<p>审查报告：knowledge-stage-k9-sec1-review.html | 后端 374 passed | 前端 32 passed</p>
+
+<h2>已采纳并修复</h2>
+<div class="card">
+<h3 class="pass">N15 已修复 ✓</h3>
+<p>审查确认前端 32/32 全部通过，N15 在 K.9 正式关闭。</p>
+</div>
+
+<h2>采纳并立即处理</h2>
+
+<div class="card">
+<h3 class="pass">建议 1（P0）：SEC.1 补充专项测试 ✓ 采纳，下阶段开工时写入</h3>
+<p>SecretStore 无专项测试。在 SEC.2 开工前补充 <code>test_secret_store.py</code>：基本操作、不存在 key、provider 同步、InMemory mock。这是后续安全工作的基础。</p>
+</div>
+
+<div class="card">
+<h3 class="pass">建议 5（采纳）：SEC.2 上下文预算，着重 ProviderCapability.context_window</h3>
+<p>审查明确建议：PR-027（ProviderCapability）终于需要实现了。采纳在 SEC.2.1 中实现 context_window 字段，token 估算复用 <code>knowledge_context.estimate_tokens()</code>，SSE meta 增加 context_trimmed 字段。</p>
+</div>
+
+<h2>推迟处理</h2>
+
+<div class="card">
+<h3 class="warn">建议 2：_migrate_key_to_secret_store 清除旧明文 key — 推迟</h3>
+<p>当前 providers 表中 api_key 明文仍在，SecretStore 为并行写入。完整迁移（清理旧值 + 审计日志 + 失败恢复）推迟到 Electron safeStorage 落地时一并实现。</p>
+</div>
+
+<div class="card">
+<h3 class="warn">建议 3：更新设计书创建 v0.7.0 — 推迟</h3>
+<p>设计书与代码严重脱节是已知事实（已在综合执行计划 v1.0 中记录）。新设计书应在完成 STR.1~4（代码结构治理）和 TOOL.1~3（ToolRegistry）后创建，作为 v1.0 正式版设计基线。</p>
+</div>
+
+<div class="card">
+<h3 class="warn">建议 4：Live2D 模型授权合规 — 推迟</h3>
+<p>模型授权风险已知（BASELINE_STATUS 已记录），替换模型为发布前的前置条件，非当前安全治理阶段的阻塞项。</p>
+</div>
+
+<div class="card">
+<h3 class="warn">建议 6：K.8 遗留建议集中处置 — 推迟</h3>
+<p>K.8 专项测试、K.8.5 UI 一致性、clean_query 接入、检索协议版本——均推迟到 SEC.2 完成后统一处置。</p>
+</div>
+
+<h2>采纳追踪汇总</h2>
+<table>
+<tr><th>建议</th><th>处置</th></tr>
+<tr><td>建议 1: SEC.1 专项测试</td><td class="pass">采纳，SEC.2 开工前写入</td></tr>
+<tr><td>建议 2: 旧明文 key 迁移</td><td class="warn">推迟</td></tr>
+<tr><td>建议 3: 更新设计书</td><td class="warn">推迟</td></tr>
+<tr><td>建议 4: Live2D 模型授权</td><td class="warn">推迟</td></tr>
+<tr><td>建议 5: SEC.2 上下文预算</td><td class="pass">采纳，继续施工</td></tr>
+<tr><td>建议 6: K.8 遗留建议</td><td class="warn">推迟</td></tr>
+</table>
+
+</body>
+</html>
