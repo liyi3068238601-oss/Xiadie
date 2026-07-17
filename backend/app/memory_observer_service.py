@@ -17,6 +17,10 @@ MAX_ATTEMPTS = 3
 FIRST_RETRY_DELAY_SECONDS = 5 * 60
 RUNNING_STALE_SECONDS = 2 * 60
 WORKER_IDLE_SECONDS = 30
+_USER_CONFIRM_PATTERNS = (
+    "以后按这个", "我决定", "就照这个做", "按你说的来", "就这样",
+    "就按这个", "照你说的办", "听你的", "以后就这样", "按这个来",
+)
 LEGACY_FALLBACK_ERROR_CODES = frozenset({
     "model_call_failed", "observer_model_timeout", "invalid_json", "schema_invalid",
     "invalid_type", "output_too_large",
@@ -235,6 +239,10 @@ async def _process_claimed(row: dict) -> None:
         _finish_without_retry(row, "observer_model_unavailable", "skipped")
         return
 
+    knowledge_meta = context.get("knowledge_meta") or {}
+    knowledge_used = knowledge_meta.get("knowledge_used", False)
+    user_has_confirmed = knowledge_used and _detect_user_confirmation(context["user_text"])
+
     try:
         state = companion_state.get_state(persist_advance=False)
         cluster = (state.get("derived") or {}).get("cluster")
@@ -242,6 +250,7 @@ async def _process_claimed(row: dict) -> None:
         prompt = observer.build_messages(
             messages=context["messages"], persona_summary=OBSERVER_PERSONA_SUMMARY,
             emotion_cluster=cluster, related_memories=related,
+            knowledge_meta=context.get("knowledge_meta"),
         )
     except Exception:  # noqa: BLE001 - 上下文读取失败也必须离开 running
         _mark_failure(
@@ -296,15 +305,22 @@ async def _process_claimed(row: dict) -> None:
         )
         return
     _apply_candidate(
-        row, candidate, completions, input_chars, _elapsed_ms(started), repair_attempted
+        row, candidate, completions, input_chars, _elapsed_ms(started), repair_attempted,
+        user_has_confirmed=user_has_confirmed,
     )
 
 
 def _apply_candidate(
     row: dict, candidate: dict, completions: list[dict], input_chars: int,
     latency_ms: int, repair_attempted: bool, stored_audit: bool = False,
+    user_has_confirmed: bool = False,
 ) -> None:
     """把净化候选、Fragment、实体、事件和 applied 状态放进同一事务。"""
+    # 用户已确认时，将 knowledge_reference 升级为 user_confirmed_fact
+    if user_has_confirmed and candidate.get("items"):
+        for item in candidate["items"]:
+            if item.get("observation_source") == "knowledge_reference":
+                item["observation_source"] = "user_confirmed_fact"
     if stored_audit:
         prompt_tokens = row.get("prompt_tokens")
         completion_tokens = row.get("completion_tokens")
@@ -461,9 +477,55 @@ def _load_context(row: dict) -> dict | None:
         messages = [dict(item) for item in reversed(rows)]
         if not any(item["id"] == row["source_assistant_message_id"] for item in messages):
             return None
-        return {"user_text": user["content"], "messages": messages}
+        knowledge_meta = _load_knowledge_meta(conn, row["source_assistant_message_id"])
+        return {
+            "user_text": user["content"], "messages": messages,
+            "knowledge_meta": knowledge_meta,
+        }
     finally:
         conn.close()
+
+
+def _load_knowledge_meta(conn, assistant_message_id: str) -> dict:
+    """只返回本轮知识使用的元数据，不复制知识正文到观察器输入中。"""
+    retrieval = conn.execute(
+        "SELECT injected_count, trigger_reason FROM knowledge_chat_retrievals "
+        "WHERE assistant_message_id = ?", (assistant_message_id,)
+    ).fetchone()
+    knowledge_used = bool(retrieval and retrieval["injected_count"] > 0)
+    meta: dict = {
+        "knowledge_used": knowledge_used,
+        "trigger_reason": retrieval["trigger_reason"] if retrieval else None,
+        "citations": [],
+    }
+    if knowledge_used:
+        citation_rows = conn.execute(
+            "SELECT citation_key, document_id, chunk_id, original_name,"
+            " heading_path_json, content_sha256"
+            " FROM knowledge_message_citations WHERE assistant_message_id = ?"
+            " ORDER BY citation_key",
+            (assistant_message_id,),
+        ).fetchall()
+        meta["citations"] = [
+            {
+                "citation_key": row["citation_key"],
+                "document_id": row["document_id"],
+                "chunk_id": row["chunk_id"],
+                "original_name": row["original_name"],
+                "heading_path": json.loads(row["heading_path_json"] or "[]"),
+                "content_sha256": row["content_sha256"],
+            }
+            for row in citation_rows
+        ]
+    return meta
+
+
+def _detect_user_confirmation(user_text: str) -> bool:
+    """检查用户消息是否包含明确采纳知识资料为自身决定的表达。"""
+    text = user_text.strip()
+    if not text:
+        return False
+    return any(pattern in text for pattern in _USER_CONFIRM_PATTERNS)
 
 
 def _resolve_model(chat_provider: dict | None, chat_model: str) -> tuple[dict | None, str]:

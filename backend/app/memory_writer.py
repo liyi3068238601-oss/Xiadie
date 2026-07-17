@@ -48,7 +48,13 @@ def apply_observation_in_transaction(
 
     fragment_ids: list[str] = []
     created_fragment_ids: list[str] = []
+    knowledge_discarded = 0
     for index, item in enumerate(revalidated["items"]):
+        # 知识引用未获用户确认的候选项拒绝写入
+        if item.get("observation_source") == "knowledge_reference":
+            knowledge_discarded += 1
+            continue
+
         idempotency_key = (
             f"{observer.PROTOCOL_VERSION}:{run['source_assistant_message_id']}:{index}"
         )
@@ -102,7 +108,9 @@ def apply_observation_in_transaction(
         " repair_attempted=?,updated_at=? WHERE id=?",
         (
             json.dumps(candidate, ensure_ascii=False),
-            json.dumps(candidate.get("warnings") or [], ensure_ascii=False),
+            json.dumps(candidate.get("warnings") or [], ensure_ascii=False) + (
+                f',"knowledge_discarded":{knowledge_discarded}' if knowledge_discarded else ""
+            ),
             json.dumps(fragment_ids, ensure_ascii=False),
             json.dumps(created_fragment_ids, ensure_ascii=False), now,
             audit["input_chars"], audit["output_chars"], audit["prompt_tokens"],
