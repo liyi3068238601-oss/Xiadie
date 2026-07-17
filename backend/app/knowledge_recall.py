@@ -35,6 +35,26 @@ _EMOTION = re.compile(r"(?:有点|很|太|好)?(?:累|难过|伤心|焦虑|烦|�
 _SIMPLE_TASK = re.compile(r"^(?:帮我)?(?:翻译|改写|润色|计算|算一下|列个清单|起个标题|写一句).{0,48}$")
 _AMBIGUOUS = re.compile(r"^(?:嗯+|哦+|好吧|然后呢|继续|你觉得呢|她呢|他呢|它呢|这个呢|那个呢|后来呢)[？?。！!\s]*$")
 
+# 查询清理：去掉无检索价值的寒暄、情感和语气前缀/后缀
+_QUERY_CLEAN_PREFIXES = re.compile(
+    r"^(?:嗨|你好|您好|早上好|中午好|下午好|晚上好|在吗"
+    r"(?:[，。！？、；：,.!?;:\s]+(?:今天|那个|对了|我想问(?:一下)?|"
+    r"帮我|麻烦|请问|想问(?:一下)?))?"
+    r")[，。！？、；：,.!?;:\s]+"
+)
+_QUERY_CLEAN_SUFFIXES = re.compile(
+    r"[，。！？、；：,.!?;:\s]*(?:谢谢|感谢|拜托|好吗|可以吗|行吗|对吧|确定吗|"
+    r"(?:觉得|认为)(?:呢|怎么样)|怎么办|怎么处理|请问|麻烦了|辛苦了|拜托了)[。！？,.!?\s]*$"
+)
+_QUERY_CLEAN_FILLERS = re.compile(r"[啊呀哦嗯嘛吧呢啦哈呵嘿噢哎呦]+")
+_CJK_STOP_LIST = frozenset({
+    "的", "了", "和", "与", "或", "是", "在", "有", "我", "你", "他", "她", "它",
+    "这", "那", "个", "们", "都", "也", "还", "要", "就", "能", "会", "可以",
+    "因为", "所以", "但是", "如果", "虽然", "这个", "那个", "什么", "怎么",
+    "一个", "一些", "一下", "可能", "应该", "然后", "而且", "之后", "之前",
+    "非常", "比较", "特别", "一般", "大概", "左右",
+})
+
 
 def settings() -> dict:
     mode = db.get_setting("knowledge_recall_mode", "explicit")
@@ -485,6 +505,33 @@ def _finish(base: dict, started: float, action: str, reason: str, confidence: st
 def _fingerprint(text: str) -> str:
     normalized = " ".join(str(text or "").split()).casefold()
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+
+
+def clean_query(text: str) -> str:
+    """本地确定性查询清理：去掉寒暄、感叹、无检索价值的前缀后缀。
+
+    保留：人名、项目名、术语、数字、时间、英文单词。
+    去掉：问候语、情感表达、句末礼貌语、语气词、常见停用词。
+    """
+    if not text or not text.strip():
+        return ""
+    cleaned = str(text).strip()
+    # 去掉前缀寒暄/求助
+    cleaned = _QUERY_CLEAN_PREFIXES.sub("", cleaned, count=1)
+    # 去掉后缀感谢/请求
+    cleaned = _QUERY_CLEAN_SUFFIXES.sub("", cleaned, count=1)
+    # 去掉纯语气词
+    cleaned = _QUERY_CLEAN_FILLERS.sub("", cleaned)
+    # 去掉常见停用词（仅在清理后仍较长时）
+    if len(cleaned) > 40:
+        tokens = cleaned.split()
+        tokens = [t for t in tokens if t not in _CJK_STOP_LIST]
+        cleaned = " ".join(tokens)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    # 清理后无有效内容则返回原文本
+    if not cleaned or len(cleaned) < 2:
+        return str(text).strip()
+    return cleaned
 
 
 def _public(item: dict) -> dict:
