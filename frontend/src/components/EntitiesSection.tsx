@@ -182,8 +182,19 @@ export function EntitiesSection({ memories, onOpenSource }: Props) {
                 className={`entity-item${selectedId === entity.id ? " active" : ""}`}
                 onClick={() => selectEntity(entity.id)}
               >
-                <span>{entity.name}</span>
-                <small>{typeLabel(entity.entity_type)} · {entity.fragment_count} 条</small>
+                <div className="entity-item-head">
+                  <span>{entity.name}</span>
+                  <span className={`entity-type-pill t-${entity.entity_type}`}>
+                    {typeLabel(entity.entity_type)}
+                  </span>
+                </div>
+                {entity.summary && (
+                  <p className="entity-item-summary">{entity.summary}</p>
+                )}
+                <div className="entity-item-foot">
+                  <span>{entity.fragment_count} 条记忆</span>
+                  {entity.current_status && <span>{entity.current_status}</span>}
+                </div>
               </button>
             ))}
           </div>

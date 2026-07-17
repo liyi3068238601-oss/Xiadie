@@ -271,7 +271,7 @@ export function MemoriesPage({ onOpenSource }: Props) {
         <button className="memory-hero-add" onClick={focusNewMemory}>＋ 新增记忆</button>
       </header>
 
-      <nav className="memory-view-tabs glass" aria-label="记忆分类">
+      <nav className="memory-view-tabs" aria-label="记忆分类">
         {([
           ["memories", "❋", "记忆条目"],
           ["entities", "◇", "实体档案"],
@@ -284,21 +284,27 @@ export function MemoriesPage({ onOpenSource }: Props) {
         ))}
       </nav>
 
+      <div className="memory-view-content">
       {view === "entities" && <EntitiesSection memories={memories} onOpenSource={onOpenSource} />}
       {view === "episodes" && <EpisodesSection onOpenSource={onOpenSource} />}
       {view === "sagas" && <SagasSection onOpenSource={onOpenSource} />}
 
       {view === "memories" && <>
-      <div className="memory-search-row glass">
+      <div className="memory-search-row">
         <label><span aria-hidden="true">⌕</span><input value={memorySearch}
           onChange={(event) => setMemorySearch(event.target.value)} placeholder="搜索记忆内容、来源…" /></label>
-        <div className="memory-layer-filters">
-          <button className={layerFilter === "all" ? "is-active" : ""} onClick={() => setLayerFilter("all")}>全部</button>
-          {LAYERS.map((layer) => <button key={layer.key}
-            className={layerFilter === layer.key ? `is-active layer-${layer.key.toLowerCase()}` : ""}
-            onClick={() => setLayerFilter(layer.key)}>{layer.key}</button>)}
-        </div>
         <small>共 {visibleMemories.length} 条</small>
+      </div>
+
+      <div className="memory-layer-filters">
+        {LAYERS.map((layer) => <button key={layer.key}
+          className={`layer-${layer.key.toLowerCase()} ${layerFilter === layer.key ? "is-active" : ""}`}
+          onClick={() => setLayerFilter(layer.key)}>{layer.key}</button>)}
+        <span className="memory-filter-divider" aria-hidden="true" />
+        <button className={layerFilter === "all" ? "is-active" : ""} onClick={() => setLayerFilter("all")}>全部</button>
+        <span className="memory-filter-count">
+          显示 {layerFilter === "all" ? "全部层级" : layerFilter} · 共 {visibleMemories.length} 条
+        </span>
       </div>
 
       <section className="memory-section memory-conflict-section">
@@ -331,35 +337,38 @@ export function MemoriesPage({ onOpenSource }: Props) {
       </section>
 
       {/* 新增记忆 */}
-      <div className="list-row memory-add-card" style={{ alignItems: "flex-end", flexWrap: "wrap" }}>
-        <div className="field" style={{ marginBottom: 0, width: 150 }}>
-          <label>层级</label>
-          <select
-            value={newLayer}
-            onChange={(e) => setNewLayer(e.target.value as Layer)}
-          >
-            {LAYERS.map((l) => (
-              <option key={l.key} value={l.key}>
-                {l.name}
-              </option>
-            ))}
-          </select>
+      <div className="memory-add-card glass">
+        <div className="memory-add-title">快速新增记忆</div>
+        <div className="list-row" style={{ alignItems: "flex-end", flexWrap: "wrap", gap: 12 }}>
+          <div className="field" style={{ marginBottom: 0, width: 150 }}>
+            <label>层级</label>
+            <select
+              value={newLayer}
+              onChange={(e) => setNewLayer(e.target.value as Layer)}
+            >
+              {LAYERS.map((l) => (
+                <option key={l.key} value={l.key}>
+                  {l.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field" style={{ marginBottom: 0, flex: 1, minWidth: 200 }}>
+            <label>内容</label>
+            <input
+              ref={newMemoryRef}
+              value={newContent}
+              placeholder="记录一件遐蝶应该记住的事……"
+              onChange={(e) => setNewContent(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") onAdd();
+              }}
+            />
+          </div>
+          <button className="btn" disabled={adding} onClick={onAdd}>
+            ＋ 新增记忆
+          </button>
         </div>
-        <div className="field" style={{ marginBottom: 0, flex: 1, minWidth: 200 }}>
-          <label>内容</label>
-          <input
-            ref={newMemoryRef}
-            value={newContent}
-            placeholder="记录一件遐蝶应该记住的事……"
-            onChange={(e) => setNewContent(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") onAdd();
-            }}
-          />
-        </div>
-        <button className="btn" disabled={adding} onClick={onAdd}>
-          ＋ 新增记忆
-        </button>
       </div>
 
       {error && (
@@ -401,7 +410,7 @@ export function MemoriesPage({ onOpenSource }: Props) {
                 return (
                   <div
                     key={m.id}
-                    className="list-row memory-fragment-card"
+                    className={`list-row memory-fragment-card memory-layer-${m.layer.toLowerCase()}`}
                     style={{ opacity: m.enabled ? 1 : 0.45 }}
                   >
                     <span className={layerChipClass(m.layer)}>{m.layer}</span>
@@ -639,6 +648,7 @@ export function MemoriesPage({ onOpenSource }: Props) {
         })}
       </details>
       </>}
+      </div>
     </div>
   );
 }
