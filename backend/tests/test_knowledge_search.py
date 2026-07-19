@@ -212,6 +212,57 @@ def test_hybrid_search_clusters_exact_duplicates_and_overlapping_neighbors(monke
     assert result["diagnostics"]["adjacent_duplicates_removed"] == 1
 
 
+def test_k7_reranks_full_pool_then_enforces_strict_source_diversity(monkeypatch):
+    def candidate(index: int, collection: str, document: str, content: str) -> dict:
+        return {
+            "chunk_id": f"chunk-{index}", "document_id": document,
+            "collection_id": collection, "original_name": f"{document}.md",
+            "ordinal": index, "content": content,
+            "content_sha256": hashlib.sha256(content.encode()).hexdigest(),
+            "heading_path": ["重试预算"] if index == 4 else [],
+            "paragraph_start": index, "line_start": index, "char_start": index,
+            "page_start": None, "match_type": "primary", "rank": float(index),
+        }
+
+    rows = [
+        candidate(0, "collection-a", "doc-a", "网关说明一"),
+        candidate(1, "collection-a", "doc-a", "网关说明二"),
+        candidate(2, "collection-a", "doc-a", "网关说明三"),
+        candidate(3, "collection-b", "doc-b", "另一份网关说明"),
+        candidate(4, "collection-c", "doc-c", "重试预算是 2026 次"),
+    ]
+    monkeypatch.setattr(knowledge_search, "search", lambda *_a, **_k: {
+        "results": rows, "result_count": len(rows),
+    })
+    result = knowledge_search.hybrid_search(
+        "重试预算 2026", mode="fts", limit=4, max_per_collection=2,
+    )
+
+    assert result["diagnostics"]["search_protocol_version"] == "knowledge-search-v2"
+    assert result["diagnostics"]["rerank_pool_count"] == 5
+    assert result["results"][0]["chunk_id"] == "chunk-4"
+    assert sum(item["collection_id"] == "collection-a" for item in result["results"]) == 2
+    assert {item["collection_id"] for item in result["results"]} == {
+        "collection-a", "collection-b", "collection-c",
+    }
+
+
+def test_k7_diversity_obeys_character_budget_after_reordering():
+    rows = [
+        {
+            "chunk_id": f"c{index}", "document_id": f"d{index}",
+            "collection_id": f"collection-{index}", "content": "甲" * 180,
+            "fusion_score": 1.0 - index / 10,
+        }
+        for index in range(3)
+    ]
+    selected = knowledge_search._diversity_select(
+        rows, limit=3, max_chars=300, max_per_collection=2,
+    )
+    assert len(selected) == 1
+    assert sum(len(item["content"]) for item in selected) <= 300
+
+
 def test_cancel_during_index_preparation_cleans_fts_chunks_and_artifact(monkeypatch):
     imported = _import(("段落。" * 400).encode(), "cancel.txt")
     asyncio.run(knowledge_worker.process_due(limit=2))

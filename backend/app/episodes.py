@@ -512,6 +512,7 @@ def reject_candidate(candidate_id: str, note: str = "") -> dict | None:
 def _build_group_proposals(conn, now: float) -> list[dict]:
     rows = conn.execute(
         "SELECT f.* FROM memory_fragments f WHERE f.status='active' AND f.enabled=1"
+        " AND f.observation_source IN ('conversation','user_confirmed_fact')"
         " AND f.created_at BETWEEN ? AND ?"
         " AND NOT EXISTS (SELECT 1 FROM memory_episode_fragments ef WHERE ef.fragment_id=f.id)"
         " AND NOT EXISTS (SELECT 1 FROM memory_episode_candidate_fragments ecf"
@@ -730,7 +731,8 @@ def _load_fragments(conn, fragment_ids: list[str]) -> list[dict]:
         return []
     rows = conn.execute(
         f"SELECT f.* FROM memory_fragments f WHERE f.id IN ({','.join('?' for _ in fragment_ids)})"
-        " AND f.status='active' AND NOT EXISTS ("
+        " AND f.status='active'"
+        " AND f.observation_source IN ('conversation','user_confirmed_fact') AND NOT EXISTS ("
         " SELECT 1 FROM memory_episode_fragments ef WHERE ef.fragment_id=f.id) ORDER BY f.created_at",
         fragment_ids,
     ).fetchall()

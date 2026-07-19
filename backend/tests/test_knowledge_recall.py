@@ -343,3 +343,42 @@ def test_smart_medium_candidate_never_enters_real_prepared_context(monkeypatch):
         "换一种说法", mode="smart", provider={"execution_location": "local"},
     )
     assert prepared is None and decision["confidence_band"] == "medium"
+
+
+def test_k7_natural_recall_uses_cleaned_query_without_losing_names_numbers_or_english():
+    captured = {}
+
+    def search(query, **_kwargs):
+        captured["query"] = query
+        return {"results": [], "retrieval_mode": "fts", "diagnostics": {}}
+
+    original = "你好，请帮我看看 Nebula Gateway 的 retry budget 2026 是多少，谢谢"
+    result = knowledge_recall.evaluate(original, search_fn=search)
+
+    assert captured["query"] != original
+    assert "Nebula Gateway" in captured["query"]
+    assert "retry budget" in captured["query"]
+    assert "2026" in captured["query"]
+    assert result["features"]["query_changed"] is True
+    assert "_search_query" in result
+
+
+def test_k7_pronoun_continuation_only_appends_locally_verified_recent_entities(monkeypatch):
+    captured = {}
+    monkeypatch.setattr(
+        knowledge_recall, "recent_context_entities",
+        lambda session_id: ["Nebula Gateway"] if session_id == "session-1" else [],
+    )
+
+    def search(query, **_kwargs):
+        captured["query"] = query
+        return {"results": [], "retrieval_mode": "fts", "diagnostics": {}}
+
+    knowledge_recall.evaluate(
+        "它的 retry budget 是多少？", session_id="session-1", search_fn=search,
+    )
+    assert captured["query"].endswith("Nebula Gateway")
+    assert knowledge_recall.clean_query(
+        "Nebula Gateway 的 retry budget 是多少？",
+        context_entities=["Nebula Gateway", "未出现的项目"],
+    ).count("Nebula Gateway") == 1

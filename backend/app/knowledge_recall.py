@@ -34,6 +34,7 @@ _GREETING = re.compile(r"^(?:嗨|你好|您好|早上好|中午好|下午好|晚
 _EMOTION = re.compile(r"(?:有点|很|太|好)?(?:累|难过|伤心|焦虑|烦|孤独|委屈|害怕|想哭|睡不着|没精神)")
 _SIMPLE_TASK = re.compile(r"^(?:帮我)?(?:翻译|改写|润色|计算|算一下|列个清单|起个标题|写一句).{0,48}$")
 _AMBIGUOUS = re.compile(r"^(?:嗯+|哦+|好吧|然后呢|继续|你觉得呢|她呢|他呢|它呢|这个呢|那个呢|后来呢)[？?。！!\s]*$")
+_CONTEXT_REFERENCE = re.compile(r"(?:它|这个|那个|上述|前面(?:那个)?|刚才(?:那个)?|这份|该项目|这个项目)")
 
 # 查询清理：去掉无检索价值的寒暄、情感和语气前缀/后缀
 _QUERY_CLEAN_PREFIXES = re.compile(
@@ -148,12 +149,13 @@ def enqueue(*, session_id: str, user_message_id: str | None, user_text: str,
     finally:
         conn.close()
     from . import knowledge_recall_service
-    knowledge_recall_service.enqueue(decision_id, user_text, provider_snapshot)
+    knowledge_recall_service.enqueue(decision_id, user_text, provider_snapshot, session_id)
     return decision_id
 
 
 def evaluate(
     user_text: str, provider: dict | None = None, *,
+    session_id: str | None = None,
     search_fn: Callable[..., dict] | None = None,
     policy_fn: Callable[[set[str]], dict[str, dict]] | None = None,
 ) -> dict:
@@ -186,12 +188,17 @@ def evaluate(
     if _AMBIGUOUS.fullmatch(text) or len(text) < 2:
         return _finish(base, started, "skip", "ambiguous_reference", "high")
 
-    query = explicit_query or text[:knowledge_search.MAX_QUERY_CHARS]
+    context_entities = recent_context_entities(session_id) if not explicit_query else []
+    query = explicit_query or clean_query(text, context_entities=context_entities)[
+        :knowledge_search.MAX_QUERY_CHARS
+    ]
     search_started = time.perf_counter()
     try:
-        found = (search_fn or knowledge_search.hybrid_search)(
-            query, limit=6, context_window=0, max_chars=4000,
-        )
+        search_kwargs = {
+            "limit": 6, "context_window": 0, "max_chars": 4000,
+            "max_per_collection": knowledge_search.NATURAL_MAX_PER_COLLECTION,
+        }
+        found = (search_fn or knowledge_search.hybrid_search)(query, **search_kwargs)
     except knowledge_search.SearchError as error:
         reason = "fts_no_terms" if error.code == "knowledge_query_has_no_terms" else "preflight_search_failed"
         return _finish(base, started, "skip", reason, "low", status="failed")
@@ -216,8 +223,11 @@ def evaluate(
         "natural_selected_count": len(natural_results),
         "natural_tokens": natural_tokens,
         "_selected_results": natural_results,
+        "_search_query": query,
         "features": {
             **found.get("diagnostics", {}),
+            "query_changed": query != text,
+            "query_char_count": len(query),
             "raw_candidate_count": len(raw_results),
             "admitted_candidate_count": len(results),
             "term_strength": 0,
@@ -507,7 +517,7 @@ def _fingerprint(text: str) -> str:
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 
-def clean_query(text: str) -> str:
+def clean_query(text: str, *, context_entities: list[str] | None = None) -> str:
     """本地确定性查询清理：去掉寒暄、感叹、无检索价值的前缀后缀。
 
     保留：人名、项目名、术语、数字、时间、英文单词。
@@ -528,10 +538,48 @@ def clean_query(text: str) -> str:
         tokens = [t for t in tokens if t not in _CJK_STOP_LIST]
         cleaned = " ".join(tokens)
     cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    if _CONTEXT_REFERENCE.search(cleaned):
+        additions = [
+            entity for entity in (context_entities or [])
+            if entity.casefold() not in cleaned.casefold()
+        ][:2]
+        if additions:
+            cleaned = f"{cleaned} {' '.join(additions)}"
     # 清理后无有效内容则返回原文本
     if not cleaned or len(cleaned) < 2:
         return str(text).strip()
     return cleaned
+
+
+def recent_context_entities(session_id: str | None) -> list[str]:
+    """只延续最近两轮中出现过、且可由本地知识元数据验证的名称或标签。"""
+    if not session_id:
+        return []
+    conn = db.connect()
+    try:
+        messages = conn.execute(
+            "SELECT content FROM messages WHERE session_id=? ORDER BY created_at DESC,id DESC LIMIT 4",
+            (session_id,),
+        ).fetchall()
+        documents = conn.execute(
+            "SELECT original_name,tags_json FROM knowledge_documents"
+            " WHERE status='indexed' AND indexed_at IS NOT NULL ORDER BY updated_at DESC LIMIT 100"
+        ).fetchall()
+    finally:
+        conn.close()
+    recent = "\n".join(str(row["content"] or "") for row in messages).casefold()
+    candidates: list[str] = []
+    for row in documents:
+        stem = re.sub(r"\.[^.]{1,8}$", "", str(row["original_name"] or "")).strip()
+        values = [stem]
+        try:
+            values.extend(str(value).strip() for value in json.loads(row["tags_json"] or "[]"))
+        except (TypeError, ValueError, json.JSONDecodeError):
+            pass
+        for value in values:
+            if 2 <= len(value) <= 80 and value.casefold() in recent and value not in candidates:
+                candidates.append(value)
+    return candidates[:4]
 
 
 def _public(item: dict) -> dict:

@@ -74,7 +74,7 @@ def prepare(user_text: str, *, lore_text: str = "", memory_text: str = "") -> di
 
 def prepare_for_mode(
     user_text: str, *, mode: str, provider: dict | None = None,
-    lore_text: str = "", memory_text: str = "",
+    lore_text: str = "", memory_text: str = "", session_id: str | None = None,
 ) -> tuple[dict | None, dict | None]:
     """按 off/explicit/smart 准备候选；只让高置信自然判断进入真实上下文。"""
     if mode == "off":
@@ -91,7 +91,7 @@ def prepare_for_mode(
 
     # 局部导入避免 knowledge_recall -> knowledge_context 的模块环。
     from . import knowledge_recall  # noqa: PLC0415
-    decision = knowledge_recall.evaluate(user_text, provider)
+    decision = knowledge_recall.evaluate(user_text, provider, session_id=session_id)
     results = list(decision.get("_selected_results") or [])
     if (
         decision.get("confidence_band") != "high"
@@ -100,7 +100,7 @@ def prepare_for_mode(
     ):
         return None, decision
     prepared = _prepare_results(
-        query=str(user_text or "")[:knowledge_search.MAX_QUERY_CHARS],
+        query=str(decision.get("_search_query") or user_text)[:knowledge_search.MAX_QUERY_CHARS],
         reason=f"smart_{decision['reason_code']}", results=results,
         candidate_count=int(decision.get("candidate_count") or len(results)),
         token_budget=knowledge_recall.NATURAL_TOKEN_BUDGET,

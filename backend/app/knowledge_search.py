@@ -9,6 +9,7 @@ from collections.abc import Callable
 from . import db, knowledge_chunker
 
 INDEX_VERSION = "knowledge-fts-terms-v1"
+SEARCH_PROTOCOL_VERSION = "knowledge-search-v2"
 MAX_QUERY_CHARS = 256
 MAX_QUERY_TERMS = 16
 MAX_DOCUMENT_FILTERS = 20
@@ -16,12 +17,14 @@ MAX_TAG_FILTERS = 10
 MAX_LIMIT = 12
 MAX_RESULT_CHARS = 8_000
 ADJACENT_SIMILARITY_THRESHOLD = 0.65
-# \u89c4\u5219\u91cd\u6392\u6743\u91cd\uff08K.7.2\uff09
-RE_RANK_ENTITY_BONUS = 0.08           # \u547d\u4e2d\u5df2\u77e5\u5b9e\u4f53\u540d\u79f0
-RE_RANK_HEADING_MATCH_BONUS = 0.05    # \u67e5\u8be2\u8bcd\u547d\u4e2d heading_path
-RE_RANK_LOCATION_COMPLETENESS = 0.03  # \u5b9a\u4f4d\u4fe1\u606f\u5b8c\u6574\u5ea6
-# \u6765\u6e90\u591a\u6837\u6027\u4e0a\u9650\uff08K.7.4\uff09
-MAX_PER_COLLECTION = 3  # \u6bcf\u4e2a collection \u6700\u591a\u8d21\u732e\u6761\u6570
+# K.7 有界规则重排与轻量多样性选择。
+RE_RANK_CONTENT_COVERAGE_BONUS = 0.006
+RE_RANK_HEADING_MATCH_BONUS = 0.004
+RE_RANK_LOCATION_COMPLETENESS = 0.002
+MMR_SIMILARITY_WEIGHT = 0.012
+MMR_NEW_DOCUMENT_BONUS = 0.0015
+EXPLICIT_MAX_PER_COLLECTION = 3
+NATURAL_MAX_PER_COLLECTION = 2
 _CJK_OR_WORD = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]+|[A-Za-z0-9_]+")
 _CJK = re.compile(r"^[\u3400-\u4dbf\u4e00-\u9fff]+$")
 
@@ -208,7 +211,7 @@ def hybrid_search(
     query: str, *, collection_id: str | None = None,
     document_ids: list[str] | None = None, tags: list[str] | None = None,
     limit: int = 6, context_window: int = 0, max_chars: int = 4_000,
-    mode: str = "auto",
+    mode: str = "auto", max_per_collection: int = EXPLICIT_MAX_PER_COLLECTION,
 ) -> dict:
     """RRF 合并本地 FTS 与 dense；向量不可用/失败时 FTS 仍完整工作。"""
     if mode not in {"auto", "fts", "vector"}:
@@ -262,8 +265,7 @@ def hybrid_search(
             if item["chunk_id"] not in items or source == "fts":
                 items[item["chunk_id"]] = dict(item)
     ordered = sorted(items.values(), key=lambda item: (-scores[item["chunk_id"]], item["chunk_id"]))
-    selected: list[dict] = []
-    used_chars = 0
+    candidates: list[dict] = []
     adjacent_duplicates_removed = 0
     duplicate_sizes: dict[str, int] = {}
     duplicate_documents: dict[str, set[str]] = {}
@@ -271,22 +273,7 @@ def hybrid_search(
         duplicate_sizes[item["content_sha256"]] = duplicate_sizes.get(item["content_sha256"], 0) + 1
         duplicate_documents.setdefault(item["content_sha256"], set()).add(item["document_id"])
     exact_duplicates_removed = sum(max(0, count - 1) for count in duplicate_sizes.values())
-    seen_content: set[str] = set()
     for item in ordered:
-        if len(selected) >= max(1, min(int(limit), MAX_LIMIT)):
-            break
-        if item["content_sha256"] in seen_content:
-            continue
-        if any(
-            kept["document_id"] == item["document_id"]
-            and abs(int(kept["ordinal"]) - int(item["ordinal"])) <= 1
-            and _text_similarity(kept["content"], item["content"]) >= ADJACENT_SIMILARITY_THRESHOLD
-            for kept in selected
-        ):
-            adjacent_duplicates_removed += 1
-            continue
-        if used_chars + len(item["content"]) > max(256, min(int(max_chars), MAX_RESULT_CHARS)):
-            continue
         chunk_id = item["chunk_id"]
         item["fusion_score"] = scores[chunk_id]
         item["fts_position"] = lexical_positions.get(chunk_id)
@@ -297,9 +284,7 @@ def hybrid_search(
         if chunk_id in lexical_positions and chunk_id in vector_positions:
             item["match_type"] = "hybrid"
         item["_query"] = value
-        selected.append(item)
-        seen_content.add(item["content_sha256"])
-        used_chars += len(item["content"])
+        candidates.append(item)
     retrieval_mode = "fts"
     if mode == "vector":
         retrieval_mode = "vector" if vector["available"] else "fts_unavailable"
@@ -308,17 +293,40 @@ def hybrid_search(
     elif vector["available"]:
         retrieval_mode = "hybrid"
     fusion_values = sorted((scores.values()), reverse=True)
-    selected = _re_rank(selected, items, scores, collection_limit=0)
-    selected = _diversity_select(selected, limit=max(1, min(int(limit), MAX_LIMIT)))
+    candidates = _re_rank(candidates, scores)
+    deduplicated: list[dict] = []
+    seen_content: set[str] = set()
+    for item in candidates:
+        if item["content_sha256"] in seen_content:
+            continue
+        if any(
+            kept["document_id"] == item["document_id"]
+            and abs(int(kept["ordinal"]) - int(item["ordinal"])) <= 1
+            and _text_similarity(kept["content"], item["content"]) >= ADJACENT_SIMILARITY_THRESHOLD
+            for kept in deduplicated
+        ):
+            adjacent_duplicates_removed += 1
+            continue
+        deduplicated.append(item)
+        seen_content.add(item["content_sha256"])
+    selected = _diversity_select(
+        deduplicated, limit=max(1, min(int(limit), MAX_LIMIT)),
+        max_chars=max(256, min(int(max_chars), MAX_RESULT_CHARS)),
+        max_per_collection=max(1, min(int(max_per_collection), MAX_LIMIT)),
+    )
+    used_chars = sum(len(item["content"]) for item in selected)
     return {
         "query": value, "results": selected, "result_count": len(selected),
         "used_chars": used_chars, "context_window": context_window,
         "retrieval_mode": retrieval_mode, "vector_available": bool(vector["available"]),
         "vector_error_code": vector.get("error_code"),
         "diagnostics": {
+            "search_protocol_version": SEARCH_PROTOCOL_VERSION,
             "lexical_count": len(lexical["results"]),
             "dense_count": len(vector["results"]),
             "fused_count": len(ordered),
+            "rerank_pool_count": len(candidates),
+            "deduplicated_pool_count": len(deduplicated),
             "selected_count": len(selected),
             "exact_duplicates_removed": exact_duplicates_removed,
             "adjacent_duplicates_removed": adjacent_duplicates_removed,
@@ -355,34 +363,33 @@ def _text_similarity(left: str, right: str) -> float:
     return len(left_grams & right_grams) / len(left_grams | right_grams)
 
 
-def _re_rank(
-    selected: list[dict], items: dict[str, dict], scores: dict[str, float],
-    collection_limit: int = 0,
-) -> list[dict]:
+def _re_rank(selected: list[dict], scores: dict[str, float]) -> list[dict]:
     """K.7.2: RRF 融合后增加规则重排，提升检索相关性。
 
     评分分量：
-    - 实体覆盖：候选内容/标题中命中已知实体名加分
+    - 内容覆盖：候选正文覆盖查询词项时有界加分
     - 标题路径匹配：query 词命中 heading_path 加分
     - 定位完整度：有页码、段落范围的行数完整的 chunk 轻微加分
     """
     if not selected:
         return selected
 
-    # 从 items 中提取标题和实体元数据（已在 RRF 融合阶段可用）
     for item in selected:
         bonus = 0.0
         doc_name = str(item.get("original_name") or "")
         heading = " ".join(
             str(h) for h in (item.get("heading_path") or []) if isinstance(h, str)
         )
-        # heading 命中加分
-        query_terms = _CJK_OR_WORD.findall(str(item.get("_query") or ""))
+        query_terms = list(dict.fromkeys(terms_for_text(str(item.get("_query") or "")).split()))
+        content_terms = set(terms_for_text(str(item.get("content") or "")).split())
+        matched = sum(1 for term in query_terms if term in content_terms)
+        if query_terms:
+            bonus += RE_RANK_CONTENT_COVERAGE_BONUS * matched / len(query_terms)
         for term in query_terms:
-            if len(term) >= 3 and term in heading:
-                bonus += RE_RANK_HEADING_MATCH_BONUS * (1.0 + 0.2 * len(term))
-            if len(term) >= 3 and term in doc_name:
-                bonus += RE_RANK_HEADING_MATCH_BONUS * 0.5
+            if len(term) >= 2 and term.casefold() in heading.casefold():
+                bonus += RE_RANK_HEADING_MATCH_BONUS / max(1, len(query_terms))
+            if len(term) >= 2 and term.casefold() in doc_name.casefold():
+                bonus += RE_RANK_HEADING_MATCH_BONUS / (2 * max(1, len(query_terms)))
 
         # 定位完整度：有页码更可信
         has_page = item.get("page_start") is not None
@@ -403,40 +410,51 @@ def _re_rank(
     return selected
 
 
-def _diversity_select(selected: list[dict], limit: int) -> list[dict]:
-    """K.7.4: 轻量 MMR 来源多样性选择。
-
-    每个 collection 最多 MAX_PER_COLLECTION 条，超过后对相似内容做折减。
-    """
-    if len(selected) <= limit:
-        return selected
+def _diversity_select(
+    selected: list[dict], *, limit: int, max_chars: int, max_per_collection: int,
+) -> list[dict]:
+    """从完整候选池贪心选择，严格执行来源上限、字符预算和相似度折减。"""
     result: list[dict] = []
     collection_counts: dict[str, int] = {}
-    for item in selected:
-        collection_id = str(item.get("collection_id") or "")
-        count = collection_counts.get(collection_id, 0)
-        if count >= MAX_PER_COLLECTION:
-            # 超过每个 collection 上限，用 Jaccard 折减分数
-            penalty = 1.0
-            for kept in result:
-                sim = _text_similarity(
-                    str(item.get("content") or ""), str(kept.get("content") or ""),
-                )
-                if sim > 0.5:
-                    penalty *= (1.0 - sim * 0.3)
-            item["diversity_penalty"] = round(1.0 - penalty, 5)
-            item["fusion_score"] = round(item.get("fusion_score", 0.0) * max(0.4, penalty), 8)
-            # 重新插入并重排
-            result.append(item)
-            result.sort(key=lambda x: (-x.get("fusion_score", 0), x["chunk_id"]))
-            if len(result) > limit:
-                removed = result.pop()
-                if removed["chunk_id"] != item["chunk_id"]:
-                    collection_counts[collection_id] -= 1
-        else:
-            result.append(item)
-            collection_counts[collection_id] = count + 1
-    return result[:limit]
+    remaining = list(selected)
+    effective_collection_limit = (
+        max_per_collection
+        if len({str(item.get("collection_id") or "") for item in selected}) > 1
+        else limit
+    )
+    used_chars = 0
+    while remaining and len(result) < limit:
+        ranked: list[tuple[float, str, dict, float]] = []
+        for item in remaining:
+            collection_id = str(item.get("collection_id") or "")
+            if collection_counts.get(collection_id, 0) >= effective_collection_limit:
+                continue
+            content_len = len(str(item.get("content") or ""))
+            if used_chars + content_len > max_chars:
+                continue
+            max_similarity = max(
+                (_text_similarity(str(item.get("content") or ""), str(kept.get("content") or ""))
+                 for kept in result), default=0.0,
+            )
+            new_document = bool(result) and all(
+                kept.get("document_id") != item.get("document_id") for kept in result
+            )
+            adjusted = (
+                float(item.get("fusion_score") or 0.0)
+                - MMR_SIMILARITY_WEIGHT * max_similarity
+                + (MMR_NEW_DOCUMENT_BONUS if new_document else 0.0)
+            )
+            ranked.append((adjusted, str(item["chunk_id"]), item, max_similarity))
+        if not ranked:
+            break
+        _score, _chunk_id, chosen, similarity = min(ranked, key=lambda row: (-row[0], row[1]))
+        chosen["diversity_similarity"] = round(similarity, 5)
+        result.append(chosen)
+        remaining.remove(chosen)
+        collection_id = str(chosen.get("collection_id") or "")
+        collection_counts[collection_id] = collection_counts.get(collection_id, 0) + 1
+        used_chars += len(str(chosen.get("content") or ""))
+    return result
 
 
 def _public_result(item: dict, match_type: str, context_of: str | None, rank: float | None) -> dict:

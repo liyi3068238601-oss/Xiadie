@@ -20,10 +20,11 @@ RUNNING_STALE_SECONDS = 2 * 60
 WORKER_IDLE_SECONDS = 30
 _USER_CONFIRM_PATTERNS = (
     re.compile(r"我决定"),
-    re.compile(r"以后(?:就)?按(?:这个|那个|文档|资料|方案|建议)"),
-    re.compile(r"(?:就)?照(?:这个|那个|文档|资料|方案|建议|你说的).{0,8}(?:做|办|执行|来)"),
-    re.compile(r"(?:就)?按(?:这个|那个|文档|资料|方案|建议|你说的).{0,8}(?:做|办|执行|来)"),
+    re.compile(r"以后(?:就)?按(?:这个|那个|文档|资料|方案|建议|规范|计划)"),
+    re.compile(r"(?:就)?照(?:这个|那个|文档|资料|方案|建议|规范|计划|你说的).{0,8}(?:做|办|执行|来|走)"),
+    re.compile(r"(?:就)?按(?:这个|那个|文档|资料|方案|建议|规范|计划|你说的).{0,8}(?:做|办|执行|来|走)"),
     re.compile(r"(?:采用|接受|采纳).{0,12}(?:文档|资料|方案|建议|配置)"),
+    re.compile(r"(?:好[，,、\s]*)?(?:就)?这么定了"),
 )
 LEGACY_FALLBACK_ERROR_CODES = frozenset({
     "model_call_failed", "observer_model_timeout", "invalid_json", "schema_invalid",

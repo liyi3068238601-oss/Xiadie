@@ -1729,6 +1729,19 @@ MIGRATIONS = [
             ON knowledge_chat_retrievals(created_at);
         """,
     ),
+    (
+        40,
+        """
+        ALTER TABLE memory_fragments ADD COLUMN observation_source TEXT NOT NULL
+            DEFAULT 'conversation' CHECK(observation_source IN (
+                'conversation','knowledge_reference','shared_lookup','user_confirmed_fact'
+            ));
+        ALTER TABLE knowledge_chat_retrievals ADD COLUMN search_protocol_version TEXT NOT NULL
+            DEFAULT 'knowledge-search-v1';
+        CREATE INDEX idx_memory_fragments_observation_source
+            ON memory_fragments(observation_source,status,enabled,created_at);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

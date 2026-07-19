@@ -6,7 +6,7 @@ import threading
 
 from . import knowledge_recall
 
-_queue: queue.Queue[tuple[str, str, dict] | None] = queue.Queue(maxsize=128)
+_queue: queue.Queue[tuple[str, str, dict, str | None] | None] = queue.Queue(maxsize=128)
 _thread: threading.Thread | None = None
 _lock = threading.Lock()
 
@@ -33,10 +33,10 @@ def stop_worker() -> None:
         _thread = None
 
 
-def enqueue(decision_id: str, user_text: str, provider: dict) -> None:
+def enqueue(decision_id: str, user_text: str, provider: dict, session_id: str | None = None) -> None:
     start_worker()
     try:
-        _queue.put_nowait((decision_id, user_text, dict(provider)))
+        _queue.put_nowait((decision_id, user_text, dict(provider), session_id))
     except queue.Full:
         knowledge_recall.fail(decision_id)
 
@@ -46,9 +46,13 @@ def _loop() -> None:
         item = _queue.get()
         if item is None:
             return
-        decision_id, user_text, provider = item
+        if len(item) == 3:  # 兼容升级时已进入进程内队列的旧任务。
+            decision_id, user_text, provider = item
+            session_id = None
+        else:
+            decision_id, user_text, provider, session_id = item
         try:
-            result = knowledge_recall.evaluate(user_text, provider)
+            result = knowledge_recall.evaluate(user_text, provider, session_id=session_id)
             if result["latency_ms"] > knowledge_recall.TIMEOUT_MS:
                 knowledge_recall.fail(decision_id, timed_out=True)
             else:

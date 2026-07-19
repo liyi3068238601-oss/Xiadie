@@ -282,7 +282,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
         recall_mode = knowledge_recall.settings()["mode"]
         knowledge_retrieval, recall_decision = knowledge_context.prepare_for_mode(
             body.content, mode=recall_mode, provider=provider,
-            lore_text=lore_digest, memory_text=digest,
+            lore_text=lore_digest, memory_text=digest, session_id=body.session_id,
         )
         try:
             knowledge_retrieval = knowledge_grants.authorize_chat_locked(
@@ -339,13 +339,14 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 "INSERT INTO knowledge_chat_retrievals("
                 "id,session_id,user_message_id,trigger_reason,query_sha256,candidate_count,"
                 "injected_count,knowledge_tokens,knowledge_token_budget,lore_tokens,memory_tokens,"
-                "status,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                "status,search_protocol_version,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (
                     knowledge_retrieval["id"], body.session_id, uid, knowledge_retrieval["reason"],
                     knowledge_retrieval["query_sha256"], knowledge_retrieval["candidate_count"],
                     len(knowledge_retrieval["results"]), knowledge_retrieval["knowledge_tokens"],
                     knowledge_retrieval["knowledge_token_budget"], knowledge_retrieval["lore_tokens"],
-                    knowledge_retrieval["memory_tokens"], knowledge_retrieval["status"], db.now(),
+                    knowledge_retrieval["memory_tokens"], knowledge_retrieval["status"],
+                    knowledge_search.SEARCH_PROTOCOL_VERSION, db.now(),
                 ),
             )
         conn.commit()

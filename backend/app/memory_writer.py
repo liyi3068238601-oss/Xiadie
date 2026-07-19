@@ -80,7 +80,8 @@ def apply_observation_in_transaction(
             "id,layer,content,tags,source,source_session_id,source_message_id,confidence,"
             "sensitivity,status,enabled,created_at,updated_at,scope,kind,importance,emotion,"
             "inner_reason,observer_version,evidence_message_ids,source_assistant_message_id,"
-            "idempotency_key) VALUES(?,?,?,?,?,?,?,?,?,'active',?,?,?,?,?,?,?,?,?,?,?,?)",
+            "idempotency_key,observation_source)"
+            " VALUES(?,?,?,?,?,?,?,?,?,'active',?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 fragment_id, "L2", item["content"],
                 f"observer,{item['scope']},{item['kind']}", "observer",
@@ -90,6 +91,7 @@ def apply_observation_in_transaction(
                 item["inner_reason"], observer.PROTOCOL_VERSION,
                 json.dumps(item["evidence_message_ids"], ensure_ascii=False),
                 run["source_assistant_message_id"], idempotency_key,
+                item["observation_source"],
             ),
         )
         fragment = memory._get_fragment(conn, fragment_id)

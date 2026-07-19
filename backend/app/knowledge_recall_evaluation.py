@@ -36,6 +36,10 @@ def build_report(*, fixture: dict, outcomes: list[dict], environment: dict) -> d
     f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
     relevant = [row for row in outcomes if row["expected_document_groups"]]
     retrieval_hits = sum(row["retrieval_hit"] for row in relevant)
+    reciprocal_ranks = [
+        1.0 / row["first_relevant_rank"] if row.get("first_relevant_rank") else 0.0
+        for row in relevant
+    ]
     reason_metrics: dict[str, dict] = {}
     for reason in sorted({row["actual_reason"] for row in outcomes}):
         rows = [row for row in outcomes if row["actual_reason"] == reason]
@@ -91,6 +95,8 @@ def build_report(*, fixture: dict, outcomes: list[dict], environment: dict) -> d
             "recall_trigger_recall": _round(recall),
             "recall_trigger_f1": _round(f1),
             "retrieval_case_hit_rate": _round(retrieval_hits / len(relevant)) if relevant else 0.0,
+            "mean_reciprocal_rank": _round(statistics.fmean(reciprocal_ranks))
+            if reciprocal_ranks else 0.0,
         },
         "reason_metrics": reason_metrics,
         "performance_ms": {
@@ -143,6 +149,7 @@ def render_markdown(report: dict) -> str:
         f"- Reason accuracy：{metrics['reason_accuracy']:.2%}",
         f"- Trigger precision / recall / F1：{metrics['recall_trigger_precision']:.2%} / {metrics['recall_trigger_recall']:.2%} / {metrics['recall_trigger_f1']:.2%}",
         f"- 检索命中率：{metrics['retrieval_case_hit_rate']:.2%}",
+        f"- 首个相关来源 MRR：{metrics['mean_reciprocal_rank']:.4f}",
         "",
         "## 性能（毫秒）",
         "",

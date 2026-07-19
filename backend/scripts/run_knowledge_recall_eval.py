@@ -88,6 +88,13 @@ def main() -> int:
             retrieval_hit = bool(
                 expected_groups and all(retrieved & set(group) for group in expected_groups)
             )
+            expected_documents = {
+                document for group in expected_groups for document in group
+            }
+            first_relevant_rank = next((
+                rank for rank, item in enumerate(found.get("results", []), start=1)
+                if reverse_documents.get(item["document_id"]) in expected_documents
+            ), None)
             outcomes.append({
                 "case_id": case["id"],
                 "category": case["category"],
@@ -98,6 +105,7 @@ def main() -> int:
                 "recall_mode": decision["recall_mode"],
                 "expected_document_groups": expected_groups,
                 "retrieval_hit": bool(retrieval_hit),
+                "first_relevant_rank": first_relevant_rank,
                 "retrieved_document_count": len(retrieved),
                 "candidate_count": decision["candidate_count"],
                 "natural_selected_count": decision["natural_selected_count"],
@@ -129,6 +137,7 @@ def main() -> int:
                 "embedding_available": embedding_available,
                 "embedding_version": knowledge_embeddings.EMBEDDING_VERSION if embedding_available else None,
                 "search_index_version": knowledge_search.INDEX_VERSION,
+                "search_protocol_version": knowledge_search.SEARCH_PROTOCOL_VERSION,
             },
         )
         args.json_output.parent.mkdir(parents=True, exist_ok=True)
