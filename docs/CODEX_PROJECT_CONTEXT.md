@@ -186,13 +186,14 @@ Xiadie/
 - Live2D 设置多数没有真实持久化和 IPC 行为。
 - 数据导出、备份和恢复尚未实现。
 - Provider 能力标签主要依赖模型名称推断。
+- CTX.3 已生成受约束会话摘要，但普通聊天尚未消费；CTX.4 才建立统一 `ContextAssembler`。
 
 ### 7.3 当前已知优先风险
 
 - FastAPI 已使用会话级随机令牌，并将 CORS 限制为明确的本机来源；正式安装包仍需验证后端重启链路。
-- API Key 仍明文保存在 SQLite。
-- 重新生成失败可能导致旧回复丢失。
-- 长会话没有上下文预算和摘要。
+- API Key 已经由 SecretStore 抽象隔离，但开发期实现仍是未加密的本地 SQLite，正式版还需 safeStorage。
+- 重新生成已改为新回复成功后原子替换，并有失败保留旧回复回归测试。
+- CTX.1 已有硬预算，CTX.3 已有后台摘要；摘要尚未注入，长会话连续性要由 CTX.4 收口。
 - Provider 和模型选择校验不足。
 - 前端及 Electron 自动化测试不足。
 
@@ -303,7 +304,7 @@ cd E:\Xiadie\Xiadie\backend
 .\.venv\Scripts\python.exe -m pytest tests -q
 ```
 
-当前已知基线：446 项测试通过（对话上下文 CTX.2 数据地基，schema 42）。
+当前已知基线：457 项测试通过（CTX.3 受约束后台摘要，schema 43）。
 
 ### 11.2 前端
 

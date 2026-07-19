@@ -10,6 +10,9 @@ import sys
 import tempfile
 from pathlib import Path
 
+DEFAULT_JSON_OUTPUT_NAME = "knowledge-recall-eval-v3-search-v2.json"
+DEFAULT_MARKDOWN_OUTPUT_NAME = "knowledge-recall-eval-v3-search-v2.md"
+
 
 def main() -> int:
     parser = argparse.ArgumentParser()
@@ -25,11 +28,11 @@ def main() -> int:
     )
     parser.add_argument(
         "--json-output", type=Path,
-        default=project_root / "docs" / "reports" / "knowledge-recall-eval-v3-calibrated.json",
+        default=project_root / "docs" / "reports" / DEFAULT_JSON_OUTPUT_NAME,
     )
     parser.add_argument(
         "--markdown-output", type=Path,
-        default=project_root / "docs" / "reports" / "knowledge-recall-eval-v3-calibrated.md",
+        default=project_root / "docs" / "reports" / DEFAULT_MARKDOWN_OUTPUT_NAME,
     )
     args = parser.parse_args()
 

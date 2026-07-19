@@ -101,7 +101,7 @@ def source_snapshot(conn, session_id: str, *, start_message_id: str | None = Non
 
 
 def enqueue(session_id: str, *, start_message_id: str | None = None,
-            end_message_id: str | None = None) -> dict:
+            end_message_id: str | None = None, binding: Mapping[str, object] | None = None) -> dict:
     """为连续完整来源建立幂等 run；不启动模型或后台生成。"""
     conn = db.connect()
     try:
@@ -110,9 +110,11 @@ def enqueue(session_id: str, *, start_message_id: str | None = None,
             conn, session_id, start_message_id=start_message_id,
             end_message_id=end_message_id,
         )
+        binding = dict(binding or {})
+        generation_key = str(binding.get("generation_key") or "unbound")
         key = ":".join((
             PROTOCOL_VERSION, session_id, snapshot.start_message_id,
-            snapshot.end_message_id, snapshot.source_hash,
+            snapshot.end_message_id, snapshot.source_hash, generation_key,
         ))
         now = db.now()
         run_id = db.new_id()
@@ -120,13 +122,18 @@ def enqueue(session_id: str, *, start_message_id: str | None = None,
             "INSERT OR IGNORE INTO conversation_summary_runs("
             "id,idempotency_key,session_id,status,protocol_version,"
             "source_start_message_id,source_end_message_id,source_message_count,source_hash,"
-            "max_attempts,next_attempt_at,created_at,updated_at)"
-            " VALUES(?,?,?,'queued',?,?,?,?,?,?,?,?,?)",
+            "max_attempts,next_attempt_at,created_at,updated_at,provider_id,model,"
+            "provider_location,provider_location_revision,remote_history_allowed,"
+            "generation_mode,base_revision_id)"
+            " VALUES(?,?,?,'queued',?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 run_id, key, session_id, PROTOCOL_VERSION,
                 snapshot.start_message_id, snapshot.end_message_id,
                 snapshot.message_count, snapshot.source_hash, MAX_ATTEMPTS,
-                now, now, now,
+                now, now, now, binding.get("provider_id"), binding.get("model"),
+                binding.get("provider_location"), binding.get("provider_location_revision"),
+                1 if binding.get("remote_history_allowed") else 0,
+                binding.get("generation_mode") or "full", binding.get("base_revision_id"),
             ),
         )
         row = conn.execute(
@@ -276,7 +283,9 @@ def fail_run(run_id: str, lease_token: str, error_code: str, *, retryable: bool)
 def activate_result(run_id: str, lease_token: str, summary: Mapping[str, object], *,
                     provider_id: str | None = None, model: str | None = None,
                     prompt_tokens: int | None = None,
-                    completion_tokens: int | None = None) -> dict:
+                    completion_tokens: int | None = None, input_chars: int | None = None,
+                    output_chars: int | None = None, latency_ms: int | None = None,
+                    repair_attempted: bool = False) -> dict:
     """原子验证来源并激活结果；调用方只能传已通过 CTX.3 协议校验的数据。"""
     summary_text = str(
         summary.get("summary_text") or summary.get("continuity") or ""
@@ -347,6 +356,13 @@ def activate_result(run_id: str, lease_token: str, summary: Mapping[str, object]
                 reason_code="newer_revision_activated", metadata={}, now=now,
             )
         revision_id = db.new_id()
+        conn.execute(
+            "UPDATE conversation_summary_runs SET input_chars=?,output_chars=?,prompt_tokens=?,"
+            "completion_tokens=?,latency_ms=?,repair_attempted=? WHERE id=?",
+            (_nonnegative_optional(input_chars), _nonnegative_optional(output_chars),
+             _nonnegative_optional(prompt_tokens), _nonnegative_optional(completion_tokens),
+             _nonnegative_optional(latency_ms), 1 if repair_attempted else 0, run_id),
+        )
         conn.execute(
             "INSERT INTO conversation_summary_revisions("
             "id,session_id,run_id,revision,status,protocol_version,"
@@ -479,6 +495,24 @@ def list_revisions(session_id: str, *, limit: int = 50) -> list[dict]:
         conn.close()
 
 
+def active_revision_internal(session_id: str) -> dict | None:
+    """仅供摘要 worker 增量合并；正文不经过 HTTP 暴露。"""
+    conn = db.connect()
+    try:
+        row = conn.execute(
+            "SELECT * FROM conversation_summary_revisions WHERE session_id=? AND status='active'",
+            (session_id,),
+        ).fetchone()
+        if not row:
+            return None
+        item = dict(row)
+        for field in ("open_threads_json", "decisions_json", "corrections_json", "entity_refs_json"):
+            item[field.removesuffix("_json")] = json.loads(item[field] or "[]")
+        return item
+    finally:
+        conn.close()
+
+
 def list_events(session_id: str, *, limit: int = 100) -> list[dict]:
     conn = db.connect()
     try:
@@ -487,6 +521,41 @@ def list_events(session_id: str, *, limit: int = 100) -> list[dict]:
             " ORDER BY created_at DESC,id DESC LIMIT ?", (session_id, _limit(limit)),
         ).fetchall()
         return [_event_public(row) for row in rows]
+    finally:
+        conn.close()
+
+
+def load_claimed_source(run_id: str, lease_token: str) -> list[dict]:
+    """供 CTX.3 worker 读取租约绑定的原始来源；不通过 HTTP 暴露正文。"""
+    conn = db.connect()
+    try:
+        row = _leased_run(conn, run_id, lease_token)
+        selected = _complete_turn_range(
+            _ordered_messages(conn, row["session_id"]),
+            row["source_start_message_id"], row["source_end_message_id"],
+        )
+        if _source_hash(selected) != row["source_hash"]:
+            raise ConversationSummaryError("summary_source_changed", "摘要来源已变化")
+        return selected
+    finally:
+        conn.close()
+
+
+def record_attempt_metrics(run_id: str, lease_token: str, *, input_chars: int | None,
+                           output_chars: int | None, prompt_tokens: int | None,
+                           completion_tokens: int | None, latency_ms: int | None,
+                           repair_attempted: bool) -> None:
+    conn = db.connect()
+    try:
+        _leased_run(conn, run_id, lease_token)
+        conn.execute(
+            "UPDATE conversation_summary_runs SET input_chars=?,output_chars=?,prompt_tokens=?,"
+            "completion_tokens=?,latency_ms=?,repair_attempted=?,updated_at=? WHERE id=?",
+            (_nonnegative_optional(input_chars), _nonnegative_optional(output_chars),
+             _nonnegative_optional(prompt_tokens), _nonnegative_optional(completion_tokens),
+             _nonnegative_optional(latency_ms), 1 if repair_attempted else 0, db.now(), run_id),
+        )
+        conn.commit()
     finally:
         conn.close()
 
@@ -509,6 +578,11 @@ def _complete_run_locked(conn, row, revision_id: str, now: float, reason_code: s
         "UPDATE conversation_summary_runs SET status='completed',lease_token=NULL,"
         "lease_expires_at=NULL,heartbeat_at=NULL,result_revision_id=?,finished_at=?,updated_at=?"
         " WHERE id=?", (revision_id, now, now, row["id"]),
+    )
+    _event(
+        conn, session_id=row["session_id"], run_id=row["id"], revision_id=revision_id,
+        action="completed", before_status="running", after_status="completed",
+        reason_code=reason_code, metadata={}, now=now,
     )
 
 
@@ -548,11 +622,6 @@ def _insert_failed_revision_locked(conn, row, error_code: str, now: float) -> st
         reason_code=error_code, metadata={"revision": revision_number}, now=now,
     )
     return revision_id
-    _event(
-        conn, session_id=row["session_id"], run_id=row["id"], revision_id=revision_id,
-        action="completed", before_status="running", after_status="completed",
-        reason_code=reason_code, metadata={}, now=now,
-    )
 
 
 def _safe_metadata(metadata: Mapping[str, object]) -> str:
@@ -606,6 +675,10 @@ def _event(conn, *, session_id: str, action: str, before_status: str | None,
 def _run_public(conn, row, *, include_events: bool) -> dict:
     item = dict(row)
     item.pop("lease_token", None)
+    if item.get("input_chars") and item.get("output_chars") is not None:
+        item["compression_ratio"] = round(item["output_chars"] / item["input_chars"], 6)
+    else:
+        item["compression_ratio"] = None
     if include_events:
         events = conn.execute(
             "SELECT * FROM conversation_summary_events WHERE run_id=?"

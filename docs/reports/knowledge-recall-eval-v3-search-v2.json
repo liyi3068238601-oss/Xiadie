@@ -2,6 +2,7 @@
   "report_protocol_version": "knowledge-recall-report-v1",
   "evaluation_protocol_version": "knowledge-recall-eval-v3",
   "decision_protocol_version": "knowledge-recall-decision-v1",
+  "search_protocol_version": "knowledge-search-v2",
   "fixture_sha256": "1b9beb3fc3ff947243f3e14bb8f19778f9d68df4358b5fa23989586d51415a3d",
   "synthetic_only": true,
   "environment": {

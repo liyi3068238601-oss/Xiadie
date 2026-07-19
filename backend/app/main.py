@@ -15,7 +15,8 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from . import (
-    archivist, archivist_worker, companion_state, context_budget, conversation_summaries, db,
+    archivist, archivist_worker, companion_state, context_budget, conversation_summaries,
+    conversation_summary_service, db,
     entities, episode_consolidator,
     episode_summary_service, episodes, knowledge, knowledge_cleanup, knowledge_context,
     knowledge_embeddings, knowledge_grants,
@@ -32,8 +33,8 @@ from .security import ALLOWED_ORIGINS, TOKEN_HEADER, local_api_guard
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db.init_db()
-    # CTX.2 只恢复超时任务账本，不启动摘要生成；真正 worker 属于 CTX.3。
     conversation_summaries.recover_stale_runs()
+    await conversation_summary_service.start_worker()
     await affect_observer_service.start_worker()
     await memory_observer_service.start_worker()
     await episode_consolidator.start_worker()
@@ -51,6 +52,7 @@ async def lifespan(app: FastAPI):
         await episode_consolidator.stop_worker()
         await memory_observer_service.stop_worker()
         await affect_observer_service.stop_worker()
+        await conversation_summary_service.stop_worker()
 
 
 app = FastAPI(title="遐蝶 Agent Backend", version="0.1.0", lifespan=lifespan)
@@ -187,6 +189,29 @@ def get_conversation_summary_revisions(sid: str, limit: int = 50) -> list[dict]:
 @app.get("/api/sessions/{sid}/conversation-summary-events")
 def get_conversation_summary_events(sid: str, limit: int = 100) -> list[dict]:
     return conversation_summaries.list_events(sid, limit=limit)
+
+
+class ConversationSummaryModelIn(BaseModel):
+    mode: str
+    provider_id: str | None = None
+    model: str | None = None
+    allow_remote_history: bool = False
+
+
+@app.get("/api/conversation-summaries/model-config")
+def get_conversation_summary_model_config() -> dict:
+    return conversation_summary_service.get_model_config()
+
+
+@app.put("/api/conversation-summaries/model-config")
+def put_conversation_summary_model_config(body: ConversationSummaryModelIn) -> dict:
+    try:
+        return conversation_summary_service.set_model_config(
+            mode=body.mode, provider_id=body.provider_id, model=body.model,
+            allow_remote_history=body.allow_remote_history,
+        )
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
 
 
 @app.post("/api/messages/{mid}/favorite")
@@ -543,6 +568,12 @@ async def chat(body: ChatIn) -> StreamingResponse:
                     "status": "unlogged_failure",
                     "error_code": "observer_enqueue_failed",
                 }
+        try:
+            conversation_summary_service.enqueue_after_chat(
+                session_id=body.session_id, chat_provider=provider, chat_model=model,
+            )
+        except Exception:  # noqa: BLE001 - 摘要入队不能破坏已完成聊天
+            pass
         # 旧关键词候选只在观察模型不可用时兜底；真实模型路径不再逐条等待确认。
         candidate = None
         if (

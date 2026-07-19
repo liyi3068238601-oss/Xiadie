@@ -93,6 +93,7 @@ class SqliteSecretStore(SecretStore):
             conn.close()
 
     def retrieve(self, key_id: str) -> str | None:
+        self._ensure_table()
         conn = db.connect()
         try:
             row = conn.execute(

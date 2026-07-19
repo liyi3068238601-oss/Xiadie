@@ -7,6 +7,7 @@ from app import (
     db, knowledge_recall, knowledge_recall_evaluation, knowledge_recall_service,
     knowledge_recall_thresholds, knowledge_search,
 )
+from scripts import run_knowledge_recall_eval
 from app.main import app
 from fastapi.testclient import TestClient
 
@@ -273,6 +274,14 @@ def test_evaluation_v3_fixture_threshold_evidence_and_reports_are_stable():
     assert calibrated["score_evidence"]["high_confidence_auto_precision"] == 1.0
     assert calibrated["threshold_decision"]["automatic_injection_enabled"] is True
     assert calibrated["threshold_decision"]["semantic_auto_high_enabled"] is False
+    search_v2 = json.loads(
+        (reports / "knowledge-recall-eval-v3-search-v2.json").read_text(encoding="utf-8")
+    )
+    assert search_v2["search_protocol_version"] == "knowledge-search-v2"
+    assert search_v2["environment"]["search_protocol_version"] == "knowledge-search-v2"
+    assert run_knowledge_recall_eval.DEFAULT_JSON_OUTPUT_NAME.endswith("-search-v2.json")
+    assert run_knowledge_recall_eval.DEFAULT_MARKDOWN_OUTPUT_NAME.endswith("-search-v2.md")
+    assert "calibrated" not in run_knowledge_recall_eval.DEFAULT_JSON_OUTPUT_NAME
 
 
 def test_decision_stats_endpoint_returns_counts_rates_and_percentiles():

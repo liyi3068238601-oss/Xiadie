@@ -1853,6 +1853,34 @@ MIGRATIONS = [
             ON conversation_summary_events(revision_id,created_at,id);
         """,
     ),
+    (
+        43,
+        """
+        ALTER TABLE conversation_summary_runs ADD COLUMN provider_id TEXT;
+        ALTER TABLE conversation_summary_runs ADD COLUMN model TEXT;
+        ALTER TABLE conversation_summary_runs ADD COLUMN provider_location TEXT
+            CHECK(provider_location IS NULL OR provider_location IN ('local','remote','unknown'));
+        ALTER TABLE conversation_summary_runs ADD COLUMN provider_location_revision INTEGER
+            CHECK(provider_location_revision IS NULL OR provider_location_revision >= 1);
+        ALTER TABLE conversation_summary_runs ADD COLUMN remote_history_allowed INTEGER NOT NULL
+            DEFAULT 0 CHECK(remote_history_allowed IN (0,1));
+        ALTER TABLE conversation_summary_runs ADD COLUMN generation_mode TEXT NOT NULL
+            DEFAULT 'full' CHECK(generation_mode IN ('full','incremental'));
+        ALTER TABLE conversation_summary_runs ADD COLUMN base_revision_id TEXT;
+        ALTER TABLE conversation_summary_runs ADD COLUMN input_chars INTEGER
+            CHECK(input_chars IS NULL OR input_chars >= 0);
+        ALTER TABLE conversation_summary_runs ADD COLUMN output_chars INTEGER
+            CHECK(output_chars IS NULL OR output_chars >= 0);
+        ALTER TABLE conversation_summary_runs ADD COLUMN prompt_tokens INTEGER
+            CHECK(prompt_tokens IS NULL OR prompt_tokens >= 0);
+        ALTER TABLE conversation_summary_runs ADD COLUMN completion_tokens INTEGER
+            CHECK(completion_tokens IS NULL OR completion_tokens >= 0);
+        ALTER TABLE conversation_summary_runs ADD COLUMN latency_ms INTEGER
+            CHECK(latency_ms IS NULL OR latency_ms >= 0);
+        ALTER TABLE conversation_summary_runs ADD COLUMN repair_attempted INTEGER NOT NULL
+            DEFAULT 0 CHECK(repair_attempted IN (0,1));
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

@@ -7,7 +7,7 @@ import sqlite3
 import pytest
 from fastapi.testclient import TestClient
 
-from app import conversation_summaries, db, llm
+from app import conversation_summaries, conversation_summary_service, db, llm
 from app.main import app
 
 client = TestClient(
@@ -289,7 +289,13 @@ def test_chat_does_not_consume_summary_and_regenerate_invalidates_covered_revisi
         "POST", "/api/chat", json={"session_id": session["id"], "content": "第一轮问题"},
     ) as response:
         "".join(response.iter_text())
-    run = conversation_summaries.enqueue(session["id"])
+    runs = conversation_summaries.list_runs(session_id=session["id"])
+    if not runs:
+        diagnostic = conversation_summary_service.enqueue_after_chat(
+            session_id=session["id"], chat_provider=None, chat_model="xiadie-mock",
+        )
+        pytest.fail(f"chat summary enqueue missing: {diagnostic}")
+    run = runs[0]
     _activate(run, {"continuity": "SUMMARY-MUST-NOT-ENTER-CHAT"})
 
     with client.stream(
