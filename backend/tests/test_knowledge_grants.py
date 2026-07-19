@@ -467,3 +467,55 @@ def test_off_mode_preflight_does_not_run_search(monkeypatch):
     result = _preflight(session["id"])
     assert result["status"] == "not_needed"
     assert result["recall_mode"] == "off"
+
+
+def test_model_switch_revokes_an_issued_grant_before_any_message_is_written():
+    _index()
+    session = _session()
+    grant = _preflight(session["id"])
+    issued = _resolve(grant, session["id"])
+    db.set_setting("current_model", json.dumps({
+        "provider_id": "deepseek", "model": "deepseek-reasoner",
+    }))
+
+    status, body = _chat({
+        "session_id": session["id"], "content": QUERY, "request_nonce": NONCE,
+        "knowledge_grant_token": issued["token"],
+    })
+
+    assert status == 409 and "grant_binding_changed" in body
+    assert client.get(f"/api/sessions/{session['id']}/messages").json() == []
+    current = client.get(
+        f"/api/knowledge/transmission-grants/{grant['id']}"
+    ).json()
+    assert current["status"] == "revoked"
+
+
+def test_source_change_after_issue_revokes_grant_and_fails_closed():
+    document = _index()
+    session = _session()
+    grant = _preflight(session["id"])
+    issued = _resolve(grant, session["id"])
+    changed = CONTENT + " changed-after-confirmation"
+    conn = db.connect()
+    try:
+        conn.execute(
+            "UPDATE knowledge_chunks SET content=?,content_sha256=? WHERE document_id=?",
+            (changed, hashlib.sha256(changed.encode()).hexdigest(), document["id"]),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    status, body = _chat({
+        "session_id": session["id"], "content": QUERY, "request_nonce": NONCE,
+        "knowledge_grant_token": issued["token"],
+    })
+
+    assert status == 409
+    assert "grant_binding_changed" in body or "grant_source_or_policy_changed" in body
+    assert client.get(f"/api/sessions/{session['id']}/messages").json() == []
+    current = client.get(
+        f"/api/knowledge/transmission-grants/{grant['id']}"
+    ).json()
+    assert current["status"] == "revoked"

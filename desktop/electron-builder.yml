@@ -25,6 +25,9 @@ extraResources:
 asar: true
 
 win:
+  # 当前版本不签名；同时避免普通 Windows 账户为编辑 EXE 元数据而下载并
+  # 解压含 macOS 符号链接的 winCodeSign 工具（无创建链接权限时会中断打包）。
+  signAndEditExecutable: false
   target:
     - target: nsis
       arch:

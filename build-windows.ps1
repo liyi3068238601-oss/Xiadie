@@ -4,16 +4,16 @@
 $ErrorActionPreference = "Stop"
 $root = $PSScriptRoot
 
-Write-Host "`n========== 1/3  Build frontend ==========" -ForegroundColor Cyan
+Write-Host "`n========== 1/4  Build frontend ==========" -ForegroundColor Cyan
 Set-Location "$root\frontend"
 npm install
 npm run build
 
-Write-Host "`n========== 2/3  Freeze backend ==========" -ForegroundColor Cyan
+Write-Host "`n========== 2/4  Freeze backend ==========" -ForegroundColor Cyan
 Set-Location "$root\backend"
 & "$root\backend\build-backend.ps1"
 
-Write-Host "`n========== 3/3  Build installer ==========" -ForegroundColor Cyan
+Write-Host "`n========== 3/4  Build installer ==========" -ForegroundColor Cyan
 Set-Location "$root\desktop"
 npm install
 $modelSource = Join-Path (Split-Path $root -Parent) "bge-m3"
@@ -26,6 +26,9 @@ if (Test-Path (Join-Path $modelSource "onnx\model_quantized.onnx")) {
   Write-Warning "Missing ..\bge-m3; the installer will keep FTS but omit the local vector model."
 }
 npm run dist
+
+Write-Host "`n========== 4/4  Verify release resources ==========" -ForegroundColor Cyan
+& "$root\scripts\verify-release-resources.ps1"
 
 Set-Location $root
 Write-Host "`nBuild complete. Installers are in dist-installer\" -ForegroundColor Green

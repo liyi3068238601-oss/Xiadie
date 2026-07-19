@@ -69,8 +69,8 @@
 任务专项施工基线：
 
 - 记忆系统最终形态与已完成阶段：`docs/MEMORY_SYSTEM_DESIGN_FOR_BEGINNERS.md`。
-- 知识库下一轮优化 K.0～K.9：`docs/KNOWLEDGE_SYSTEM_OPTIMIZATION_PLAN.md`。该计划目前只完成设计，
-  尚未开始自然召回、远传策略或授权协议施工。
+- 知识库优化 K.0～K.9：`docs/KNOWLEDGE_SYSTEM_OPTIMIZATION_PLAN.md`。该计划已完成并通过总验收；
+  自然召回、远传策略、一次性授权、记忆隔离和生命周期均以 ADR-0036～ADR-0044 为准。
 
 ---
 
@@ -303,7 +303,7 @@ cd E:\Xiadie\Xiadie\backend
 .\.venv\Scripts\python.exe -m pytest tests -q
 ```
 
-当前已知基线：317 项测试通过（知识库优化施工前基线）。
+当前已知基线：404 项测试通过（知识库 K.9 总验收基线，schema 41）。
 
 ### 11.2 前端
 
@@ -343,7 +343,7 @@ node --check preload.js
 ## 13. 当前近期顺序
 
 本节保留项目早期 v0.1 治理顺序作为历史约束；其中多项已经完成。当前具体施工顺序以用户当轮指令及对应专项
-计划为准。知识库优化必须按 `KNOWLEDGE_SYSTEM_OPTIMIZATION_PLAN.md` 的 K.0～K.9 和阶段 review 规则推进。
+计划为准。知识库 K.0～K.9 已完成；后续扩展必须另立阶段并继续沿用该计划的 review 与验收规则。
 
 严格按以下顺序推进：
 
@@ -364,9 +364,9 @@ node --check preload.js
 
 ## 14. 当前专项入口
 
-知识库 F.1～F.8 已完成。下一轮知识优化尚未施工，权威入口为：
+知识库 F.1～F.8 与优化 K.0～K.9 均已完成，权威完工入口为：
 
 `docs/KNOWLEDGE_SYSTEM_OPTIMIZATION_PLAN.md`
 
-用户批准开工后从 K.0 开始；每个小阶段完成后更新勾选和完工记录，下一阶段开工前只读取一次最新 review。
-不能跳过影子模式、评测门槛或远传授权，直接把自然对话命中片段发送给在线模型。
+后续新增知识能力不得直接续写已关闭的 K 系列，应新建计划和 ADR。仍不能绕过本地预检、评测门槛或远传授权，
+直接把自然对话命中片段发送给在线模型。
