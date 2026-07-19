@@ -4,7 +4,7 @@ import asyncio
 import pytest
 from fastapi.testclient import TestClient
 
-from app import db, knowledge, knowledge_context, knowledge_worker, llm
+from app import db, knowledge, knowledge_context, knowledge_worker, llm, memory_observer_service
 from app.main import app
 
 client = TestClient(
@@ -115,6 +115,29 @@ def test_chat_persists_audited_citation_and_source_requires_current_hash(monkeyp
     finally:
         conn.close()
     assert client.get(f"/api/knowledge/citations/{citation['id']}").status_code == 410
+
+
+def test_memory_observer_enqueue_crash_cannot_break_knowledge_reply_or_citation(monkeypatch):
+    _index("# 星海\n星空是安静的。")
+
+    async def fake_stream(*_args):
+        yield "星空是安静的 [资料:K1]。"
+
+    monkeypatch.setattr(llm, "stream_chat", fake_stream)
+    monkeypatch.setattr(
+        memory_observer_service, "enqueue_turn",
+        lambda **_kwargs: (_ for _ in ()).throw(RuntimeError("observer crashed")),
+    )
+    session = client.post("/api/sessions", json={}).json()
+    with client.stream(
+        "POST", "/api/chat",
+        json={"session_id": session["id"], "content": "请根据文档告诉我星空"},
+    ) as response:
+        body = "".join(response.iter_text())
+    assert "event: done" in body and "observer_enqueue_failed" in body
+    assistant = client.get(f"/api/sessions/{session['id']}/messages").json()[-1]
+    assert assistant["content"] == "星空是安静的 [资料:K1]。"
+    assert len(assistant["knowledge_citations"]) == 1
 
 
 def test_ordinary_chat_creates_no_knowledge_audit(monkeypatch):

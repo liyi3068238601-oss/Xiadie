@@ -24,6 +24,7 @@ def apply_observation_in_transaction(
     *,
     run: dict,
     candidate: dict,
+    knowledge_guard: dict | None = None,
     audit: dict,
 ) -> list[str]:
     """复核来源并写 Fragment、实体关系、事件和 applied 状态。"""
@@ -48,12 +49,14 @@ def apply_observation_in_transaction(
 
     fragment_ids: list[str] = []
     created_fragment_ids: list[str] = []
+    persisted_items: list[dict] = []
     knowledge_discarded = 0
+    guard = knowledge_guard or {}
     for index, item in enumerate(revalidated["items"]):
-        # 知识引用未获用户确认的候选项拒绝写入
-        if item.get("observation_source") == "knowledge_reference":
+        if not _knowledge_item_allowed(item, run, guard):
             knowledge_discarded += 1
             continue
+        persisted_items.append(item)
 
         idempotency_key = (
             f"{observer.PROTOCOL_VERSION}:{run['source_assistant_message_id']}:{index}"
@@ -100,6 +103,17 @@ def apply_observation_in_transaction(
         created_fragment_ids.append(fragment_id)
 
     now = db.now()
+    persisted_candidate = {
+        "protocol_version": candidate.get("protocol_version"),
+        "should_write": bool(persisted_items),
+        "items": persisted_items,
+    }
+    persisted_warnings = list(candidate.get("warnings") or [])
+    if knowledge_discarded:
+        persisted_warnings.append({
+            "code": "knowledge_items_discarded",
+            "count": knowledge_discarded,
+        })
     conn.execute(
         "UPDATE memory_observer_runs SET status='applied',candidate_json=?,warnings_json=?,"
         " error_code=NULL,next_attempt_at=NULL,applied_fragment_ids_json=?,"
@@ -107,10 +121,8 @@ def apply_observation_in_transaction(
         " input_chars=?,output_chars=?,prompt_tokens=?,completion_tokens=?,latency_ms=?,"
         " repair_attempted=?,updated_at=? WHERE id=?",
         (
-            json.dumps(candidate, ensure_ascii=False),
-            json.dumps(candidate.get("warnings") or [], ensure_ascii=False) + (
-                f',"knowledge_discarded":{knowledge_discarded}' if knowledge_discarded else ""
-            ),
+            json.dumps(persisted_candidate, ensure_ascii=False),
+            json.dumps(persisted_warnings, ensure_ascii=False),
             json.dumps(fragment_ids, ensure_ascii=False),
             json.dumps(created_fragment_ids, ensure_ascii=False), now,
             audit["input_chars"], audit["output_chars"], audit["prompt_tokens"],
@@ -119,6 +131,22 @@ def apply_observation_in_transaction(
         ),
     )
     return fragment_ids
+
+
+def _knowledge_item_allowed(item: dict, run: dict, guard: dict) -> bool:
+    """用服务端事实裁决知识候选；绝不信任模型给出的来源标签。"""
+    source = item.get("observation_source") or "conversation"
+    if source == "knowledge_reference":
+        return False
+    if not guard.get("knowledge_used"):
+        return source == "conversation"
+    if source != "user_confirmed_fact" or not guard.get("user_confirmed"):
+        return False
+    expected_user_id = guard.get("source_user_message_id")
+    return (
+        expected_user_id == run.get("source_user_message_id")
+        and expected_user_id in (item.get("evidence_message_ids") or [])
+    )
 
 
 def _load_and_verify_sources(conn, run: dict, candidate: dict) -> list[dict]:

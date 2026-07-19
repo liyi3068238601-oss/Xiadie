@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 import time
 from contextlib import suppress
 
@@ -18,8 +19,11 @@ FIRST_RETRY_DELAY_SECONDS = 5 * 60
 RUNNING_STALE_SECONDS = 2 * 60
 WORKER_IDLE_SECONDS = 30
 _USER_CONFIRM_PATTERNS = (
-    "以后按这个", "我决定", "就照这个做", "按你说的来", "就这样",
-    "就按这个", "照你说的办", "听你的", "以后就这样", "按这个来",
+    re.compile(r"我决定"),
+    re.compile(r"以后(?:就)?按(?:这个|那个|文档|资料|方案|建议)"),
+    re.compile(r"(?:就)?照(?:这个|那个|文档|资料|方案|建议|你说的).{0,8}(?:做|办|执行|来)"),
+    re.compile(r"(?:就)?按(?:这个|那个|文档|资料|方案|建议|你说的).{0,8}(?:做|办|执行|来)"),
+    re.compile(r"(?:采用|接受|采纳).{0,12}(?:文档|资料|方案|建议|配置)"),
 )
 LEGACY_FALLBACK_ERROR_CODES = frozenset({
     "model_call_failed", "observer_model_timeout", "invalid_json", "schema_invalid",
@@ -215,6 +219,18 @@ def _claim_next() -> dict | None:
 
 
 async def _process_claimed(row: dict) -> None:
+    context = _load_context(row)
+    if not context:
+        _finish_without_retry(row, "observer_source_unavailable", "skipped")
+        return
+    knowledge_meta = context.get("knowledge_meta") or {}
+    knowledge_used = bool(knowledge_meta.get("knowledge_used"))
+    user_has_confirmed = knowledge_used and _detect_user_confirmation(context["user_text"])
+    knowledge_guard = {
+        "knowledge_used": knowledge_used,
+        "user_confirmed": user_has_confirmed,
+        "source_user_message_id": row["source_user_message_id"],
+    }
     if row.get("has_stored_candidate"):
         try:
             candidate = json.loads(row["candidate_json"])
@@ -228,20 +244,13 @@ async def _process_claimed(row: dict) -> None:
         _apply_candidate(
             row, candidate, [], row.get("input_chars", 0), row.get("latency_ms") or 0,
             bool(row.get("repair_attempted")), stored_audit=True,
+            knowledge_guard=knowledge_guard,
         )
-        return
-    context = _load_context(row)
-    if not context:
-        _finish_without_retry(row, "observer_source_unavailable", "skipped")
         return
     provider = _load_provider(row.get("provider_id"))
     if not provider or provider["id"] == "mock" or not provider.get("enabled") or not provider.get("base_url"):
         _finish_without_retry(row, "observer_model_unavailable", "skipped")
         return
-
-    knowledge_meta = context.get("knowledge_meta") or {}
-    knowledge_used = knowledge_meta.get("knowledge_used", False)
-    user_has_confirmed = knowledge_used and _detect_user_confirmation(context["user_text"])
 
     try:
         state = companion_state.get_state(persist_advance=False)
@@ -306,18 +315,20 @@ async def _process_claimed(row: dict) -> None:
         return
     _apply_candidate(
         row, candidate, completions, input_chars, _elapsed_ms(started), repair_attempted,
-        user_has_confirmed=user_has_confirmed,
+        knowledge_guard=knowledge_guard,
     )
 
 
 def _apply_candidate(
     row: dict, candidate: dict, completions: list[dict], input_chars: int,
     latency_ms: int, repair_attempted: bool, stored_audit: bool = False,
-    user_has_confirmed: bool = False,
+    knowledge_guard: dict | None = None,
 ) -> None:
     """把净化候选、Fragment、实体、事件和 applied 状态放进同一事务。"""
-    # 用户已确认时，将 knowledge_reference 升级为 user_confirmed_fact
-    if user_has_confirmed and candidate.get("items"):
+    # 来源标签来自不可信模型。只有服务端确认“本轮用了知识 + 用户明确采纳 +
+    # 当前用户消息是证据”时，才允许 user_confirmed_fact 进入正式写入层。
+    guard = knowledge_guard or {}
+    if guard.get("user_confirmed") and candidate.get("items"):
         for item in candidate["items"]:
             if item.get("observation_source") == "knowledge_reference":
                 item["observation_source"] = "user_confirmed_fact"
@@ -335,6 +346,7 @@ def _apply_candidate(
         conn.execute("BEGIN IMMEDIATE")
         fragment_ids = memory_writer.apply_observation_in_transaction(
             conn, run=row, candidate=candidate,
+            knowledge_guard=guard,
             audit={
                 "input_chars": input_chars, "output_chars": output_chars,
                 "prompt_tokens": prompt_tokens, "completion_tokens": completion_tokens,
@@ -525,7 +537,7 @@ def _detect_user_confirmation(user_text: str) -> bool:
     text = user_text.strip()
     if not text:
         return False
-    return any(pattern in text for pattern in _USER_CONFIRM_PATTERNS)
+    return any(pattern.search(text) for pattern in _USER_CONFIRM_PATTERNS)
 
 
 def _resolve_model(chat_provider: dict | None, chat_model: str) -> tuple[dict | None, str]:

@@ -52,7 +52,8 @@ SYSTEM_PROMPT = """你是"遐蝶记忆观察器"，是不可见的后台分析�
 每条 observation 必须标注 observation_source：
 - "conversation"：来自用户与遐蝶的自然对话
 - "knowledge_reference"：遐蝶引用了知识资料，且用户消息中未明确采纳资料为自己的决定
-- "user_confirmed_fact"：用户明确表达了采纳（如"以后按这个""我决定""就照这个做""按你说的来""就这样"）
+- "shared_lookup"：只描述用户与遐蝶共同查阅、核对资料的行为，不能包含资料事实
+- "user_confirmed_fact"：用户明确表达了采纳（如"以后按这个方案""我决定""就照文档建议做""按你说的来"）
 当 JSON 中 knowledge_meta.knowledge_used=true 时，以助手回复证据为主的候选项应标 knowledge_reference，importance 上限 0.40。
 只有用户消息含明确采纳表达时才可标 user_confirmed_fact。
 
@@ -96,7 +97,9 @@ class MemoryItem(_StrictModel):
     entities: list[str] = Field(max_length=8)
     sensitivity: Literal["normal", "sensitive", "forbidden"]
     evidence_message_ids: list[str] = Field(min_length=1, max_length=4)
-    observation_source: Literal["conversation", "knowledge_reference", "user_confirmed_fact"] = Field(
+    observation_source: Literal[
+        "conversation", "knowledge_reference", "shared_lookup", "user_confirmed_fact",
+    ] = Field(
         default="conversation",
     )
 

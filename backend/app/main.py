@@ -483,13 +483,19 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 user_message_id=uid,
                 assistant_message_id=aid,
             )
-            memory_observation = memory_observer_service.enqueue_turn(
-                chat_provider=provider,
-                chat_model=model,
-                session_id=body.session_id,
-                user_message_id=uid,
-                assistant_message_id=aid,
-            )
+            try:
+                memory_observation = memory_observer_service.enqueue_turn(
+                    chat_provider=provider,
+                    chat_model=model,
+                    session_id=body.session_id,
+                    user_message_id=uid,
+                    assistant_message_id=aid,
+                )
+            except Exception:  # noqa: BLE001 - 观察器故障不能破坏已完成的回复和引用
+                memory_observation = {
+                    "status": "unlogged_failure",
+                    "error_code": "observer_enqueue_failed",
+                }
         # 旧关键词候选只在观察模型不可用时兜底；真实模型路径不再逐条等待确认。
         candidate = None
         if (
