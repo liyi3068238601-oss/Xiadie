@@ -15,7 +15,8 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from . import (
-    archivist, archivist_worker, companion_state, context_budget, db, entities, episode_consolidator,
+    archivist, archivist_worker, companion_state, context_budget, conversation_summaries, db,
+    entities, episode_consolidator,
     episode_summary_service, episodes, knowledge, knowledge_cleanup, knowledge_context,
     knowledge_embeddings, knowledge_grants,
     knowledge_management, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search,
@@ -31,6 +32,8 @@ from .security import ALLOWED_ORIGINS, TOKEN_HEADER, local_api_guard
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db.init_db()
+    # CTX.2 只恢复超时任务账本，不启动摘要生成；真正 worker 属于 CTX.3。
+    conversation_summaries.recover_stale_runs()
     await affect_observer_service.start_worker()
     await memory_observer_service.start_worker()
     await episode_consolidator.start_worker()
@@ -160,6 +163,30 @@ def list_messages(sid: str) -> list[dict]:
         return messages
     finally:
         conn.close()
+
+
+@app.get("/api/conversation-summaries/runs")
+def get_conversation_summary_runs(session_id: str | None = None,
+                                  limit: int = 50) -> list[dict]:
+    return conversation_summaries.list_runs(session_id=session_id, limit=limit)
+
+
+@app.get("/api/conversation-summaries/runs/{run_id}")
+def get_conversation_summary_run(run_id: str) -> dict:
+    run = conversation_summaries.get_run(run_id)
+    if not run:
+        raise HTTPException(404, "摘要任务不存在")
+    return run
+
+
+@app.get("/api/sessions/{sid}/conversation-summary-revisions")
+def get_conversation_summary_revisions(sid: str, limit: int = 50) -> list[dict]:
+    return conversation_summaries.list_revisions(sid, limit=limit)
+
+
+@app.get("/api/sessions/{sid}/conversation-summary-events")
+def get_conversation_summary_events(sid: str, limit: int = 100) -> list[dict]:
+    return conversation_summaries.list_events(sid, limit=limit)
 
 
 @app.post("/api/messages/{mid}/favorite")
@@ -469,6 +496,9 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 (aid, body.session_id, "assistant", full, model, db.now()),
             )
             if replace_assistant_id:
+                conversation_summaries.invalidate_for_replaced_message_locked(
+                    c2, body.session_id, replace_assistant_id,
+                )
                 c2.execute("DELETE FROM messages WHERE id = ?", (replace_assistant_id,))
             if knowledge_retrieval:
                 for citation in used_citations:

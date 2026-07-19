@@ -2,7 +2,7 @@
 
 > 最近复核日期：2026-07-19
 >
-> 基线提交：对话上下文 CTX.1 硬预算内核（以本文件所在提交为准）
+> 基线提交：对话上下文 CTX.2 摘要数据地基（以本文件所在提交为准）
 >
 > 当前版本：`v0.1.0` MVP 骨架（知识库系统 K 系列已完成）
 >
@@ -35,8 +35,8 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests` | 通过：437 passed，2 warnings；schema 41 |
-| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：33 项；TypeScript 检查及 Vite 生产构建 188 modules 成功 |
+| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests` | 通过：446 passed，2 warnings；schema 42 |
+| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：33 项；TypeScript 检查及 Vite 生产构建 185 modules 成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 
 已知但不阻断当前开发的警告：
@@ -267,7 +267,8 @@ npm.cmd start
 | 本地 API | 临时令牌与严格来源策略已覆盖开发/冻结启动；正式安装升级后的重启链路仍需实机回归 | 正式发布验收时复核安装、重启和升级 |
 | 密钥 | API Key 存在本地 SQLite 中，接口不回显但存储未加密 | 迁移到 Electron `safeStorage` 或系统凭据存储 |
 | 重新生成 | 已改为新回复成功持久化时再替换旧回复，并有失败回归测试 | 后续版本化回复时再扩展历史保留策略 |
-| 上下文 | CTX.1 已建立 provider+model 能力解析、1M 应用上限、统一估算、输出预留、安全余量、完整轮次裁剪与 Provider 调用前失败关闭；预算诊断只含计数，不含正文 | CTX.2 建立会话摘要派生数据；CTX.4 再引入相关性选择与统一 `ContextAssembler` |
+| 上下文 | CTX.1 已建立 provider+model 能力解析、1M 应用上限、统一估算、输出预留、安全余量、完整轮次裁剪与 Provider 调用前失败关闭；预算诊断只含计数，不含正文 | CTX.3 生成受约束摘要；CTX.4 再引入相关性选择与统一 `ContextAssembler` |
+| 会话摘要 | CTX.2 已建立 schema 42 revisions/runs/events、连续来源哈希、单 active 状态机、幂等任务、租约/心跳/恢复、重新生成失效和无正文只读诊断；尚未生成或注入摘要 | CTX.3 实现受约束后台生成；CTX.4 才允许接入聊天上下文 |
 | 模型设置 | provider/model 选择的服务端校验较弱 | v0.1.2 增加校验与错误恢复 |
 | 数据演进 | SQLite 已有顺序 schema 迁移并到达 41，但尚无独立迁移 CLI、降级和备份恢复工具 | 正式发布前补齐备份、恢复与迁移演练 |
 | Live2D 授权 | 当前模型只允许个人使用，禁止上传、再分发、商用和二改 | 仓库继续忽略资源；发布前更换为可发布模型 |

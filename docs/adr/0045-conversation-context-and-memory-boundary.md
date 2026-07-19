@@ -71,8 +71,8 @@ Fragment、Episode、Saga、Memory Observer 与 Archivist 等长期记忆能力�
 
 ## 数据与迁移
 
-- 当前 schema：41。
-- 下一迁移编号：42，预留给 `conversation_summaries` 及其事件表；CTX.0 不执行该迁移。
+- 当前 schema：42；CTX.2 已建立 `conversation_summary_revisions/runs/events`。
+- 下一迁移编号：43；CTX.3 如需新增协议字段必须使用新迁移，不得回写 schema 42。
 - 兼容旧数据的方法：原 `messages` 和长期记忆表保持不变，派生摘要可从原消息重建。
 - 失败恢复方法：摘要或检索失败时回退到受硬预算保护的最近原文，不修改原消息和长期记忆。
 
@@ -89,5 +89,5 @@ CTX.0 仅增加文档、基线脚本和测试，不改变运行行为，可直�
 ## 后续事项
 
 - [x] CTX.1 建立 provider+model 级模型能力与硬预算内核。
-- [ ] CTX.2 建立 schema 42 会话摘要派生表。
+- [x] CTX.2 建立 schema 42 会话摘要派生表。
 - [ ] CTX.4 让 ContextAssembler 成为唯一上下文组装入口。

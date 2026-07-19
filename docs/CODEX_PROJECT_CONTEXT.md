@@ -303,7 +303,7 @@ cd E:\Xiadie\Xiadie\backend
 .\.venv\Scripts\python.exe -m pytest tests -q
 ```
 
-当前已知基线：404 项测试通过（知识库 K.9 总验收基线，schema 41）。
+当前已知基线：446 项测试通过（对话上下文 CTX.2 数据地基，schema 42）。
 
 ### 11.2 前端
 

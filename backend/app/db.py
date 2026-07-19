@@ -1762,6 +1762,97 @@ MIGRATIONS = [
             ON knowledge_chat_retrievals(audit_state,created_at,id);
         """,
     ),
+    (
+        42,
+        """
+        CREATE TABLE conversation_summary_runs (
+            id TEXT PRIMARY KEY,
+            idempotency_key TEXT NOT NULL UNIQUE,
+            session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            status TEXT NOT NULL CHECK(status IN (
+                'queued','running','recovery_pending','completed',
+                'failed','exhausted','cancelled'
+            )),
+            protocol_version TEXT NOT NULL,
+            source_start_message_id TEXT NOT NULL,
+            source_end_message_id TEXT NOT NULL,
+            source_message_count INTEGER NOT NULL
+                CHECK(source_message_count >= 2 AND source_message_count % 2 = 0),
+            source_hash TEXT NOT NULL CHECK(length(source_hash) = 64),
+            attempt_count INTEGER NOT NULL DEFAULT 0 CHECK(attempt_count >= 0),
+            max_attempts INTEGER NOT NULL DEFAULT 3 CHECK(max_attempts BETWEEN 1 AND 10),
+            lease_token TEXT,
+            lease_expires_at REAL,
+            heartbeat_at REAL,
+            next_attempt_at REAL,
+            error_code TEXT,
+            result_revision_id TEXT,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            started_at REAL,
+            finished_at REAL
+        );
+        CREATE INDEX idx_conversation_summary_runs_due
+            ON conversation_summary_runs(status,next_attempt_at,created_at,id);
+        CREATE INDEX idx_conversation_summary_runs_session
+            ON conversation_summary_runs(session_id,created_at,id);
+
+        CREATE TABLE conversation_summary_revisions (
+            id TEXT PRIMARY KEY,
+            session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            run_id TEXT NOT NULL REFERENCES conversation_summary_runs(id) ON DELETE CASCADE,
+            revision INTEGER NOT NULL CHECK(revision >= 1),
+            status TEXT NOT NULL CHECK(status IN ('active','superseded','invalid','failed')),
+            protocol_version TEXT NOT NULL,
+            source_start_message_id TEXT NOT NULL,
+            source_end_message_id TEXT NOT NULL,
+            source_message_count INTEGER NOT NULL
+                CHECK(source_message_count >= 2 AND source_message_count % 2 = 0),
+            source_hash TEXT NOT NULL CHECK(length(source_hash) = 64),
+            summary_text TEXT,
+            open_threads_json TEXT NOT NULL DEFAULT '[]',
+            decisions_json TEXT NOT NULL DEFAULT '[]',
+            corrections_json TEXT NOT NULL DEFAULT '[]',
+            entity_refs_json TEXT NOT NULL DEFAULT '[]',
+            provider_id TEXT,
+            model TEXT,
+            prompt_tokens INTEGER CHECK(prompt_tokens IS NULL OR prompt_tokens >= 0),
+            completion_tokens INTEGER CHECK(completion_tokens IS NULL OR completion_tokens >= 0),
+            error_code TEXT,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            activated_at REAL,
+            superseded_at REAL,
+            invalidated_at REAL,
+            UNIQUE(session_id,revision),
+            CHECK(status IN ('invalid','failed') OR summary_text IS NOT NULL)
+        );
+        CREATE UNIQUE INDEX idx_conversation_summary_one_active
+            ON conversation_summary_revisions(session_id) WHERE status='active';
+        CREATE INDEX idx_conversation_summary_revisions_source
+            ON conversation_summary_revisions(session_id,source_hash,status,revision);
+
+        CREATE TABLE conversation_summary_events (
+            id TEXT PRIMARY KEY,
+            session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            run_id TEXT REFERENCES conversation_summary_runs(id) ON DELETE CASCADE,
+            revision_id TEXT REFERENCES conversation_summary_revisions(id) ON DELETE CASCADE,
+            action TEXT NOT NULL,
+            before_status TEXT,
+            after_status TEXT,
+            reason_code TEXT NOT NULL,
+            metadata_json TEXT NOT NULL DEFAULT '{}',
+            created_at REAL NOT NULL,
+            CHECK(run_id IS NOT NULL OR revision_id IS NOT NULL)
+        );
+        CREATE INDEX idx_conversation_summary_events_session
+            ON conversation_summary_events(session_id,created_at,id);
+        CREATE INDEX idx_conversation_summary_events_run
+            ON conversation_summary_events(run_id,created_at,id);
+        CREATE INDEX idx_conversation_summary_events_revision
+            ON conversation_summary_events(revision_id,created_at,id);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
