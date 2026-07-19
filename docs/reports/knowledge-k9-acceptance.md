@@ -56,3 +56,20 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\verify-release
 - 当前安装器未代码签名，可能出现 SmartScreen；正式发布需按 ADR-0044 重新启用签名并做安装/升级验收。
 - BGE-M3 增加约 543 MiB 安装体积；模型缺失或推理失败时仍以 FTS 安全降级。
 - Live2D 当前素材仅限个人使用，不能因本次安装器成功而对外分发。
+
+## 完工后 review 处置（2026-07-19）
+
+完工后收到 `knowledge-stage-k9-sec1-review-feedback.html`。它仍以 374 项后端、32 项前端测试为基线，早于
+本报告的 404/33 基线，并把临时 SEC.1～SEC.3 代码视为既定施工阶段。逐项处置如下：
+
+| 建议 | 决定 | 原因与后续边界 |
+|---|---|---|
+| SEC.1 增加 SecretStore 专项测试 | 调整后采纳，进入下一份计划 | 当前实现尚未成为真实密钥边界：业务调用、连接测试和模型发现仍读取 `providers.api_key`，SQLite store 只是第二份未加密副本，部分写入错误还会被静默吞掉。不能先用测试固化错误过渡态；新计划应先定义迁移状态机、失败恢复和唯一读取入口，再补接口、迁移与端到端测试。 |
+| 清除旧明文 key 推迟到 safeStorage | 调整后采纳，列为下一计划核心 | 不能无限期保留双份明文。应设计 dual-read/受控迁移/验证/清除/回滚顺序，并把 Electron safeStorage、开发环境替代实现和旧库升级放在同一阶段验收。 |
+| 等 STR/TOOL 完成后另写 v0.7 总设计 | 不采纳该依赖关系 | 密钥与上下文属于当前可靠性风险，无需等待 ToolRegistry 或大规模结构治理。按用户决定，在 K 系列关闭后另写一份聚焦的新计划。 |
+| Live2D 授权替换 | 推迟 | 已在基线和 ADR-0044 记录；它阻塞公开发布，但不阻塞知识系统本地闭环。 |
+| ProviderCapability.context_window 与上下文预算 | 调整后采纳，进入下一份计划 | `context_budget.py` 已有临时代码，但仍按 Provider ID 硬编码、重复定义 estimator，且 `max(512, …)` 与最小保留轮次不能证明总输入不越界。新计划需按 provider+model 能力、输出预留、系统/知识/记忆预算和严格不变量重新设计，并保留 `context_trimmed` 可观测性。 |
+| K.8 遗留项统一推迟 | 不采纳 | K.8 专项、UI 一致性、`clean_query` 和检索协议版本已经在 K.8/K.9 验收，review 的描述已过时。 |
+
+本次处置不修改 SEC 临时代码，也不把它们计为完成；K.9 结论保持关闭。下一阶段必须先创建新的施工计划，再决定
+是修复、迁移还是替换这些半成品。
