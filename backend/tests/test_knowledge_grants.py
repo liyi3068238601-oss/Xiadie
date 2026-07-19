@@ -115,7 +115,7 @@ def test_remote_restricted_chat_requires_grant_and_writes_no_message(monkeypatch
     session = _session()
     called = False
 
-    async def fake_stream(*_args):
+    async def fake_stream(*_args, **_kwargs):
         nonlocal called
         called = True
         yield "should not run"
@@ -165,7 +165,7 @@ def test_allow_once_is_hashed_consumed_and_cannot_be_replayed(monkeypatch):
 
     captured = {}
 
-    async def fake_stream(_provider, _model, messages):
+    async def fake_stream(_provider, _model, messages, **_kwargs):
         captured["system"] = messages[0]["content"]
         yield "已查到 [资料:K1]"
 
@@ -204,7 +204,7 @@ def test_deny_then_skip_sends_chat_without_restricted_chunks(monkeypatch):
     assert denied.status_code == 200 and denied.json()["status"] == "denied"
     captured = {}
 
-    async def fake_stream(_provider, _model, messages):
+    async def fake_stream(_provider, _model, messages, **_kwargs):
         captured["system"] = messages[0]["content"]
         yield "没有使用资料"
 
@@ -293,7 +293,7 @@ def test_concurrent_replay_allows_exactly_one_chat(monkeypatch):
     grant = _preflight(session["id"])
     issued = _resolve(grant, session["id"])
 
-    async def fake_stream(*_args):
+    async def fake_stream(*_args, **_kwargs):
         yield "唯一成功的回复"
 
     monkeypatch.setattr(llm, "stream_chat", fake_stream)
@@ -315,7 +315,7 @@ def test_online_failure_consumes_grant_and_retry_requires_new_confirmation(monke
     grant = _preflight(session["id"])
     issued = _resolve(grant, session["id"])
 
-    async def failing_stream(*_args):
+    async def failing_stream(*_args, **_kwargs):
         raise llm.LLMError("provider unavailable", "请稍后重试")
         yield  # pragma: no cover - keep this an async generator
 
@@ -415,7 +415,7 @@ def test_smart_natural_ask_reuses_grant_and_records_confirmed_source(monkeypatch
     })
     assert issued_response.status_code == 200
 
-    async def fake_stream(*_args):
+    async def fake_stream(*_args, **_kwargs):
         yield "已确认资料 [资料:K1]"
 
     monkeypatch.setattr(llm, "stream_chat", fake_stream)

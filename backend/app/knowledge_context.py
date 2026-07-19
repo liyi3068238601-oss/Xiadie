@@ -6,6 +6,7 @@ import json
 import re
 
 from . import db, knowledge_search
+from .context_budget import estimate_tokens
 
 KNOWLEDGE_TOKEN_BUDGET = 1_200
 MAX_INJECTED_RESULTS = 6
@@ -28,16 +29,6 @@ _PROMPT_PREAMBLE = (
     " `[资料:K1]` 这类标记，标记必须来自本区块的 citation_key。没有证据就明确说明没有找到，"
     "不得编造引用。"
 )
-
-
-def estimate_tokens(text: str) -> int:
-    """无需外部 tokenizer 的保守本地估算；中文逐字、拉丁词与标点分别计量。"""
-    if not text:
-        return 0
-    cjk = len(re.findall(r"[\u3400-\u4dbf\u4e00-\u9fff]", text))
-    words = len(re.findall(r"[A-Za-z0-9_]+", text))
-    punctuation = len(re.findall(r"[^\s\u3400-\u4dbf\u4e00-\u9fffA-Za-z0-9_]", text))
-    return cjk + words + (punctuation + 3) // 4
 
 
 def retrieval_query(user_text: str) -> tuple[str | None, str | None]:

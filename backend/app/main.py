@@ -239,6 +239,13 @@ def _current_model() -> tuple[Optional[dict], str]:
         conn.close()
 
 
+def _context_capability(provider: dict | None, model: str):
+    configured = db.get_setting("model_context_capabilities", "{}")
+    return context_budget.resolve_model_context_capability(
+        provider, model, configured_profiles=configured,
+    )
+
+
 @app.post("/api/chat")
 async def chat(body: ChatIn) -> StreamingResponse:
     uid: str | None = None
@@ -350,24 +357,27 @@ async def chat(body: ChatIn) -> StreamingResponse:
                     knowledge_search.SEARCH_PROTOCOL_VERSION, db.now(),
                 ),
             )
-        conn.commit()
         system_prompt = build_system_prompt(digest, style, lore_digest, knowledge_block)
-        context_window = context_budget.get_context_window(provider)
-        system_tokens = context_budget.estimate_tokens(system_prompt)
-        history_tokens = context_budget.count_history_tokens(history)
-        available = max(512, context_window - system_tokens)
-        trimmed_count = 0
-        if history_tokens > available:
-            full = [dict(r) for r in history]
-            trimmed = context_budget.trim_history(full, available)
-            trimmed_count = len(full) - len(trimmed)
-            history = trimmed
-
-        messages = [{
-            "role": "system",
-            "content": system_prompt,
-        }]
-        messages += [{"role": r["role"], "content": r["content"]} for r in history]
+        capability = _context_capability(provider, model)
+        try:
+            budget_plan = context_budget.build_budget_plan(
+                system_prompt=system_prompt,
+                history=history,
+                capability=capability,
+                system_components={
+                    "existing_memory_digest": digest,
+                    "affect_guidance": style,
+                    "lore": lore_digest,
+                    "knowledge": knowledge_block,
+                },
+            )
+        except context_budget.ContextBudgetError as error:
+            if conn.in_transaction:
+                conn.rollback()
+            raise HTTPException(413, error.public_detail()) from error
+        messages = list(budget_plan.messages)
+        trimmed_count = budget_plan.trimmed_messages
+        conn.commit()
     finally:
         conn.close()
 
@@ -429,9 +439,14 @@ async def chat(body: ChatIn) -> StreamingResponse:
                     "knowledge_recall_mode": recall_mode,
                     "context_trimmed": trimmed_count > 0,
                     "context_trimmed_messages": trimmed_count,
+                    "context_trimmed_rounds": budget_plan.trimmed_rounds,
+                    "context_budget": budget_plan.public_meta(),
                 },
             )
-            async for chunk in llm.stream_chat(provider, model, messages):
+            async for chunk in llm.stream_chat(
+                provider, model, messages,
+                max_tokens=budget_plan.output_reserve_tokens,
+            ):
                 collected.append(chunk)
                 yield _sse("delta", {"text": chunk})
         except llm.LLMError as e:
@@ -1841,11 +1856,13 @@ async def discover_provider_models(body: DiscoverModelsIn) -> dict:
 @app.get("/api/current-model")
 def current_model() -> dict:
     prov, model = _current_model()
+    context_capability = _context_capability(prov, model)
     return {
         "provider_id": prov["id"] if prov else "mock",
         "provider_name": prov["name"] if prov else "内置演示",
         "model": model,
         "capabilities": _capabilities(prov, model) if prov else ["local"],
+        "context_capability": context_capability.public_meta(),
     }
 
 

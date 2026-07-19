@@ -88,6 +88,6 @@ CTX.0 仅增加文档、基线脚本和测试，不改变运行行为，可直�
 
 ## 后续事项
 
-- [ ] CTX.1 建立 provider+model 级模型能力与硬预算内核。
+- [x] CTX.1 建立 provider+model 级模型能力与硬预算内核。
 - [ ] CTX.2 建立 schema 42 会话摘要派生表。
 - [ ] CTX.4 让 ContextAssembler 成为唯一上下文组装入口。

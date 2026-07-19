@@ -36,38 +36,43 @@ def measure_case(*, case: str, provider_id: str, model: str, rounds: int,
         "knowledge_block": "知识引用" * (system_units // 4),
     }
     system_prompt = "\n".join(system_components.values())
-    context_window = context_budget.get_context_window(provider)
-    system_tokens = context_budget.estimate_tokens(system_prompt)
-    history_tokens = context_budget.count_history_tokens(history)
-    available = max(512, context_window - system_tokens)
-    trimmed = context_budget.trim_history(history, available)
-    kept_history_tokens = context_budget.count_history_tokens(trimmed)
-    estimated_input_tokens = system_tokens + kept_history_tokens
-    component_tokens = {
-        name: context_budget.estimate_tokens(value)
-        for name, value in system_components.items()
-    }
-    component_tokens.update({
-        "current_user_message": context_budget.estimate_tokens(history[-1]["content"]),
-        "history_before": history_tokens,
-        "history_kept": kept_history_tokens,
-        "message_envelope": None,
-        "output_reserve": 0,
-    })
-    return {
+    capability = context_budget.resolve_model_context_capability(provider, model)
+    base = {
         "case": case,
         "provider_id": provider_id,
         "model": model,
-        "context_window": context_window,
-        "system_tokens": system_tokens,
+        "context_window": capability.effective_context_window,
+        "context_window_source": capability.source,
+    }
+    try:
+        plan = context_budget.build_budget_plan(
+            system_prompt=system_prompt,
+            history=history,
+            capability=capability,
+            system_components=system_components,
+        )
+    except context_budget.ContextBudgetError as error:
+        return {
+            **base,
+            "outcome": "fail_closed",
+            "error_code": error.code,
+            "exceeds_window": False,
+            "request_constructed": False,
+            "budget": error.details,
+        }
+    return {
+        **base,
+        "outcome": "planned",
         "completed_history_rounds": rounds,
-        "history_tokens_before": history_tokens,
-        "available_history_tokens": available,
-        "history_messages_kept": len(trimmed),
-        "history_tokens_kept": kept_history_tokens,
-        "estimated_input_tokens": estimated_input_tokens,
-        "exceeds_window": estimated_input_tokens > context_window,
-        "component_tokens": component_tokens,
+        "history_messages_kept": len(plan.messages) - 2,
+        "estimated_input_tokens": plan.estimated_input_tokens,
+        "reserved_total_tokens": plan.reserved_total_tokens,
+        "output_reserve_tokens": plan.output_reserve_tokens,
+        "trimmed_messages": plan.trimmed_messages,
+        "trimmed_rounds": plan.trimmed_rounds,
+        "exceeds_window": plan.reserved_total_tokens > capability.effective_context_window,
+        "request_constructed": True,
+        "component_tokens": plan.component_tokens,
     }
 
 

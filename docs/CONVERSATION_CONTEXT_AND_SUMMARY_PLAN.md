@@ -521,38 +521,38 @@ conversation_summary_events
 
 目标：先保证永不主动构造已知超限请求，即使摘要尚未实现。
 
-- [ ] 建立 provider+model 级 `ModelContextCapability`。
-- [ ] 固定应用级 `APPLICATION_CONTEXT_CEILING_TOKENS = 1_000_000`。
-- [ ] 有效窗口严格取 `min(1_000_000, verified_model_context_window)`。
-- [ ] 支持 verified / configured / conservative_fallback 来源标记。
-- [ ] 定义输入窗口、最大输出、默认输出预留和安全余量。
-- [ ] 移除重复 token estimator 定义。
-- [ ] 建立纯函数 `BudgetPlan`，返回每个组件的 estimated tokens、保留/舍弃原因和最终总量。
-- [ ] 取消可能突破硬上限的 `max(512, ...)`。
-- [ ] 最近消息按完整轮次裁剪，不拆 user/assistant 配对。
-- [ ] 当前用户消息、系统安全规则和输出预留设置为受保护区。
-- [ ] 无法容纳受保护区时在 Provider 调用前返回结构化错误。
-- [ ] SSE meta 保留现有字段并新增预算版本、估算总量、窗口来源和裁剪轮数；不暴露正文。
+- [x] 建立 provider+model 级 `ModelContextCapability`。
+- [x] 固定应用级 `APPLICATION_CONTEXT_CEILING_TOKENS = 1_000_000`。
+- [x] 有效窗口严格取 `min(1_000_000, verified_model_context_window)`。
+- [x] 支持 verified / configured / conservative_fallback 来源标记。
+- [x] 定义输入窗口、最大输出、默认输出预留和安全余量。
+- [x] 移除重复 token estimator 定义。
+- [x] 建立纯函数 `BudgetPlan`，返回每个组件的 estimated tokens、保留/舍弃原因和最终总量。
+- [x] 取消可能突破硬上限的 `max(512, ...)`。
+- [x] 最近消息按完整轮次裁剪，不拆 user/assistant 配对。
+- [x] 当前用户消息、系统安全规则和输出预留设置为受保护区。
+- [x] 无法容纳受保护区时在 Provider 调用前返回结构化错误。
+- [x] SSE meta 保留现有字段并新增预算版本、估算总量、窗口来源和裁剪轮数；不暴露正文。
 
 专项测试：
 
-- [ ] system prompt 自身接近或超过窗口。
-- [ ] 单条用户消息超过窗口。
-- [ ] 中文、英文、代码、JSON 和混合文本估算。
-- [ ] 未知 Provider、未知模型和用户自定义模型。
-- [ ] 小窗口模型与大窗口模型切换。
-- [ ] 128K 模型不能因应用上限为 1M 而生成超过 128K 的请求。
-- [ ] 经测试配置支持 1M 的模型可使用接近 1M 的安全窗口，但仍保留输出与安全余量。
-- [ ] 声称超过 1M 的模型仍被应用上限限制为 1M。
-- [ ] 1M 长输入压力测试不要求每轮发送全部历史，必须验证相关性选择和延迟。
-- [ ] regenerate 排除旧回复后仍保持完整轮次。
-- [ ] 任何成功生成的 `BudgetPlan` 都满足硬不变量。
+- [x] system prompt 自身接近或超过窗口。
+- [x] 单条用户消息超过窗口。
+- [x] 中文、英文、代码、JSON 和混合文本估算。
+- [x] 未知 Provider、未知模型和用户自定义模型。
+- [x] 小窗口模型与大窗口模型切换。
+- [x] 128K 模型不能因应用上限为 1M 而生成超过 128K 的请求。
+- [x] 经测试配置支持 1M 的模型可使用接近 1M 的安全窗口，但仍保留输出与安全余量。
+- [x] 声称超过 1M 的模型仍被应用上限限制为 1M。
+- [x] CTX.1 已完成 1M 长输入的硬预算压力测试；相关性选择与延迟基准留到 CTX.4/CTX.7，因为本阶段尚未引入 `ContextAssembler`。
+- [x] regenerate 排除旧回复后仍保持完整轮次。
+- [x] 任何成功生成的 `BudgetPlan` 都满足硬不变量。
 
 完成门：
 
-- [ ] 摘要尚不可用时，长会话也只会安全裁剪或明确失败，不会构造已知超限请求。
-- [ ] `context_budget` 专项测试完成，关闭 SEC.2/SEC.3 的遗留建议。
-- [ ] 独立审查通过后才能进入 CTX.2。
+- [x] 摘要尚不可用时，长会话也只会安全裁剪或明确失败，不会构造已知超限请求。
+- [x] `context_budget` 专项测试完成，关闭 SEC.2/SEC.3 的遗留建议。
+- [x] 独立审查通过后才能进入 CTX.2。
 
 ### CTX.2：会话摘要数据地基与生命周期
 
@@ -718,6 +718,13 @@ conversation_summary_events
 - [ ] 更新 `BASELINE_STATUS.md`、`CODEX_PROJECT_CONTEXT.md` 和长期路线。
 - [ ] 写总验收报告，列明已知限制和下一阶段入口。
 - [ ] 独立总审查没有 P0/P1 未解决问题。
+
+在 CTX.7 核心验收全部通过后、关闭本计划前，处理 K 系列遗留技术债 N20/N21：
+
+- [ ] `run_knowledge_recall_eval.py` 不再覆盖既有协议基线，按协议版本选择独立输出文件或要求显式输出路径。
+- [ ] 所有新生成的知识召回评测 JSON 明确保存 `search_protocol_version`。
+- [ ] 增加评测输出不覆盖历史基线、协议字段可自证的回归测试。
+- [ ] 保留并核对用户当前未提交的知识评测报告修改，不以技术债修复覆盖用户结果。
 
 冻结标准：
 

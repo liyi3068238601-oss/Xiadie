@@ -162,7 +162,7 @@ def test_api_management_filters_tags_reindex_delete_and_audit(monkeypatch):
     tags = client.patch(f"/api/knowledge/documents/{document_id}/tags", json={"tags": ["设定"]})
     assert tags.status_code == 200 and tags.json()["tags"] == ["设定"]
 
-    async def fake_stream(*_args):
+    async def fake_stream(*_args, **_kwargs):
         yield "引用回答 [资料:K1]"
 
     monkeypatch.setattr(llm, "stream_chat", fake_stream)
