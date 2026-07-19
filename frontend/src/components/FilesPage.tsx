@@ -51,6 +51,7 @@ export function FilesPage() {
   const [audits, setAudits] = useState<api.KnowledgeRetrievalAudit[] | null>(null);
   const [recallDecisions, setRecallDecisions] = useState<api.KnowledgeRecallDecision[] | null>(null);
   const [recallStats, setRecallStats] = useState<api.KnowledgeRecallStats | null>(null);
+  const [auditLifecycle, setAuditLifecycle] = useState<api.KnowledgeAuditLifecycle | null>(null);
   const [embeddingStatus, setEmbeddingStatus] = useState<api.KnowledgeEmbeddingStatus | null>(null);
   const [recallSettings, setRecallSettings] = useState<api.KnowledgeRecallSettings | null>(null);
   const [privacyOpen, setPrivacyOpen] = useState(false);
@@ -255,17 +256,78 @@ export function FilesPage() {
       setAudits(null);
       setRecallDecisions(null);
       setRecallStats(null);
+      setAuditLifecycle(null);
       return;
     }
     try {
-      const [retrievals, decisions, stats] = await Promise.all([
+      const [retrievals, decisions, stats, lifecycle] = await Promise.all([
         api.listKnowledgeRetrievals(), api.listKnowledgeRecallDecisions(), api.getKnowledgeRecallStats(),
+        api.getKnowledgeAuditLifecycle(),
       ]);
       setAudits(retrievals);
       setRecallDecisions(decisions);
       setRecallStats(stats);
+      setAuditLifecycle(lifecycle);
     } catch (error: any) {
       toast(error.message || "检索记录加载失败");
+    }
+  }
+
+  async function changeCollectionPolicy(
+    collection: api.KnowledgeCollection,
+    policy: api.KnowledgeDocument["transmission_policy"],
+  ) {
+    if (!window.confirm("修改这个集合以后导入普通文档时采用的默认发送策略吗？")) return;
+    const applyExisting = window.confirm(
+      "同时把这个策略应用到集合内现有文档吗？\n\n确定：应用到现有文档；取消：只作为以后导入文档的默认策略。",
+    );
+    setActionBusy(`collection-policy:${collection.id}`);
+    try {
+      const result = await api.updateKnowledgeCollectionPolicy(collection.id, policy, applyExisting);
+      toast(applyExisting
+        ? `集合策略已更新，修改 ${result.updated_document_count} 份文档`
+        : "集合默认策略已更新，仅影响以后导入的普通文档");
+      setCollections(await api.listKnowledgeCollections());
+      await refresh();
+    } catch (error: any) {
+      toast(error.message || "集合策略更新失败");
+    } finally {
+      setActionBusy(null);
+    }
+  }
+
+  async function downloadManifest() {
+    try {
+      const manifest = await api.getKnowledgeExportManifest();
+      const url = URL.createObjectURL(new Blob(
+        [JSON.stringify(manifest, null, 2)], { type: "application/json" },
+      ));
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "xiadie-knowledge-manifest.json";
+      anchor.click();
+      URL.revokeObjectURL(url);
+      toast("已导出不含正文、向量和授权 token 的知识清单");
+    } catch (error: any) {
+      toast(error.message || "知识清单导出失败");
+    }
+  }
+
+  async function clearAllKnowledge() {
+    const confirmation = window.prompt(
+      "这会让全部知识立即退出召回，并清除应用内原文副本、切片、索引、授权与派生审计。\n"
+      + "应用外原文件和备份不会删除。请输入 CLEAR_ALL_KNOWLEDGE 确认：",
+    );
+    if (confirmation !== "CLEAR_ALL_KNOWLEDGE") return;
+    setActionBusy("clear-all");
+    try {
+      const result = await api.clearAllKnowledge(confirmation);
+      toast(`全部知识已退出召回，正在清理 ${result.queued_document_count} 份应用内资料`);
+      await refresh();
+    } catch (error: any) {
+      toast(error.message || "完整清除启动失败");
+    } finally {
+      setActionBusy(null);
     }
   }
 
@@ -295,10 +357,14 @@ export function FilesPage() {
   const indexedCount = documents.filter((document) => document.status === "indexed").length;
   const failedCount = documents.filter((document) => ["failed", "delete_failed"].includes(document.status)).length;
   const waitingCount = Math.max(0, documents.length - indexedCount - failedCount);
-  const groupedDocuments = collections
+  const groupedDocuments: Array<{
+    id: string; name: string; collection: api.KnowledgeCollection | null;
+    documents: api.KnowledgeDocument[];
+  }> = collections
     .map((collection) => ({
       id: collection.id,
       name: collection.name,
+      collection,
       documents: documents.filter((document) => document.collection_id === collection.id),
     }))
     .filter((group) => group.documents.length > 0);
@@ -306,7 +372,7 @@ export function FilesPage() {
     (document) => !collections.some((collection) => collection.id === document.collection_id),
   );
   if (ungroupedDocuments.length > 0) {
-    groupedDocuments.push({ id: "other", name: "未分类", documents: ungroupedDocuments });
+    groupedDocuments.push({ id: "other", name: "未分类", collection: null, documents: ungroupedDocuments });
   }
 
   const statusClassOf = (document: api.KnowledgeDocument) => documentStatusClass(document);
@@ -515,12 +581,20 @@ export function FilesPage() {
       {audits !== null && (
         <div className="glass knowledge-audits">
           <div className="card-title">最近检索审计（不保存查询正文）</div>
+          {auditLifecycle && <div className="knowledge-shadow-summary">
+            <span>判断保留 {auditLifecycle.recall_decisions_days} 天</span>
+            <span>终态授权 {auditLifecycle.terminal_grants_days} 天</span>
+            <span>检索元数据 {auditLifecycle.retrieval_metadata_days} 天</span>
+            <span>引用随消息保留</span>
+            <span>已隔离知识候选 {auditLifecycle.counts.knowledge_candidates_isolated || 0} 条</span>
+          </div>}
           {audits.length === 0 ? <div className="sub">还没有知识检索记录</div> : audits.map((audit) => (
             <div className="knowledge-audit-row" key={audit.id}>
               <span>{new Date(audit.created_at * 1000).toLocaleString("zh-CN")}</span>
               <span>{audit.candidate_count ? `${audit.injected_count}/${audit.candidate_count} 条注入` : "没有找到资料"}</span>
               <span>知识 {audit.knowledge_tokens}/{audit.knowledge_token_budget} token</span>
               <span>指纹 {audit.query_fingerprint}</span>
+              <span>{audit.search_protocol_version}{audit.audit_state === "minimized" ? " · 已最小化" : ""}</span>
               {!audit.session_available && <span className="danger-text">原会话已删除</span>}
             </div>
           ))}
@@ -576,6 +650,19 @@ export function FilesPage() {
                 <strong>{group.name}</strong>
                 <small>{group.documents.length} 个文件</small>
               </div>
+              {group.collection && <label className="knowledge-group-policy" onClick={(event) => event.stopPropagation()}>
+                <span>新文档默认</span>
+                <select value={group.collection.default_transmission_policy}
+                  disabled={actionBusy === `collection-policy:${group.id}`}
+                  onChange={(event) => changeCollectionPolicy(
+                    group.collection!,
+                    event.target.value as api.KnowledgeDocument["transmission_policy"],
+                  )}>
+                  <option value="ask_each_time">每次询问</option>
+                  <option value="local_only">仅限本地</option>
+                  <option value="remote_allowed">允许发送命中片段</option>
+                </select>
+              </label>}
             </div>
             <div className="knowledge-folder-content">
               {viewMode === "list" ? (
@@ -653,6 +740,11 @@ export function FilesPage() {
             <li>文件内容不会被用于模型训练</li>
             <li>删除知识文档只会清理遐蝶应用内副本、切片与索引；应用外的原文件或备份不会同步删除</li>
           </ol>
+          <div className="knowledge-row-actions">
+            <button className="btn ghost" onClick={downloadManifest}>导出元数据清单</button>
+            <button className="btn danger" disabled={actionBusy === "clear-all"}
+              onClick={clearAllKnowledge}>完整清除知识库</button>
+          </div>
         </div>
       </div>
     </div>
@@ -760,6 +852,9 @@ function FileRow(props: FileRowProps) {
             <div>解析器：{document.parser_version || "尚未解析"} · 切片器：{document.chunker_version || "尚未切片"}</div>
             <div>索引版本：{document.index_version || "尚未索引"} · 导入时间：{new Date(document.created_at * 1000).toLocaleString("zh-CN")}</div>
             <div>语义版本：{document.embedding_version || "尚未建立"}</div>
+            <div>最近召回：{document.last_recalled_at
+              ? new Date(document.last_recalled_at * 1000).toLocaleString("zh-CN") : "尚未召回"}
+              · 累计 {document.recall_count || 0} 次 · 引用 {document.citation_count || 0} 条</div>
             <div>远传策略：{transmissionPolicyLabel(document.transmission_policy)} · revision {document.policy_revision}</div>
           </details>
           <div className="knowledge-row-actions">
@@ -856,6 +951,8 @@ function FileCard(props: FileRowProps) {
             <div>文档 ID：{document.id}</div>
             <div>指纹：{document.content_sha256}</div>
             <div>导入：{new Date(document.created_at * 1000).toLocaleString("zh-CN")}</div>
+            <div>索引：{document.index_version || "尚未索引"}</div>
+            <div>召回 {document.recall_count || 0} 次 · 引用 {document.citation_count || 0} 条</div>
           </details>
           <div className="knowledge-row-actions">
             <label className="knowledge-policy-control">

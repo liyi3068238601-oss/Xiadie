@@ -107,7 +107,8 @@ def import_file(
     try:
         conn.execute("BEGIN IMMEDIATE")
         collection = conn.execute(
-            "SELECT id FROM knowledge_collections WHERE id=? AND status='active'",
+            "SELECT id,default_transmission_policy FROM knowledge_collections"
+            " WHERE id=? AND status='active'",
             (collection_id,),
         ).fetchone()
         if not collection:
@@ -153,7 +154,10 @@ def import_file(
         _atomic_write(final_path, data)
         now = db.now()
         document_id, run_id = db.new_id(), db.new_id()
-        transmission_policy = "local_only" if sensitivity == "sensitive" else "ask_each_time"
+        transmission_policy = (
+            "local_only" if sensitivity == "sensitive"
+            else str(collection["default_transmission_policy"])
+        )
         assert_document_transition("staged", "queued")
         conn.execute(
             "INSERT INTO knowledge_documents("
@@ -220,7 +224,9 @@ def list_documents(*, collection_id: str | None = None, status: str | None = Non
             params.append(f"%{escaped}%")
         where = " WHERE " + " AND ".join(clauses) if clauses else ""
         rows = conn.execute(
-            "SELECT * FROM knowledge_documents" + where + " ORDER BY updated_at DESC,id",
+            "SELECT d.*,(SELECT COUNT(*) FROM knowledge_message_citations c"
+            " WHERE c.document_id=d.id) AS citation_count FROM knowledge_documents d"
+            + where + " ORDER BY d.updated_at DESC,d.id",
             params,
         ).fetchall()
         documents = []

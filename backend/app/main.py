@@ -16,7 +16,8 @@ from pydantic import BaseModel, Field
 
 from . import (
     archivist, archivist_worker, companion_state, context_budget, db, entities, episode_consolidator,
-    episode_summary_service, episodes, knowledge, knowledge_context, knowledge_embeddings, knowledge_grants,
+    episode_summary_service, episodes, knowledge, knowledge_cleanup, knowledge_context,
+    knowledge_embeddings, knowledge_grants,
     knowledge_management, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search,
     knowledge_worker, llm, lore, memory, memory_conflicts, saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, secret_store, slow_lifecycle,
@@ -630,6 +631,30 @@ def get_knowledge_collections() -> list[dict]:
     return knowledge_management.list_collections()
 
 
+class KnowledgeCollectionPolicyIn(BaseModel):
+    default_transmission_policy: str
+    apply_existing: bool = False
+
+
+@app.patch("/api/knowledge/collections/{collection_id}/transmission-policy")
+def patch_knowledge_collection_policy(
+    collection_id: str, body: KnowledgeCollectionPolicyIn,
+) -> dict:
+    try:
+        result = knowledge_policy.update_collection_policy(
+            collection_id, body.default_transmission_policy,
+            apply_existing=body.apply_existing,
+        )
+    except knowledge_policy.KnowledgePolicyError as error:
+        status = 409 if error.code in {
+            "collection_contains_deleting_document", "sensitive_remote_forbidden",
+        } else 400
+        raise HTTPException(status, {"code": error.code, "message": str(error)}) from error
+    if not result:
+        raise HTTPException(404, "知识库集合不存在")
+    return result
+
+
 class KnowledgeTagsIn(BaseModel):
     tags: list[str] = Field(default_factory=list, max_length=10)
 
@@ -724,6 +749,27 @@ def get_knowledge_retrievals(session_id: Optional[str] = None,
         row["session_available"] = bool(row["session_available"])
         row["query_fingerprint"] = row.pop("query_sha256")[:12]
     return rows
+
+
+@app.get("/api/knowledge/audit-lifecycle")
+def get_knowledge_audit_lifecycle() -> dict:
+    return knowledge_cleanup.stats()
+
+
+@app.get("/api/knowledge/export-manifest")
+def get_knowledge_export_manifest() -> dict:
+    return knowledge_management.export_manifest()
+
+
+class KnowledgeClearAllIn(BaseModel):
+    confirmation: str
+
+
+@app.post("/api/knowledge/clear-all", status_code=202)
+def clear_all_knowledge(body: KnowledgeClearAllIn) -> dict:
+    if body.confirmation != "CLEAR_ALL_KNOWLEDGE":
+        raise HTTPException(400, "完整清除确认文本无效")
+    return knowledge_management.clear_all()
 
 
 class KnowledgeRecallSettingsIn(BaseModel):

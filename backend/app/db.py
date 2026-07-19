@@ -1742,6 +1742,26 @@ MIGRATIONS = [
             ON memory_fragments(observation_source,status,enabled,created_at);
         """,
     ),
+    (
+        41,
+        """
+        ALTER TABLE knowledge_collections ADD COLUMN default_transmission_policy TEXT NOT NULL
+            DEFAULT 'ask_each_time' CHECK(default_transmission_policy IN (
+                'remote_allowed','ask_each_time','local_only'
+            ));
+        ALTER TABLE knowledge_collections ADD COLUMN policy_revision INTEGER NOT NULL DEFAULT 1
+            CHECK(policy_revision >= 1);
+        ALTER TABLE knowledge_collections ADD COLUMN policy_updated_at REAL;
+        UPDATE knowledge_collections SET policy_updated_at=updated_at
+            WHERE policy_updated_at IS NULL;
+
+        ALTER TABLE knowledge_chat_retrievals ADD COLUMN audit_state TEXT NOT NULL
+            DEFAULT 'active' CHECK(audit_state IN ('active','minimized'));
+        ALTER TABLE knowledge_chat_retrievals ADD COLUMN minimized_at REAL;
+        CREATE INDEX idx_knowledge_chat_retrievals_audit_lifecycle
+            ON knowledge_chat_retrievals(audit_state,created_at,id);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

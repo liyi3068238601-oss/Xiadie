@@ -259,6 +259,9 @@ export interface KnowledgeDocument {
   latest_run?: KnowledgeImportRun | null;
   latest_deletion?: KnowledgeDeletionRun | null;
   latest_embedding?: KnowledgeEmbeddingRun | null;
+  recall_count?: number;
+  last_recalled_at?: number | null;
+  citation_count?: number;
   created_at: number;
   updated_at: number;
 }
@@ -289,6 +292,9 @@ export interface KnowledgeCollection {
   name: string;
   description: string;
   status: "active" | "disabled";
+  default_transmission_policy: KnowledgeDocument["transmission_policy"];
+  policy_revision: number;
+  policy_updated_at?: number | null;
   created_at: number;
   updated_at: number;
 }
@@ -324,9 +330,30 @@ export interface KnowledgeRetrievalAudit {
   lore_tokens: number;
   memory_tokens: number;
   status: "no_results" | "injected" | "completed" | "failed";
+  search_protocol_version: string;
+  audit_state: "active" | "minimized";
+  minimized_at?: number | null;
   session_available: boolean;
   created_at: number;
   finished_at?: number | null;
+}
+export interface KnowledgeAuditLifecycle {
+  policy_version: string;
+  recall_decisions_days: number;
+  terminal_grants_days: number;
+  retrieval_metadata_days: number;
+  citations: "message_lifetime";
+  document_bodies_in_audit: false;
+  expired_cited_retrieval_behavior: string;
+  counts: Record<string, number>;
+}
+export interface KnowledgeExportManifest {
+  manifest_version: string;
+  contains_knowledge_body: false;
+  contains_tokens: false;
+  contains_vectors: false;
+  collections: Array<Record<string, unknown>>;
+  documents: Array<Record<string, unknown>>;
 }
 export interface KnowledgeRecallDecision {
   id: string;
@@ -739,6 +766,14 @@ export const listKnowledgeDocuments = (options: {
 };
 export const listKnowledgeCollections = () =>
   j<KnowledgeCollection[]>("/api/knowledge/collections");
+export const updateKnowledgeCollectionPolicy = (
+  id: string, default_transmission_policy: KnowledgeDocument["transmission_policy"],
+  apply_existing: boolean,
+) => j<KnowledgeCollection & { updated_document_count: number; revoked_grant_count: number }>(
+  `/api/knowledge/collections/${encodeURIComponent(id)}/transmission-policy`, {
+    method: "PATCH", body: JSON.stringify({ default_transmission_policy, apply_existing }),
+  },
+);
 export const updateKnowledgeTags = (id: string, tags: string[]) =>
   j<KnowledgeDocument>(`/api/knowledge/documents/${id}/tags`, {
     method: "PATCH", body: JSON.stringify({ tags }),
@@ -758,6 +793,14 @@ export const getKnowledgeDeletionRun = (id: string) =>
   j<KnowledgeDeletionRun>(`/api/knowledge/deletion-runs/${id}`);
 export const listKnowledgeRetrievals = (limit = 30) =>
   j<KnowledgeRetrievalAudit[]>(`/api/knowledge/retrievals?limit=${limit}`);
+export const getKnowledgeAuditLifecycle = () =>
+  j<KnowledgeAuditLifecycle>("/api/knowledge/audit-lifecycle");
+export const getKnowledgeExportManifest = () =>
+  j<KnowledgeExportManifest>("/api/knowledge/export-manifest");
+export const clearAllKnowledge = (confirmation: string) =>
+  j<{ status: string; queued_document_count: number }>("/api/knowledge/clear-all", {
+    method: "POST", body: JSON.stringify({ confirmation }),
+  });
 export const listKnowledgeRecallDecisions = (limit = 30) =>
   j<KnowledgeRecallDecision[]>(`/api/knowledge/recall-decisions?limit=${limit}`);
 export const getKnowledgeRecallStats = (sessionId?: string) =>

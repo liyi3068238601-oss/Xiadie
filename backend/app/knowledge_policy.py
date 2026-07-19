@@ -117,6 +117,7 @@ def update_document_policy(document_id: str, transmission_policy: str) -> dict |
             " VALUES(?,?,?,?,?,'user','user_policy_change',?)",
             (db.new_id(), document_id, before, transmission_policy, revision, now),
         )
+        _revoke_changed_document_grants_locked(conn, [document_id], now)
         updated = conn.execute(
             "SELECT * FROM knowledge_documents WHERE id=?", (document_id,),
         ).fetchone()
@@ -124,6 +125,105 @@ def update_document_policy(document_id: str, transmission_policy: str) -> dict |
         return knowledge.public_document(dict(updated))
     finally:
         conn.close()
+
+
+def update_collection_policy(
+    collection_id: str, transmission_policy: str, *, apply_existing: bool,
+) -> dict | None:
+    """原子修改集合默认策略；可选批量应用，任何不安全文档都会使整批回滚。"""
+    if transmission_policy not in TRANSMISSION_POLICIES:
+        raise KnowledgePolicyError("transmission_policy_invalid", "集合远传策略无效")
+    conn = db.connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        collection = conn.execute(
+            "SELECT * FROM knowledge_collections WHERE id=?", (collection_id,),
+        ).fetchone()
+        if not collection:
+            conn.rollback()
+            return None
+        documents = conn.execute(
+            "SELECT id,sensitivity,status,transmission_policy,policy_revision"
+            " FROM knowledge_documents WHERE collection_id=? ORDER BY id",
+            (collection_id,),
+        ).fetchall() if apply_existing else []
+        if any(row["status"] in {"delete_pending", "delete_failed"} for row in documents):
+            raise KnowledgePolicyError(
+                "collection_contains_deleting_document",
+                "集合中有正在删除的文档，不能执行批量策略修改",
+            )
+        if transmission_policy == "remote_allowed" and any(
+            row["sensitivity"] == "sensitive" for row in documents
+        ):
+            raise KnowledgePolicyError(
+                "sensitive_remote_forbidden",
+                "集合中有敏感文档，不能整批设为允许在线发送",
+            )
+        now = db.now()
+        collection_revision = int(collection["policy_revision"])
+        if collection["default_transmission_policy"] != transmission_policy:
+            collection_revision += 1
+            conn.execute(
+                "UPDATE knowledge_collections SET default_transmission_policy=?,policy_revision=?,"
+                "policy_updated_at=?,updated_at=? WHERE id=?",
+                (transmission_policy, collection_revision, now, now, collection_id),
+            )
+        changed_ids: list[str] = []
+        for row in documents:
+            if row["transmission_policy"] == transmission_policy:
+                continue
+            revision = int(row["policy_revision"]) + 1
+            conn.execute(
+                "UPDATE knowledge_documents SET transmission_policy=?,policy_revision=?,"
+                "policy_updated_at=?,updated_at=? WHERE id=?",
+                (transmission_policy, revision, now, now, row["id"]),
+            )
+            conn.execute(
+                "INSERT INTO knowledge_document_policy_events("
+                "id,document_id,before_policy,after_policy,policy_revision,actor,reason_code,created_at)"
+                " VALUES(?,?,?,?,?,'user','collection_policy_change',?)",
+                (db.new_id(), row["id"], row["transmission_policy"], transmission_policy,
+                 revision, now),
+            )
+            changed_ids.append(str(row["id"]))
+        revoked_count = _revoke_changed_document_grants_locked(conn, changed_ids, now)
+        updated = conn.execute(
+            "SELECT id,name,description,status,default_transmission_policy,policy_revision,"
+            "policy_updated_at,created_at,updated_at FROM knowledge_collections WHERE id=?",
+            (collection_id,),
+        ).fetchone()
+        conn.commit()
+        return {**dict(updated), "updated_document_count": len(changed_ids),
+                "revoked_grant_count": revoked_count}
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def _revoke_changed_document_grants_locked(conn, document_ids: list[str], now: float) -> int:
+    if not document_ids:
+        return 0
+    rows = conn.execute(
+        "SELECT DISTINCT g.id,g.status FROM knowledge_transmission_grants g"
+        " JOIN knowledge_transmission_grant_items i ON i.grant_id=g.id"
+        " WHERE g.status IN ('pending','issued') AND i.document_id IN ("
+        + ",".join("?" for _ in document_ids) + ")",
+        document_ids,
+    ).fetchall()
+    for row in rows:
+        conn.execute(
+            "UPDATE knowledge_transmission_grants SET status='revoked',token_hash=NULL,"
+            "revoked_at=?,updated_at=? WHERE id=?", (now, now, row["id"]),
+        )
+        conn.execute(
+            "INSERT INTO knowledge_transmission_grant_events("
+            "id,grant_id,action,before_status,after_status,reason_code,item_count,created_at)"
+            " VALUES(?,?,'policy_changed',?,'revoked','collection_policy_change',0,?)",
+            (db.new_id(), row["id"], row["status"], now),
+        )
+    return len(rows)
 
 
 def list_document_policy_events(document_id: str, limit: int = 50) -> list[dict] | None:

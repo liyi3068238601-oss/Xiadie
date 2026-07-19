@@ -203,7 +203,8 @@ def list_collections() -> list[dict]:
     conn = db.connect()
     try:
         return [dict(row) for row in conn.execute(
-            "SELECT id,name,description,status,created_at,updated_at FROM knowledge_collections ORDER BY name,id"
+            "SELECT id,name,description,status,default_transmission_policy,policy_revision,"
+            "policy_updated_at,created_at,updated_at FROM knowledge_collections ORDER BY name,id"
         ).fetchall()]
     finally:
         conn.close()
@@ -218,10 +219,114 @@ def list_retrieval_audits(*, session_id: str | None = None, limit: int = 30) -> 
             "SELECT r.id,r.session_id,r.user_message_id,r.assistant_message_id,r.trigger_reason,"
             "r.query_sha256,r.candidate_count,r.injected_count,r.knowledge_tokens,"
             "r.knowledge_token_budget,r.lore_tokens,r.memory_tokens,r.status,r.created_at,r.finished_at,"
+            "r.search_protocol_version,r.audit_state,r.minimized_at,"
             "CASE WHEN s.id IS NULL THEN 0 ELSE 1 END AS session_available "
             "FROM knowledge_chat_retrievals r LEFT JOIN sessions s ON s.id=r.session_id" + where +
             " ORDER BY r.created_at DESC,r.id DESC LIMIT ?", params,
         ).fetchall()]
+    finally:
+        conn.close()
+
+
+def clear_all() -> dict:
+    """立即退出全部召回并撤销派生授权/审计；原文物理清理由删除 worker 完成。"""
+    conn = db.connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        documents = conn.execute(
+            "SELECT * FROM knowledge_documents ORDER BY created_at,id"
+        ).fetchall()
+        run_ids: list[str] = []
+        now = db.now()
+        for row in documents:
+            existing = conn.execute(
+                "SELECT * FROM knowledge_deletion_runs WHERE document_id=?"
+                " AND status IN ('queued','running') ORDER BY created_at DESC,id DESC LIMIT 1",
+                (row["id"],),
+            ).fetchone()
+            if existing:
+                run_ids.append(str(existing["id"]))
+                continue
+            failed = conn.execute(
+                "SELECT * FROM knowledge_deletion_runs WHERE document_id=? AND status='failed'"
+                " ORDER BY created_at DESC,id DESC LIMIT 1", (row["id"],),
+            ).fetchone()
+            knowledge_search.clear_document_index_locked(conn, row["id"])
+            knowledge_embeddings.clear_document_locked(conn, row["id"])
+            _stop_import_runs_locked(conn, row["id"], now)
+            if row["status"] == "delete_failed" and failed:
+                conn.execute(
+                    "UPDATE knowledge_documents SET status='delete_pending',index_version=NULL,"
+                    "indexed_at=NULL,error_code=NULL,updated_at=? WHERE id=?", (now, row["id"]),
+                )
+                conn.execute(
+                    "UPDATE knowledge_deletion_runs SET status='queued',error_code=NULL,"
+                    "started_at=NULL,finished_at=NULL,updated_at=? WHERE id=?", (now, failed["id"]),
+                )
+                _delete_event(conn, failed["id"], "clear_all_retried", "failed", "queued", None, now)
+                run_ids.append(str(failed["id"]))
+                continue
+            if row["status"] != "delete_pending":
+                knowledge.assert_document_transition(row["status"], "delete_pending")
+            conn.execute(
+                "UPDATE knowledge_documents SET status='delete_pending',index_version=NULL,"
+                "indexed_at=NULL,error_code=NULL,updated_at=? WHERE id=?", (now, row["id"]),
+            )
+            run_id = db.new_id()
+            conn.execute(
+                "INSERT INTO knowledge_deletion_runs("
+                "id,document_id,collection_id,content_sha256,status,created_at,updated_at)"
+                " VALUES(?,?,?,?,'queued',?,?)",
+                (run_id, row["id"], row["collection_id"], row["content_sha256"], now, now),
+            )
+            _delete_event(conn, run_id, "clear_all_requested", row["status"], "queued", None, now)
+            run_ids.append(run_id)
+
+        counts = {
+            "citations": conn.execute("SELECT COUNT(*) FROM knowledge_message_citations").fetchone()[0],
+            "retrievals": conn.execute("SELECT COUNT(*) FROM knowledge_chat_retrievals").fetchone()[0],
+            "grants": conn.execute("SELECT COUNT(*) FROM knowledge_transmission_grants").fetchone()[0],
+            "recall_decisions": conn.execute("SELECT COUNT(*) FROM knowledge_recall_decisions").fetchone()[0],
+        }
+        conn.execute("DELETE FROM knowledge_message_citations")
+        conn.execute("DELETE FROM knowledge_chat_retrievals")
+        conn.execute("DELETE FROM knowledge_transmission_grants")
+        conn.execute("DELETE FROM knowledge_recall_decisions")
+        conn.execute("DELETE FROM knowledge_recall_mode_events")
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+    _wake()
+    return {
+        "status": "cleanup_queued" if run_ids else "completed",
+        "queued_document_count": len(run_ids), "deletion_run_ids": run_ids,
+        "cleared_audit_counts": {key: int(value) for key, value in counts.items()},
+        "external_files_deleted": False,
+    }
+
+
+def export_manifest() -> dict:
+    """导出可核对的本地元数据清单；不包含正文、切片、向量或授权 token。"""
+    conn = db.connect()
+    try:
+        collections = [dict(row) for row in conn.execute(
+            "SELECT id,name,description,status,default_transmission_policy,policy_revision,"
+            "created_at,updated_at FROM knowledge_collections ORDER BY id"
+        ).fetchall()]
+        documents = [dict(row) for row in conn.execute(
+            "SELECT id,collection_id,original_name,extension,size_bytes,content_sha256,status,"
+            "sensitivity,transmission_policy,policy_revision,index_version,embedding_version,"
+            "chunk_count,recall_count,last_recalled_at,created_at,updated_at"
+            " FROM knowledge_documents ORDER BY collection_id,id"
+        ).fetchall()]
+        return {
+            "manifest_version": "knowledge-export-manifest-v1",
+            "contains_knowledge_body": False, "contains_tokens": False,
+            "contains_vectors": False, "collections": collections, "documents": documents,
+        }
     finally:
         conn.close()
 

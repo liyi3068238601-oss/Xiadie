@@ -2209,6 +2209,8 @@ textarea {
 .knowledge-folder-icon { color: #8a78c8; font-size: 13px; }
 .knowledge-group-title strong { color: #bbb3d0; font-size: 11px; font-weight: 600; }
 .knowledge-group-title small { color: #655e79; font-size: 9px; }
+.knowledge-group-policy { margin-left: auto; display: flex; align-items: center; gap: 8px; color: #77708b; font-size: 10px; }
+.knowledge-group-policy select { min-width: 112px; border: 1px solid rgba(124, 99, 186, 0.25); border-radius: 8px; background: rgba(22, 15, 43, 0.72); color: #aaa1c2; padding: 5px 7px; font-size: 10px; }
 .knowledge-folder-content {
   max-height: 6000px;
   overflow: hidden;

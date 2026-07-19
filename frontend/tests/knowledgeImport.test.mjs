@@ -94,6 +94,18 @@ test("knowledge retrieval audit UI states that query bodies are not stored", asy
   assert.match(api, /listKnowledgeRetrievals|query_fingerprint|session_available/);
 });
 
+test("knowledge lifecycle preserves citations and exposes guarded local cleanup", async () => {
+  const [page, api] = await Promise.all([
+    readFile(new URL("../src/components/FilesPage.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/api.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(page, /引用随消息保留|已最小化|新文档默认/);
+  assert.match(page, /导出元数据清单|完整清除知识库|CLEAR_ALL_KNOWLEDGE/);
+  assert.match(page, /最近召回|累计.*次.*引用.*条/);
+  assert.match(api, /updateKnowledgeCollectionPolicy|getKnowledgeAuditLifecycle/);
+  assert.match(api, /getKnowledgeExportManifest|clearAllKnowledge/);
+});
+
 test("knowledge transmission policy and provider location stay explicit", async () => {
   const [files, settings, api] = await Promise.all([
     readFile(new URL("../src/components/FilesPage.tsx", import.meta.url), "utf8"),
