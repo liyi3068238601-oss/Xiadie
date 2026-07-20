@@ -18,12 +18,12 @@ from .persona import build_system_prompt
 
 PACKAGE_PROTOCOL_VERSION = "context-package-v1"
 SUMMARY_PROTOCOL_VERSION = "conversation-summary-v1"
-OPTIONAL_SYSTEM_SHARE = 0.35
+OPTIONAL_SYSTEM_SHARE = 0.50
 OPTIONAL_COMPONENT_SHARES = {
-    "rolling_summary": 0.28,
-    "cross_session_recall": 0.22,
-    "existing_memory_digest": 0.20,
-    "knowledge": 0.18,
+    "rolling_summary": 0.24,
+    "cross_session_recall": 0.18,
+    "existing_memory_digest": 0.16,
+    "knowledge": 0.30,
     "lore": 0.12,
 }
 OPTIONAL_COMPONENT_PRIORITY = (

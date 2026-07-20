@@ -14,8 +14,8 @@ MAX_QUERY_CHARS = 256
 MAX_QUERY_TERMS = 16
 MAX_DOCUMENT_FILTERS = 20
 MAX_TAG_FILTERS = 10
-MAX_LIMIT = 12
-MAX_RESULT_CHARS = 8_000
+MAX_LIMIT = 20
+MAX_RESULT_CHARS = 40_000
 ADJACENT_SIMILARITY_THRESHOLD = 0.65
 # K.7 有界规则重排与轻量多样性选择。
 RE_RANK_CONTENT_COVERAGE_BONUS = 0.006
@@ -208,10 +208,10 @@ def search(
 
 
 def hybrid_search(
-    query: str, *, collection_id: str | None = None,
-    document_ids: list[str] | None = None, tags: list[str] | None = None,
-    limit: int = 6, context_window: int = 0, max_chars: int = 4_000,
-    mode: str = "auto", max_per_collection: int = EXPLICIT_MAX_PER_COLLECTION,
+  query: str, *, collection_id: str | None = None,
+  document_ids: list[str] | None = None, tags: list[str] | None = None,
+  limit: int = 8, context_window: int = 0, max_chars: int = 10_000,
+  mode: str = "auto", max_per_collection: int = EXPLICIT_MAX_PER_COLLECTION,
 ) -> dict:
     """RRF 合并本地 FTS 与 dense；向量不可用/失败时 FTS 仍完整工作。"""
     if mode not in {"auto", "fts", "vector"}:

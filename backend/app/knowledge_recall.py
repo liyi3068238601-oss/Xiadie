@@ -11,8 +11,8 @@ from . import db, knowledge_context, knowledge_recall_thresholds, knowledge_sear
 
 PROTOCOL_VERSION = "knowledge-recall-decision-v1"
 TIMEOUT_MS = 1_500
-NATURAL_TOKEN_BUDGET = 700
-MAX_NATURAL_RESULTS = 4
+NATURAL_TOKEN_BUDGET = 6_000
+MAX_NATURAL_RESULTS = 8
 EMPTY_POLICY_SNAPSHOT = hashlib.sha256(b"[]").hexdigest()
 REASON_CODES = frozenset({
     "queued", "explicit_request", "explicit_forbidden", "companion_smalltalk",
@@ -195,7 +195,7 @@ def evaluate(
     search_started = time.perf_counter()
     try:
         search_kwargs = {
-            "limit": 6, "context_window": 0, "max_chars": 4000,
+            "limit": 10, "context_window": 1, "max_chars": 20_000,
             "max_per_collection": knowledge_search.NATURAL_MAX_PER_COLLECTION,
         }
         found = (search_fn or knowledge_search.hybrid_search)(query, **search_kwargs)

@@ -8,8 +8,8 @@ import re
 from . import db, knowledge_search
 from .context_budget import estimate_tokens
 
-KNOWLEDGE_TOKEN_BUDGET = 1_200
-MAX_INJECTED_RESULTS = 6
+KNOWLEDGE_TOKEN_BUDGET = 12_000
+MAX_INJECTED_RESULTS = 12
 _INTENT = re.compile(
     r"(?:知识库|资料库|文档(?:里|中|内)?|文件(?:里|中|内)?|根据(?:资料|文档|文件)|"
     r"查(?:一下|找|找一下)?(?:资料|文档|文件)|引用(?:资料|来源)|来源是什么)"
