@@ -15,11 +15,19 @@ New-Item -ItemType Directory -Force -Path $logRoot | Out-Null
 Remove-Item -LiteralPath (Join-Path $logRoot "launcher.err.log") -Force -ErrorAction SilentlyContinue
 
 function Show-LaunchError([string]$message) {
+  # 写错误文件到桌面，确保用户能看到（hidden 窗口下 MessageBox 可能不显示）
+  try {
+    $desktop = [Environment]::GetFolderPath("Desktop")
+    $errFile = Join-Path $desktop "遐蝶启动失败.txt"
+    $stamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $content = "遐蝶启动失败`r`n时间: $stamp`r`n错误: $message`r`n`r`n请检查是否已有遐蝶实例在运行，或查看日志：`r`n$([Environment]::GetFolderPath('LocalApplicationData'))\Xiadie\dev-logs\"
+    [System.IO.File]::WriteAllText($errFile, $content, [System.Text.UTF8Encoding]::new($true))
+  } catch {}
   try {
     Add-Type -AssemblyName PresentationFramework
     [System.Windows.MessageBox]::Show(
       $message,
-      "Xiadie startup failed",
+      "遐蝶启动失败",
       [System.Windows.MessageBoxButton]::OK,
       [System.Windows.MessageBoxImage]::Error
     ) | Out-Null
