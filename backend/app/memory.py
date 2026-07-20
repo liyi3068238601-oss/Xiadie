@@ -191,7 +191,7 @@ def get_memory(mid: str) -> dict | None:
 
 def search_memories(query: str, limit: int = MAX_INJECT) -> list[dict]:
     """FTS5 优先的相关记忆召回；短查询使用 LIKE 回退。"""
-    if db.get_setting("memory_enabled", "1") != "1":
+    if db.get_setting("memory_enabled", db.DEFAULT_MEMORY_ENABLED) != "1":
         return []
     match_query = _fts_query(query)
     conn = db.connect()
@@ -235,7 +235,7 @@ def search_memories(query: str, limit: int = MAX_INJECT) -> list[dict]:
 
 
 def build_digest(query: str) -> tuple[str, list[dict]]:
-    if db.get_setting("memory_enabled", "1") != "1":
+    if db.get_setting("memory_enabled", db.DEFAULT_MEMORY_ENABLED) != "1":
         return "", []
     memories = search_memories(query, MAX_INJECT)
     if len(memories) < MAX_INJECT:

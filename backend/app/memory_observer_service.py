@@ -78,7 +78,7 @@ def enqueue_turn(
     try:
         provider, model = _resolve_model(chat_provider, chat_model)
         provider_id = provider.get("id") if provider else None
-        enabled = db.get_setting("memory_enabled", "1") == "1"
+        enabled = db.get_setting("memory_enabled", db.DEFAULT_MEMORY_ENABLED) == "1"
         available = bool(provider and provider_id != "mock" and provider.get("base_url"))
         status = "queued" if enabled and available else "skipped"
         error_code = (
@@ -449,7 +449,7 @@ def _record_repair_attempt(run_id: str) -> None:
 
 def _maybe_create_legacy_fallback(row: dict) -> None:
     """真实观察路径不可用或耗尽时，才使用旧关键词候选作为保守兜底。"""
-    if db.get_setting("memory_enabled", "1") != "1":
+    if db.get_setting("memory_enabled", db.DEFAULT_MEMORY_ENABLED) != "1":
         return
     conn = db.connect()
     try:

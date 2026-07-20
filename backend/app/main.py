@@ -624,7 +624,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
         candidate = None
         if (
             not body.regenerate
-            and db.get_setting("memory_enabled", "1") == "1"
+            and db.get_setting("memory_enabled", db.DEFAULT_MEMORY_ENABLED) == "1"
             and (memory_observation or {}).get("error_code")
             in ("observer_model_unavailable", "observer_enqueue_failed")
         ):
@@ -2012,7 +2012,8 @@ def tool_logs() -> list[dict]:
 
 @app.get("/api/settings/{key}")
 def read_setting(key: str) -> dict:
-    return {"key": key, "value": db.get_setting(key)}
+    default = db.DEFAULT_MEMORY_ENABLED if key == "memory_enabled" else ""
+    return {"key": key, "value": db.get_setting(key, default)}
 
 
 @app.put("/api/settings/{key}")
@@ -2020,7 +2021,10 @@ def write_setting(key: str, body: dict) -> dict:
     # 保留键（如 current_model 存 JSON）须走专用接口，避免通用端点写入非法值把功能写坏
     if key in ("current_model",):
         raise HTTPException(400, "该设置项须通过专用接口修改")
-    db.set_setting(key, str(body.get("value", "")))
+    value = str(body.get("value", ""))
+    if key == "memory_enabled" and value not in {"0", "1"}:
+        raise HTTPException(400, "长期记忆开关只接受 0 或 1")
+    db.set_setting(key, value)
     return {"key": key, "value": db.get_setting(key)}
 
 

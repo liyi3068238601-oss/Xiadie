@@ -35,7 +35,7 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests` | 通过：484 passed，1 warning；schema 44 |
+| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests` | 通过：485 passed，1 warning；schema 44 |
 | 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：33 项；TypeScript 检查及 Vite 生产构建 188 modules 成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 
@@ -246,6 +246,7 @@ npm.cmd start
 - 本地 API：除最小健康检查外均校验会话级随机令牌，CORS 仅允许明确的本机来源。
 - 数据：SQLite 本地保存会话、消息、记忆、任务、设置和工具日志。
 - 记忆：L0/L1/L2 分层、查看、修改、删除、禁用和保守自动抽取。
+- 长期记忆默认开启；用户可随时关闭，显式关闭状态在重新初始化或升级后保持不变。
 - 任务：创建、状态流转、今日任务及聊天来源记录。
 - 权限：已有 S0-S4 展示与审计视图，但尚未接入真实工具执行链。
 

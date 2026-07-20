@@ -8,6 +8,8 @@ import sqlite3
 import time
 import uuid
 
+DEFAULT_MEMORY_ENABLED = "1"
+
 DATA_DIR = os.environ.get(
     "XIADIE_DATA_DIR",
     os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data"),
@@ -2024,7 +2026,8 @@ def init_db() -> None:
             (json.dumps({"provider_id": "mock", "model": "xiadie-mock"}),),
         )
         conn.execute(
-            "INSERT OR IGNORE INTO settings(key, value) VALUES('memory_enabled', '1')"
+            "INSERT OR IGNORE INTO settings(key, value) VALUES('memory_enabled', ?)",
+            (DEFAULT_MEMORY_ENABLED,),
         )
         conn.execute(
             "INSERT OR IGNORE INTO settings(key, value)"

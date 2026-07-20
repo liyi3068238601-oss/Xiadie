@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 # conftest.py 在任何 app 模块导入前建立临时库，避免测试收集顺序污染开发数据。
 TEST_API_TOKEN = "test-token-with-at-least-thirty-two-bytes"
 
+from app import db  # noqa: E402
 from app.main import app  # noqa: E402
 
 client = TestClient(app, headers={"X-Xiadie-Token": TEST_API_TOKEN})
@@ -16,6 +17,30 @@ def test_health():
     r = TestClient(app).get("/api/health")
     assert r.status_code == 200
     assert r.json() == {"status": "ok"}
+
+
+def test_long_term_memory_defaults_on_but_preserves_explicit_user_off():
+    conn = db.connect()
+    try:
+        conn.execute("DELETE FROM settings WHERE key='memory_enabled'")
+        conn.commit()
+    finally:
+        conn.close()
+
+    db.init_db()
+    assert client.get("/api/settings/memory_enabled").json()["value"] == "1"
+
+    assert client.put(
+        "/api/settings/memory_enabled", json={"value": "0"},
+    ).json()["value"] == "0"
+    db.init_db()
+    assert client.get("/api/settings/memory_enabled").json()["value"] == "0"
+    assert client.put(
+        "/api/settings/memory_enabled", json={"value": "2"},
+    ).status_code == 400
+
+    # 不把本测试中的主动关闭泄漏给后续聊天/记忆测试。
+    client.put("/api/settings/memory_enabled", json={"value": "1"})
 
 
 def test_local_api_requires_correct_token():
