@@ -113,7 +113,7 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
   async function send(regenerate = false) {
     if (!sessionId || busy) return;
     const content = regenerate ? lastUserContent() : input.trim();
-    if (!content) return;
+    if (!content && pendingAttachments.length === 0) return;
     const requestNonce = newRequestNonce();
     memoryWatchId.current += 1;
     setErrorCard(null);
@@ -440,7 +440,7 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
               }
             }}
           />
-          <button className="send-btn" disabled={busy || !input.trim()} onClick={() => send()}>
+          <button className="send-btn" disabled={busy || (!input.trim() && pendingAttachments.length === 0)} onClick={() => send()}>
             ➤
           </button>
         </div>

@@ -1185,12 +1185,12 @@ async def import_knowledge_document(request: Request) -> dict:
 
 @app.post("/api/chat/attachments")
 async def upload_chat_attachment(request: Request) -> dict:
-    """聊天框附件上传：同步解析文件提取纯文本供本轮注入，同时异步入知识库。
+    """聊天框附件上传：同步解析文件提取纯文本供本轮注入。
 
-    与 /api/knowledge/documents/import 的区别：
-    - 本端点同步返回解析后的文本，供本轮对话即时阅读
-    - 同时异步调用 knowledge.import_file 存入知识库（不阻塞响应）
-    - 附件记录存入 message_attachments 表，message_id 在 chat() 中回填
+    附件仅用于本轮对话阅读（通过 attachment_block 直接注入 system prompt），
+    不存入知识库。存入知识库会导致 transmission_policy=ask_each_time，
+    知识库检索命中附件时触发远传授权 409，与"本轮直接阅读"的意图冲突。
+    用户如需持久化，可从知识库页面单独上传。
     """
     import os as _os
     import secrets as _secrets
@@ -1235,17 +1235,6 @@ async def upload_chat_attachment(request: Request) -> dict:
         conn.commit()
     finally:
         conn.close()
-    # 异步存入知识库（不阻塞响应；失败不影响本轮使用）
-    collection_id = request.headers.get("X-Xiadie-Collection", "default")
-    sensitivity = request.headers.get("X-Xiadie-Sensitivity", "normal")
-    try:
-        knowledge.import_file(
-            filename, mime_type, bytes(body),
-            collection_id=collection_id, sensitivity=sensitivity,
-        )
-        knowledge_worker.wake_worker()
-    except Exception:
-        pass  # 知识库导入失败不影响本轮附件阅读
     return {
         "id": attachment_id,
         "filename": filename,
