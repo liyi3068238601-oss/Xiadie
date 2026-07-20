@@ -38,7 +38,16 @@ function Test-Port([int]$port) {
 
 function Stop-ProcessTree([System.Diagnostics.Process]$process) {
   if (-not $process -or $process.HasExited) { return }
-  & taskkill.exe /PID $process.Id /T /F 2>$null | Out-Null
+  # 全局 $ErrorActionPreference = "Stop" 会导致 taskkill 在进程已退出时的
+  # stderr 输出变成终止错误，脚本提前退出并触发 finally 杀掉所有子进程。
+  # 临时切到 Continue 模式，吞掉 taskkill 的所有错误。
+  $prev = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
+  try {
+    & taskkill.exe /PID $process.Id /T /F 2>&1 | Out-Null
+  } finally {
+    $ErrorActionPreference = $prev
+  }
 }
 
 function Get-ListenerProcess([int]$port) {
