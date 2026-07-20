@@ -188,6 +188,16 @@ def test_incremental_runs_periodically_return_to_raw_full_rebuild():
     assert service.generation_mode_for_revision(service.FULL_REBUILD_INTERVAL) == "full"
 
 
+def test_repeated_manual_rebuild_coalesces_same_source_snapshot():
+    sid, _ = _session([("我决定采用单窗口", "好")])
+
+    first = service.rebuild(sid)["run"]
+    second = service.rebuild(sid)["run"]
+
+    assert second["id"] == first["id"]
+    assert len(conversation_summaries.list_runs(session_id=sid)) == 1
+
+
 def test_incremental_correction_cannot_keep_superseded_state_in_free_text():
     previous = {
         "summary_text": "我决定采用多窗口。",

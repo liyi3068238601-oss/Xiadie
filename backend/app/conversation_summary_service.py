@@ -100,13 +100,20 @@ def rebuild(session_id: str) -> dict:
     location = str((provider or {}).get("execution_location") or "unknown")
     location_revision = max(1, int((provider or {}).get("location_revision") or 1))
     allowed = bool(config.get("allow_remote_history"))
+    # 同一来源快照和同一执行绑定只保留一个手动全量重建。新消息会改变
+    # ledger 的 source_hash，因此仍会自然产生新的重建任务。
+    generation_key = ":".join((
+        "manual-full",
+        str((provider or {}).get("id") or "unavailable"), model,
+        location, str(location_revision), "1" if allowed else "0",
+    ))
     run = ledger.enqueue(session_id, binding={
         "provider_id": (provider or {}).get("id"), "model": model,
         "provider_location": location,
         "provider_location_revision": location_revision,
         "remote_history_allowed": allowed,
         "generation_mode": "full", "base_revision_id": None,
-        "generation_key": f"manual-full:{db.new_id()}",
+        "generation_key": generation_key,
     })
     wake_worker()
     return {"run": {"id": run["id"], "status": run["status"],

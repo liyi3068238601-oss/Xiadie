@@ -142,13 +142,20 @@ def _knowledge_item_allowed(item: dict, run: dict, guard: dict) -> bool:
         return False
     if not guard.get("knowledge_used"):
         return source == "conversation"
+    expected_user_id = guard.get("source_user_message_id")
+    evidence_ids = item.get("evidence_message_ids") or []
+    current_user_only = (
+        expected_user_id == run.get("source_user_message_id")
+        and evidence_ids == [expected_user_id]
+    )
+    # N17：知识检索不能吞掉用户在同一轮亲口表达的独立偏好、计划或事实。
+    # 仅放行当前用户消息作为唯一证据的 conversation；正文 grounding 仍由
+    # observer.parse_and_validate 复核。助手回答、知识引用和 shared_lookup 不放行。
+    if source == "conversation":
+        return current_user_only
     if source != "user_confirmed_fact" or not guard.get("user_confirmed"):
         return False
-    expected_user_id = guard.get("source_user_message_id")
-    return (
-        expected_user_id == run.get("source_user_message_id")
-        and expected_user_id in (item.get("evidence_message_ids") or [])
-    )
+    return current_user_only
 
 
 def _load_and_verify_sources(conn, run: dict, candidate: dict) -> list[dict]:

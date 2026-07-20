@@ -230,6 +230,48 @@ def test_knowledge_turn_rejects_forged_conversation_source_and_scrubs_audit_body
     assert "256MB" not in stored["candidate_json"]
 
 
+def test_knowledge_turn_keeps_independent_user_grounded_conversation_memory():
+    user_text = "我一直更喜欢单主窗口，请再帮我查一下资料。"
+    run = _create_running_observer_run(
+        user_text,
+        "资料建议使用分栏布局，但最终仍以你的偏好为准。",
+    )
+    item = FakeContext.make_item(
+        kind="preference", content="我一直更喜欢单主窗口",
+        inner_reason="这是用户在当前消息中亲口表达的稳定偏好", entities=[],
+        evidence_message_ids=[run["source_user_message_id"]],
+        observation_source="conversation",
+    )
+
+    ids, stored = _apply(run, item, {
+        "knowledge_used": True,
+        "user_confirmed": False,
+        "source_user_message_id": run["source_user_message_id"],
+    })
+
+    assert len(ids) == 1
+    persisted = json.loads(stored["candidate_json"])["items"][0]
+    assert persisted["observation_source"] == "conversation"
+    assert persisted["evidence_message_ids"] == [run["source_user_message_id"]]
+
+
+def test_knowledge_turn_conversation_memory_rejects_mixed_or_assistant_evidence():
+    run = {"source_user_message_id": "u-current"}
+    guard = {
+        "knowledge_used": True,
+        "user_confirmed": False,
+        "source_user_message_id": "u-current",
+    }
+    base = {"observation_source": "conversation"}
+
+    assert memory_writer._knowledge_item_allowed(
+        {**base, "evidence_message_ids": ["a-current"]}, run, guard,
+    ) is False
+    assert memory_writer._knowledge_item_allowed(
+        {**base, "evidence_message_ids": ["u-current", "a-current"]}, run, guard,
+    ) is False
+
+
 def test_user_confirmed_source_requires_server_confirmation_and_current_user_evidence():
     user_text = "我决定采用文档里的配置，把内存池增加到256MB。"
     run = _create_running_observer_run(user_text, "好，我们按这个决定继续。")

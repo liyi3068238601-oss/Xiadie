@@ -35,8 +35,8 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests` | 通过：489 passed，1 warning；schema 45 |
-| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：36 项；TypeScript 检查及 Vite 生产构建 186 modules 成功 |
+| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests` | 通过：492 passed，1 warning；schema 45 |
+| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：36 项；TypeScript 检查及 Vite 生产构建 185 modules 成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 
 已知但不阻断当前开发的警告：
@@ -267,14 +267,15 @@ npm.cmd start
 | 本地 API | 临时令牌与严格来源策略已覆盖开发/冻结启动；正式安装升级后的重启链路仍需实机回归 | 正式发布验收时复核安装、重启和升级 |
 | 密钥 | API Key 存在本地 SQLite 中，接口不回显但存储未加密 | 迁移到 Electron `safeStorage` 或系统凭据存储 |
 | 重新生成 | 已改为新回复成功持久化时再替换旧回复，并有失败回归测试 | 后续版本化回复时再扩展历史保留策略 |
-| 上下文 | CTX.6 在唯一 `ContextAssembler` 与 CTX.1 硬预算上增加独立用户控制；当前用户消息受保护，较早完整轮次按预算安全裁剪，摘要、跨会话历史、长期记忆、知识和 Lore 保持独立来源与优先级 | 等待 CTX.6 独立 UI/隐私 review 后进入 CTX.7 总验收 |
-| 会话摘要/历史 | schema 45 增加无正文 `context_package_events`；“参考过往聊天”只控制显式历史召回，摘要注入可独立关闭；摘要可安全重建或单独删除派生数据，原始消息不变；普通自动召回仍为 shadow | CTX.7 使用合成或明确授权数据完成校准、压力、token 误差和 Windows 实机总验收 |
+| 上下文 | CTX.0～CTX.7 已完成内部总验收；5/20/100/500 轮满足硬预算，当前用户消息受保护，摘要、跨会话历史、长期记忆、知识和 Lore 保持独立来源与优先级 | 等待 CTX.7 独立 strict review 后冻结关闭 |
+| 会话摘要/历史 | schema 45 与 v1 协议已冻结；摘要六类样本 6/6、显式历史召回固定集 4/4，重复手动重建已幂等合并；普通自动召回仍为 shadow | 只有取得明确授权的校准样本并另立 ADR 才考虑解除 shadow |
 | 模型设置 | provider/model 选择的服务端校验较弱 | v0.1.2 增加校验与错误恢复 |
 | 数据演进 | SQLite 已有顺序 schema 迁移并到达 45，但尚无独立迁移 CLI、降级和备份恢复工具 | 正式发布前补齐备份、恢复与迁移演练 |
 | Live2D 授权 | 当前模型只允许个人使用，禁止上传、再分发、商用和二改 | 仓库继续忽略资源；发布前更换为可发布模型 |
 | 发布 | 未签名 NSIS 已可构建；尚无证书、授权素材和稳定升级链路 | v1.0 前重新启用签名并完成安装/卸载/升级验收 |
 | 知识模型体积 | 本地 BGE-M3 使安装资源增加约 543 MiB | 发布前评估可选下载；缺失时继续使用 FTS |
 | 外部 Provider | 授权协议用 mock/受控流完成矩阵，未把测试正文发送给真实在线供应商 | 各供应商接入时单独做不含私密正文的网络兼容回归 |
+| Token 估算 | CTX.7 未读取真实聊天；当前没有经用户明确提供的 Provider usage 样本，误差百分比未实测 | 保留保守估算与已验证窗口；以后仅用用户显式样本输出无正文聚合误差 |
 
 ## 8. 数据与资源边界
 
