@@ -132,7 +132,13 @@ export function FilesPage() {
       setSensitive(false);
       await refresh();
     } catch (error: any) {
-      toast(error.message || "文件导入失败");
+      // "Failed to fetch" 是浏览器原生 TypeError，意味着网络层无法连接
+      // （后端未启动、端口未监听等），显示中文友好提示
+      const msg = error?.message || "";
+      const friendly = /Failed to fetch|NetworkError|network/i.test(msg)
+        ? "无法连接到后端，请确认遐蝶已正常启动"
+        : msg || "文件导入失败";
+      toast(friendly);
     } finally {
       setImporting(false);
     }

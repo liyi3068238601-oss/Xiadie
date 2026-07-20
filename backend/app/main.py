@@ -62,10 +62,18 @@ db.init_db()
 
 # 只允许明确的本地开发来源和 Electron file:// 来源；实际数据接口还需临时令牌。
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=list(ALLOWED_ORIGINS),
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", TOKEN_HEADER],
+  CORSMiddleware,
+  allow_origins=list(ALLOWED_ORIGINS),
+  allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allow_headers=[
+    "Content-Type",
+    TOKEN_HEADER,
+    # 知识库导入用的自定义 header，缺这些会导致 CORS 预检失败
+    # （浏览器抛 TypeError: Failed to fetch）
+    "X-Xiadie-Filename",
+    "X-Xiadie-Collection",
+    "X-Xiadie-Sensitivity",
+  ],
 )
 app.middleware("http")(local_api_guard)
 
