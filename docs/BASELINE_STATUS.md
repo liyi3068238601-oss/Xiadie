@@ -1,8 +1,8 @@
 # 遐蝶项目基线状态
 
-> 最近复核日期：2026-07-19
+> 最近复核日期：2026-07-20
 >
-> 基线提交：对话上下文 CTX.2 摘要数据地基（以本文件所在提交为准）
+> 基线提交：对话上下文 CTX.5 跨会话历史回忆（以本文件所在提交为准）
 >
 > 当前版本：`v0.1.0` MVP 骨架（知识库系统 K 系列已完成）
 >
@@ -31,12 +31,12 @@
 
 ## 3. 自动验证结果
 
-以下命令最近于 2026-07-19 执行：
+以下命令最近于 2026-07-20 执行：
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests` | 通过：446 passed，2 warnings；schema 42 |
-| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：33 项；TypeScript 检查及 Vite 生产构建 185 modules 成功 |
+| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests` | 通过：484 passed，1 warning；schema 44 |
+| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：33 项；TypeScript 检查及 Vite 生产构建 188 modules 成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
 
 已知但不阻断当前开发的警告：
@@ -267,10 +267,10 @@ npm.cmd start
 | 本地 API | 临时令牌与严格来源策略已覆盖开发/冻结启动；正式安装升级后的重启链路仍需实机回归 | 正式发布验收时复核安装、重启和升级 |
 | 密钥 | API Key 存在本地 SQLite 中，接口不回显但存储未加密 | 迁移到 Electron `safeStorage` 或系统凭据存储 |
 | 重新生成 | 已改为新回复成功持久化时再替换旧回复，并有失败回归测试 | 后续版本化回复时再扩展历史保留策略 |
-| 上下文 | CTX.4 已建立唯一 `ContextAssembler`：重新验证 active 摘要来源、完整轮次和 source hash；摘要覆盖原文去重，source_end 后保留最近原文；长期记忆 digest、知识、Lore 和摘要使用独立限额；所有成功 ContextPackage 继续满足 CTX.1 硬预算 | CTX.5 增加跨会话两阶段历史召回，不改变当前陪伴界面 |
-| 会话摘要 | CTX.3 的 schema 43 与 `conversation-summary-v1` 保持不变；CTX.4 开始在普通聊天内部消费通过复核的 active 摘要，失效、缺失、边界不完整或 regenerate 排除来源时一律退回安全完整轮次裁剪 | 等待 CTX.4 独立 review 后进入 CTX.5 |
+| 上下文 | CTX.5 已在唯一 `ContextAssembler` 中增加独立 `cross_session_recall` 动态预算；当前消息、最近完整轮次、滚动摘要、跨会话历史、长期记忆、知识和 Lore 身份分离，所有成功 ContextPackage 继续满足 CTX.1 硬预算 | 等待 CTX.5 独立 review 后进入 CTX.6 用户控制与隐私诊断 |
+| 会话摘要/历史 | schema 44 保持 `conversation-summary-v1`，并新增可重建 session/message FTS 索引与两阶段历史召回；默认 `explicit_only`，明确回忆可注入，普通聊天仅 shadow；归档可召回，永久删除同步清原文、摘要和索引 | CTX.6 增加“参考过往聊天”开关、重建与高级无正文诊断，不在普通聊天常驻展示 |
 | 模型设置 | provider/model 选择的服务端校验较弱 | v0.1.2 增加校验与错误恢复 |
-| 数据演进 | SQLite 已有顺序 schema 迁移并到达 43，但尚无独立迁移 CLI、降级和备份恢复工具 | 正式发布前补齐备份、恢复与迁移演练 |
+| 数据演进 | SQLite 已有顺序 schema 迁移并到达 44，但尚无独立迁移 CLI、降级和备份恢复工具 | 正式发布前补齐备份、恢复与迁移演练 |
 | Live2D 授权 | 当前模型只允许个人使用，禁止上传、再分发、商用和二改 | 仓库继续忽略资源；发布前更换为可发布模型 |
 | 发布 | 未签名 NSIS 已可构建；尚无证书、授权素材和稳定升级链路 | v1.0 前重新启用签名并完成安装/卸载/升级验收 |
 | 知识模型体积 | 本地 BGE-M3 使安装资源增加约 543 MiB | 发布前评估可选下载；缺失时继续使用 FTS |

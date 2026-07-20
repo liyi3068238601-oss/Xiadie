@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field
 from . import (
     archivist, archivist_worker, companion_state, context_assembler, context_budget, conversation_summaries,
     conversation_summary_service, db,
-    entities, episode_consolidator,
+    entities, episode_consolidator, history_recall,
     episode_summary_service, episodes, knowledge, knowledge_cleanup, knowledge_context,
     knowledge_embeddings, knowledge_grants,
     knowledge_management, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search,
@@ -188,6 +188,17 @@ def get_conversation_summary_revisions(sid: str, limit: int = 50) -> list[dict]:
 @app.get("/api/sessions/{sid}/conversation-summary-events")
 def get_conversation_summary_events(sid: str, limit: int = 100) -> list[dict]:
     return conversation_summaries.list_events(sid, limit=limit)
+
+
+@app.get("/api/history-recall/events")
+def get_history_recall_events(session_id: str | None = None,
+                              limit: int = 50) -> list[dict]:
+    return history_recall.list_events(session_id=session_id, limit=limit)
+
+
+@app.post("/api/history-recall/rebuild")
+def rebuild_history_recall_index() -> dict[str, int]:
+    return history_recall.rebuild_index()
 
 
 class ConversationSummaryModelIn(BaseModel):
@@ -412,6 +423,9 @@ async def chat(body: ChatIn) -> StreamingResponse:
             )
         capability = _context_capability(provider, model)
         active_summary = conversation_summaries.active_revision_internal(body.session_id)
+        history_prepared = history_recall.prepare_locked(
+            conn, body.content, current_session_id=body.session_id,
+        )
         try:
             context_package = context_assembler.assemble(
                 history=history,
@@ -421,6 +435,8 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 lore_digest=lore_digest,
                 knowledge_block=knowledge_block,
                 active_summary=active_summary,
+                cross_session_recall=history_prepared["turns"],
+                current_session_id=body.session_id,
             )
         except context_budget.ContextBudgetError as error:
             if conn.in_transaction:
@@ -470,9 +486,18 @@ async def chat(body: ChatIn) -> StreamingResponse:
                         lore_digest=lore_digest,
                         knowledge_block=knowledge_block,
                         active_summary=active_summary,
+                        cross_session_recall=history_prepared["turns"],
+                        current_session_id=body.session_id,
                     )
                     messages = list(context_package.messages)
                     trimmed_count = context_package.trimmed_messages
+            try:
+                history_recall.record_injected(
+                    history_prepared.get("event_id"),
+                    len(context_package.cross_session_turns),
+                )
+            except Exception:  # noqa: BLE001 - 历史召回审计失败不能阻断陪伴聊天
+                pass
             # 记账/恢复完成后再报告最终实际注入集合。
             yield _sse(
                 "meta",
@@ -497,6 +522,19 @@ async def chat(body: ChatIn) -> StreamingResponse:
                         if (knowledge_retrieval or {}).get("results") else "none"
                     ),
                     "knowledge_recall_mode": recall_mode,
+                    "history_recall_used": bool(context_package.cross_session_turns),
+                    "history_recall_count": len(context_package.cross_session_turns),
+                    "history_recall_refs": [
+                        {
+                            "source_type": "cross_session_history",
+                            "session_id": item.session_id,
+                            "session_title": item.session_title,
+                            "user_message_id": item.user_message_id,
+                            "assistant_message_id": item.assistant_message_id,
+                            "locator": item.locator,
+                        }
+                        for item in context_package.cross_session_turns
+                    ],
                     "context_trimmed": trimmed_count > 0,
                     "context_trimmed_messages": trimmed_count,
                     "context_trimmed_rounds": context_package.trimmed_rounds,

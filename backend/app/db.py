@@ -1881,6 +1881,92 @@ MIGRATIONS = [
             DEFAULT 0 CHECK(repair_attempted IN (0,1));
         """,
     ),
+    (
+        44,
+        """
+        CREATE VIRTUAL TABLE conversation_history_sessions_fts USING fts5(
+            session_id UNINDEXED,
+            title,
+            summary_text,
+            tokenize='trigram'
+        );
+        CREATE VIRTUAL TABLE conversation_history_messages_fts USING fts5(
+            message_id UNINDEXED,
+            session_id UNINDEXED,
+            content,
+            tokenize='trigram'
+        );
+
+        INSERT INTO conversation_history_sessions_fts(session_id,title,summary_text)
+        SELECT s.id,s.title,COALESCE((
+            SELECT r.summary_text FROM conversation_summary_revisions r
+            WHERE r.session_id=s.id AND r.status='active' LIMIT 1
+        ),'') FROM sessions s;
+        INSERT INTO conversation_history_messages_fts(message_id,session_id,content)
+        SELECT id,session_id,content FROM messages;
+
+        CREATE TRIGGER conversation_history_session_insert AFTER INSERT ON sessions BEGIN
+            INSERT INTO conversation_history_sessions_fts(session_id,title,summary_text)
+            VALUES(NEW.id,NEW.title,'');
+        END;
+        CREATE TRIGGER conversation_history_session_title_update AFTER UPDATE OF title ON sessions BEGIN
+            DELETE FROM conversation_history_sessions_fts WHERE session_id=OLD.id;
+            INSERT INTO conversation_history_sessions_fts(session_id,title,summary_text)
+            SELECT NEW.id,NEW.title,COALESCE((
+                SELECT summary_text FROM conversation_summary_revisions
+                WHERE session_id=NEW.id AND status='active' LIMIT 1
+            ),'');
+        END;
+        CREATE TRIGGER conversation_history_session_delete AFTER DELETE ON sessions BEGIN
+            DELETE FROM conversation_history_sessions_fts WHERE session_id=OLD.id;
+            DELETE FROM conversation_history_messages_fts WHERE session_id=OLD.id;
+        END;
+        CREATE TRIGGER conversation_history_message_insert AFTER INSERT ON messages BEGIN
+            INSERT INTO conversation_history_messages_fts(message_id,session_id,content)
+            VALUES(NEW.id,NEW.session_id,NEW.content);
+        END;
+        CREATE TRIGGER conversation_history_message_update AFTER UPDATE OF content ON messages BEGIN
+            DELETE FROM conversation_history_messages_fts WHERE message_id=OLD.id;
+            INSERT INTO conversation_history_messages_fts(message_id,session_id,content)
+            VALUES(NEW.id,NEW.session_id,NEW.content);
+        END;
+        CREATE TRIGGER conversation_history_message_delete AFTER DELETE ON messages BEGIN
+            DELETE FROM conversation_history_messages_fts WHERE message_id=OLD.id;
+        END;
+        CREATE TRIGGER conversation_history_summary_insert AFTER INSERT ON conversation_summary_revisions
+        WHEN NEW.status='active' BEGIN
+            DELETE FROM conversation_history_sessions_fts WHERE session_id=NEW.session_id;
+            INSERT INTO conversation_history_sessions_fts(session_id,title,summary_text)
+            SELECT s.id,s.title,NEW.summary_text FROM sessions s WHERE s.id=NEW.session_id;
+        END;
+        CREATE TRIGGER conversation_history_summary_status_update
+        AFTER UPDATE OF status ON conversation_summary_revisions BEGIN
+            DELETE FROM conversation_history_sessions_fts WHERE session_id=NEW.session_id;
+            INSERT INTO conversation_history_sessions_fts(session_id,title,summary_text)
+            SELECT s.id,s.title,COALESCE((
+                SELECT summary_text FROM conversation_summary_revisions
+                WHERE session_id=NEW.session_id AND status='active' LIMIT 1
+            ),'') FROM sessions s WHERE s.id=NEW.session_id;
+        END;
+
+        CREATE TABLE conversation_history_recall_events (
+            id TEXT PRIMARY KEY,
+            current_session_id TEXT REFERENCES sessions(id) ON DELETE CASCADE,
+            query_sha256 TEXT NOT NULL,
+            intent TEXT NOT NULL,
+            mode TEXT NOT NULL CHECK(mode IN ('off','explicit_only','shadow','on')),
+            status TEXT NOT NULL CHECK(status IN ('off','no_candidates','shadow','injected')),
+            score_version TEXT NOT NULL,
+            candidate_session_count INTEGER NOT NULL DEFAULT 0,
+            candidate_turn_count INTEGER NOT NULL DEFAULT 0,
+            injected_turn_count INTEGER NOT NULL DEFAULT 0,
+            diagnostic_json TEXT NOT NULL DEFAULT '{}',
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_conversation_history_recall_events_session
+            ON conversation_history_recall_events(current_session_id,created_at,id);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
@@ -1959,6 +2045,10 @@ def init_db() -> None:
         conn.execute(
             "INSERT OR IGNORE INTO settings(key, value)"
             " VALUES('knowledge_recall_mode', 'explicit')"
+        )
+        conn.execute(
+            "INSERT OR IGNORE INTO settings(key, value)"
+            " VALUES('conversation_history_recall_mode', 'explicit_only')"
         )
         conn.commit()
     finally:

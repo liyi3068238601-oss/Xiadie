@@ -1,0 +1,37 @@
+{
+  "protocol_version": "conversation-history-eval-v1",
+  "cases": [
+    {
+      "name": "math_original_turn",
+      "title": "随手计算",
+      "user": "12×8 等于多少？",
+      "assistant": "12×8 等于 96。",
+      "query": "你还记得我以前问过什么算术题吗？",
+      "expected": "12×8"
+    },
+    {
+      "name": "ui_synonym",
+      "title": "桌面体验决定",
+      "user": "我不喜欢同时弹出很多窗口，只保留单主窗口。",
+      "assistant": "以后会保持轻量的单主窗口体验。",
+      "query": "我们以前对界面布局做过什么决定？",
+      "expected": "单主窗口"
+    },
+    {
+      "name": "code_symbols",
+      "title": "代码排错 2026-07-12",
+      "user": "TypeError 出现在 parse_context() 的 None 分支。",
+      "assistant": "当时决定先补 None 检查和回归测试。",
+      "query": "还记得 2026-07-12 的 parse_context() 报错吗？",
+      "expected": "parse_context"
+    },
+    {
+      "name": "blender_topic",
+      "title": "Blender 创作讨论",
+      "user": "Blender 接入先生成脚本，再由我确认执行。",
+      "assistant": "这样可以保留预览、确认和审计边界。",
+      "query": "我们之前怎样决定 Blender 脚本的执行方式？",
+      "expected": "确认执行"
+    }
+  ]
+}

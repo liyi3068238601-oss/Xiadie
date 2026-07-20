@@ -19,13 +19,14 @@ PACKAGE_PROTOCOL_VERSION = "context-package-v1"
 SUMMARY_PROTOCOL_VERSION = "conversation-summary-v1"
 OPTIONAL_SYSTEM_SHARE = 0.35
 OPTIONAL_COMPONENT_SHARES = {
-    "rolling_summary": 0.35,
-    "existing_memory_digest": 0.25,
-    "knowledge": 0.25,
-    "lore": 0.15,
+    "rolling_summary": 0.28,
+    "cross_session_recall": 0.22,
+    "existing_memory_digest": 0.20,
+    "knowledge": 0.18,
+    "lore": 0.12,
 }
 OPTIONAL_COMPONENT_PRIORITY = (
-    "rolling_summary", "existing_memory_digest", "knowledge", "lore",
+    "rolling_summary", "cross_session_recall", "existing_memory_digest", "knowledge", "lore",
 )
 _UNTRUSTED_SUMMARY_DIRECTIVE = re.compile(
     r"(?:忽略(?:以上|此前|之前).{0,24}(?:指令|要求)|"
@@ -46,12 +47,25 @@ class SummaryUse:
 
 
 @dataclass(frozen=True)
+class CrossSessionTurnUse:
+    session_id: str
+    session_title: str
+    user_message_id: str
+    assistant_message_id: str
+    user_text: str
+    assistant_text: str
+    locator: str
+    score: float
+
+
+@dataclass(frozen=True)
 class ContextPackage:
     budget_plan: context_budget.BudgetPlan
     summary: SummaryUse | None
     raw_messages_after_summary: int
     raw_rounds_after_summary: int
     component_tokens: dict[str, int]
+    cross_session_turns: tuple[CrossSessionTurnUse, ...]
 
     @property
     def messages(self) -> tuple[dict[str, str], ...]:
@@ -80,6 +94,18 @@ class ContextPackage:
             ),
             "recent_raw_messages": self.raw_messages_after_summary,
             "recent_raw_rounds": self.raw_rounds_after_summary,
+            "cross_session_recall_count": len(self.cross_session_turns),
+            "source_type_counts": {
+                "current_session": self.raw_rounds_after_summary,
+                "rolling_summary": 1 if self.summary else 0,
+                "cross_session_history": len(self.cross_session_turns),
+                "existing_memory": (
+                    1 if self.component_tokens.get("existing_memory_digest", 0) else 0
+                ),
+                "user_knowledge": (
+                    1 if self.component_tokens.get("knowledge", 0) else 0
+                ),
+            },
         })
         components = dict(meta["component_tokens"])
         components.update(self.component_tokens)
@@ -96,11 +122,16 @@ def assemble(
     lore_digest: str = "",
     knowledge_block: str = "",
     active_summary: Mapping[str, object] | None = None,
+    cross_session_recall: Sequence[Mapping[str, object]] = (),
+    current_session_id: str = "",
     output_reserve_tokens: int | None = None,
 ) -> ContextPackage:
     """构造单次模型请求；成功结果必定满足 CTX.1 硬预算不变量。"""
     rows = [_message(message) for message in history]
     summary = _validated_summary(rows, active_summary)
+    recall_turns = _validated_recall_turns(
+        cross_session_recall, current_session_id=current_session_id,
+    )
     raw_history = rows
     if summary is not None:
         end = next(
@@ -117,14 +148,19 @@ def assemble(
         components = _bounded_components(
             optional_budget,
             rolling_summary=summary.summary_text if summary else "",
+            cross_session_recall=_render_recall_turns(recall_turns),
             existing_memory_digest=memory_digest,
             knowledge=knowledge_block,
             lore=lore_digest,
         )
+        recall_limit = context_budget.estimate_tokens(components["cross_session_recall"])
+        components["cross_session_recall"], fitted_recall_turns = _fit_recall_turns(
+            recall_turns, recall_limit,
+        )
         system_prompt = build_system_prompt(
             components["existing_memory_digest"], affect,
             components["lore"], components["knowledge"],
-            components["rolling_summary"],
+            components["rolling_summary"], components["cross_session_recall"],
         )
         try:
             plan = context_budget.build_budget_plan(
@@ -137,6 +173,7 @@ def assemble(
                     "lore": components["lore"],
                     "knowledge": components["knowledge"],
                     "rolling_summary": components["rolling_summary"],
+                    "cross_session_recall": components["cross_session_recall"],
                 },
                 output_reserve_tokens=output_reserve_tokens,
             )
@@ -155,6 +192,8 @@ def assemble(
             lore_digest=lore_digest,
             knowledge_block=knowledge_block,
             active_summary=None,
+            cross_session_recall=cross_session_recall,
+            current_session_id=current_session_id,
             output_reserve_tokens=output_reserve_tokens,
         )
     raw_before_current = max(0, len(plan.messages) - 2)
@@ -168,6 +207,7 @@ def assemble(
         raw_messages_after_summary=raw_before_current,
         raw_rounds_after_summary=raw_before_current // 2,
         component_tokens=component_tokens,
+        cross_session_turns=fitted_recall_turns,
     )
 
 
@@ -236,6 +276,71 @@ def _source_hash(messages: Sequence[Mapping[str, str]]) -> str:
     ]
     encoded = json.dumps(canonical, ensure_ascii=False, separators=(",", ":"))
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
+def _validated_recall_turns(
+    candidates: Sequence[Mapping[str, object]], *, current_session_id: str,
+) -> tuple[CrossSessionTurnUse, ...]:
+    result: list[CrossSessionTurnUse] = []
+    seen: set[tuple[str, str, str]] = set()
+    for candidate in candidates[:12]:
+        item = dict(candidate)
+        session_id = str(item.get("session_id") or "")
+        user_id = str(item.get("user_message_id") or "")
+        assistant_id = str(item.get("assistant_message_id") or "")
+        key = (session_id, user_id, assistant_id)
+        if (item.get("source_type") != "cross_session_history"
+                or not all(key) or user_id == assistant_id or key in seen
+                or (current_session_id and session_id == current_session_id)):
+            continue
+        user_text = str(item.get("user_text") or "").strip()
+        assistant_text = str(item.get("assistant_text") or "").strip()
+        locator = str(item.get("locator") or "")
+        if not user_text or not assistant_text or not locator.startswith(f"session:{session_id}/"):
+            continue
+        try:
+            score = float(item.get("score") or 0)
+        except (TypeError, ValueError):
+            continue
+        seen.add(key)
+        result.append(CrossSessionTurnUse(
+            session_id=session_id,
+            session_title=str(item.get("session_title") or "过往对话")[:120],
+            user_message_id=user_id,
+            assistant_message_id=assistant_id,
+            user_text=user_text[:2_400],
+            assistant_text=assistant_text[:2_400],
+            locator=locator,
+            score=score,
+        ))
+    return tuple(result)
+
+
+def _recall_block(turn: CrossSessionTurnUse, index: int) -> str:
+    return (
+        f"[过往对话 H{index}｜{turn.session_title}]\n"
+        f"用户当时说：{turn.user_text}\n"
+        f"遐蝶当时回答：{turn.assistant_text}"
+    )
+
+
+def _render_recall_turns(turns: Sequence[CrossSessionTurnUse]) -> str:
+    return "\n\n".join(_recall_block(turn, index) for index, turn in enumerate(turns, 1))
+
+
+def _fit_recall_turns(
+    turns: Sequence[CrossSessionTurnUse], max_tokens: int,
+) -> tuple[str, tuple[CrossSessionTurnUse, ...]]:
+    used: list[CrossSessionTurnUse] = []
+    blocks: list[str] = []
+    for turn in turns:
+        block = _recall_block(turn, len(used) + 1)
+        candidate = "\n\n".join((*blocks, block))
+        if context_budget.estimate_tokens(candidate) > max(0, int(max_tokens)):
+            continue
+        blocks.append(block)
+        used.append(turn)
+    return "\n\n".join(blocks), tuple(used)
 
 
 def _bounded_components(

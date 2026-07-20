@@ -59,6 +59,12 @@
 - 不新增普通前端诊断展示，符合用户“尽可能贴近陪伴、聊天、伴侣核心”的决定。
 - 用户未提交的 `docs/reports/knowledge-recall-eval-v3-search-v2.md` 未编辑、未覆盖、不会纳入本阶段提交。
 
+## 独立 Strict Review 结果
+
+`review/ctx-stage-4-strict-review/ctx-stage-4-strict-review.html` 对提交 `99a6a27`、schema 43 和
+`context-package-v1` 完成复核，结论为通过，0 个未解决 P0/P1，可进入 CTX.5。评审建议没有要求返工
+CTX.4；其跨会话动态预算、两阶段检索、生命周期、shadow 校准和真实 locator 建议已纳入 CTX.5。
+
 ## 下一阶段入口
 
 独立 review 无未解决 P0/P1 后进入 CTX.5。下一阶段只增加“相关会话 → 少量完整原始轮次”的两阶段召回，
