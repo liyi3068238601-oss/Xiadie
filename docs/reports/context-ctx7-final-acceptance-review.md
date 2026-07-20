@@ -1,7 +1,7 @@
 # CTX.7 上下文专项总验收 Review
 
 - 日期：2026-07-20
-- 状态：实现与内部总验收完成，等待独立 strict review
+- 状态：正式关闭并冻结
 - 上一阶段审查：`ctx-stage-6-strict-review` 通过，0 个未解决 P0/P1
 
 ## Review 建议取舍
@@ -61,4 +61,15 @@ cd backend
 
 ## 冻结与下一入口
 
-协议与 schema 冻结见 ADR-0050。独立总审查必须确认 0 个未解决 P0/P1 后，CTX 专项才能正式关闭。下一产品阶段应回到受控 Agent 地基，而不是继续增加普通聊天技术展示：`ToolRegistry → PermissionPolicy → Approval → ToolRun/AuditEvent`。
+协议与 schema 冻结见 ADR-0050。`review/ctx-stage-7-strict-review` 已确认 0 个未解决 P0/P1，CTX 专项正式关闭。
+
+## 独立 strict review 处置
+
+最新审查的通过结论与仓库中的测试、验收脚本、冻结 ADR 和实现一致，不需要追加 CTX 返工。后续建议按实际产品边界处理如下：
+
+1. **shadow 模式校准：采纳为独立后续专项，不在 CTX.7 内解除 shadow。** 只有取得用户明确授权的真实样本、完成离线评分校准并经新 ADR 审批后，普通自动历史召回才可从 `conversation-history-score-v1-shadow` 转为正式模式。
+2. **跨 Provider token 估算：采纳为 Provider 兼容性专项。** 当前没有授权真实 usage 样本，继续使用保守估算；不读取用户聊天正文，不为完成指标而调用真实供应商。
+3. **长期记忆与摘要协同：不采纳“摘要决定自动写入长期记忆”的直接通道。** 摘要是上下文压缩产物，不是用户事实证据。未来如需协同，只能生成带原始用户消息证据的候选，并继续通过现有记忆观察、grounding、敏感性与生命周期门。
+4. **文档与实现一致性审计：采纳。** 纳入下一情绪与主动陪伴专项的基线阶段，先核对现有 affect、relationship、Episode/Saga、上下文和 UI，再扩展实现。
+
+下一专项是“情绪、关系积温与主动陪伴”，它建立在已完成的 affect/relationship 内核和 CTX 上，不改写上下文 v1 协议。外部渠道发送仍需等待 `ToolRegistry → PermissionPolicy → Approval → ToolRun/AuditEvent` 安全地基。

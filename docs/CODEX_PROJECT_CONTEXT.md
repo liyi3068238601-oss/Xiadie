@@ -71,6 +71,10 @@
 - 记忆系统最终形态与已完成阶段：`docs/MEMORY_SYSTEM_DESIGN_FOR_BEGINNERS.md`。
 - 知识库优化 K.0～K.9：`docs/KNOWLEDGE_SYSTEM_OPTIMIZATION_PLAN.md`。该计划已完成并通过总验收；
   自然召回、远传策略、一次性授权、记忆隔离和生命周期均以 ADR-0036～ADR-0044 为准。
+- 对话上下文 CTX.0～CTX.7：`docs/CONVERSATION_CONTEXT_AND_SUMMARY_PLAN.md`。该计划已完成总验收并通过独立 strict review；
+  schema 45 与上下文 v1 已冻结，普通自动历史召回继续 shadow。
+- 当前下一专项：`docs/EMOTION_RELATIONSHIP_AND_PROACTIVE_COMPANION_PLAN.md`。它继承现有 affect/relationship 内核，
+  补齐情感意义、共同经历协同和默认关闭的本机主动陪伴；不得另建重复情绪状态源。
 
 ---
 
@@ -195,7 +199,8 @@ Xiadie/
 - FastAPI 已使用会话级随机令牌，并将 CORS 限制为明确的本机来源；正式安装包仍需验证后端重启链路。
 - API Key 已经由 SecretStore 抽象隔离，但开发期实现仍是未加密的本地 SQLite，正式版还需 safeStorage。
 - 重新生成已改为新回复成功后原子替换，并有失败保留旧回复回归测试。
-- CTX.0～CTX.7 已完成实现与内部总验收；等待 CTX.7 独立 strict review 以 0 个未解决 P0/P1 正式关闭专项。
+- CTX.0～CTX.7 已完成实现、内部总验收与独立 strict review；审查确认 0 个未解决 P0/P1，schema 45 与上下文 v1 已正式冻结。
+- 下一专项为情绪、关系积温与主动陪伴：沿用现有 `affect_state`、`relationship_state`、旁观观察器和统一 Live2D 状态源，不另建重复情绪内核；主动消息默认关闭，先限于本机桌面渠道。
 - Provider 和模型选择校验不足。
 - 前端及 Electron 自动化测试不足。
 
@@ -368,9 +373,9 @@ node --check preload.js
 
 ## 14. 当前专项入口
 
-知识库 F.1～F.8 与优化 K.0～K.9 均已完成，权威完工入口为：
+知识库 F.1～F.8、优化 K.0～K.9 与上下文 CTX.0～CTX.7 均已完成并冻结。下一专项施工入口为：
 
-`docs/KNOWLEDGE_SYSTEM_OPTIMIZATION_PLAN.md`
+`docs/EMOTION_RELATIONSHIP_AND_PROACTIVE_COMPANION_PLAN.md`
 
-后续新增知识能力不得直接续写已关闭的 K 系列，应新建计划和 ADR。仍不能绕过本地预检、评测门槛或远传授权，
-直接把自然对话命中片段发送给在线模型。
+该专项先执行 EAP.0 真实基线，不得直接跳到主动发送。主动陪伴默认关闭，首版只允许用户明确开启的本机桌面渠道；
+外部消息仍须等待 ToolRegistry、权限、审批、审计和去重锁闭环。
