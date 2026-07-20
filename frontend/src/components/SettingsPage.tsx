@@ -343,11 +343,9 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
   const [memErr, setMemErr] = useState("");
 
   const loadMemory = () => {
-    fetch(api.API_BASE + "/api/settings/memory_enabled")
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error("读取失败"))))
+    api.getSetting("memory_enabled")
       .then((d) => {
-        const v = d && typeof d === "object" ? (d.value ?? d) : d;
-        setMemEnabled(String(v) === "1");
+        setMemEnabled(String(d.value) === "1");
         setMemErr("");
       })
       .catch((e) => {
@@ -359,18 +357,24 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
   useEffect(loadMemory, []);
 
   const setMemory = (on: boolean) => {
-    fetch(api.API_BASE + "/api/settings/memory_enabled", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ value: on ? "1" : "0" }),
-    })
-      .then((r) => (r.ok ? r : Promise.reject(new Error("保存失败"))))
+    api.setSetting("memory_enabled", on ? "1" : "0")
       .then(() => {
         toast(on ? "已开启长期记忆" : "已关闭长期记忆");
         loadMemory();
       })
       .catch((e) => toast(e.message || "保存失败"));
   };
+
+  // ---- 记忆层级分布（真实统计，替代之前的硬编码占位值）----
+  const [memoryStats, setMemoryStats] = useState<{ L0: number; L1: number; L2: number } | null>(null);
+
+  const loadMemoryStats = () => {
+    api.getMemoryStats()
+      .then(setMemoryStats)
+      .catch(() => { /* 静默失败，卡片显示占位 0 */ });
+  };
+
+  useEffect(loadMemoryStats, []);
 
   // ---- 对话连续性：与长期记忆独立，普通聊天不展示技术计数 ----
   const [contextControls, setContextControlsState] = useState<api.ContextControls | null>(null);
@@ -878,42 +882,32 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
           {/* 记忆层级分布 */}
           <section className="settings-card">
             <h2 className="settings-card-title">记忆层级分布</h2>
-            <div className="settings-mem-layer">
-              <div className="settings-mem-layer-head">
-                <span>L0 核心画像</span>
-                <span>5 条</span>
-              </div>
-              <div className="memory-bar-track">
-                <div
-                  className="memory-bar-fill memory-bar-l0"
-                  style={{ width: "10%" }}
-                />
-              </div>
-            </div>
-            <div className="settings-mem-layer">
-              <div className="settings-mem-layer-head">
-                <span>L1 近期状态</span>
-                <span>18 条</span>
-              </div>
-              <div className="memory-bar-track">
-                <div
-                  className="memory-bar-fill memory-bar-l1"
-                  style={{ width: "38%" }}
-                />
-              </div>
-            </div>
-            <div className="settings-mem-layer">
-              <div className="settings-mem-layer-head">
-                <span>L2 长期记忆</span>
-                <span>24 条</span>
-              </div>
-              <div className="memory-bar-track">
-                <div
-                  className="memory-bar-fill memory-bar-l2"
-                  style={{ width: "52%" }}
-                />
-              </div>
-            </div>
+            {(() => {
+              const l0 = memoryStats?.L0 ?? 0;
+              const l1 = memoryStats?.L1 ?? 0;
+              const l2 = memoryStats?.L2 ?? 0;
+              const total = l0 + l1 + l2;
+              const pct = (n: number) => (total > 0 ? Math.round((n / total) * 100) : 0);
+              const layers: [string, string, number, string][] = [
+                ["L0 核心画像", "memory-bar-l0", l0, `${pct(l0)}%`],
+                ["L1 近期状态", "memory-bar-l1", l1, `${pct(l1)}%`],
+                ["L2 长期记忆", "memory-bar-l2", l2, `${pct(l2)}%`],
+              ];
+              return layers.map(([label, cls, count, width]) => (
+                <div className="settings-mem-layer" key={label}>
+                  <div className="settings-mem-layer-head">
+                    <span>{label}</span>
+                    <span>{count} 条</span>
+                  </div>
+                  <div className="memory-bar-track">
+                    <div
+                      className={`memory-bar-fill ${cls}`}
+                      style={{ width }}
+                    />
+                  </div>
+                </div>
+              ));
+            })()}
             <p className="settings-card-hint">目标比例: L0 ≤ 10% · L1 30-50% · L2 ≥ 40%</p>
           </section>
 
@@ -1314,7 +1308,7 @@ function ProviderDrawer({
               className={`settings-checkbox ${edit.enabled ? "is-checked" : ""}`}
               aria-hidden="true"
             >
-              {edit.enabled && "&#x2713;"}
+              {edit.enabled && "✓"}
             </span>
             <input
               type="checkbox"

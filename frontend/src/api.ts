@@ -752,6 +752,8 @@ export const getKnowledgeCitation = (id: string) =>
 
 // ---- 记忆 ----
 export const listMemories = () => j<Memory[]>("/api/memories");
+export const getMemoryStats = () =>
+  j<{ L0: number; L1: number; L2: number }>("/api/memory/stats");
 export const addMemory = (layer: string, content: string, tags = "") =>
   j<Memory>("/api/memories", { method: "POST", body: JSON.stringify({ layer, content, tags }) });
 export const updateMemory = (id: string, body: Partial<Memory>) =>
@@ -1075,6 +1077,15 @@ export const listCompanionStateEvents = (limit = 10) =>
 
 // ---- 对话连续性（与长期记忆相互独立） ----
 export const getContextControls = () => j<ContextControls>("/api/context/controls");
+
+// ---- 通用 settings（走封装，自动带 token）----
+export const getSetting = (key: string) =>
+  j<{ key: string; value: string }>(`/api/settings/${encodeURIComponent(key)}`);
+export const setSetting = (key: string, value: string) =>
+  j<{ key: string; value: string }>(`/api/settings/${encodeURIComponent(key)}`, {
+    method: "PUT",
+    body: JSON.stringify({ value }),
+  });
 export const setContextControls = (body: Partial<Pick<ContextControls,
   "reference_chat_history" | "summary_injection_enabled">>) =>
   j<ContextControls>("/api/context/controls", {

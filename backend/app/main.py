@@ -1398,6 +1398,29 @@ def get_memory_events(object_type: str, object_id: str) -> list[dict]:
     return memory.list_events(object_type, object_id)
 
 
+@app.get("/api/memory/stats")
+def get_memory_stats() -> dict:
+    """返回记忆层级分布真实统计（有效记忆：enabled=1 AND status='active'）。
+
+    供设置页"记忆层级分布"卡片展示，替代之前的硬编码占位值。
+    """
+    conn = db.connect()
+    try:
+        rows = conn.execute(
+            "SELECT layer, COUNT(*) AS n FROM memory_fragments "
+            "WHERE enabled=1 AND status='active' "
+            "GROUP BY layer ORDER BY layer"
+        ).fetchall()
+    finally:
+        conn.close()
+    counts = {row["layer"]: row["n"] for row in rows}
+    return {
+        "L0": counts.get("L0", 0),
+        "L1": counts.get("L1", 0),
+        "L2": counts.get("L2", 0),
+    }
+
+
 # ---------------------------------------------------------------- Episode
 class EpisodeConsolidatorRunIn(BaseModel):
     trigger: str = "manual"
