@@ -74,3 +74,9 @@
 
 独立 review 无未解决 P0/P1 后进入 CTX.4。CTX.4 只能在统一预算、摘要覆盖边界和原文去重条件下消费
 active 摘要，不得直接把全部摘要和历史重新塞入模型。
+
+## 后续独立审查结果
+
+2026-07-19 加入的 `ctx-stage-3-strict-review` 给出通过结论，完成门全部通过，未发现新的 CTX.3 返工
+问题。其面向 CTX.4 的五条 P0 建议均经源码核对后采纳，处置与实现记录见
+`context-ctx4-context-assembler-review.md`。

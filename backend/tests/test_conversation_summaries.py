@@ -1,4 +1,4 @@
-"""CTX.2 会话摘要派生数据、状态机、租约与聊天隔离。"""
+"""会话摘要派生数据、状态机、租约及 CTX.4 聊天消费边界。"""
 from __future__ import annotations
 
 import json
@@ -276,7 +276,7 @@ def test_session_delete_cascades_all_summary_records():
         conn.close()
 
 
-def test_chat_does_not_consume_summary_and_regenerate_invalidates_covered_revision(monkeypatch):
+def test_regenerate_excludes_covered_summary_and_invalidates_it_after_success(monkeypatch):
     calls = []
 
     async def fake_stream(_provider, _model, messages, **_kwargs):
@@ -311,3 +311,62 @@ def test_chat_does_not_consume_summary_and_regenerate_invalidates_covered_revisi
     revision = conversation_summaries.list_revisions(session["id"])[0]
     assert revision["status"] == "invalid"
     assert revision["error_code"] == "source_message_replaced"
+
+
+def test_chat_consumes_active_summary_but_not_its_covered_raw_messages(monkeypatch):
+    sid, _ = _session_with_turns(4)
+    _activate(
+        conversation_summaries.enqueue(sid),
+        {"continuity": "我们此前决定继续以陪伴和自然聊天为核心。"},
+    )
+    # helper 为轮次生成了递增的未来时间；将旧消息移回当前请求之前，模拟真实顺序。
+    conn = db.connect()
+    try:
+        conn.execute("UPDATE messages SET created_at=created_at-100 WHERE session_id=?", (sid,))
+        conn.commit()
+    finally:
+        conn.close()
+    captured = {}
+
+    async def fake_stream(_provider, _model, messages, **_kwargs):
+        captured["messages"] = list(messages)
+        yield "我记得，我们就沿着这个方向慢慢走。"
+
+    monkeypatch.setattr(llm, "stream_chat", fake_stream)
+    with client.stream(
+        "POST", "/api/chat", json={"session_id": sid, "content": "那就继续吧"},
+    ) as response:
+        body = "".join(response.iter_text())
+
+    assert captured, body
+    encoded = "\n".join(message["content"] for message in captured["messages"])
+    assert response.status_code == 200 and "event: done" in body
+    assert "以陪伴和自然聊天为核心" in captured["messages"][0]["content"]
+    assert "用户原文-0" not in encoded and "助手原文-3" not in encoded
+    assert captured["messages"][-1]["content"] == "那就继续吧"
+    assert '"summary_used": true' in body
+    assert '"summary_covered_messages": 8' in body
+
+
+def test_failed_regenerate_keeps_active_summary_revision(monkeypatch):
+    sid, _ = _session_with_turns(1)
+    _activate(
+        conversation_summaries.enqueue(sid),
+        {"continuity": "这一轮已经成为共同经历。"},
+    )
+
+    async def failing_stream(*_args, **_kwargs):
+        raise llm.LLMError("暂时无法回复", "稍后重试")
+        yield  # pragma: no cover - 保持 async generator 形状
+
+    monkeypatch.setattr(llm, "stream_chat", failing_stream)
+    with client.stream(
+        "POST", "/api/chat",
+        json={"session_id": sid, "content": "用户原文-0", "regenerate": True},
+    ) as response:
+        body = "".join(response.iter_text())
+
+    revision = conversation_summaries.list_revisions(sid)[0]
+    assert "event: error" in body
+    assert revision["status"] == "active"
+    assert revision["error_code"] is None

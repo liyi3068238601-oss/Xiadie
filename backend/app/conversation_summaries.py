@@ -496,7 +496,7 @@ def list_revisions(session_id: str, *, limit: int = 50) -> list[dict]:
 
 
 def active_revision_internal(session_id: str) -> dict | None:
-    """仅供摘要 worker 增量合并；正文不经过 HTTP 暴露。"""
+    """供摘要 worker 与 ContextAssembler 调用方读取；正文不经过 HTTP 暴露。"""
     conn = db.connect()
     try:
         row = conn.execute(

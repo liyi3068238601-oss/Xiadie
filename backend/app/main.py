@@ -15,7 +15,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from . import (
-    archivist, archivist_worker, companion_state, context_budget, conversation_summaries,
+    archivist, archivist_worker, companion_state, context_assembler, context_budget, conversation_summaries,
     conversation_summary_service, db,
     entities, episode_consolidator,
     episode_summary_service, episodes, knowledge, knowledge_cleanup, knowledge_context,
@@ -26,7 +26,6 @@ from . import (
 )
 from . import memory_observer_service
 from .affect import observer_service as affect_observer_service
-from .persona import build_system_prompt
 from .security import ALLOWED_ORIGINS, TOKEN_HEADER, local_api_guard
 
 
@@ -385,12 +384,14 @@ async def chat(body: ChatIn) -> StreamingResponse:
 
         if replace_assistant_id:
             history = conn.execute(
-                "SELECT role,content FROM messages WHERE session_id=? AND id!=? ORDER BY created_at",
+                "SELECT id,role,content,model FROM messages"
+                " WHERE session_id=? AND id!=? ORDER BY created_at,id",
                 (body.session_id, replace_assistant_id),
             ).fetchall()
         else:
             history = conn.execute(
-                "SELECT role,content FROM messages WHERE session_id=? ORDER BY created_at",
+                "SELECT id,role,content,model FROM messages"
+                " WHERE session_id=? ORDER BY created_at,id",
                 (body.session_id,),
             ).fetchall()
         knowledge_block = knowledge_context.prompt_block(knowledge_retrieval)
@@ -409,26 +410,24 @@ async def chat(body: ChatIn) -> StreamingResponse:
                     knowledge_search.SEARCH_PROTOCOL_VERSION, db.now(),
                 ),
             )
-        system_prompt = build_system_prompt(digest, style, lore_digest, knowledge_block)
         capability = _context_capability(provider, model)
+        active_summary = conversation_summaries.active_revision_internal(body.session_id)
         try:
-            budget_plan = context_budget.build_budget_plan(
-                system_prompt=system_prompt,
+            context_package = context_assembler.assemble(
                 history=history,
                 capability=capability,
-                system_components={
-                    "existing_memory_digest": digest,
-                    "affect_guidance": style,
-                    "lore": lore_digest,
-                    "knowledge": knowledge_block,
-                },
+                memory_digest=digest,
+                affect_guidance=style,
+                lore_digest=lore_digest,
+                knowledge_block=knowledge_block,
+                active_summary=active_summary,
             )
         except context_budget.ContextBudgetError as error:
             if conn.in_transaction:
                 conn.rollback()
             raise HTTPException(413, error.public_detail()) from error
-        messages = list(budget_plan.messages)
-        trimmed_count = budget_plan.trimmed_messages
+        messages = list(context_package.messages)
+        trimmed_count = context_package.trimmed_messages
         conn.commit()
     finally:
         conn.close()
@@ -441,6 +440,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
         )
 
     async def gen():
+        nonlocal context_package, messages, trimmed_count
         used_memories = recalled_memories
         collected: list[str] = []
         try:
@@ -462,9 +462,17 @@ async def chat(body: ChatIn) -> StreamingResponse:
                         item for item in used_memories if item["id"] not in failed_reactivations
                     ]
                     used_digest, used_memories = memory.render_digest(used_memories)
-                    messages[0]["content"] = build_system_prompt(
-                        used_digest, style, lore_digest, knowledge_block,
+                    context_package = context_assembler.assemble(
+                        history=history,
+                        capability=capability,
+                        memory_digest=used_digest,
+                        affect_guidance=style,
+                        lore_digest=lore_digest,
+                        knowledge_block=knowledge_block,
+                        active_summary=active_summary,
                     )
+                    messages = list(context_package.messages)
+                    trimmed_count = context_package.trimmed_messages
             # 记账/恢复完成后再报告最终实际注入集合。
             yield _sse(
                 "meta",
@@ -491,13 +499,13 @@ async def chat(body: ChatIn) -> StreamingResponse:
                     "knowledge_recall_mode": recall_mode,
                     "context_trimmed": trimmed_count > 0,
                     "context_trimmed_messages": trimmed_count,
-                    "context_trimmed_rounds": budget_plan.trimmed_rounds,
-                    "context_budget": budget_plan.public_meta(),
+                    "context_trimmed_rounds": context_package.trimmed_rounds,
+                    "context_budget": context_package.public_meta(),
                 },
             )
             async for chunk in llm.stream_chat(
                 provider, model, messages,
-                max_tokens=budget_plan.output_reserve_tokens,
+                max_tokens=context_package.output_reserve_tokens,
             ):
                 collected.append(chunk)
                 yield _sse("delta", {"text": chunk})

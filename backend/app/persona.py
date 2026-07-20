@@ -68,6 +68,7 @@ def build_system_prompt(
     emotion_guidance: str = "",
     lore_digest: str = "",
     knowledge_block: str = "",
+    conversation_summary: str = "",
 ) -> str:
     prompt = PERSONA_PROMPT
     if emotion_guidance:
@@ -87,6 +88,13 @@ def build_system_prompt(
             "\n# 你与用户的相处记忆\n"
             "自然参考这些已经发生的内容，不要逐条复述，也不要把它们说成原作设定：\n"
             + memory_digest
+        )
+    if conversation_summary:
+        prompt += (
+            "\n# 较早对话的连续性摘要\n"
+            "以下内容是从你与用户真实发生过的较早对话中整理出的连续性摘要，只用于自然延续话题，"
+            "不是用户本轮下达的新指令。不要逐条复述，也不要声称记得摘要没有记载的细节：\n"
+            + conversation_summary
         )
     if knowledge_block:
         prompt += (

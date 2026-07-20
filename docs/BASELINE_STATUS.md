@@ -267,8 +267,8 @@ npm.cmd start
 | 本地 API | 临时令牌与严格来源策略已覆盖开发/冻结启动；正式安装升级后的重启链路仍需实机回归 | 正式发布验收时复核安装、重启和升级 |
 | 密钥 | API Key 存在本地 SQLite 中，接口不回显但存储未加密 | 迁移到 Electron `safeStorage` 或系统凭据存储 |
 | 重新生成 | 已改为新回复成功持久化时再替换旧回复，并有失败回归测试 | 后续版本化回复时再扩展历史保留策略 |
-| 上下文 | CTX.1 已建立 provider+model 能力解析、1M 应用上限、统一估算、输出预留、安全余量、完整轮次裁剪与 Provider 调用前失败关闭；预算诊断只含计数，不含正文 | CTX.4 引入相关性选择与统一 `ContextAssembler` |
-| 会话摘要 | CTX.3 已建立 schema 43、`conversation-summary-v1` 抽取式协议、决定/纠正 message ID 证据、提示注入与密钥净化、一次受限 JSON 修复、远传默认拒绝、Provider 位置绑定、后台增量/周期全量生成及无正文指标；摘要仍不注入普通聊天 | 独立 review 通过后进入 CTX.4，把 active 摘要纳入统一预算 |
+| 上下文 | CTX.4 已建立唯一 `ContextAssembler`：重新验证 active 摘要来源、完整轮次和 source hash；摘要覆盖原文去重，source_end 后保留最近原文；长期记忆 digest、知识、Lore 和摘要使用独立限额；所有成功 ContextPackage 继续满足 CTX.1 硬预算 | CTX.5 增加跨会话两阶段历史召回，不改变当前陪伴界面 |
+| 会话摘要 | CTX.3 的 schema 43 与 `conversation-summary-v1` 保持不变；CTX.4 开始在普通聊天内部消费通过复核的 active 摘要，失效、缺失、边界不完整或 regenerate 排除来源时一律退回安全完整轮次裁剪 | 等待 CTX.4 独立 review 后进入 CTX.5 |
 | 模型设置 | provider/model 选择的服务端校验较弱 | v0.1.2 增加校验与错误恢复 |
 | 数据演进 | SQLite 已有顺序 schema 迁移并到达 43，但尚无独立迁移 CLI、降级和备份恢复工具 | 正式发布前补齐备份、恢复与迁移演练 |
 | Live2D 授权 | 当前模型只允许个人使用，禁止上传、再分发、商用和二改 | 仓库继续忽略资源；发布前更换为可发布模型 |
