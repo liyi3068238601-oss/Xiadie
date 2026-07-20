@@ -144,15 +144,22 @@ export function FilesPage() {
     }
   }
 
-  async function showRun(document: api.KnowledgeDocument) {
+  function toggleRun(document: api.KnowledgeDocument) {
+    // 已展开 → 收起
+    if (runDetails[document.id]) {
+      setRunDetails((current) => {
+        const next = { ...current };
+        delete next[document.id];
+        return next;
+      });
+      return;
+    }
+    // 未展开 → 加载并展开
     const runId = document.latest_run?.id;
     if (!runId) return;
-    try {
-      const run = await api.getKnowledgeImportRun(runId);
-      setRunDetails((current) => ({ ...current, [document.id]: run }));
-    } catch (error: any) {
-      toast(error.message || "任务详情加载失败");
-    }
+    api.getKnowledgeImportRun(runId)
+      .then((run) => setRunDetails((current) => ({ ...current, [document.id]: run })))
+      .catch((error: any) => toast(error.message || "任务详情加载失败"));
   }
 
   async function cancelRun(document: api.KnowledgeDocument) {
@@ -687,7 +694,7 @@ export function FilesPage() {
                       embeddingAvailable={!!embeddingStatus?.available}
                       statusClass={statusClassOf(document)}
                       statusLabel={statusLabelOf(document)}
-                      onShowRun={showRun}
+                      onToggleRun={toggleRun}
                       onCancelRun={cancelRun}
                       onSaveTags={saveTags}
                       onReindex={reindexDocument}
@@ -714,7 +721,7 @@ export function FilesPage() {
                       embeddingAvailable={!!embeddingStatus?.available}
                       statusClass={statusClassOf(document)}
                       statusLabel={statusLabelOf(document)}
-                      onShowRun={showRun}
+                      onToggleRun={toggleRun}
                       onCancelRun={cancelRun}
                       onSaveTags={saveTags}
                       onReindex={reindexDocument}
@@ -769,7 +776,7 @@ interface FileRowProps {
   embeddingAvailable: boolean;
   statusClass: string;
   statusLabel: string;
-  onShowRun: (document: api.KnowledgeDocument) => void;
+  onToggleRun: (document: api.KnowledgeDocument) => void;
   onCancelRun: (document: api.KnowledgeDocument) => void;
   onSaveTags: (document: api.KnowledgeDocument) => void;
   onReindex: (document: api.KnowledgeDocument) => void;
@@ -877,7 +884,9 @@ function FileRow(props: FileRowProps) {
                 {document.sensitivity !== "sensitive" && <option value="remote_allowed">允许发送命中片段</option>}
               </select>
             </label>
-            {document.latest_run && <button className="btn ghost" onClick={() => props.onShowRun(document)}>进度详情</button>}
+            {document.latest_run && <button className="btn ghost" onClick={() => props.onToggleRun(document)}>
+              {runDetails[document.id] ? "收起详情" : "进度详情"}
+            </button>}
             {document.latest_run && ["queued", "running", "recovery_pending", "cancel_requested"].includes(document.latest_run.status) && (
               <button className="btn ghost" disabled={document.latest_run.status === "cancel_requested"}
                 onClick={() => props.onCancelRun(document)}>{document.latest_run.status === "cancel_requested" ? "停止中…" : "停止处理"}</button>
@@ -974,7 +983,9 @@ function FileCard(props: FileRowProps) {
                 {document.sensitivity !== "sensitive" && <option value="remote_allowed">允许发送</option>}
               </select>
             </label>
-            {document.latest_run && <button className="btn ghost" onClick={() => props.onShowRun(document)}>进度</button>}
+            {document.latest_run && <button className="btn ghost" onClick={() => props.onToggleRun(document)}>
+              {runDetails[document.id] ? "收起" : "进度"}
+            </button>}
             {document.latest_run && ["queued", "running", "recovery_pending", "cancel_requested"].includes(document.latest_run.status) && (
               <button className="btn ghost" disabled={document.latest_run.status === "cancel_requested"}
                 onClick={() => props.onCancelRun(document)}>停止</button>
