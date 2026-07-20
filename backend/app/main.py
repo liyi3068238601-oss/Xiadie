@@ -15,7 +15,8 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from . import (
-    archivist, archivist_worker, companion_state, context_assembler, context_budget, conversation_summaries,
+    archivist, archivist_worker, companion_state, context_assembler, context_budget,
+    context_controls, context_diagnostics, conversation_summaries,
     conversation_summary_service, db,
     entities, episode_consolidator, history_recall,
     episode_summary_service, episodes, knowledge, knowledge_cleanup, knowledge_context,
@@ -199,6 +200,56 @@ def get_history_recall_events(session_id: str | None = None,
 @app.post("/api/history-recall/rebuild")
 def rebuild_history_recall_index() -> dict[str, int]:
     return history_recall.rebuild_index()
+
+
+class ContextControlsIn(BaseModel):
+    reference_chat_history: bool | None = None
+    summary_injection_enabled: bool | None = None
+
+
+@app.get("/api/context/controls")
+def get_context_controls() -> dict:
+    return context_controls.read()
+
+
+@app.put("/api/context/controls")
+def put_context_controls(body: ContextControlsIn) -> dict:
+    return context_controls.update(
+        reference_chat_history=body.reference_chat_history,
+        summary_injection_enabled=body.summary_injection_enabled,
+    )
+
+
+@app.get("/api/context/diagnostics")
+def get_context_diagnostics(session_id: str | None = None, limit: int = 50) -> dict:
+    """Advanced, body-free diagnostics; never returns message or summary text."""
+    return {
+        "controls": context_controls.read(),
+        "component_priority": list(context_assembler.OPTIONAL_COMPONENT_PRIORITY),
+        "package_events": context_diagnostics.list_events(session_id=session_id, limit=limit),
+        "history_events": history_recall.list_events(session_id=session_id, limit=limit),
+        "summary_runs": conversation_summaries.list_runs(session_id=session_id, limit=limit),
+        "summary_revisions": (
+            conversation_summaries.list_revisions(session_id, limit=limit)
+            if session_id else []
+        ),
+    }
+
+
+@app.post("/api/sessions/{sid}/conversation-summary-rebuild")
+def rebuild_conversation_summary(sid: str) -> dict:
+    try:
+        return conversation_summary_service.rebuild(sid)
+    except conversation_summaries.ConversationSummaryError as exc:
+        raise HTTPException(400, {"code": exc.code, "message": str(exc)}) from exc
+
+
+@app.delete("/api/sessions/{sid}/conversation-summary-derived")
+def delete_conversation_summary_derived(sid: str) -> dict:
+    try:
+        return conversation_summaries.delete_derived(sid)
+    except conversation_summaries.ConversationSummaryError as exc:
+        raise HTTPException(404, {"code": exc.code, "message": str(exc)}) from exc
 
 
 class ConversationSummaryModelIn(BaseModel):
@@ -422,7 +473,10 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 ),
             )
         capability = _context_capability(provider, model)
-        active_summary = conversation_summaries.active_revision_internal(body.session_id)
+        active_summary = (
+            conversation_summaries.active_revision_internal(body.session_id)
+            if context_controls.summary_injection_enabled() else None
+        )
         history_prepared = history_recall.prepare_locked(
             conn, body.content, current_session_id=body.session_id,
         )
@@ -492,6 +546,14 @@ async def chat(body: ChatIn) -> StreamingResponse:
                     messages = list(context_package.messages)
                     trimmed_count = context_package.trimmed_messages
             try:
+                context_diagnostics.record(
+                    session_id=body.session_id,
+                    user_message_id=uid,
+                    meta=context_package.public_meta(),
+                )
+            except Exception:  # body-free diagnostics must never block companionship chat
+                pass
+            try:
                 history_recall.record_injected(
                     history_prepared.get("event_id"),
                     len(context_package.cross_session_turns),
@@ -531,6 +593,8 @@ async def chat(body: ChatIn) -> StreamingResponse:
                             "session_title": item.session_title,
                             "user_message_id": item.user_message_id,
                             "assistant_message_id": item.assistant_message_id,
+                            "user_created_at": item.user_created_at,
+                            "assistant_created_at": item.assistant_created_at,
                             "locator": item.locator,
                         }
                         for item in context_package.cross_session_turns
@@ -2019,7 +2083,10 @@ def read_setting(key: str) -> dict:
 @app.put("/api/settings/{key}")
 def write_setting(key: str, body: dict) -> dict:
     # 保留键（如 current_model 存 JSON）须走专用接口，避免通用端点写入非法值把功能写坏
-    if key in ("current_model",):
+    if key in (
+        "current_model", "conversation_history_recall_mode",
+        "conversation_summary_injection_enabled",
+    ):
         raise HTTPException(400, "该设置项须通过专用接口修改")
     value = str(body.get("value", ""))
     if key == "memory_enabled" and value not in {"0", "1"}:

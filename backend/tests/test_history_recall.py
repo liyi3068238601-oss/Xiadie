@@ -82,7 +82,7 @@ def _capability(window: int = 16_384):
     )
 
 
-def test_schema_44_builds_rebuildable_local_history_indexes():
+def test_schema_45_keeps_rebuildable_local_history_indexes():
     sid = _session("Blender 材质", [("把材质改成玻璃", "已经记下玻璃材质方案")])
     conn = db.connect()
     try:
@@ -99,7 +99,7 @@ def test_schema_44_builds_rebuildable_local_history_indexes():
         conn.close()
 
     rebuilt = history_recall.rebuild_index()
-    assert version == "44"
+    assert version == "45"
     assert session_count == 1 and message_count == 2
     assert rebuilt == {"sessions": 1, "messages": 2}
 

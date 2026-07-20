@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from datetime import datetime
 from dataclasses import dataclass
 from typing import Mapping, Sequence
 
@@ -54,6 +55,8 @@ class CrossSessionTurnUse:
     assistant_message_id: str
     user_text: str
     assistant_text: str
+    user_created_at: float
+    assistant_created_at: float
     locator: str
     score: float
 
@@ -310,6 +313,8 @@ def _validated_recall_turns(
             assistant_message_id=assistant_id,
             user_text=user_text[:2_400],
             assistant_text=assistant_text[:2_400],
+            user_created_at=_safe_float(item.get("user_created_at")),
+            assistant_created_at=_safe_float(item.get("assistant_created_at")),
             locator=locator,
             score=score,
         ))
@@ -317,8 +322,12 @@ def _validated_recall_turns(
 
 
 def _recall_block(turn: CrossSessionTurnUse, index: int) -> str:
+    when = (
+        datetime.fromtimestamp(turn.user_created_at).strftime("%Y-%m-%d %H:%M")
+        if turn.user_created_at > 0 else "时间未知"
+    )
     return (
-        f"[过往对话 H{index}｜{turn.session_title}]\n"
+        f"[过往对话 H{index}｜{turn.session_title}｜{when}]\n"
         f"用户当时说：{turn.user_text}\n"
         f"遐蝶当时回答：{turn.assistant_text}"
     )
@@ -391,3 +400,10 @@ def _safe_int(value: object) -> int:
         return int(value)
     except (TypeError, ValueError):
         return 0
+
+
+def _safe_float(value: object) -> float:
+    try:
+        return max(0.0, float(value or 0))
+    except (TypeError, ValueError):
+        return 0.0

@@ -264,7 +264,9 @@ export default function App() {
               onSessionsChanged={refreshSessions}
             />
           )}
-          {view === "settings" && <SettingsPage onModelChanged={refreshModel} />}
+          {view === "settings" && (
+            <SettingsPage onModelChanged={refreshModel} currentSessionId={activeSession} />
+          )}
           {view === "tasks" && <TasksPage />}
           {view === "memories" && <MemoriesPage onOpenSource={openMemorySource} />}
           {view === "files" && <FilesPage />}

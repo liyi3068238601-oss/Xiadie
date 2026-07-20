@@ -84,6 +84,41 @@ export interface ObserverModelConfig {
   provider_id: string | null;
   model: string | null;
 }
+
+export interface ContextControls {
+  reference_chat_history: boolean;
+  summary_injection_enabled: boolean;
+  summary_automatic: boolean;
+  history_mode: "off" | "explicit_only" | "shadow" | "on";
+  ordinary_history_recall: "shadow";
+  memory_enabled: boolean;
+}
+
+export interface ContextPackageEvent {
+  id: string;
+  session_id: string;
+  user_message_id?: string | null;
+  package_protocol_version: string;
+  budget_protocol_version: string;
+  context_window_tokens: number;
+  output_reserve_tokens: number;
+  trimmed_messages: number;
+  trimmed_rounds: number;
+  trim_reason: "none" | "budget";
+  summary_revision?: number | null;
+  source_type_counts: Record<string, number>;
+  component_tokens: Record<string, number>;
+  created_at: number;
+}
+
+export interface ContextDiagnostics {
+  controls: ContextControls;
+  component_priority: string[];
+  package_events: ContextPackageEvent[];
+  history_events: Array<Record<string, unknown>>;
+  summary_runs: Array<Record<string, unknown>>;
+  summary_revisions: Array<Record<string, unknown>>;
+}
 export type { EmotionCluster } from "./affectPresentation.mjs";
 export interface AffectState {
   contact_need: number;
@@ -1037,6 +1072,32 @@ export const getMemoryObserverResult = (id: string) =>
 export const getCompanionState = () => j<CompanionState>("/api/companion-state");
 export const listCompanionStateEvents = (limit = 10) =>
   j<CompanionStateEvent[]>(`/api/companion-state/events?limit=${encodeURIComponent(limit)}`);
+
+// ---- 对话连续性（与长期记忆相互独立） ----
+export const getContextControls = () => j<ContextControls>("/api/context/controls");
+export const setContextControls = (body: Partial<Pick<ContextControls,
+  "reference_chat_history" | "summary_injection_enabled">>) =>
+  j<ContextControls>("/api/context/controls", {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+export const getContextDiagnostics = (sessionId?: string | null, limit = 20) => {
+  const query = new URLSearchParams({ limit: String(limit) });
+  if (sessionId) query.set("session_id", sessionId);
+  return j<ContextDiagnostics>(`/api/context/diagnostics?${query.toString()}`);
+};
+export const rebuildHistoryIndex = () =>
+  j<{ sessions: number; messages: number }>("/api/history-recall/rebuild", { method: "POST" });
+export const rebuildConversationSummary = (sessionId: string) =>
+  j<{ run: Record<string, unknown> }>(
+    `/api/sessions/${encodeURIComponent(sessionId)}/conversation-summary-rebuild`,
+    { method: "POST" },
+  );
+export const deleteConversationSummaryDerived = (sessionId: string) =>
+  j<{ ok: boolean; raw_messages_preserved: number }>(
+    `/api/sessions/${encodeURIComponent(sessionId)}/conversation-summary-derived`,
+    { method: "DELETE" },
+  );
 
 // ---- 工具日志 ----
 export const listToolLogs = () => j<ToolLog[]>("/api/tool-logs");

@@ -100,7 +100,10 @@ interface EditForm {
   execution_location: api.Provider["execution_location"];
 }
 
-export function SettingsPage({ onModelChanged }: { onModelChanged: () => void }) {
+export function SettingsPage({ onModelChanged, currentSessionId }: {
+  onModelChanged: () => void;
+  currentSessionId: string | null;
+}) {
   const [tab, setTab] = useState<TabKey>("model");
 
   // ---- 模型 API 状态 ----
@@ -367,6 +370,65 @@ export function SettingsPage({ onModelChanged }: { onModelChanged: () => void })
         loadMemory();
       })
       .catch((e) => toast(e.message || "保存失败"));
+  };
+
+  // ---- 对话连续性：与长期记忆独立，普通聊天不展示技术计数 ----
+  const [contextControls, setContextControlsState] = useState<api.ContextControls | null>(null);
+  const [contextDiagnostics, setContextDiagnostics] = useState<api.ContextDiagnostics | null>(null);
+  const [contextBusy, setContextBusy] = useState(false);
+
+  const loadContextControls = () => {
+    api.getContextControls()
+      .then(setContextControlsState)
+      .catch((e) => toast(e.message || "读取对话连续性设置失败"));
+  };
+
+  const loadContextDiagnostics = () => {
+    api.getContextDiagnostics(currentSessionId)
+      .then(setContextDiagnostics)
+      .catch((e) => toast(e.message || "读取诊断失败"));
+  };
+
+  useEffect(loadContextControls, []);
+  useEffect(() => {
+    if (tab === "memory") loadContextDiagnostics();
+  }, [tab, currentSessionId]);
+
+  const updateContextControls = (patch: Partial<Pick<api.ContextControls,
+    "reference_chat_history" | "summary_injection_enabled">>) => {
+    setContextBusy(true);
+    api.setContextControls(patch)
+      .then((result) => {
+        setContextControlsState(result);
+        toast("已保存对话连续性设置");
+      })
+      .catch((e) => toast(e.message || "保存失败"))
+      .finally(() => setContextBusy(false));
+  };
+
+  const rebuildSummary = () => {
+    if (!currentSessionId) return toast("请先选择一个会话");
+    setContextBusy(true);
+    api.rebuildConversationSummary(currentSessionId)
+      .then(() => {
+        toast("已重新安排当前会话摘要");
+        loadContextDiagnostics();
+      })
+      .catch((e) => toast(e.message || "重建摘要失败"))
+      .finally(() => setContextBusy(false));
+  };
+
+  const deleteDerivedSummary = () => {
+    if (!currentSessionId) return toast("请先选择一个会话");
+    if (!window.confirm("只删除当前会话的派生摘要？原始聊天不会被删除。")) return;
+    setContextBusy(true);
+    api.deleteConversationSummaryDerived(currentSessionId)
+      .then((result) => {
+        toast(`派生摘要已删除，${result.raw_messages_preserved} 条原始消息保持不变`);
+        loadContextDiagnostics();
+      })
+      .catch((e) => toast(e.message || "删除派生摘要失败"))
+      .finally(() => setContextBusy(false));
   };
 
   // ---- 记忆设置：保留策略 / 敏感度（本地状态，后端尚未支持）----
@@ -718,6 +780,100 @@ export function SettingsPage({ onModelChanged }: { onModelChanged: () => void })
               )}
             </div>
           </section>
+
+          <section className="settings-card settings-mem-toggle-card">
+            <div className="settings-mem-toggle-row">
+              <div className="settings-mem-toggle-text">
+                <h2>参考过往聊天</h2>
+                <p>
+                  开启后，当你明确问起以前聊过的事情时，遐蝶可以查找真实旧对话。
+                  普通聊天不会主动翻出旧话题，这与长期记忆开关相互独立。
+                </p>
+              </div>
+              {contextControls === null ? (
+                <span className="settings-status-pill settings-status-off">读取中…</span>
+              ) : (
+                <button
+                  className={`toggle-track${contextControls.reference_chat_history ? " is-on" : ""}`}
+                  role="switch"
+                  aria-checked={contextControls.reference_chat_history}
+                  aria-label="参考过往聊天"
+                  disabled={contextBusy}
+                  onClick={() => updateContextControls({
+                    reference_chat_history: !contextControls.reference_chat_history,
+                  })}
+                >
+                  <span className="toggle-thumb" />
+                </button>
+              )}
+            </div>
+          </section>
+
+          <details className="settings-card context-advanced">
+            <summary>高级上下文诊断</summary>
+            <p className="settings-card-hint">
+              这里只显示预算、来源类型、状态和版本，不显示聊天、摘要、记忆或知识正文。
+            </p>
+            <div className="settings-mem-toggle-row context-summary-control">
+              <div className="settings-mem-toggle-text">
+                <h2>使用会话摘要衔接长对话</h2>
+                <p>关闭后只停止摘要注入；自动整理与原始聊天档案仍会保留。</p>
+              </div>
+              {contextControls && (
+                <button
+                  className={`toggle-track${contextControls.summary_injection_enabled ? " is-on" : ""}`}
+                  role="switch"
+                  aria-checked={contextControls.summary_injection_enabled}
+                  aria-label="使用会话摘要衔接长对话"
+                  disabled={contextBusy}
+                  onClick={() => updateContextControls({
+                    summary_injection_enabled: !contextControls.summary_injection_enabled,
+                  })}
+                >
+                  <span className="toggle-thumb" />
+                </button>
+              )}
+            </div>
+            <div className="context-diagnostic-actions">
+              <button className="btn ghost" disabled={contextBusy || !currentSessionId} onClick={rebuildSummary}>
+                重建当前会话摘要
+              </button>
+              <button className="btn ghost" disabled={contextBusy || !currentSessionId} onClick={deleteDerivedSummary}>
+                删除当前会话派生摘要
+              </button>
+              <button
+                className="btn ghost"
+                disabled={contextBusy}
+                onClick={() => {
+                  setContextBusy(true);
+                  api.rebuildHistoryIndex()
+                    .then((result) => toast(`已重建 ${result.sessions} 个会话、${result.messages} 条消息的索引`))
+                    .catch((e) => toast(e.message || "重建索引失败"))
+                    .finally(() => setContextBusy(false));
+                }}
+              >
+                重建历史索引
+              </button>
+              <button className="btn ghost" disabled={contextBusy} onClick={loadContextDiagnostics}>
+                刷新诊断
+              </button>
+            </div>
+            {contextDiagnostics?.package_events[0] ? (
+              <dl className="context-diagnostic-grid">
+                <div><dt>摘要修订</dt><dd>{contextDiagnostics.package_events[0].summary_revision ?? "未使用"}</dd></div>
+                <div><dt>裁剪原因</dt><dd>{contextDiagnostics.package_events[0].trim_reason === "budget" ? "上下文预算" : "无需裁剪"}</dd></div>
+                <div><dt>裁剪轮次</dt><dd>{contextDiagnostics.package_events[0].trimmed_rounds}</dd></div>
+                <div><dt>输出预留</dt><dd>{contextDiagnostics.package_events[0].output_reserve_tokens} tokens</dd></div>
+                <div><dt>来源类型</dt><dd>{Object.keys(contextDiagnostics.package_events[0].source_type_counts).length} 类</dd></div>
+                <div><dt>诊断正文</dt><dd>不记录</dd></div>
+              </dl>
+            ) : (
+              <p className="settings-card-hint">当前会话还没有可显示的无正文诊断记录。</p>
+            )}
+            <p className="settings-card-hint">
+              重建或删除摘要只影响可再生成的派生数据，不会改写或删除原始聊天。
+            </p>
+          </details>
 
           {/* 记忆层级分布 */}
           <section className="settings-card">

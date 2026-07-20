@@ -525,6 +525,51 @@ def list_events(session_id: str, *, limit: int = 100) -> list[dict]:
         conn.close()
 
 
+def delete_derived(session_id: str) -> dict[str, int | bool]:
+    """Delete rebuildable summary artifacts while preserving every raw message."""
+    conn = db.connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        session = conn.execute("SELECT id FROM sessions WHERE id=?", (session_id,)).fetchone()
+        if not session:
+            raise ConversationSummaryError("summary_session_missing", "会话不存在")
+        message_count = conn.execute(
+            "SELECT COUNT(*) value FROM messages WHERE session_id=?", (session_id,),
+        ).fetchone()["value"]
+        run_count = conn.execute(
+            "SELECT COUNT(*) value FROM conversation_summary_runs WHERE session_id=?",
+            (session_id,),
+        ).fetchone()["value"]
+        revision_count = conn.execute(
+            "SELECT COUNT(*) value FROM conversation_summary_revisions WHERE session_id=?",
+            (session_id,),
+        ).fetchone()["value"]
+        event_count = conn.execute(
+            "SELECT COUNT(*) value FROM conversation_summary_events WHERE session_id=?",
+            (session_id,),
+        ).fetchone()["value"]
+        conn.execute("DELETE FROM conversation_summary_runs WHERE session_id=?", (session_id,))
+        # Cascading deletes do not provide a summary-delete trigger, so refresh
+        # the session FTS row explicitly and remove any derived summary text.
+        conn.execute("DELETE FROM conversation_history_sessions_fts WHERE session_id=?", (session_id,))
+        conn.execute(
+            "INSERT INTO conversation_history_sessions_fts(session_id,title,summary_text)"
+            " SELECT id,title,'' FROM sessions WHERE id=?", (session_id,),
+        )
+        conn.commit()
+        return {
+            "ok": True, "raw_messages_preserved": int(message_count),
+            "deleted_runs": int(run_count), "deleted_revisions": int(revision_count),
+            "deleted_events": int(event_count),
+        }
+    except Exception:
+        if conn.in_transaction:
+            conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
 def load_claimed_source(run_id: str, lease_token: str) -> list[dict]:
     """供 CTX.3 worker 读取租约绑定的原始来源；不通过 HTTP 暴露正文。"""
     conn = db.connect()

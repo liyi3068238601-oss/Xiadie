@@ -18,8 +18,6 @@ interface Props {
 
 interface Streaming {
   text: string;
-  memoryCount: number;
-  knowledgeCount: number;
 }
 
 interface PendingGrant {
@@ -176,7 +174,7 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
       setMessages((m) => [...m, localMsg("user", content)]);
       setInput("");
     }
-    setStreaming({ text: "", memoryCount: 0, knowledgeCount: 0 });
+    setStreaming({ text: "" });
     onMode("thinking");
     api.desktop?.setPetState?.("thinking", "让我想想…", companionCluster);
 
@@ -184,13 +182,8 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
       activeSessionId,
       content,
       {
-        onMeta: (m) => setStreaming((s) => (s ? {
-          ...s, memoryCount: m.memory_count, knowledgeCount: m.knowledge_count,
-        } : s)),
         onDelta: (t) => {
-          setStreaming((s) => (s ? { ...s, text: s.text + t } : {
-            text: t, memoryCount: 0, knowledgeCount: 0,
-          }));
+          setStreaming((s) => (s ? { text: s.text + t } : { text: t }));
         },
         onError: (msg, hint) => {
           setStreaming(null);
@@ -320,18 +313,6 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
                   </span>
                 )}
               </div>
-              {streaming.memoryCount > 0 && (
-                <div className="msg-meta">
-                  <span className="memory-hint">
-                    ✦ 本轮参考了 {streaming.memoryCount} 条相关记忆
-                  </span>
-                </div>
-              )}
-              {streaming.knowledgeCount > 0 && (
-                <div className="msg-meta">
-                  <span className="knowledge-hint">▧ 正在核对 {streaming.knowledgeCount} 条本地资料</span>
-                </div>
-              )}
             </div>
           </div>
         )}

@@ -1969,6 +1969,29 @@ MIGRATIONS = [
             ON conversation_history_recall_events(current_session_id,created_at,id);
         """,
     ),
+    (
+        45,
+        """
+        CREATE TABLE context_package_events (
+            id TEXT PRIMARY KEY,
+            session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            user_message_id TEXT REFERENCES messages(id) ON DELETE SET NULL,
+            package_protocol_version TEXT NOT NULL,
+            budget_protocol_version TEXT NOT NULL,
+            context_window_tokens INTEGER NOT NULL,
+            output_reserve_tokens INTEGER NOT NULL,
+            trimmed_messages INTEGER NOT NULL DEFAULT 0,
+            trimmed_rounds INTEGER NOT NULL DEFAULT 0,
+            trim_reason TEXT NOT NULL CHECK(trim_reason IN ('none','budget')),
+            summary_revision INTEGER,
+            source_type_counts_json TEXT NOT NULL DEFAULT '{}',
+            component_tokens_json TEXT NOT NULL DEFAULT '{}',
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_context_package_events_session
+            ON context_package_events(session_id,created_at,id);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
@@ -2052,6 +2075,10 @@ def init_db() -> None:
         conn.execute(
             "INSERT OR IGNORE INTO settings(key, value)"
             " VALUES('conversation_history_recall_mode', 'explicit_only')"
+        )
+        conn.execute(
+            "INSERT OR IGNORE INTO settings(key, value)"
+            " VALUES('conversation_summary_injection_enabled', '1')"
         )
         conn.commit()
     finally:

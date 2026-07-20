@@ -92,6 +92,27 @@ def enqueue_after_chat(*, session_id: str, chat_provider: dict | None, chat_mode
                 "diagnostic_type": type(exc).__name__}
 
 
+def rebuild(session_id: str) -> dict:
+    """Enqueue a fresh full rebuild while the last valid summary stays active."""
+    config = get_model_config()
+    provider = _load_provider(str(config.get("resolved_provider_id") or ""))
+    model = str(config.get("resolved_model") or "")
+    location = str((provider or {}).get("execution_location") or "unknown")
+    location_revision = max(1, int((provider or {}).get("location_revision") or 1))
+    allowed = bool(config.get("allow_remote_history"))
+    run = ledger.enqueue(session_id, binding={
+        "provider_id": (provider or {}).get("id"), "model": model,
+        "provider_location": location,
+        "provider_location_revision": location_revision,
+        "remote_history_allowed": allowed,
+        "generation_mode": "full", "base_revision_id": None,
+        "generation_key": f"manual-full:{db.new_id()}",
+    })
+    wake_worker()
+    return {"run": {"id": run["id"], "status": run["status"],
+                    "error_code": run.get("error_code")}}
+
+
 async def start_worker() -> None:
     global _worker_task, _wake_event
     if _worker_task and not _worker_task.done():
