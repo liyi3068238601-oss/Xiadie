@@ -158,10 +158,30 @@ try {
   Add-Content -LiteralPath (Join-Path $logRoot "launcher.err.log") -Value $launcherError -Encoding UTF8
   Show-LaunchError $_.Exception.Message
 } finally {
+  # 先尝试杀之前保存的进程对象（进程树方式）
   Stop-ProcessTree $frontendListener
   Stop-ProcessTree $backendListener
   Stop-ProcessTree $startedFrontend
   Stop-ProcessTree $startedBackend
+  Stop-ProcessTree $desktop
+
+  # 兜底：按端口和进程名清理所有残留进程。
+  # venv launcher 派生的 codex-runtimes python 子进程可能成为孤儿，
+  # 之前的进程对象杀不到它；直接按端口定位并杀掉监听者更可靠。
+  foreach ($port in 8756, 5173) {
+    try {
+      $listener = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction Stop |
+        Select-Object -First 1
+      if ($listener) {
+        Stop-ProcessTree (Get-Process -Id $listener.OwningProcess -ErrorAction SilentlyContinue)
+      }
+    } catch {}
+  }
+  # 清理所有本项目 Electron 进程（防止 GPU/utility/renderer 子进程残留）
+  Get-Process -Name electron -ErrorAction SilentlyContinue |
+    Where-Object { try { $_.Path -like "$desktopDir*" } catch { $false } } |
+    Stop-Process -Force -ErrorAction SilentlyContinue
+
   # 清理 dev 模式文件标志
   $devFlag = Join-Path $root "backend\.dev_mode"
   Remove-Item -LiteralPath $devFlag -Force -ErrorAction SilentlyContinue
