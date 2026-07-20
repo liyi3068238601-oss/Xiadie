@@ -112,8 +112,13 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
 
   async function send(regenerate = false) {
     if (!sessionId || busy) return;
-    const content = regenerate ? lastUserContent() : input.trim();
+    let content = regenerate ? lastUserContent() : input.trim();
     if (!content && pendingAttachments.length === 0) return;
+    // 有附件但无文字时填充占位，避免后端 preflight 的 content min_length=1 校验失败
+    if (!content && pendingAttachments.length > 0) {
+      const names = pendingAttachments.map((a) => a.filename).join("、");
+      content = `(请阅读我上传的文件：${names})`;
+    }
     const requestNonce = newRequestNonce();
     memoryWatchId.current += 1;
     setErrorCard(null);
