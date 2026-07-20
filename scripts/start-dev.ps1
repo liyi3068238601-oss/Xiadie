@@ -72,6 +72,9 @@ try {
   $tokenPart2 = [Guid]::NewGuid().ToString("N")
   $env:XIADIE_API_TOKEN = [string]::Concat($tokenPart1, $tokenPart2)
   $env:XIADIE_PARENT_PID = [string]$PID
+  # dev 模式标记：security.py 对 vite origin 放行无 token 请求，
+  # main.js 也以此作为 isDev 的可靠补充判断。
+  $env:XIADIE_DEV_MODE = "1"
 
   $existingElectron = Get-CimInstance Win32_Process -Filter "Name = 'electron.exe'" -ErrorAction SilentlyContinue |
     Where-Object { $_.ExecutablePath -eq $electronExe } |
@@ -83,6 +86,11 @@ try {
   if (Test-Port 8756) {
     throw "Backend port 8756 is already in use. Exit the existing backend and try again."
   } else {
+    # dev 模式文件标志：venv launcher 派生子进程时可能丢失 XIADIE_DEV_MODE
+    # 环境变量，文件标志不受进程派生影响，security.py 优先检查它。
+    $devFlag = Join-Path $root "backend\.dev_mode"
+    Set-Content -LiteralPath $devFlag -Value "1" -Encoding UTF8 -NoNewline
+
     $startedBackend = Start-Process `
       -FilePath $backendPython `
       -ArgumentList "run_frozen.py" `
@@ -154,4 +162,7 @@ try {
   Stop-ProcessTree $backendListener
   Stop-ProcessTree $startedFrontend
   Stop-ProcessTree $startedBackend
+  # 清理 dev 模式文件标志
+  $devFlag = Join-Path $root "backend\.dev_mode"
+  Remove-Item -LiteralPath $devFlag -Force -ErrorAction SilentlyContinue
 }

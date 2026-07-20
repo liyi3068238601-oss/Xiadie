@@ -28,3 +28,6 @@ frontend/public/models/
 .DS_Store
 *.log
 .env
+
+# dev 启动器生成的临时文件标志（start-dev.ps1 创建/清理）
+backend/.dev_mode

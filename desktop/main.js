@@ -8,7 +8,12 @@ const { spawn } = require("child_process");
 const http = require("http");
 const { randomBytes } = require("crypto");
 
-const isDev = !app.isPackaged;
+// Electron 33 的 app.isPackaged 在从 node_modules/electron 运行时仍可能返回
+// true（已知行为变化），用 resourcesPath 是否落在 node_modules 内作为补充判断。
+const isDev =
+  !app.isPackaged ||
+  process.resourcesPath.includes("node_modules") ||
+  process.env.XIADIE_DEV_MODE === "1";
 const BACKEND_PORT = 8756;
 const DEV_URL = "http://127.0.0.1:5173";
 const inheritedToken = process.env.XIADIE_API_TOKEN || "";
