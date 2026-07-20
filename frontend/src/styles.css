@@ -2715,7 +2715,7 @@ textarea {
 
 /* 标签内容容器 */
 .settings-tab-content { display: flex; flex-direction: column; gap: 16px; }
-.settings-memory-content, .settings-perms-content { max-width: 640px; }
+.settings-memory-content, .settings-perms-content { width: 100%; }
 
 /* 通用卡片 */
 .settings-card { padding: 20px; border: 1px solid var(--glass-border); border-radius: var(--radius); background: var(--glass-strong); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: var(--shadow); }
