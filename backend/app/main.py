@@ -21,7 +21,7 @@ from . import (
     entities, episode_consolidator, history_recall,
     episode_summary_service, episodes, knowledge, knowledge_cleanup, knowledge_context,
     knowledge_embeddings, knowledge_grants,
-    knowledge_management, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search,
+    knowledge_management, knowledge_parser, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search,
     knowledge_worker, llm, lore, memory, memory_conflicts, saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, secret_store, slow_lifecycle,
 )
@@ -339,6 +339,7 @@ class ChatIn(BaseModel):
                                          pattern=r"^[A-Za-z0-9_-]+$")
     knowledge_grant_token: Optional[str] = Field(default=None, max_length=256)
     knowledge_skip_restricted: bool = False
+    attachment_ids: list[str] = Field(default_factory=list)
 
 
 def _current_model() -> tuple[Optional[dict], str]:
@@ -464,6 +465,26 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 " WHERE session_id=? ORDER BY created_at,id",
                 (body.session_id,),
             ).fetchall()
+        # 读取本轮附件全文，回填 message_id，拼接 attachment_block
+        attachment_block = ""
+        if body.attachment_ids and uid:
+            rows = conn.execute(
+                "SELECT id, filename, content_text FROM message_attachments WHERE id IN (%s)"
+                % ",".join("?" * len(body.attachment_ids)),
+                body.attachment_ids,
+            ).fetchall()
+            found = {row["id"]: row for row in rows}
+            parts = []
+            for aid in body.attachment_ids:
+                row = found.get(aid)
+                if row:
+                    conn.execute(
+                        "UPDATE message_attachments SET message_id=? WHERE id=? AND message_id IS NULL",
+                        (uid, aid),
+                    )
+                    parts.append("=== %s ===\n%s" % (row["filename"], row["content_text"]))
+            if parts:
+                attachment_block = "\n\n".join(parts)
         knowledge_block = knowledge_context.prompt_block(knowledge_retrieval)
         if knowledge_retrieval:
             conn.execute(
@@ -499,6 +520,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 active_summary=active_summary,
                 cross_session_recall=history_prepared["turns"],
                 current_session_id=body.session_id,
+                attachment_block=attachment_block,
             )
         except context_budget.ContextBudgetError as error:
             if conn.in_transaction:
@@ -1159,6 +1181,78 @@ async def import_knowledge_document(request: Request) -> dict:
         raise HTTPException(status, str(error)) from error
     except OSError as error:
         raise HTTPException(507, "无法把文件安全保存到本地知识库") from error
+
+
+@app.post("/api/chat/attachments")
+async def upload_chat_attachment(request: Request) -> dict:
+    """聊天框附件上传：同步解析文件提取纯文本供本轮注入，同时异步入知识库。
+
+    与 /api/knowledge/documents/import 的区别：
+    - 本端点同步返回解析后的文本，供本轮对话即时阅读
+    - 同时异步调用 knowledge.import_file 存入知识库（不阻塞响应）
+    - 附件记录存入 message_attachments 表，message_id 在 chat() 中回填
+    """
+    import os as _os
+    import secrets as _secrets
+    declared_length = request.headers.get("content-length")
+    if declared_length:
+        try:
+            if int(declared_length) > knowledge.MAX_FILE_BYTES:
+                raise HTTPException(413, "文件超过 10 MiB 限制")
+        except ValueError as error:
+            raise HTTPException(400, "Content-Length 无效") from error
+    body = bytearray()
+    async for chunk in request.stream():
+        body.extend(chunk)
+        if len(body) > knowledge.MAX_FILE_BYTES:
+            raise HTTPException(413, "文件超过 10 MiB 限制")
+    filename = unquote(request.headers.get("X-Xiadie-Filename", ""))
+    if not filename:
+        raise HTTPException(400, "缺少文件名")
+    ext = _os.path.splitext(filename)[1].lower()
+    # 同步解析文件提取纯文本
+    try:
+        result = knowledge_parser.parse(bytes(body), extension=ext)
+        content_text = result["normalized_text"]
+        char_count = result["char_count"]
+    except knowledge_parser.ParserError as error:
+        status = 415 if error.code in {
+            "parser_unsupported", "encoding_unsupported",
+        } else 400
+        raise HTTPException(status, str(error)) from error
+    attachment_id = _secrets.token_hex(8)
+    content_sha256 = hashlib.sha256(content_text.encode("utf-8")).hexdigest()
+    mime_type = request.headers.get("content-type", "application/octet-stream")
+    conn = db.connect()
+    try:
+        conn.execute(
+            "INSERT INTO message_attachments(id, message_id, filename, mime_type,"
+            " content_text, content_sha256, char_count, created_at)"
+            " VALUES(?,?,?,?,?,?,?,?)",
+            (attachment_id, None, filename, mime_type,
+             content_text, content_sha256, char_count, db.now()),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    # 异步存入知识库（不阻塞响应；失败不影响本轮使用）
+    collection_id = request.headers.get("X-Xiadie-Collection", "default")
+    sensitivity = request.headers.get("X-Xiadie-Sensitivity", "normal")
+    try:
+        knowledge.import_file(
+            filename, mime_type, bytes(body),
+            collection_id=collection_id, sensitivity=sensitivity,
+        )
+        knowledge_worker.wake_worker()
+    except Exception:
+        pass  # 知识库导入失败不影响本轮附件阅读
+    return {
+        "id": attachment_id,
+        "filename": filename,
+        "mime_type": mime_type,
+        "char_count": char_count,
+        "content_preview": content_text[:200],
+    }
 
 
 @app.get("/api/knowledge/import-runs/{run_id}")

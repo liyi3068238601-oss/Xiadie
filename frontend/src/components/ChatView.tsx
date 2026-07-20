@@ -38,10 +38,13 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
   const [memoryNotice, setMemoryNotice] = useState<string | null>(null);
   const [pendingGrant, setPendingGrant] = useState<PendingGrant | null>(null);
   const [grantBusy, setGrantBusy] = useState(false);
+  const [pendingAttachments, setPendingAttachments] = useState<api.ChatAttachmentResult[]>([]);
+  const [attachmentBusy, setAttachmentBusy] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const memoryWatchId = useRef(0);
   const noticeTimer = useRef<number | null>(null);
-  const busy = streaming !== null || grantBusy || pendingGrant !== null;
+  const busy = streaming !== null || grantBusy || pendingGrant !== null || attachmentBusy;
 
   useEffect(() => {
     if (!sessionId) {
@@ -75,6 +78,37 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, streaming]);
+
+  async function handleFileSelect(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setAttachmentBusy(true);
+    for (const file of Array.from(files)) {
+      const lower = file.name.toLowerCase();
+      if (!/\.(txt|md|pdf|docx)$/.test(lower)) {
+        toast("仅支持 txt/md/pdf/docx 文件");
+        continue;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        toast(`${file.name} 超过 10 MiB 限制`);
+        continue;
+      }
+      try {
+        const result = await api.uploadChatAttachment(file);
+        setPendingAttachments((prev) => [...prev, result]);
+      } catch (error: any) {
+        const msg = error?.message || "";
+        const friendly = /Failed to fetch|NetworkError/i.test(msg)
+          ? "无法连接到后端，请确认遐蝶已正常启动"
+          : msg || "文件上传失败";
+        toast(friendly);
+      }
+    }
+    setAttachmentBusy(false);
+  }
+
+  function removeAttachment(id: string) {
+    setPendingAttachments((prev) => prev.filter((a) => a.id !== id));
+  }
 
   async function send(regenerate = false) {
     if (!sessionId || busy) return;
@@ -214,8 +248,15 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
         request_nonce: requestNonce,
         knowledge_grant_token: token,
         knowledge_skip_restricted: skipRestricted,
+        attachment_ids: pendingAttachments.length > 0
+          ? pendingAttachments.map((a) => a.id)
+          : undefined,
       },
     );
+    // 发送成功后清空附件
+    if (!options.regenerate) {
+      setPendingAttachments([]);
+    }
   }
 
   function showRequestError(error: unknown, fallbackHint: string) {
@@ -350,7 +391,42 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
       </div>
 
       <div className="composer">
+        {pendingAttachments.length > 0 && (
+          <div className="attachment-chips">
+            {pendingAttachments.map((a) => (
+              <span className="attachment-chip" key={a.id}>
+                📎 {a.filename}
+                <button
+                  className="attachment-chip-remove"
+                  onClick={() => removeAttachment(a.id)}
+                  title="移除"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
         <div className="composer-inner">
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept=".txt,.md,.pdf,.docx"
+            style={{ display: "none" }}
+            onChange={(e) => {
+              handleFileSelect(e.target.files);
+              e.target.value = "";
+            }}
+          />
+          <button
+            className="attach-btn"
+            disabled={!sessionId || busy}
+            onClick={() => fileInputRef.current?.click()}
+            title="上传文件让遐蝶阅读"
+          >
+            📎
+          </button>
           <textarea
             rows={1}
             placeholder={sessionId ? "和遐蝶说点什么…" : "正在准备对话…"}

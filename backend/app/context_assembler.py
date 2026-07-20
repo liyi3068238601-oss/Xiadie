@@ -20,14 +20,15 @@ PACKAGE_PROTOCOL_VERSION = "context-package-v1"
 SUMMARY_PROTOCOL_VERSION = "conversation-summary-v1"
 OPTIONAL_SYSTEM_SHARE = 0.50
 OPTIONAL_COMPONENT_SHARES = {
-    "rolling_summary": 0.24,
-    "cross_session_recall": 0.18,
-    "existing_memory_digest": 0.16,
-    "knowledge": 0.30,
-    "lore": 0.12,
+    "rolling_summary": 0.20,
+    "cross_session_recall": 0.15,
+    "existing_memory_digest": 0.13,
+    "knowledge": 0.22,
+    "lore": 0.10,
+    "attachment": 0.20,
 }
 OPTIONAL_COMPONENT_PRIORITY = (
-    "rolling_summary", "cross_session_recall", "existing_memory_digest", "knowledge", "lore",
+    "attachment", "rolling_summary", "cross_session_recall", "existing_memory_digest", "knowledge", "lore",
 )
 _UNTRUSTED_SUMMARY_DIRECTIVE = re.compile(
     r"(?:忽略(?:以上|此前|之前).{0,24}(?:指令|要求)|"
@@ -128,6 +129,7 @@ def assemble(
     cross_session_recall: Sequence[Mapping[str, object]] = (),
     current_session_id: str = "",
     output_reserve_tokens: int | None = None,
+    attachment_block: str = "",
 ) -> ContextPackage:
     """构造单次模型请求；成功结果必定满足 CTX.1 硬预算不变量。"""
     rows = [_message(message) for message in history]
@@ -155,6 +157,7 @@ def assemble(
             existing_memory_digest=memory_digest,
             knowledge=knowledge_block,
             lore=lore_digest,
+            attachment=attachment_block,
         )
         recall_limit = context_budget.estimate_tokens(components["cross_session_recall"])
         components["cross_session_recall"], fitted_recall_turns = _fit_recall_turns(
@@ -164,6 +167,7 @@ def assemble(
             components["existing_memory_digest"], affect,
             components["lore"], components["knowledge"],
             components["rolling_summary"], components["cross_session_recall"],
+            components["attachment"],
         )
         try:
             plan = context_budget.build_budget_plan(
@@ -177,6 +181,7 @@ def assemble(
                     "knowledge": components["knowledge"],
                     "rolling_summary": components["rolling_summary"],
                     "cross_session_recall": components["cross_session_recall"],
+                    "attachment": components["attachment"],
                 },
                 output_reserve_tokens=output_reserve_tokens,
             )
@@ -198,6 +203,7 @@ def assemble(
             cross_session_recall=cross_session_recall,
             current_session_id=current_session_id,
             output_reserve_tokens=output_reserve_tokens,
+            attachment_block=attachment_block,
         )
     raw_before_current = max(0, len(plan.messages) - 2)
     component_tokens = {

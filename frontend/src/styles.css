@@ -670,6 +670,62 @@ textarea {
   opacity: 0.4;
   cursor: default;
 }
+.attach-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 16px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.attach-btn:hover:not(:disabled) {
+  border-color: var(--glass-border-lit);
+  background: var(--glass-strong);
+}
+.attach-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.attachment-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.attachment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-border);
+  font-size: 12px;
+  color: var(--text-dim);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.attachment-chip-remove {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.6;
+}
+.attachment-chip-remove:hover {
+  opacity: 1;
+}
 
 /* 右侧状态栏 */
 .rightbar {

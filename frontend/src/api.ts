@@ -1149,6 +1149,43 @@ export interface ChatRequestOptions {
   request_nonce?: string;
   knowledge_grant_token?: string;
   knowledge_skip_restricted?: boolean;
+  attachment_ids?: string[];
+}
+
+// ---- 聊天附件上传 ----
+export interface ChatAttachmentResult {
+  id: string;
+  filename: string;
+  mime_type: string;
+  char_count: number;
+  content_preview: string;
+}
+
+export async function uploadChatAttachment(
+  file: File,
+): Promise<ChatAttachmentResult> {
+  const lower = file.name.toLowerCase();
+  const fallbackMime = lower.endsWith(".md")
+    ? "text/markdown"
+    : lower.endsWith(".pdf")
+      ? "application/pdf"
+      : lower.endsWith(".docx")
+        ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        : "text/plain";
+  const response = await fetch(API_BASE + "/api/chat/attachments", {
+    method: "POST",
+    headers: requestHeaders({ headers: {
+      "Content-Type": file.type || fallbackMime,
+      "X-Xiadie-Filename": encodeURIComponent(file.name),
+    }}),
+    body: file,
+  });
+  if (!response.ok) {
+    let detail = response.statusText;
+    try { detail = (await response.json()).detail || detail; } catch { /* ignore */ }
+    throw new ApiError(response.status, detail);
+  }
+  return response.json();
 }
 
 // 用 fetch+ReadableStream 解析 SSE（EventSource 不支持 POST）

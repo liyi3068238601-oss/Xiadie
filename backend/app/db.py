@@ -1992,6 +1992,23 @@ MIGRATIONS = [
             ON context_package_events(session_id,created_at,id);
         """,
     ),
+    (
+        46,
+        """
+        CREATE TABLE IF NOT EXISTS message_attachments (
+            id TEXT PRIMARY KEY,
+            message_id TEXT REFERENCES messages(id) ON DELETE CASCADE,
+            filename TEXT NOT NULL,
+            mime_type TEXT,
+            content_text TEXT NOT NULL,
+            content_sha256 TEXT NOT NULL,
+            char_count INTEGER NOT NULL DEFAULT 0,
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_message_attachments_message
+            ON message_attachments(message_id);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
