@@ -1047,16 +1047,20 @@ proactive-feedback-v1          主动反馈
 
 ### 8.2 与 LIFE 的边界
 
-#### LIFE 拥有领域（8 项）
+> v0.2 修订（2026-07-21）：LIFE 拥有领域从 8 项扩展为 10 项，补充 LifeClock 和 BoundaryProfile；联动规则补充 candidate kind 映射表。
 
-- 连续自我生活状态
-- 每日生活日程
-- 离线世界续演
-- LifeEvent
-- PersonalGoal
-- ImportantDate
-- Diary
-- SelfTimeline
+#### LIFE 拥有领域（10 项）
+
+- LifeClock（连续时间与推进游标）
+- SelfState（连续自我状态：energy/focus/curiosity 等）
+- 每日生活日程（DailySchedule + ScheduleSegment）
+- 离线世界续演（CatchUpRequest + 分层续演策略）
+- LifeEvent（LifeEventLedger 唯一账本，5 种 world_layer）
+- PersonalGoal（遐蝶自己的连续目标）
+- ImportantDate（重要日期与共同日期）
+- Diary（DiaryEntry + ContinuityThread）
+- SelfTimeline（遐蝶自己的可检索时间线）
+- BoundaryProfile（互动与生活边界）
 
 #### 联动规则
 
@@ -1064,19 +1068,42 @@ proactive-feedback-v1          主动反馈
 - EAP 判断是否适合接近用户、采用何种强度
 - LIFE 不得直接发送主动消息
 - EAP 不得伪造或修改 LifeEvent
+- LIFE 的 SelfState 变化可作为 EAP approach_drive 的弱调制输入（不影响硬边界）
+- LIFE 的 BoundaryProfile 与 EAP 的三层硬门协同：用户明确边界 > LIFE BoundaryProfile > EAP 动态因素
+- LIFE 事件被 EAP 拒绝后，EAP 调用 `reject_seed` 通知 LIFE（seed 保留审计，不反馈到 LIFE 侧数据）
+
+#### LIFE 生活来源到 EAP candidate kind 映射
+
+> v0.2 新增：明确 LIFE 第 7.5 节 5 种生活来源到 EAP 第 5.5 节 candidate kind 的映射关系。
+
+| LIFE 生活来源 | EAP candidate kind | 说明 |
+|--------------|-------------------|------|
+| life_share（分享当天小事） | gentle_greeting | 低频问候，适合关系较浅时 |
+| goal_progress_share（目标进展） | milestone_followup | 里程碑跟进，需关系较高 |
+| important_date_care（重要日期关心） | emotional_care | 情感关心，引用真实日期 |
+| diary_reflection（日记想法） | gentle_greeting | 低频问候，带连续线索 |
+| return_greeting（长离线回归） | expected_return_followup | 预计返回跟进，引用离线时长 |
+
+注：EAP 第一版 candidate kind 白名单为 5 种（conversation_continuation/expected_return_followup/emotional_care/milestone_followup/gentle_greeting）。如 LIFE 需要更细分的 kind，须在 EAP 协议升级后新增白名单，不得绕过现有 kind 直接发送。
 
 #### 示例流程
 
 ```text
 DiaryEntry
     ↓
-life_share proactive seed
+life_share proactive seed（seed_kind='life_share'，DB CHECK 约束）
     ↓
-EAP 建立 ContactEpisode
+EAP life_adapter.receive_life_seed 落库（不创建 ContactEpisode）
     ↓
-LLM 判断现在是否自然
+EAP life_adapter.consume_seed 关联已存在 ContactEpisode
     ↓
-程序验证边界和投递
+EAP proactive-decision-v2 三层硬门评估
+    ↓
+LLM 判断现在是否自然（approach_drive）
+    ↓
+程序验证边界和投递（硬边界 LLM 无权放行）
+    ↓
+若拒绝：reject_seed 通知 LIFE（seed 保留审计）
 ```
 
 ### 8.3 与 CTX 的边界
@@ -1478,10 +1505,11 @@ EAP v1 冻结后，外部渠道仍不得直接启用。下一入口必须先完�
 目标：接入 LIFE 生活事件、日记、重要日期，形成 proactive seed。
 
 - [ ] 等待 LIFE 专项提供 LifeEvent、PersonalGoal、ImportantDate、Diary、SelfTimeline
-- [ ] 实现 `life_share` proactive seed 接入 EAP ContactEpisode
-- [ ] 验证：LIFE 不得直接发送主动消息；EAP 不得伪造 LifeEvent
+- [x] 实现 `life_share` proactive seed 接入 EAP ContactEpisode（EAP v0.2 已完成接口预留：`life_proactive_seeds` 表 + `life_adapter.py`）
+- [x] 验证：LIFE 不得直接发送主动消息（DB CHECK 约束 `seed_kind = 'life_share'` 已实现）
+- [x] 验证：EAP 不得伪造 LifeEvent（`consume_seed` 只关联已存在 episode，不写 LIFE 侧表）
 
-能力状态：`[ ]` 未实现（依赖 LIFE 专项，可延后）
+能力状态：`[~]` 接口预留已实现（2026-07-21 EAP v0.2 施工完成），等待 LIFE 专项提供数据模型实际接入
 
 ### EAP.J：长期模拟、用户偏好适应和总验收
 
@@ -1680,6 +1708,7 @@ Review 建议必须分为：
 | 第 7.1 节 | 修订 | 主动陪伴总开关默认关闭→默认开启 |
 | 第 7.4 节 | 修订 | 普通 UI 移除技术解释，只保留自然控制（Task 1.14） |
 | 第 8 节 | 新增 | 与 LIFE、CTX、Memory、KIG 的所有权边界（Task 1.15） |
+| 第 8.2 节 | 修订 | LIFE 拥有领域从 8 项扩展为 10 项（补充 LifeClock 和 BoundaryProfile）；联动规则补充 candidate kind 映射表和示例流程（2026-07-21 EAP v0.2 施工后同步） |
 | 第 8.A 节 | 重编号 | 原第 8 节"与上下文、记忆、任务和渠道的接口"重编号为 8.A |
 | 第 9 节 | 标注 | EAP.0~EAP.10 标注为 v0.1 历史，已被 v0.2 取代；affect 内核项标注 `[x]` |
 | 第 9.A 节 | 新增 | 施工阶段重组 EAP.A~EAP.J（Task 1.18） |
