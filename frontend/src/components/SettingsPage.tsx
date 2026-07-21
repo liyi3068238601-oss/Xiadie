@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import * as api from "./../api";
 import { toast } from "./../store";
 
-// 需求 6.9 分组：模型 API / 外观 / Live2D / 记忆 / 权限 / 数据。
-type TabKey = "model" | "appearance" | "live2d" | "memory" | "perms" | "data";
+// 需求 6.9 分组：模型 API / 外观 / Live2D / 记忆 / 权限 / 陪伴与主动消息 / 数据。
+type TabKey = "model" | "appearance" | "live2d" | "memory" | "perms" | "proactive" | "data";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "model", label: "模型 API" },
@@ -11,8 +11,44 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "live2d", label: "Live2D" },
   { key: "memory", label: "记忆" },
   { key: "perms", label: "权限" },
+  { key: "proactive", label: "陪伴与主动消息" },
   { key: "data", label: "数据" },
 ];
+
+// 陪伴与主动消息：后端 settings 键名与默认值（EAP v0.2 第 7.1 节）。
+const PROACTIVE_SETTING_KEYS = [
+  "proactive_enabled",
+  "proactive_desktop_notification_enabled",
+  "proactive_external_channels_enabled",
+  "proactive_kind_chat_continuation_enabled",
+  "proactive_kind_return_followup_enabled",
+  "proactive_kind_emotional_care_enabled",
+  "proactive_kind_milestone_followup_enabled",
+  "proactive_kind_casual_greeting_enabled",
+  "proactive_kind_life_share_enabled",
+  "proactive_quiet_hours_start",
+  "proactive_quiet_hours_end",
+  "proactive_frequency_mode",
+  "proactive_pause_until",
+  "proactive_show_advanced_diagnostics",
+];
+
+const PROACTIVE_DEFAULTS: Record<string, string> = {
+  proactive_enabled: "1",
+  proactive_desktop_notification_enabled: "0",
+  proactive_external_channels_enabled: "0",
+  proactive_kind_chat_continuation_enabled: "1",
+  proactive_kind_return_followup_enabled: "1",
+  proactive_kind_emotional_care_enabled: "1",
+  proactive_kind_milestone_followup_enabled: "1",
+  proactive_kind_casual_greeting_enabled: "1",
+  proactive_kind_life_share_enabled: "1",
+  proactive_quiet_hours_start: "23",
+  proactive_quiet_hours_end: "9",
+  proactive_frequency_mode: "restrained",
+  proactive_pause_until: "",
+  proactive_show_advanced_diagnostics: "0",
+};
 
 // 能力标签说明（stream/tools/vision/reasoning/local）。
 const CAP_DESC: { key: string; label: string; tone: "ok" | "cyan" | "violet" | "warn" }[] = [
@@ -492,6 +528,49 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
       return { ...prev, [name]: next };
     });
   };
+
+  // ---- 陪伴与主动消息（EAP v0.2 第 7.1 节）：复用 api.getSetting/setSetting ----
+  const [proactiveLoading, setProactiveLoading] = useState(true);
+  const [proactiveError, setProactiveError] = useState("");
+  const [proactiveSettings, setProactiveSettings] = useState<Record<string, string>>({});
+
+  const loadProactiveSettings = () => {
+    setProactiveLoading(true);
+    Promise.all(
+      PROACTIVE_SETTING_KEYS.map((k) =>
+        api.getSetting(k).catch(() => ({ key: k, value: PROACTIVE_DEFAULTS[k] || "" }))
+      )
+    )
+      .then((results) => {
+        const map: Record<string, string> = {};
+        results.forEach((r, i) => {
+          const key = PROACTIVE_SETTING_KEYS[i];
+          // 后端返回空值时使用默认值。
+          map[key] = r.value || PROACTIVE_DEFAULTS[key] || "";
+        });
+        setProactiveSettings(map);
+        setProactiveError("");
+      })
+      .catch((e) => setProactiveError(e.message || "加载失败"))
+      .finally(() => setProactiveLoading(false));
+  };
+
+  const updateProactiveSetting = (key: string, value: string) => {
+    // 乐观更新本地状态；保存失败时回滚并提示。
+    const prevValue = proactiveSettings[key];
+    setProactiveSettings((prev) => ({ ...prev, [key]: value }));
+    api
+      .setSetting(key, value)
+      .catch((e) => {
+        toast(e.message || "保存失败");
+        setProactiveSettings((prev) => ({ ...prev, [key]: prevValue }));
+        loadProactiveSettings();
+      });
+  };
+
+  useEffect(() => {
+    if (tab === "proactive") loadProactiveSettings();
+  }, [tab]);
 
   const drawerProvider = drawerPid ? providers.find((p) => p.id === drawerPid) : null;
 
@@ -1173,6 +1252,279 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
             <span className="settings-perm-note-dot" aria-hidden="true">·</span>
             <span>所有工具调用记录可在「工具记录」查看</span>
           </div>
+        </div>
+      )}
+
+      {/* ============ 陪伴与主动消息 ============ */}
+      {tab === "proactive" && (
+        <div className="settings-tab-content">
+          {proactiveLoading && <div className="settings-empty">正在加载主动陪伴设置…</div>}
+
+          {!proactiveLoading && proactiveError && (
+            <div className="settings-empty">
+              加载失败：{proactiveError}
+              <div className="settings-empty-actions">
+                <button className="btn ghost" onClick={loadProactiveSettings}>重试</button>
+              </div>
+            </div>
+          )}
+
+          {!proactiveLoading && !proactiveError && (
+            <>
+              {/* 1. 主动陪伴总开关 */}
+              <section className="settings-card">
+                <div className="settings-card-title-row">
+                  <span className="settings-card-title">主动陪伴</span>
+                  <label className="settings-toggle">
+                    <input
+                      type="checkbox"
+                      checked={proactiveSettings.proactive_enabled === "1"}
+                      onChange={(e) => updateProactiveSetting("proactive_enabled", e.target.checked ? "1" : "0")}
+                      aria-label="主动陪伴总开关"
+                    />
+                    <span className="settings-toggle-slider" aria-hidden="true"></span>
+                  </label>
+                </div>
+                <p className="settings-card-hint">
+                  遐蝶可能在合适的时候通过本机消息轻轻问候你。关闭后不会有任何真实主动投递。
+                </p>
+              </section>
+
+              {/* 2. 允许的主动类型 */}
+              <section className="settings-card">
+                <p className="settings-card-eyebrow">允许的主动类型</p>
+                <p className="settings-card-hint">分别控制遐蝶可以发起的主动行为类型。</p>
+                <div className="settings-proactive-kinds">
+                  {[
+                    { key: "proactive_kind_chat_continuation_enabled", label: "聊天延续" },
+                    { key: "proactive_kind_return_followup_enabled", label: "回来后追问" },
+                    { key: "proactive_kind_emotional_care_enabled", label: "情绪关心" },
+                    { key: "proactive_kind_milestone_followup_enabled", label: "里程碑跟进" },
+                    { key: "proactive_kind_casual_greeting_enabled", label: "普通问候" },
+                    { key: "proactive_kind_life_share_enabled", label: "LIFE 分享" },
+                  ].map((item) => (
+                    <label key={item.key} className="settings-toggle-row">
+                      <span>{item.label}</span>
+                      <label className="settings-toggle">
+                        <input
+                          type="checkbox"
+                          checked={proactiveSettings[item.key] === "1"}
+                          onChange={(e) => updateProactiveSetting(item.key, e.target.checked ? "1" : "0")}
+                          aria-label={item.label}
+                        />
+                        <span className="settings-toggle-slider" aria-hidden="true"></span>
+                      </label>
+                    </label>
+                  ))}
+                </div>
+              </section>
+
+              {/* 3. 安静时段 */}
+              <section className="settings-card">
+                <p className="settings-card-eyebrow">安静时段</p>
+                <p className="settings-card-hint">默认 23:00～09:00，支持跨午夜。安静时段内不发送主动消息（但状态继续推进）。</p>
+                <div className="settings-quiet-hours">
+                  <label>
+                    开始
+                    <select
+                      value={proactiveSettings.proactive_quiet_hours_start}
+                      onChange={(e) => updateProactiveSetting("proactive_quiet_hours_start", e.target.value)}
+                      aria-label="安静时段开始"
+                    >
+                      {Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, "0")).map((h) => (
+                        <option key={h} value={h}>{h}:00</option>
+                      ))}
+                    </select>
+                  </label>
+                  <span>至</span>
+                  <label>
+                    结束
+                    <select
+                      value={proactiveSettings.proactive_quiet_hours_end}
+                      onChange={(e) => updateProactiveSetting("proactive_quiet_hours_end", e.target.value)}
+                      aria-label="安静时段结束"
+                    >
+                      {Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, "0")).map((h) => (
+                        <option key={h} value={h}>{h}:00</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              </section>
+
+              {/* 4. 频率 */}
+              <section className="settings-card">
+                <p className="settings-card-eyebrow">频率</p>
+                <p className="settings-card-hint">控制遐蝶主动接近的频率偏好。</p>
+                <div className="settings-frequency-mode">
+                  {[
+                    { value: "restrained", label: "克制", desc: "更少主动，优先安静等待和 Live2D 表达" },
+                    { value: "standard", label: "标准", desc: "正常主动陪伴频率" },
+                    { value: "custom", label: "自定义", desc: "高级用户自定义" },
+                  ].map((opt) => (
+                    <label
+                      key={opt.value}
+                      className={`settings-frequency-option${proactiveSettings.proactive_frequency_mode === opt.value ? " is-active" : ""}`}
+                    >
+                      <input
+                        type="radio"
+                        name="frequency-mode"
+                        value={opt.value}
+                        checked={proactiveSettings.proactive_frequency_mode === opt.value}
+                        onChange={(e) => updateProactiveSetting("proactive_frequency_mode", e.target.value)}
+                      />
+                      <div>
+                        <p className="settings-frequency-label">{opt.label}</p>
+                        <p className="settings-frequency-desc">{opt.desc}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </section>
+
+              {/* 5. 渠道 */}
+              <section className="settings-card">
+                <p className="settings-card-eyebrow">渠道</p>
+                <p className="settings-card-hint">控制遐蝶可以使用哪些渠道发起主动陪伴。</p>
+                <div className="settings-channels">
+                  <label className="settings-toggle-row">
+                    <div>
+                      <p>桌面系统通知</p>
+                      <p className="settings-card-hint">Windows 系统通知。首次使用时询问授权。</p>
+                    </div>
+                    <label className="settings-toggle">
+                      <input
+                        type="checkbox"
+                        checked={proactiveSettings.proactive_desktop_notification_enabled === "1"}
+                        onChange={(e) => updateProactiveSetting("proactive_desktop_notification_enabled", e.target.checked ? "1" : "0")}
+                        aria-label="桌面系统通知"
+                      />
+                      <span className="settings-toggle-slider" aria-hidden="true"></span>
+                    </label>
+                  </label>
+                  <label className="settings-toggle-row">
+                    <div>
+                      <p>外部渠道消息（QQ、微信、邮件等）</p>
+                      <p className="settings-card-hint">必须逐渠道明确授权。本版本暂未启用。</p>
+                    </div>
+                    <label className="settings-toggle">
+                      <input
+                        type="checkbox"
+                        checked={proactiveSettings.proactive_external_channels_enabled === "1"}
+                        onChange={(e) => updateProactiveSetting("proactive_external_channels_enabled", e.target.checked ? "1" : "0")}
+                        aria-label="外部渠道消息"
+                      />
+                      <span className="settings-toggle-slider" aria-hidden="true"></span>
+                    </label>
+                  </label>
+                </div>
+              </section>
+
+              {/* 6. 临时暂停 */}
+              <section className="settings-card">
+                <p className="settings-card-eyebrow">临时暂停</p>
+                <p className="settings-card-hint">临时停止主动陪伴。暂停期间不会有任何主动投递。</p>
+                <div className="settings-pause-actions">
+                  <button
+                    className="btn ghost"
+                    onClick={() => {
+                      const until = new Date(Date.now() + 3600 * 1000).toISOString();
+                      updateProactiveSetting("proactive_pause_until", until);
+                      toast("已暂停主动陪伴 1 小时");
+                    }}
+                  >
+                    暂停 1 小时
+                  </button>
+                  <button
+                    className="btn ghost"
+                    onClick={() => {
+                      const until = new Date();
+                      until.setHours(23, 59, 59, 999);
+                      updateProactiveSetting("proactive_pause_until", until.toISOString());
+                      toast("已暂停主动陪伴至今天结束");
+                    }}
+                  >
+                    暂停至今天结束
+                  </button>
+                  <button
+                    className="btn ghost"
+                    onClick={() => {
+                      updateProactiveSetting("proactive_pause_until", "");
+                      toast("已恢复主动陪伴");
+                    }}
+                  >
+                    恢复
+                  </button>
+                </div>
+                {proactiveSettings.proactive_pause_until && (
+                  <p className="settings-pause-status">
+                    当前暂停至：{new Date(proactiveSettings.proactive_pause_until).toLocaleString("zh-CN")}
+                  </p>
+                )}
+              </section>
+
+              {/* 7. 主动消息历史 */}
+              <section className="settings-card">
+                <div className="settings-card-title-row">
+                  <span className="settings-card-title">主动消息历史</span>
+                  <span className="settings-status-pill settings-status-off">开发中</span>
+                </div>
+                <p className="settings-card-hint">显示时间、自然原因、结果，可标记"时机不对/太频繁/内容不对"。</p>
+                <div className="settings-empty">暂无主动消息历史</div>
+              </section>
+
+              {/* 8. 高级诊断 */}
+              <section className="settings-card">
+                <div className="settings-card-title-row">
+                  <span className="settings-card-title">高级诊断</span>
+                  <label className="settings-toggle">
+                    <input
+                      type="checkbox"
+                      checked={proactiveSettings.proactive_show_advanced_diagnostics === "1"}
+                      onChange={(e) => updateProactiveSetting("proactive_show_advanced_diagnostics", e.target.checked ? "1" : "0")}
+                      aria-label="高级诊断"
+                    />
+                    <span className="settings-toggle-slider" aria-hidden="true"></span>
+                  </label>
+                </div>
+                <p className="settings-card-hint">仅开发模式显示候选、硬门、reason code 和策略版本。</p>
+                {proactiveSettings.proactive_show_advanced_diagnostics === "1" && (
+                  <div className="settings-diagnostics-info">
+                    <p>协议版本：conversation-presence-v2 / proactive-decision-v2 / expression-plan-v1</p>
+                    <p>Schema 版本：55</p>
+                    <p>（诊断详情将在后续版本中提供）</p>
+                  </div>
+                )}
+              </section>
+
+              {/* 9. 重置 / 清除候选（开发中） */}
+              <section className="settings-card">
+                <div className="settings-card-title-row">
+                  <span className="settings-card-title">重置与清除</span>
+                  <span className="settings-status-pill settings-status-off">开发中</span>
+                </div>
+                <p className="settings-card-hint">清除所有候选与历史（保留聊天、记忆和关系数据）。</p>
+                <div className="settings-data-actions">
+                  <button className="btn ghost" onClick={() => toast("清除候选功能开发中")}>
+                    清除所有候选
+                  </button>
+                  <button
+                    className="btn ghost"
+                    onClick={() => {
+                      PROACTIVE_SETTING_KEYS.forEach((k) => {
+                        if (PROACTIVE_DEFAULTS[k] !== undefined) {
+                          updateProactiveSetting(k, PROACTIVE_DEFAULTS[k]);
+                        }
+                      });
+                      toast("已重置主动陪伴设置为默认值");
+                    }}
+                  >
+                    重置为默认
+                  </button>
+                </div>
+              </section>
+            </>
+          )}
         </div>
       )}
 

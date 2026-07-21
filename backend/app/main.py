@@ -27,6 +27,7 @@ from . import (
 )
 from . import memory_observer_service
 from .affect import observer_service as affect_observer_service
+from .proactive import presence as proactive_presence
 from .security import ALLOWED_ORIGINS, TOKEN_HEADER, local_api_guard
 
 
@@ -646,6 +647,19 @@ async def chat(body: ChatIn) -> StreamingResponse:
             session_id=body.session_id, user_message_id=uid,
             user_text=body.content, provider=provider,
         )
+
+    # EAP v0.2 Conversation Presence v2：用户消息入库后更新 presence 状态。
+    # 按 spec："新消息到达时自动使过期离开状态结束"；程序规则识别高精度表达。
+    # presence 更新失败不应阻塞聊天（try/except 包裹）。
+    if not body.regenerate and uid and content_has_text:
+        try:
+            proactive_presence.update_presence(
+                body.session_id,
+                proactive_presence.detect_presence_signals(body.content),
+                source_message_id=uid,
+            )
+        except Exception:  # noqa: BLE001 - presence 失败不能阻塞陪伴聊天
+            pass
 
     async def gen():
         nonlocal context_package, messages, trimmed_count

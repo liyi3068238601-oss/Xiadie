@@ -2045,6 +2045,336 @@ MIGRATIONS = [
             VALUES('knowledge_default_policy', 'remote_allowed');
         """,
     ),
+    (
+        48,
+        """
+        -- EAP v0.2：为 affect_observer_runs 增加 source_hash 字段
+        -- 与 conversation_summary_runs.source_hash 对齐，用于 EAP 各阶段
+        -- 引用 affect 观察结果时的来源校验。
+        -- DEFAULT '' 兼容已有行（affect-observer-v1 已冻结，不修改写入逻辑）；
+        -- 新行由 EAP 各阶段在引用时按需计算并写入。
+        ALTER TABLE affect_observer_runs ADD COLUMN source_hash TEXT NOT NULL DEFAULT '';
+        """,
+    ),
+    (
+        49,
+        """
+        -- EAP v0.2 Conversation Presence v2：用户在线状态、离开原因、open_thread
+        -- 与 affect-observer-v1 的 user_status 4 值枚举互补，扩展为 8 值
+        -- 每个 session 最多一条 active 记录（is_active=1），历史记录保留用于审计
+        CREATE TABLE conversation_presence (
+            id TEXT PRIMARY KEY,
+            session_id TEXT NOT NULL,
+            user_status TEXT NOT NULL CHECK(user_status IN (
+                'online', 'away_brief', 'away_sleep', 'away_busy',
+                'away_extended', 'ended_conversation', 'do_not_disturb', 'unknown'
+            )),
+            detected_at REAL NOT NULL,
+            expires_at REAL,
+            expected_return_at REAL,
+            open_thread INTEGER NOT NULL DEFAULT 0,
+            open_thread_topic TEXT,
+            source_message_id TEXT,
+            priority INTEGER NOT NULL DEFAULT 0,
+            is_active INTEGER NOT NULL DEFAULT 1,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            FOREIGN KEY(session_id) REFERENCES sessions(id) ON DELETE CASCADE,
+            FOREIGN KEY(source_message_id) REFERENCES messages(id) ON DELETE SET NULL
+        );
+        CREATE INDEX idx_conversation_presence_session_active
+            ON conversation_presence(session_id, is_active);
+        CREATE INDEX idx_conversation_presence_expires
+            ON conversation_presence(expires_at)
+            WHERE is_active = 1;
+        """,
+    ),
+    (
+        50,
+        """
+        -- EAP v0.2 关系意义判断：LLM 输出 9 种关系意义标签，程序映射为受限 delta
+        -- 与 saga_relationship_delta_suggestions 独立（不修改已冻结的 saga 表）
+        -- 幂等：UNIQUE(source_message_id) 确保同一消息只产生一条建议
+        CREATE TABLE episode_relationship_delta_suggestions (
+            id TEXT PRIMARY KEY,
+            session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            source_message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+            episode_id TEXT REFERENCES memory_episodes(id) ON DELETE SET NULL,
+            relationship_label TEXT NOT NULL CHECK(relationship_label IN (
+                'ordinary_exchange', 'shared_appreciation', 'reliable_help',
+                'shared_success', 'vulnerable_disclosure', 'boundary_respected',
+                'boundary_repair', 'reunion', 'conflict'
+            )),
+            bond_delta REAL NOT NULL CHECK(bond_delta BETWEEN -0.01 AND 0.005),
+            familiarity_delta REAL NOT NULL CHECK(familiarity_delta BETWEEN 0 AND 0.003),
+            trust_delta REAL NOT NULL CHECK(trust_delta BETWEEN -0.01 AND 0.005),
+            attachment_delta REAL NOT NULL CHECK(attachment_delta BETWEEN 0 AND 0.003),
+            rapport_delta REAL NOT NULL CHECK(rapport_delta BETWEEN -0.005 AND 0.003),
+            cap_bond_applied REAL NOT NULL DEFAULT 0,
+            cap_trust_applied REAL NOT NULL DEFAULT 0,
+            idempotency_key TEXT NOT NULL UNIQUE,
+            status TEXT NOT NULL DEFAULT 'proposed' CHECK(status IN ('proposed','applied','revoked')),
+            applied_at REAL,
+            revoked_at REAL,
+            revocation_reason TEXT,
+            protocol_version TEXT NOT NULL,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_episode_rel_delta_session
+            ON episode_relationship_delta_suggestions(session_id, created_at);
+        CREATE INDEX idx_episode_rel_delta_source
+            ON episode_relationship_delta_suggestions(source_message_id);
+        """,
+    ),
+    (
+        51,
+        """
+        -- EAP v0.2 ContactEpisode：同一话题的连续主动管理（spec 第 5.7 节）
+        -- 状态机 10 值：proposed/waiting/approached/deferred/quiet_waiting/responded/closed/expired/cancelled/blocked
+        -- 承载 unanswered_pressure 累积与衰减（spec 第 5.9 节）
+        CREATE TABLE contact_episodes (
+            id TEXT PRIMARY KEY,
+            session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            topic TEXT NOT NULL,
+            origin_type TEXT NOT NULL CHECK(origin_type IN (
+                'expected_return', 'emotional_care', 'milestone', 'life_share'
+            )),
+            source_refs TEXT NOT NULL DEFAULT '{}',  -- JSON: 来源消息 ID、Episode ID、Saga ID
+            open_thread TEXT,  -- 用户回来后可自然衔接的事情
+            first_candidate_at REAL,
+            last_approach_at REAL,
+            approach_count INTEGER NOT NULL DEFAULT 0 CHECK(approach_count >= 0),
+            unanswered_pressure REAL NOT NULL DEFAULT 0 CHECK(unanswered_pressure >= 0),
+            current_intensity INTEGER NOT NULL DEFAULT 0
+                CHECK(current_intensity BETWEEN 0 AND 5),
+            status TEXT NOT NULL DEFAULT 'proposed' CHECK(status IN (
+                'proposed', 'waiting', 'approached', 'deferred',
+                'quiet_waiting', 'responded', 'closed', 'expired', 'cancelled', 'blocked'
+            )),
+            expires_at REAL,  -- 最大生命周期
+            outcome TEXT CHECK(outcome IS NULL OR outcome IN (
+                'replied', 'ignored', 'rejected', 'expired', 'cancelled'
+            )),
+            protocol_version TEXT NOT NULL,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_contact_episodes_session_status
+            ON contact_episodes(session_id, status);
+        CREATE INDEX idx_contact_episodes_expiry
+            ON contact_episodes(expires_at)
+            WHERE status IN ('proposed', 'waiting', 'approached', 'deferred', 'quiet_waiting');
+        """,
+    ),
+    (
+        52,
+        """
+        -- EAP v0.2 Proactive Candidate：本地候选生成（spec 第 6.3 节决策流程第 1 步）
+        CREATE TABLE proactive_candidates (
+            id TEXT PRIMARY KEY,
+            session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            episode_id TEXT REFERENCES contact_episodes(id) ON DELETE SET NULL,
+            candidate_kind TEXT NOT NULL CHECK(candidate_kind IN (
+                'chat_continuation', 'return_followup', 'emotional_care',
+                'milestone_followup', 'casual_greeting', 'life_share'
+            )),
+            topic TEXT NOT NULL,
+            source_refs TEXT NOT NULL DEFAULT '{}',
+            open_thread TEXT,
+            source_hash TEXT NOT NULL DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN (
+                'pending', 'evaluating', 'approved', 'deferred',
+                'suppressed', 'abandoned', 'delivered'
+            )),
+            expires_at REAL,
+            protocol_version TEXT NOT NULL,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_proactive_candidates_session_status
+            ON proactive_candidates(session_id, status);
+        CREATE INDEX idx_proactive_candidates_episode
+            ON proactive_candidates(episode_id);
+
+        -- EAP v0.2 Proactive Decision：三层硬门 + LLM 结构化建议 + Shadow 基线（spec 第 6.3 节）
+        CREATE TABLE proactive_decisions (
+            id TEXT PRIMARY KEY,
+            candidate_id TEXT NOT NULL REFERENCES proactive_candidates(id) ON DELETE CASCADE,
+            session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            decision TEXT NOT NULL CHECK(decision IN ('send', 'defer', 'suppress', 'abandon')),
+            intensity INTEGER CHECK(intensity IS NULL OR intensity BETWEEN 0 AND 5),
+            expression_act TEXT CHECK(expression_act IS NULL OR expression_act IN (
+                'playful_complaint', 'gentle_urge', 'firm_care',
+                'worried_checkin', 'expectant_followup', 'quiet_waiting'
+            )),
+            topic TEXT,
+            confidence REAL NOT NULL DEFAULT 0.0 CHECK(confidence BETWEEN 0 AND 1),
+            reason_codes TEXT NOT NULL DEFAULT '[]',
+            source_refs TEXT NOT NULL DEFAULT '[]',
+            layer1_blocked INTEGER NOT NULL DEFAULT 0,
+            layer1_block_reasons TEXT NOT NULL DEFAULT '[]',
+            layer2_deferred INTEGER NOT NULL DEFAULT 0,
+            layer2_defer_reasons TEXT NOT NULL DEFAULT '[]',
+            layer3_factors TEXT NOT NULL DEFAULT '{}',
+            approach_drive REAL NOT NULL DEFAULT 0.0,
+            contact_cost REAL NOT NULL DEFAULT 0.0,
+            effective_drive REAL NOT NULL DEFAULT 0.0,
+            approach_value REAL NOT NULL DEFAULT 0.0,
+            shadow_score REAL,
+            is_shadow INTEGER NOT NULL DEFAULT 0,
+            llm_raw_response TEXT,
+            idempotency_key TEXT NOT NULL UNIQUE,
+            protocol_version TEXT NOT NULL,
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_proactive_decisions_candidate
+            ON proactive_decisions(candidate_id);
+        CREATE INDEX idx_proactive_decisions_session_created
+            ON proactive_decisions(session_id, created_at);
+        """,
+    ),
+    (
+        53,
+        """
+        -- EAP v0.2 主动强度阶梯：记录决策最终选择的强度（spec 第 5.10 节）
+        CREATE TABLE proactive_intensity_plans (
+            id TEXT PRIMARY KEY,
+            decision_id TEXT NOT NULL REFERENCES proactive_decisions(id) ON DELETE CASCADE,
+            session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            level INTEGER NOT NULL CHECK(level BETWEEN 0 AND 5),
+            channel TEXT NOT NULL CHECK(channel IN (
+                'silent', 'live2d', 'bubble', 'chat', 'desktop_notification', 'external'
+            )),
+            is_minimum_sufficient INTEGER NOT NULL DEFAULT 1,
+            live2d_action TEXT,  -- JSON: {gaze: ..., expression: ..., motion: ...}
+            bubble_text TEXT,    -- Level 2 的气泡文本（如适用）
+            reason TEXT NOT NULL DEFAULT '',
+            protocol_version TEXT NOT NULL,
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_proactive_intensity_plans_decision
+            ON proactive_intensity_plans(decision_id);
+        CREATE INDEX idx_proactive_intensity_plans_session_created
+            ON proactive_intensity_plans(session_id, created_at);
+        """,
+    ),
+    (
+        54,
+        """
+        -- EAP v0.2 ExpressionPlan：7 维连续表达向量 + 迟滞参数（spec 第 5.11 节）
+        CREATE TABLE expression_plans (
+            id TEXT PRIMARY KEY,
+            session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            decision_id TEXT REFERENCES proactive_decisions(id) ON DELETE SET NULL,
+            intensity_plan_id TEXT REFERENCES proactive_intensity_plans(id) ON DELETE SET NULL,
+            -- 7 维连续表达向量（每维 0.0~1.0）
+            warmth REAL NOT NULL DEFAULT 0.5 CHECK(warmth BETWEEN 0 AND 1),
+            playfulness REAL NOT NULL DEFAULT 0.5 CHECK(playfulness BETWEEN 0 AND 1),
+            directness REAL NOT NULL DEFAULT 0.5 CHECK(directness BETWEEN 0 AND 1),
+            concern REAL NOT NULL DEFAULT 0.5 CHECK(concern BETWEEN 0 AND 1),
+            initiative REAL NOT NULL DEFAULT 0.5 CHECK(initiative BETWEEN 0 AND 1),
+            restraint REAL NOT NULL DEFAULT 0.5 CHECK(restraint BETWEEN 0 AND 1),
+            energy REAL NOT NULL DEFAULT 0.5 CHECK(energy BETWEEN 0 AND 1),
+            -- 迟滞参数
+            minimum_state_duration REAL NOT NULL DEFAULT 30.0,  -- 秒
+            hysteresis_margin REAL NOT NULL DEFAULT 0.1,        -- 0.0~1.0
+            transition_momentum REAL NOT NULL DEFAULT 0.5,      -- 0.0~1.0
+            -- ExpressionPlan 作用范围标记（5 项可调整）
+            adjusts_tone INTEGER NOT NULL DEFAULT 1,
+            adjusts_length INTEGER NOT NULL DEFAULT 1,
+            adjusts_directness INTEGER NOT NULL DEFAULT 1,
+            adjusts_live2d_intensity INTEGER NOT NULL DEFAULT 1,
+            adjusts_voice_prosody INTEGER NOT NULL DEFAULT 0,  -- 未来语音韵律，默认关
+            -- 禁区标记（5 项不可修改）
+            modifies_facts INTEGER NOT NULL DEFAULT 0,
+            modifies_safety INTEGER NOT NULL DEFAULT 0,
+            modifies_tool_results INTEGER NOT NULL DEFAULT 0,
+            modifies_permissions INTEGER NOT NULL DEFAULT 0,
+            modifies_user_boundary INTEGER NOT NULL DEFAULT 0,
+            -- 元数据
+            expression_act TEXT,
+            source_hash TEXT NOT NULL DEFAULT '',  -- 输入源的哈希
+            idempotency_key TEXT NOT NULL UNIQUE,
+            protocol_version TEXT NOT NULL,
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_expression_plans_session_created
+            ON expression_plans(session_id, created_at);
+        CREATE INDEX idx_expression_plans_decision
+            ON expression_plans(decision_id);
+
+        -- EAP v0.2 心境状态转换历史：用于迟滞检查（spec 第 5.11 节）
+        CREATE TABLE expression_state_transitions (
+            id TEXT PRIMARY KEY,
+            session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            state_kind TEXT NOT NULL CHECK(state_kind IN (
+                'mood_cluster', 'guardedness_level', 'expression_vector'
+            )),
+            from_state TEXT NOT NULL,
+            to_state TEXT NOT NULL,
+            from_value REAL,  -- 数值型状态的旧值（如 guardedness 0.0~1.0）
+            to_value REAL,    -- 新值
+            transition_at REAL NOT NULL,
+            hysteresis_applied INTEGER NOT NULL DEFAULT 0,  -- 是否因迟滞被拒绝转换
+            rejection_reason TEXT,
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_expression_state_transitions_session
+            ON expression_state_transitions(session_id, created_at);
+        CREATE INDEX idx_expression_state_transitions_kind
+            ON expression_state_transitions(state_kind, transition_at);
+        """,
+    ),
+    (
+        55,
+        """
+        -- EAP v0.2 LIFE 接入：proactive seed 接收队列（spec 第 8.2 节）
+        -- LIFE 专项将生活事件投递到此表，EAP 消费并建立 ContactEpisode
+        -- 本阶段只定义接口，LIFE 专项启动后实际写入
+        CREATE TABLE life_proactive_seeds (
+            id TEXT PRIMARY KEY,
+            source_event_type TEXT NOT NULL CHECK(source_event_type IN (
+                'life_event', 'personal_goal', 'important_date', 'diary_entry', 'self_timeline'
+            )),
+            source_event_id TEXT NOT NULL,  -- LIFE 侧的事件 ID
+            source_event_summary TEXT NOT NULL,  -- 事件摘要（不超过 200 字符）
+            topic TEXT NOT NULL,  -- EAP 用来建立 ContactEpisode 的 topic
+            origin_type TEXT NOT NULL CHECK(origin_type IN (
+                'expected_return', 'emotional_care', 'milestone', 'life_share'
+            )),
+            -- 边界约束字段
+            seed_kind TEXT NOT NULL DEFAULT 'life_share' CHECK(seed_kind = 'life_share'),
+            -- seed 来源版本（用于幂等和审计）
+            source_revision TEXT NOT NULL DEFAULT '',
+            source_hash TEXT NOT NULL DEFAULT '',
+            -- EAP 消费状态
+            consumed_at REAL,  -- 如非 NULL，表示已被 EAP 消费
+            consumed_episode_id TEXT REFERENCES contact_episodes(id) ON DELETE SET NULL,
+            consumed_candidate_id TEXT REFERENCES proactive_candidates(id) ON DELETE SET NULL,
+            -- 拒绝标记（如 EAP 判断不适合接近，可标记 rejected）
+            rejected_at REAL,
+            rejection_reason TEXT,
+            -- 元数据
+            idempotency_key TEXT NOT NULL UNIQUE,
+            protocol_version TEXT NOT NULL,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            CHECK(
+                (consumed_at IS NULL AND consumed_episode_id IS NULL AND consumed_candidate_id IS NULL)
+                OR
+                (consumed_at IS NOT NULL AND consumed_episode_id IS NOT NULL)
+            )
+        );
+        CREATE INDEX idx_life_proactive_seeds_consumed
+            ON life_proactive_seeds(consumed_at)
+            WHERE consumed_at IS NULL;
+        CREATE INDEX idx_life_proactive_seeds_source
+            ON life_proactive_seeds(source_event_type, source_event_id);
+        CREATE UNIQUE INDEX idx_life_proactive_seeds_source_unique
+            ON life_proactive_seeds(source_event_type, source_event_id, source_revision);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
@@ -2132,6 +2462,21 @@ def init_db() -> None:
         conn.execute(
             "INSERT OR IGNORE INTO settings(key, value)"
             " VALUES('conversation_summary_injection_enabled', '1')"
+        )
+        # EAP v0.2：本机主动陪伴默认开启（spec 第 3.4 节）
+        # - 主窗口内主动消息：默认开启
+        # - 桌宠气泡和轻提示：默认开启
+        # - Live2D 无文字表达：默认开启
+        # - Windows 系统通知：首次使用时询问（默认 0，前端引导用户授权）
+        # - QQ、微信、邮件等外部渠道：必须逐渠道明确授权（默认 0）
+        conn.execute(
+            "INSERT OR IGNORE INTO settings(key, value) VALUES('proactive_enabled', '1')"
+        )
+        conn.execute(
+            "INSERT OR IGNORE INTO settings(key, value) VALUES('proactive_desktop_notification_enabled', '0')"
+        )
+        conn.execute(
+            "INSERT OR IGNORE INTO settings(key, value) VALUES('proactive_external_channels_enabled', '0')"
         )
         conn.commit()
     finally:

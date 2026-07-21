@@ -3307,3 +3307,44 @@ input[type="range"].xd-range::-moz-range-thumb { width: 20px; height: 20px; bord
   .settings-model-selects .settings-select { width: 100%; min-width: 0; }
   .settings-save-btn { margin-left: 0; }
 }
+
+/* ============ 陪伴与主动消息 Tab ============ */
+.settings-proactive-kinds { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+
+.settings-toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--glass-border); gap: 16px; }
+.settings-toggle-row:last-child { border-bottom: none; }
+.settings-toggle-row > div > p:first-child { color: var(--text); font-size: 14px; margin: 0; }
+.settings-toggle-row > div > p + p { margin-top: 4px; }
+.settings-toggle-row > span { color: var(--text-dim); font-size: 14px; }
+
+/* Mini toggle (44×24, violet when on) */
+.settings-toggle { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+.settings-toggle input { opacity: 0; width: 0; height: 0; }
+.settings-toggle-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #2e2844; transition: background-color .25s, box-shadow .25s; border-radius: 24px; border: 1px solid var(--glass-border); }
+.settings-toggle-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 2px; background-color: #fff; transition: transform .25s; border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,.3); }
+.settings-toggle input:checked + .settings-toggle-slider { background-color: var(--violet); border-color: var(--violet-soft); box-shadow: 0 0 14px rgba(124,92,255,.45); }
+.settings-toggle input:checked + .settings-toggle-slider:before { transform: translateX(20px); }
+.settings-toggle input:focus-visible + .settings-toggle-slider { outline: 2px solid var(--violet-soft); outline-offset: 2px; }
+
+.settings-quiet-hours { display: flex; align-items: center; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+.settings-quiet-hours > span { color: var(--text-faint); font-size: 13px; }
+.settings-quiet-hours label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--text-faint); }
+.settings-quiet-hours select { padding: 6px 10px; border: 1px solid var(--glass-border); border-radius: 8px; background: var(--glass); color: var(--text); font-size: 13px; outline: none; transition: border-color .2s; min-width: 96px; }
+.settings-quiet-hours select:focus { border-color: var(--glass-border-lit); }
+.settings-quiet-hours select option { color: var(--text); background: #17102c; }
+
+.settings-frequency-mode { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+.settings-frequency-option { display: flex; align-items: flex-start; gap: 12px; padding: 12px; border: 1px solid var(--glass-border); border-radius: var(--radius-sm); background: var(--glass); cursor: pointer; transition: border-color .2s, background .2s; }
+.settings-frequency-option:hover { border-color: var(--violet-soft); }
+.settings-frequency-option.is-active { border-color: var(--violet); background: rgba(124,92,255,.08); }
+.settings-frequency-option input[type="radio"] { margin-top: 3px; accent-color: var(--violet); }
+.settings-frequency-label { font-weight: 500; color: var(--text); font-size: 14px; margin: 0 0 4px 0; }
+.settings-frequency-desc { font-size: 12px; color: var(--text-dim); margin: 0; line-height: 1.5; }
+
+.settings-channels { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+
+.settings-pause-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.settings-pause-status { margin-top: 12px; padding: 8px 12px; background-color: rgba(255,207,107,.12); border: 1px solid rgba(255,207,107,.25); border-radius: 6px; font-size: 13px; color: var(--warn); }
+
+.settings-diagnostics-info { margin-top: 16px; padding: 12px; background-color: var(--glass); border: 1px solid var(--glass-border); border-radius: 6px; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; color: var(--text-dim); }
+.settings-diagnostics-info p { margin: 4px 0; }
