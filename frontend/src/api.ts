@@ -59,6 +59,7 @@ export interface Message {
   favorite: boolean;
   created_at: number;
   knowledge_citations?: KnowledgeCitation[];
+  attachments?: ChatAttachmentResult[];
 }
 export interface KnowledgeCitation {
   id: string;
@@ -854,8 +855,12 @@ export const updateKnowledgeRecallSettings = (body: {
 });
 export const preflightKnowledgeTransmission = (
   session_id: string, request_nonce: string, content: string,
+  attachment_ids?: string[],
 ) => j<KnowledgeGrantPreflight>("/api/knowledge/recall/preflight", {
-  method: "POST", body: JSON.stringify({ session_id, request_nonce, content }),
+  method: "POST", body: JSON.stringify({
+    session_id, request_nonce, content,
+    attachment_ids: attachment_ids ?? [],
+  }),
 });
 export const resolveKnowledgeTransmissionGrant = (body: {
   grant_id: string;
@@ -1186,6 +1191,34 @@ export async function uploadChatAttachment(
     throw new ApiError(response.status, detail);
   }
   return response.json();
+}
+
+// 删除未绑定的附件（message_id IS NULL），用于用户点 × 移除 ready 附件时清理后端记录
+export async function deleteChatAttachment(attachmentId: string): Promise<void> {
+  await j<void>(`/api/chat/attachments/${encodeURIComponent(attachmentId)}`, {
+    method: "DELETE",
+  });
+}
+
+export async function getMessageAttachmentContent(
+  messageId: string, attachmentId: string,
+): Promise<{
+  id: string;
+  filename: string;
+  mime_type: string;
+  char_count: number;
+  content: string;
+}> {
+  const r = await fetch(
+    API_BASE + `/api/messages/${encodeURIComponent(messageId)}/attachments/${encodeURIComponent(attachmentId)}/content`,
+    { headers: requestHeaders() },
+  );
+  if (!r.ok) {
+    let detail = r.statusText;
+    try { detail = (await r.json()).detail || detail; } catch { /* ignore */ }
+    throw new ApiError(r.status, detail);
+  }
+  return r.json();
 }
 
 // 用 fetch+ReadableStream 解析 SSE（EventSource 不支持 POST）

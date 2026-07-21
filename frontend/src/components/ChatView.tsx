@@ -38,9 +38,15 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
   const [memoryNotice, setMemoryNotice] = useState<string | null>(null);
   const [pendingGrant, setPendingGrant] = useState<PendingGrant | null>(null);
   const [grantBusy, setGrantBusy] = useState(false);
-  const [pendingAttachments, setPendingAttachments] = useState<api.ChatAttachmentResult[]>([]);
+  // 附件三态：上传中 / 就绪 / 失败。失败 chip 不参与发送，可单独移除
+  type PendingAttachment =
+    | { localId: string; filename: string; status: "uploading" }
+    | { localId: string; filename: string; status: "ready"; result: api.ChatAttachmentResult }
+    | { localId: string; filename: string; status: "error"; error: string };
+  const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
   const [attachmentBusy, setAttachmentBusy] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const memoryWatchId = useRef(0);
   const noticeTimer = useRef<number | null>(null);
@@ -92,40 +98,81 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
         toast(`${file.name} 超过 10 MiB 限制`);
         continue;
       }
+      // 先 push uploading 状态，让用户看到正在处理
+      const localId = `${file.name}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      setPendingAttachments((prev) => [...prev, { localId, filename: file.name, status: "uploading" }]);
       try {
         const result = await api.uploadChatAttachment(file);
-        setPendingAttachments((prev) => [...prev, result]);
+        setPendingAttachments((prev) => prev.map((a) =>
+          a.localId === localId
+            ? { localId, filename: file.name, status: "ready", result }
+            : a,
+        ));
       } catch (error: any) {
-        const msg = error?.message || "";
-        const friendly = /Failed to fetch|NetworkError/i.test(msg)
-          ? "无法连接到后端，请确认遐蝶已正常启动"
-          : msg || "文件上传失败";
-        toast(friendly);
+        // 按 status code 分类 toast，优先使用后端返回的中文 message
+        // 后端 upload_chat_attachment 已统一返回 {code, message} 结构化格式
+        const e = error as { status?: number; message?: string };
+        let friendly: string;
+        if (e.status === 401) {
+          friendly = "令牌失效，请重启遐蝶";
+        } else if (e.status === 413) {
+          friendly = e.message || "文件超过 10 MiB 限制";
+        } else if (e.status === 415) {
+          friendly = e.message || "文件类型不支持";
+        } else if (e.status && e.status >= 500) {
+          friendly = `后端异常：${e.message || "服务异常"}`;
+        } else if (/Failed to fetch|NetworkError|ERR_CONNECTION/i.test(e.message || "")) {
+          friendly = "无法连接到后端，请确认遐蝶已正常启动";
+        } else {
+          friendly = e.message || "上传失败";
+        }
+        setPendingAttachments((prev) => prev.map((a) =>
+          a.localId === localId
+            ? { localId, filename: file.name, status: "error", error: friendly }
+            : a,
+        ));
+        toast(`${file.name}：${friendly}`);
       }
     }
     setAttachmentBusy(false);
   }
 
-  function removeAttachment(id: string) {
-    setPendingAttachments((prev) => prev.filter((a) => a.id !== id));
+  async function removeAttachment(localId: string) {
+    const target = pendingAttachments.find((a) => a.localId === localId);
+    // 乐观更新：先从 UI 移除
+    setPendingAttachments((prev) => prev.filter((a) => a.localId !== localId));
+    // ready 状态的附件已上传到后端，需要调用 DELETE 清理，避免孤儿数据
+    // uploading/error 状态没有后端记录，直接移除即可
+    if (target?.status === "ready") {
+      try {
+        await api.deleteChatAttachment(target.result.id);
+      } catch {
+        // 删除失败不阻塞 UI，启动时 GC 会兜底清理（cleanup_orphan_attachments）
+      }
+    }
   }
 
   async function send(regenerate = false) {
     if (!sessionId || busy) return;
     let content = regenerate ? lastUserContent() : input.trim();
-    if (!content && pendingAttachments.length === 0) return;
-    // 有附件但无文字时填充占位，避免后端 preflight 的 content min_length=1 校验失败
-    if (!content && pendingAttachments.length > 0) {
-      const names = pendingAttachments.map((a) => a.filename).join("、");
-      content = `(请阅读我上传的文件：${names})`;
-    }
+    // 只有 ready 状态的附件参与发送；uploading 由 attachmentBusy 阻塞，error 不发送
+    const readyAttachments = pendingAttachments.filter(
+      (a): a is Extract<PendingAttachment, { status: "ready" }> => a.status === "ready",
+    );
+    if (!content && readyAttachments.length === 0) return;
     const requestNonce = newRequestNonce();
     memoryWatchId.current += 1;
     setErrorCard(null);
     setMemoryNotice(null);
     setGrantBusy(true);
+    const attachmentIds = !regenerate && readyAttachments.length > 0
+      ? readyAttachments.map((a) => a.result.id)
+      : undefined;
     try {
-      const preview = await api.preflightKnowledgeTransmission(sessionId, requestNonce, content);
+      const preview = await api.preflightKnowledgeTransmission(
+        sessionId, requestNonce, content, attachmentIds,
+      );
+      // 纯附件无文字消息：preflight 直接返回 not_needed，无需授权，直接发
       if (preview.status === "pending" && preview.id) {
         setPendingGrant({
           preview,
@@ -209,8 +256,17 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
     if (!sessionId) return;
     const activeSessionId = sessionId;
     const { content, requestNonce, regenerate, token, skipRestricted = false } = options;
+    // 本地立即显示用户消息（含附件卡片），不等后端刷新。只展示 ready 的附件
+    const readyForLocal = !regenerate
+      ? pendingAttachments.filter(
+          (a): a is Extract<PendingAttachment, { status: "ready" }> => a.status === "ready",
+        )
+      : [];
+    const localAttachments = readyForLocal.length > 0
+      ? readyForLocal.map((a) => ({ ...a.result }))
+      : undefined;
     if (!regenerate) {
-      setMessages((m) => [...m, localMsg("user", content)]);
+      setMessages((m) => [...m, localMsg("user", content, localAttachments)]);
       setInput("");
     }
     setStreaming({ text: "" });
@@ -253,8 +309,8 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
         request_nonce: requestNonce,
         knowledge_grant_token: token,
         knowledge_skip_restricted: skipRestricted,
-        attachment_ids: pendingAttachments.length > 0
-          ? pendingAttachments.map((a) => a.id)
+        attachment_ids: readyForLocal.length > 0
+          ? readyForLocal.map((a) => a.result.id)
           : undefined,
       },
     );
@@ -333,8 +389,39 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
       <div className="messages" ref={scrollRef}>
         {messages.length === 0 && !streaming && (
           <div className="empty">
-            我是遐蝶，随时在这里。<br />
-            聊点什么，或让我帮你记一个任务、存一条记忆都可以。
+            <div className="empty-greeting">
+              我是遐蝶，随时在这里。<br />
+              聊点什么，或让我帮你记一个任务、存一条记忆都可以。
+            </div>
+            <div className="chat-starters" role="list">
+              <button
+                className="chat-starter-card"
+                role="listitem"
+                onClick={() => { setInput("今天想聊点什么？"); textareaRef.current?.focus(); }}
+              >
+                <span className="chat-starter-emoji" aria-hidden="true">🌸</span>
+                <span className="chat-starter-text">今天想聊点什么？</span>
+                <small className="chat-starter-hint">随便聊聊</small>
+              </button>
+              <button
+                className="chat-starter-card"
+                role="listitem"
+                onClick={() => { setInput("帮我记一件事"); textareaRef.current?.focus(); }}
+              >
+                <span className="chat-starter-emoji" aria-hidden="true">📝</span>
+                <span className="chat-starter-text">帮我记一件事</span>
+                <small className="chat-starter-hint">功能引导</small>
+              </button>
+              <button
+                className="chat-starter-card"
+                role="listitem"
+                onClick={() => { setInput("你在做什么呢？"); textareaRef.current?.focus(); }}
+              >
+                <span className="chat-starter-emoji" aria-hidden="true">💭</span>
+                <span className="chat-starter-text">你在做什么呢？</span>
+                <small className="chat-starter-hint">自由陪伴</small>
+              </button>
+            </div>
           </div>
         )}
         {messages.map((m) => (
@@ -398,18 +485,47 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
       <div className="composer">
         {pendingAttachments.length > 0 && (
           <div className="attachment-chips">
-            {pendingAttachments.map((a) => (
-              <span className="attachment-chip" key={a.id}>
-                📎 {a.filename}
-                <button
-                  className="attachment-chip-remove"
-                  onClick={() => removeAttachment(a.id)}
-                  title="移除"
-                >
-                  ×
-                </button>
-              </span>
-            ))}
+            {pendingAttachments.map((a) => {
+              if (a.status === "uploading") {
+                return (
+                  <span className="attachment-chip attachment-chip-loading" key={a.localId}>
+                    <span className="attachment-chip-spinner" aria-hidden="true" />
+                    {a.filename}
+                  </span>
+                );
+              }
+              if (a.status === "error") {
+                return (
+                  <span
+                    className="attachment-chip attachment-chip-error"
+                    key={a.localId}
+                    title={a.error}
+                  >
+                    <span aria-hidden="true">✕</span>
+                    {a.filename}
+                    <button
+                      className="attachment-chip-remove"
+                      onClick={() => void removeAttachment(a.localId)}
+                      title="移除"
+                    >
+                      ×
+                    </button>
+                  </span>
+                );
+              }
+              return (
+                <span className="attachment-chip" key={a.localId}>
+                  📎 {a.filename}
+                  <button
+                    className="attachment-chip-remove"
+                    onClick={() => void removeAttachment(a.localId)}
+                    title="移除"
+                  >
+                    ×
+                  </button>
+                </span>
+              );
+            })}
           </div>
         )}
         <div className="composer-inner">
@@ -433,6 +549,7 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
             📎
           </button>
           <textarea
+            ref={textareaRef}
             rows={1}
             placeholder={sessionId ? "和遐蝶说点什么…" : "正在准备对话…"}
             value={input}
@@ -445,7 +562,11 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
               }
             }}
           />
-          <button className="send-btn" disabled={busy || (!input.trim() && pendingAttachments.length === 0)} onClick={() => send()}>
+          <button
+            className="send-btn"
+            disabled={busy || (!input.trim() && !pendingAttachments.some((a) => a.status === "ready"))}
+            onClick={() => send()}
+          >
             ➤
           </button>
         </div>
@@ -511,8 +632,8 @@ function KnowledgeGrantCard({
       <div className="knowledge-grant-head">
         <div className="knowledge-grant-icon" aria-hidden="true">◇</div>
         <div>
-          <span className="knowledge-grant-eyebrow">本地资料发送确认</span>
-          <h2 id="knowledge-grant-title">遐蝶想参考这些资料回答</h2>
+          <span className="knowledge-grant-eyebrow">相关资料</span>
+          <h2 id="knowledge-grant-title">我找到一些相关资料（{preview.chunk_count} 条），可以发给我看看吗？</h2>
         </div>
         <button className="knowledge-grant-close" onClick={onCancel} disabled={busy} aria-label="取消">×</button>
       </div>
@@ -529,8 +650,7 @@ function KnowledgeGrantCard({
       )}
       {remote && (
         <p className="knowledge-grant-explain" id="knowledge-grant-description">
-          若允许，下面列出的 {preview.chunk_count} 个片段会随本轮消息发送给当前模型服务商；
-          授权仅绑定这条消息、这个模型与当前资料版本。
+          这些资料会随本轮消息发给当前模型服务商，授权仅绑定这条消息、这个模型与当前资料版本。
         </p>
       )}
 
@@ -560,20 +680,20 @@ function KnowledgeGrantCard({
         <button
           ref={primaryRef}
           className="knowledge-grant-primary"
-          disabled={busy || !preview.can_allow_once}
-          title={preview.can_allow_once ? "只允许这一次" : "包含仅限本地资料，不能单次放行"}
-          onClick={() => onAction("allow_once")}
-        >只允许这一次</button>
-        <button disabled={busy} onClick={() => onAction("skip")}>本次不使用资料</button>
-        <button
-          disabled={busy || !preview.can_always_allow}
-          title={preview.can_always_allow ? "以后可直接发送这些文档" : "敏感资料不能设为始终允许"}
-          onClick={() => onAction("always_allow")}
-        >以后始终允许</button>
-        <button disabled={busy} onClick={() => onAction("local_only")}>设为仅限本地</button>
+          disabled={busy || (!preview.can_always_allow && !preview.can_allow_once)}
+          title={
+            preview.can_always_allow
+              ? "以后可直接使用这些资料"
+              : preview.can_allow_once
+                ? "仅本轮允许使用"
+                : "包含仅限本地资料，不能放行"
+          }
+          onClick={() => onAction(preview.can_always_allow ? "always_allow" : "allow_once")}
+        >{preview.can_always_allow ? "可以用" : "这次可以用"}</button>
+        <button disabled={busy} onClick={() => onAction("skip")}>这次不要用</button>
       </div>
       <small className="knowledge-grant-footnote">
-        “本次不使用资料”会继续发送消息，但从本轮上下文中移除受限片段。
+        “这次不要用”会继续发送消息，但本轮不使用资料。可以在设置中改为每次问我。
       </small>
       <span className="sr-only" role="status" aria-live="polite">
         {busy ? "正在处理资料授权" : "等待选择资料发送方式"}
@@ -606,9 +726,9 @@ function locationText(location: api.KnowledgeGrantPreflight["provider"]["locatio
 }
 
 function policyText(policy: api.KnowledgeGrantDocument["policy"]): string {
-  if (policy === "remote_allowed") return "允许在线";
-  if (policy === "local_only") return "仅限本地";
-  return "每次询问";
+  if (policy === "remote_allowed") return "可以分享";
+  if (policy === "local_only") return "只在本机";
+  return "用之前问我";
 }
 
 function MessageRow({
@@ -622,6 +742,11 @@ function MessageRow({
 }) {
   const [source, setSource] = useState<api.KnowledgeCitation | null>(null);
   const [sourceError, setSourceError] = useState<string | null>(null);
+  const [attachmentContent, setAttachmentContent] = useState<{
+    filename: string;
+    content: string;
+  } | null>(null);
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
 
   async function openSource(citation: api.KnowledgeCitation) {
     try {
@@ -633,6 +758,32 @@ function MessageRow({
     }
   }
 
+  async function openAttachment(attachment: api.ChatAttachmentResult) {
+    // 本地未发送的附件（id 以 local- 开头）没有后端记录，跳过
+    if (m.id.startsWith("local-")) {
+      setAttachmentError(null);
+      setAttachmentContent({
+        filename: attachment.filename,
+        content: attachment.content_preview || "（本地预览暂不可用）",
+      });
+      return;
+    }
+    try {
+      setAttachmentError(null);
+      const result = await api.getMessageAttachmentContent(m.id, attachment.id);
+      setAttachmentContent({
+        filename: result.filename,
+        content: result.content,
+      });
+    } catch (error) {
+      setAttachmentContent(null);
+      setAttachmentError(error instanceof api.ApiError ? error.message : "无法读取附件全文");
+    }
+  }
+
+  const hasAttachments = !!m.attachments?.length;
+  const hasContent = !!m.content;
+
   return (
     <div
       id={`message-${m.id}`}
@@ -640,7 +791,39 @@ function MessageRow({
     >
       <div className="avatar">{m.role === "user" ? "你" : "蝶"}</div>
       <div>
-        <div className="bubble">{m.content}</div>
+        <div className="bubble">
+          {hasAttachments && (
+            <div className="message-attachments">
+              {m.attachments!.map((attachment) => (
+                <div className="message-attachment-card" key={attachment.id}>
+                  <span className="message-attachment-icon" aria-hidden="true">📄</span>
+                  <div className="message-attachment-info">
+                    <strong>{attachment.filename}</strong>
+                    <small>{attachment.char_count} 字符</small>
+                  </div>
+                  <button
+                    className="message-attachment-view"
+                    onClick={() => void openAttachment(attachment)}
+                  >查看全文</button>
+                </div>
+              ))}
+            </div>
+          )}
+          {hasContent && <div className="bubble-text">{m.content}</div>}
+        </div>
+        {(attachmentContent || attachmentError) && (
+          <div className="knowledge-source" role="region" aria-label="附件全文">
+            <button className="knowledge-source-close" onClick={() => {
+              setAttachmentContent(null); setAttachmentError(null);
+            }}>×</button>
+            {attachmentContent ? (
+              <>
+                <strong>{attachmentContent.filename}</strong>
+                <div>{attachmentContent.content}</div>
+              </>
+            ) : <span>{attachmentError}</span>}
+          </div>
+        )}
         {!!m.knowledge_citations?.length && (
           <div className="knowledge-citations" aria-label="本回复引用的资料">
             {m.knowledge_citations.map((citation) => (
@@ -680,7 +863,11 @@ function sourceLocation(source: api.KnowledgeCitation): string {
   return `段落 ${source.paragraph_start}–${source.paragraph_end} · 行 ${source.line_start}–${source.line_end}${page}${heading} · ${source.content_fingerprint}`;
 }
 
-function localMsg(role: "user" | "assistant", content: string): api.Message {
+function localMsg(
+  role: "user" | "assistant",
+  content: string,
+  attachments?: api.ChatAttachmentResult[],
+): api.Message {
   return {
     id: "local-" + Math.random().toString(36).slice(2),
     session_id: "",
@@ -688,6 +875,7 @@ function localMsg(role: "user" | "assistant", content: string): api.Message {
     content,
     favorite: false,
     created_at: Date.now() / 1000,
+    attachments,
   };
 }
 

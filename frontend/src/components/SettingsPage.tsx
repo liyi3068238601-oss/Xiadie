@@ -340,17 +340,25 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
 
   // ---- 记忆开关（真实读写 settings key: memory_enabled）----
   const [memEnabled, setMemEnabled] = useState<boolean | null>(null);
-  const [memErr, setMemErr] = useState("");
+  const [memErr, setMemErr] = useState<{ type: "network" | "auth" | "server" | "unknown"; message: string }>({ type: "unknown", message: "" });
+
+  const classifyMemoryError = (e: { status?: number; message?: string }): { type: "network" | "auth" | "server" | "unknown"; message: string } => {
+    const msg = e.message || "读取失败";
+    if (e.status === 401) return { type: "auth", message: "令牌失效，请重启遐蝶" };
+    if (/Failed to fetch|NetworkError|ERR_CONNECTION/i.test(msg)) return { type: "network", message: "遐蝶后端未启动，请重启应用或检查后端进程" };
+    if (e.status && e.status >= 500) return { type: "server", message: `后端异常：${msg}` };
+    return { type: "unknown", message: msg };
+  };
 
   const loadMemory = () => {
     api.getSetting("memory_enabled")
       .then((d) => {
         setMemEnabled(String(d.value) === "1");
-        setMemErr("");
+        setMemErr({ type: "unknown", message: "" });
       })
       .catch((e) => {
         setMemEnabled(null);
-        setMemErr(e.message || "读取失败");
+        setMemErr(classifyMemoryError(e));
       });
   };
 
@@ -365,16 +373,43 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
       .catch((e) => toast(e.message || "保存失败"));
   };
 
-  // ---- 记忆层级分布（真实统计，替代之前的硬编码占位值）----
-  const [memoryStats, setMemoryStats] = useState<{ L0: number; L1: number; L2: number } | null>(null);
+  // ---- 知识库隐私偏好（新资料默认策略，settings key: knowledge_default_policy）----
+  const [knowledgePolicy, setKnowledgePolicy] = useState<string>("");
+  const [knowledgePolicyBusy, setKnowledgePolicyBusy] = useState(false);
 
-  const loadMemoryStats = () => {
-    api.getMemoryStats()
-      .then(setMemoryStats)
-      .catch(() => { /* 静默失败，卡片显示占位 0 */ });
+  const loadKnowledgePolicy = () => {
+    api.getSetting("knowledge_default_policy")
+      .then((d) => setKnowledgePolicy(String(d.value) || "remote_allowed"))
+      .catch(() => setKnowledgePolicy("remote_allowed"));
   };
 
-  useEffect(loadMemoryStats, []);
+  useEffect(loadKnowledgePolicy, []);
+
+  const setKnowledgeDefaultPolicy = (value: string) => {
+    setKnowledgePolicyBusy(true);
+    api.setSetting("knowledge_default_policy", value)
+      .then(() => toast("新资料默认偏好已保存"))
+      .catch((e) => toast(e.message || "保存失败"))
+      .finally(() => setKnowledgePolicyBusy(false));
+  };
+
+  // ---- 记忆层级分布（真实统计，三态：loading/loaded/error）----
+  const [memoryStatsState, setMemoryStatsState] = useState<{
+    status: "loading" | "loaded" | "error";
+    data?: { L0: number; L1: number; L2: number };
+    error?: string;
+  }>({ status: "loading" });
+
+  const loadMemoryStats = () => {
+    setMemoryStatsState({ status: "loading" });
+    api.getMemoryStats()
+      .then((d) => setMemoryStatsState({ status: "loaded", data: d }))
+      .catch((e) => setMemoryStatsState({ status: "error", error: e.message || "统计读取失败" }));
+  };
+
+  useEffect(() => {
+    if (tab === "memory") loadMemoryStats();
+  }, [tab]);
 
   // ---- 对话连续性：与长期记忆独立，普通聊天不展示技术计数 ----
   const [contextControls, setContextControlsState] = useState<api.ContextControls | null>(null);
@@ -471,7 +506,7 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
         </div>
         <div className="settings-hero-actions">
           <div className="settings-search">
-            <span className="settings-search-icon" aria-hidden="true">&#x1F50D;</span>
+            <span className="settings-search-icon" aria-hidden="true">🔍</span>
             <input type="text" placeholder="搜索设置项…" aria-label="搜索设置项" />
           </div>
           <button
@@ -762,15 +797,20 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
               <div className="settings-mem-toggle-text">
                 <h2>启用长期记忆</h2>
                 <p>
-                  {memErr
-                    ? `读取失败：${memErr}`
+                  {memErr.message
+                    ? memErr.message
                     : "开启后，遐蝶会在对话中沉淀并回忆你的偏好与重要信息。"}
                 </p>
               </div>
               {memEnabled === null ? (
-                <span className="settings-status-pill settings-status-off">
-                  {memErr ? "不可用" : "读取中…"}
-                </span>
+                <div className="settings-mem-toggle-actions">
+                  {memErr.message && (
+                    <button className="btn ghost settings-retry-btn" onClick={loadMemory}>重试</button>
+                  )}
+                  <span className="settings-status-pill settings-status-off">
+                    {memErr.message ? "不可用" : "读取中…"}
+                  </span>
+                </div>
               ) : (
                 <button
                   className={`toggle-track${memEnabled ? " is-on" : ""}`}
@@ -782,6 +822,40 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
                   <span className="toggle-thumb" />
                 </button>
               )}
+            </div>
+          </section>
+
+          {/* 知识库隐私偏好：新资料默认策略 */}
+          <section className="settings-card settings-knowledge-policy-card">
+            <div className="settings-knowledge-policy-head">
+              <h2>知识库隐私偏好</h2>
+              <p>新导入的非敏感资料默认如何处理？敏感资料始终只在本机。</p>
+            </div>
+            <div className="settings-knowledge-policy-options">
+              <label className={`settings-knowledge-policy-option${knowledgePolicy === "remote_allowed" ? " is-selected" : ""}`}>
+                <input type="radio" name="knowledge-default-policy"
+                  checked={knowledgePolicy === "remote_allowed"}
+                  disabled={knowledgePolicyBusy}
+                  onChange={() => setKnowledgeDefaultPolicy("remote_allowed")} />
+                <span className="settings-knowledge-policy-label">可以分享给遐蝶（推荐）</span>
+                <small className="settings-knowledge-policy-hint">遐蝶可以自由使用这些资料回答你</small>
+              </label>
+              <label className={`settings-knowledge-policy-option${knowledgePolicy === "ask_each_time" ? " is-selected" : ""}`}>
+                <input type="radio" name="knowledge-default-policy"
+                  checked={knowledgePolicy === "ask_each_time"}
+                  disabled={knowledgePolicyBusy}
+                  onChange={() => setKnowledgeDefaultPolicy("ask_each_time")} />
+                <span className="settings-knowledge-policy-label">用之前问我</span>
+                <small className="settings-knowledge-policy-hint">每次用到资料前会先问你</small>
+              </label>
+              <label className={`settings-knowledge-policy-option${knowledgePolicy === "local_only" ? " is-selected" : ""}`}>
+                <input type="radio" name="knowledge-default-policy"
+                  checked={knowledgePolicy === "local_only"}
+                  disabled={knowledgePolicyBusy}
+                  onChange={() => setKnowledgeDefaultPolicy("local_only")} />
+                <span className="settings-knowledge-policy-label">只在本机用</span>
+                <small className="settings-knowledge-policy-hint">这些资料不会发送给在线模型</small>
+              </label>
             </div>
           </section>
 
@@ -882,33 +956,49 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
           {/* 记忆层级分布 */}
           <section className="settings-card">
             <h2 className="settings-card-title">记忆层级分布</h2>
-            {(() => {
-              const l0 = memoryStats?.L0 ?? 0;
-              const l1 = memoryStats?.L1 ?? 0;
-              const l2 = memoryStats?.L2 ?? 0;
+            {memoryStatsState.status === "loading" && (
+              <p className="settings-card-hint">统计读取中…</p>
+            )}
+            {memoryStatsState.status === "error" && (
+              <div className="settings-mem-stats-error">
+                <p className="settings-card-hint">统计读取失败：{memoryStatsState.error}</p>
+                <button className="btn ghost settings-retry-btn" onClick={loadMemoryStats}>重试</button>
+              </div>
+            )}
+            {memoryStatsState.status === "loaded" && (() => {
+              const l0 = memoryStatsState.data?.L0 ?? 0;
+              const l1 = memoryStatsState.data?.L1 ?? 0;
+              const l2 = memoryStatsState.data?.L2 ?? 0;
               const total = l0 + l1 + l2;
+              if (total === 0) {
+                return <p className="settings-card-hint">暂无记忆数据</p>;
+              }
               const pct = (n: number) => (total > 0 ? Math.round((n / total) * 100) : 0);
               const layers: [string, string, number, string][] = [
                 ["L0 核心画像", "memory-bar-l0", l0, `${pct(l0)}%`],
                 ["L1 近期状态", "memory-bar-l1", l1, `${pct(l1)}%`],
                 ["L2 长期记忆", "memory-bar-l2", l2, `${pct(l2)}%`],
               ];
-              return layers.map(([label, cls, count, width]) => (
-                <div className="settings-mem-layer" key={label}>
-                  <div className="settings-mem-layer-head">
-                    <span>{label}</span>
-                    <span>{count} 条</span>
-                  </div>
-                  <div className="memory-bar-track">
-                    <div
-                      className={`memory-bar-fill ${cls}`}
-                      style={{ width }}
-                    />
-                  </div>
-                </div>
-              ));
+              return (
+                <>
+                  {layers.map(([label, cls, count, width]) => (
+                    <div className="settings-mem-layer" key={label}>
+                      <div className="settings-mem-layer-head">
+                        <span>{label}</span>
+                        <span>{count} 条</span>
+                      </div>
+                      <div className="memory-bar-track">
+                        <div
+                          className={`memory-bar-fill ${cls}`}
+                          style={{ width }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  <p className="settings-card-hint">目标比例: L0 ≤ 10% · L1 30-50% · L2 ≥ 40%</p>
+                </>
+              );
             })()}
-            <p className="settings-card-hint">目标比例: L0 ≤ 10% · L1 30-50% · L2 ≥ 40%</p>
           </section>
 
           {/* 保留策略 */}
@@ -1002,11 +1092,11 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
             <h2 className="settings-card-title">记忆数据</h2>
             <div className="settings-mem-data-actions">
               <button className="btn ghost settings-mem-data-btn" onClick={() => toast("导出功能开发中")}>
-                <span aria-hidden="true">&#x2B07;</span>
+                <span aria-hidden="true">⬇</span>
                 导出记忆数据
               </button>
               <button className="btn ghost settings-mem-data-btn" onClick={() => toast("导入功能开发中")}>
-                <span aria-hidden="true">&#x2B06;</span>
+                <span aria-hidden="true">⬆</span>
                 导入记忆数据
               </button>
             </div>
@@ -1051,7 +1141,7 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
                 <div className="settings-risk-chips">
                   {lvl.tools.map((tool) => (
                     <span key={tool.name} className={`settings-risk-chip risk-chip-${lvl.tone}`}>
-                      <span aria-hidden="true">&#10003;</span> {tool.name}
+                      <span aria-hidden="true">✓</span> {tool.name}
                     </span>
                   ))}
                 </div>
@@ -1189,7 +1279,7 @@ function ProviderDrawer({
             <h2>{provider.name}</h2>
           </div>
           <button className="settings-drawer-close" onClick={onClose} aria-label="关闭">
-            &#x2715;
+            ✕
           </button>
         </div>
 
@@ -1274,7 +1364,7 @@ function ProviderDrawer({
                     title="移除模型"
                     onClick={() => onRemoveModel(model)}
                   >
-                    &#x2715;
+                    ✕
                   </button>
                 </span>
               ))}

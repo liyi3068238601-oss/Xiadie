@@ -61,7 +61,21 @@ def _index(*, sensitivity: str = "normal") -> dict:
         sensitivity=sensitivity,
     )
     assert asyncio.run(knowledge_worker.process_due(limit=3)) == 3
-    return imported["document"]
+    document = imported["document"]
+    # migration 47 后非敏感文档默认 remote_allowed，不再触发 grant 流程；
+    # grant 测试需要 ask_each_time 才能测试授权卡片流程。只改策略，不增加 revision，
+    # 以保持 patch 测试的 revision 断言语义（起始 revision=1，patch 后 +1=2）
+    if sensitivity == "normal":
+        conn = db.connect()
+        try:
+            conn.execute(
+                "UPDATE knowledge_documents SET transmission_policy='ask_each_time' WHERE id=?",
+                (document["id"],),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+    return document
 
 
 def _preflight(session_id: str, nonce: str = NONCE) -> dict:
@@ -91,7 +105,7 @@ def test_schema_38_grants_are_body_and_plaintext_token_free():
     try:
         assert conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
-        ).fetchone()[0] == "46"
+        ).fetchone()[0] == "47"
         decision_columns = {
             row["name"] for row in conn.execute("PRAGMA table_info(knowledge_recall_decisions)")
         }
@@ -399,7 +413,21 @@ def test_smart_natural_ask_reuses_grant_and_records_confirmed_source(monkeypatch
     )
     assert asyncio.run(knowledge_worker.process_due(limit=3)) == 3
     assert asyncio.run(knowledge_worker.process_due(limit=1)) == 1
-    assert imported["document"]["transmission_policy"] == "ask_each_time"
+    # migration 47 后非敏感文档默认 remote_allowed；显式设为 ask_each_time 以测试 grant 流程
+    conn = db.connect()
+    try:
+        conn.execute(
+            "UPDATE knowledge_documents SET transmission_policy='ask_each_time' WHERE id=?",
+            (imported["document"]["id"],),
+        )
+        conn.commit()
+        row = conn.execute(
+            "SELECT transmission_policy FROM knowledge_documents WHERE id=?",
+            (imported["document"]["id"],),
+        ).fetchone()
+        assert row["transmission_policy"] == "ask_each_time"
+    finally:
+        conn.close()
     knowledge_recall.update_settings(mode="smart", shadow_enabled=True)
     session = _session()
     natural_query = "星穹密钥说明里记录了什么？"

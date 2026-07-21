@@ -22,7 +22,7 @@
   --ok: #56d6a0;
   --warn: #ffcf6b;
   --danger: #ff7a93;
-  --font: -apple-system, "PingFang SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+  --font: -apple-system, "PingFang SC", "Microsoft YaHei", "Segoe UI", system-ui, "Segoe UI Symbol", "Noto Sans Symbols2", "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
 }
 
 * {
@@ -350,6 +350,62 @@ textarea {
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.bubble-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.message-attachments {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.message-attachment-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--glass-border-lit);
+  border-radius: 10px;
+  background: rgba(124, 92, 255, 0.08);
+  white-space: normal;
+}
+.message-attachment-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.message-attachment-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.message-attachment-info strong {
+  color: var(--text);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.message-attachment-info small {
+  color: var(--text-faint);
+  font-size: 11px;
+}
+.message-attachment-view {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border: 1px solid var(--glass-border-lit);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--violet-soft);
+  font-size: 11px;
+  cursor: pointer;
+}
+.message-attachment-view:hover {
+  background: rgba(124, 92, 255, 0.18);
 }
 .msg.assistant .bubble {
   background: var(--glass-strong);
@@ -725,6 +781,31 @@ textarea {
 }
 .attachment-chip-remove:hover {
   opacity: 1;
+}
+.attachment-chip-loading {
+  border-color: var(--glass-border-lit);
+  color: var(--text-dim);
+  opacity: 0.75;
+}
+.attachment-chip-spinner {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid rgba(180, 160, 255, 0.28);
+  border-top-color: var(--violet-soft);
+  border-radius: 50%;
+  animation: attachment-spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes attachment-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.attachment-chip-error {
+  border-color: rgba(255, 122, 147, 0.4);
+  color: var(--danger);
+  background: rgba(255, 122, 147, 0.08);
 }
 
 /* 右侧状态栏 */
@@ -1256,6 +1337,53 @@ textarea {
   text-align: center;
   padding: 40px;
   font-size: 13px;
+}
+.empty-greeting {
+  margin-bottom: 24px;
+  line-height: 1.8;
+}
+.chat-starters {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 480px;
+  margin: 0 auto;
+  text-align: left;
+}
+.chat-starter-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--glass-border-lit);
+  border-radius: 12px;
+  background: rgba(30, 20, 56, 0.4);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.05s;
+  text-align: left;
+  font-family: inherit;
+}
+.chat-starter-card:hover {
+  border-color: var(--violet-soft);
+  background: rgba(124, 92, 255, 0.12);
+}
+.chat-starter-card:active {
+  transform: scale(0.99);
+}
+.chat-starter-emoji {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.chat-starter-text {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text);
+}
+.chat-starter-hint {
+  color: var(--text-faint);
+  font-size: 11px;
+  flex-shrink: 0;
 }
 .list-row {
   display: flex;
@@ -2887,6 +3015,23 @@ textarea {
 .settings-mem-toggle-text { flex: 1; min-width: 0; }
 .settings-mem-toggle-text h2 { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
 .settings-mem-toggle-text p { font-size: 13px; color: var(--text-dim); line-height: 1.5; }
+.settings-mem-toggle-actions { display: flex; align-items: center; gap: 8px; }
+.settings-retry-btn { padding: 4px 12px; font-size: 12px; border-radius: 8px; border: 1px solid var(--glass-border-lit); color: var(--violet-soft); background: rgba(124, 92, 255, 0.08); }
+.settings-retry-btn:hover { background: rgba(124, 92, 255, 0.18); }
+.settings-mem-stats-error { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+
+/* 知识库隐私偏好卡片 */
+.settings-knowledge-policy-card { padding: 22px; }
+.settings-knowledge-policy-head { margin-bottom: 16px; }
+.settings-knowledge-policy-head h2 { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+.settings-knowledge-policy-head p { font-size: 13px; color: var(--text-dim); line-height: 1.5; }
+.settings-knowledge-policy-options { display: flex; flex-direction: column; gap: 10px; }
+.settings-knowledge-policy-option { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border: 1px solid var(--glass-border); border-radius: var(--radius); background: var(--glass); cursor: pointer; transition: border-color .2s, background .2s; }
+.settings-knowledge-policy-option:hover { border-color: var(--violet-soft); }
+.settings-knowledge-policy-option.is-selected { border-color: var(--violet); background: rgba(124,92,255,.08); }
+.settings-knowledge-policy-option input[type="radio"] { margin-top: 3px; accent-color: var(--violet); }
+.settings-knowledge-policy-label { flex: 1; font-size: 14px; font-weight: 500; color: var(--text); }
+.settings-knowledge-policy-hint { display: block; flex: 1; font-size: 12px; color: var(--text-faint); line-height: 1.5; margin-top: 2px; }
 
 /* Toggle switch (52×28, violet-green gradient when on) */
 .toggle-track { width: 52px; height: 28px; border-radius: 14px; background: var(--glass); border: 1px solid var(--glass-border); position: relative; cursor: pointer; transition: background .3s, border-color .3s, box-shadow .3s; flex-shrink: 0; }

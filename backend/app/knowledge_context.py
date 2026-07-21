@@ -44,7 +44,26 @@ def retrieval_query(user_text: str) -> tuple[str | None, str | None]:
     return query[:knowledge_search.MAX_QUERY_CHARS], "explicit_knowledge_intent"
 
 
-def prepare(user_text: str, *, lore_text: str = "", memory_text: str = "") -> dict | None:
+def _effective_budget(capability, default_budget: int) -> int:
+    """按模型上下文窗口动态调整知识 token 预算。
+
+    策略：取默认预算与 context_window * 0.3 的较小值，但至少 1500 tokens。
+    - 4K 模型 → 1200 tokens（被下限提升为 1500）
+    - 8K 模型 → 2400 tokens
+    - 32K 模型 → 9600 tokens
+    - 128K+ 模型 → 12000 tokens（保持默认值）
+    """
+    if capability is None:
+        return default_budget
+    ctx = getattr(capability, "effective_context_window", 0) or 0
+    if ctx <= 0:
+        return default_budget
+    proportional = int(ctx * 0.3)
+    return max(1500, min(default_budget, proportional))
+
+
+def prepare(user_text: str, *, lore_text: str = "", memory_text: str = "",
+            capability=None) -> dict | None:
     query, reason = retrieval_query(user_text)
     if not query:
         return None
@@ -57,7 +76,8 @@ def prepare(user_text: str, *, lore_text: str = "", memory_text: str = "") -> di
         found = {"results": [], "result_count": 0}
     return _prepare_results(
         query=query, reason=reason, results=found["results"],
-        candidate_count=found["result_count"], token_budget=KNOWLEDGE_TOKEN_BUDGET,
+        candidate_count=found["result_count"],
+        token_budget=_effective_budget(capability, KNOWLEDGE_TOKEN_BUDGET),
         max_results=MAX_INJECTED_RESULTS, lore_text=lore_text, memory_text=memory_text,
         source_mode="explicit",
     )
@@ -66,15 +86,22 @@ def prepare(user_text: str, *, lore_text: str = "", memory_text: str = "") -> di
 def prepare_for_mode(
     user_text: str, *, mode: str, provider: dict | None = None,
     lore_text: str = "", memory_text: str = "", session_id: str | None = None,
+    capability=None,
 ) -> tuple[dict | None, dict | None]:
     """按 off/explicit/smart 准备候选；只让高置信自然判断进入真实上下文。"""
     if mode == "off":
         return None, None
     explicit_query, _reason = retrieval_query(user_text)
     if mode != "smart":
-        return prepare(user_text, lore_text=lore_text, memory_text=memory_text), None
+        return prepare(
+            user_text, lore_text=lore_text, memory_text=memory_text,
+            capability=capability,
+        ), None
     if explicit_query:
-        prepared = prepare(user_text, lore_text=lore_text, memory_text=memory_text)
+        prepared = prepare(
+            user_text, lore_text=lore_text, memory_text=memory_text,
+            capability=capability,
+        )
         decision = _explicit_decision(user_text, prepared, provider)
         if prepared:
             prepared["_recall_decision"] = decision

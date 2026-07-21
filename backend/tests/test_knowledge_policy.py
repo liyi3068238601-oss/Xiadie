@@ -18,6 +18,11 @@ def clean_policy_documents():
     conn = db.connect()
     try:
         conn.execute("DELETE FROM knowledge_documents")
+        # 确保 migration 47 的全局默认策略生效（非敏感文档默认 remote_allowed）
+        conn.execute(
+            "INSERT INTO settings(key, value) VALUES('knowledge_default_policy', 'remote_allowed') "
+            "ON CONFLICT(key) DO UPDATE SET value='remote_allowed'"
+        )
         conn.commit()
     finally:
         conn.close()
@@ -86,7 +91,7 @@ def test_schema_35_is_repeatable_and_policy_events_are_body_free():
     try:
         assert conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
-        ).fetchone()[0] == "46"
+        ).fetchone()[0] == "47"
         columns = {
             row["name"] for row in conn.execute(
                 "PRAGMA table_info(knowledge_document_policy_events)"
@@ -101,7 +106,8 @@ def test_schema_35_is_repeatable_and_policy_events_are_body_free():
 def test_import_defaults_and_sensitive_constraint_are_conservative():
     normal = _import()
     sensitive = _import(sensitivity="sensitive")
-    assert normal["transmission_policy"] == "ask_each_time"
+    # migration 47 后非敏感文档默认 remote_allowed（用户意图：仅敏感才询问，其它直接引用）
+    assert normal["transmission_policy"] == "remote_allowed"
     assert sensitive["transmission_policy"] == "local_only"
     conn = db.connect()
     try:
@@ -118,7 +124,8 @@ def test_import_defaults_and_sensitive_constraint_are_conservative():
 def test_duplicate_reimport_can_only_upgrade_to_sensitive_local_only():
     data = "# 重复资料\n同一份内容。".encode()
     first = knowledge.import_file("普通.md", "text/markdown", data)["document"]
-    assert first["sensitivity"] == "normal" and first["transmission_policy"] == "ask_each_time"
+    # migration 47 后非敏感文档默认 remote_allowed
+    assert first["sensitivity"] == "normal" and first["transmission_policy"] == "remote_allowed"
     upgraded = knowledge.import_file(
         "敏感.md", "text/markdown", data, sensitivity="sensitive",
     )
@@ -137,6 +144,17 @@ def test_duplicate_reimport_can_only_upgrade_to_sensitive_local_only():
 
 def test_document_policy_api_revises_audits_and_rejects_sensitive_remote():
     normal = _import()
+    # migration 47 后非敏感文档默认 remote_allowed；为测试 patch 修改策略 + revision +1，
+    # 先显式设为 ask_each_time（revision 保持 1），再 patch 回 remote_allowed
+    conn = db.connect()
+    try:
+        conn.execute(
+            "UPDATE knowledge_documents SET transmission_policy='ask_each_time' WHERE id=?",
+            (normal["id"],),
+        )
+        conn.commit()
+    finally:
+        conn.close()
     response = client.patch(
         f"/api/knowledge/documents/{normal['id']}/transmission-policy",
         json={"transmission_policy": "remote_allowed"},

@@ -30,9 +30,34 @@ from .affect import observer_service as affect_observer_service
 from .security import ALLOWED_ORIGINS, TOKEN_HEADER, local_api_guard
 
 
+def cleanup_orphan_attachments(max_age_seconds: float = 3600) -> int:
+    """清理 message_attachments 表中的孤儿数据。
+
+    孤儿来源：用户上传附件后未发送（关闭应用、切换会话、点 × 移除），
+    或 preflight 返回 pending 后用户取消授权。这些附件 message_id IS NULL，
+    不会被 messages ON DELETE CASCADE 清理。
+
+    只清理创建时间超过 max_age_seconds 的孤儿，避免清理正在上传/发送中的附件。
+    返回被清理的行数。
+    """
+    cutoff = db.now() - max_age_seconds
+    conn = db.connect()
+    try:
+        cursor = conn.execute(
+            "DELETE FROM message_attachments WHERE message_id IS NULL AND created_at < ?",
+            (cutoff,),
+        )
+        conn.commit()
+        return cursor.rowcount or 0
+    finally:
+        conn.close()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db.init_db()
+    # 启动时清理上一次运行遗留的孤儿附件（message_id IS NULL 且超过 1 小时）
+    cleanup_orphan_attachments()
     conversation_summaries.recover_stale_runs()
     await conversation_summary_service.start_worker()
     await affect_observer_service.start_worker()
@@ -168,9 +193,80 @@ def list_messages(sid: str) -> list[dict]:
         for citation in citations:
             public = knowledge_context.citation_public(citation)
             by_message.setdefault(public["assistant_message_id"], []).append(public)
+        attachments_by_message: dict[str, list[dict]] = {}
+        attach_rows = conn.execute(
+            "SELECT id, message_id, filename, mime_type, char_count, content_sha256, created_at"
+            " FROM message_attachments WHERE message_id IN"
+            " (SELECT id FROM messages WHERE session_id=?) ORDER BY message_id, created_at",
+            (sid,),
+        ).fetchall()
+        for attach in attach_rows:
+            if not attach["message_id"]:
+                continue
+            attachments_by_message.setdefault(attach["message_id"], []).append({
+                "id": attach["id"],
+                "filename": attach["filename"],
+                "mime_type": attach["mime_type"],
+                "char_count": attach["char_count"],
+                "content_preview": "",
+                "content_sha256": attach["content_sha256"],
+                "created_at": attach["created_at"],
+            })
         for message in messages:
             message["knowledge_citations"] = by_message.get(message["id"], [])
+            message["attachments"] = attachments_by_message.get(message["id"], [])
         return messages
+    finally:
+        conn.close()
+
+
+@app.get("/api/messages/{mid}/attachments/{aid}/content")
+def get_message_attachment_content(mid: str, aid: str) -> dict:
+    """返回附件全文，供前端点击查看。仅本机访问，不暴露 token。"""
+    conn = db.connect()
+    try:
+        row = conn.execute(
+            "SELECT id, message_id, filename, mime_type, content_text, char_count"
+            " FROM message_attachments WHERE id=? AND message_id=?",
+            (aid, mid),
+        ).fetchone()
+        if not row:
+            raise HTTPException(404, "附件不存在")
+        return {
+            "id": row["id"],
+            "filename": row["filename"],
+            "mime_type": row["mime_type"],
+            "char_count": row["char_count"],
+            "content": row["content_text"],
+        }
+    finally:
+        conn.close()
+
+
+@app.delete("/api/chat/attachments/{attachment_id}")
+def delete_chat_attachment(attachment_id: str) -> dict:
+    """删除未绑定的附件（message_id IS NULL）。
+
+    用于前端用户点 × 移除 ready 附件时立即清理后端记录，避免孤儿数据。
+    已绑定到消息（message_id IS NOT NULL）的附件不能通过此端点删除，
+    应通过删除消息级联清理。
+    """
+    conn = db.connect()
+    try:
+        cursor = conn.execute(
+            "DELETE FROM message_attachments WHERE id=? AND message_id IS NULL",
+            (attachment_id,),
+        )
+        conn.commit()
+        if cursor.rowcount == 0:
+            row = conn.execute(
+                "SELECT message_id FROM message_attachments WHERE id=?",
+                (attachment_id,),
+            ).fetchone()
+            if row is None:
+                raise HTTPException(404, "附件不存在")
+            raise HTTPException(409, "附件已绑定到消息，不能单独删除")
+        return {"deleted": True}
     finally:
         conn.close()
 
@@ -370,6 +466,9 @@ def _context_capability(provider: dict | None, model: str):
 
 @app.post("/api/chat")
 async def chat(body: ChatIn) -> StreamingResponse:
+    # 空 content 且无附件：拒绝（regenerate 不受此约束，因为复用历史消息）
+    if not body.regenerate and not body.content.strip() and not body.attachment_ids:
+        raise HTTPException(400, "content 和 attachment_ids 至少有一个非空")
     uid: str | None = None
     replace_assistant_id: str | None = None
     provider, model = _current_model()
@@ -410,19 +509,28 @@ async def chat(body: ChatIn) -> StreamingResponse:
         style = companion_state.get_style_guidance(next_state)
         lore_digest = lore.retrieve_lore(body.content)
         recall_mode = knowledge_recall.settings()["mode"]
-        knowledge_retrieval, recall_decision = knowledge_context.prepare_for_mode(
-            body.content, mode=recall_mode, provider=provider,
-            lore_text=lore_digest, memory_text=digest, session_id=body.session_id,
-        )
-        try:
-            knowledge_retrieval = knowledge_grants.authorize_chat_locked(
-                conn, prepared=knowledge_retrieval, session_id=body.session_id,
-                user_message_id=uid or "", request_nonce=body.request_nonce,
-                content=body.content, provider=provider, model=model,
-                grant_token=body.knowledge_grant_token,
-                skip_restricted=body.knowledge_skip_restricted,
-                recall_mode=recall_mode,
+        # 提前计算 capability，供知识召回动态预算和上下文装配共用
+        capability = _context_capability(provider, model)
+        # 纯附件无文字消息：跳过知识召回（避免误触发远传授权询问）
+        content_has_text = bool(body.content.strip())
+        if content_has_text:
+            knowledge_retrieval, recall_decision = knowledge_context.prepare_for_mode(
+                body.content, mode=recall_mode, provider=provider,
+                lore_text=lore_digest, memory_text=digest, session_id=body.session_id,
+                capability=capability,
             )
+        else:
+            knowledge_retrieval, recall_decision = None, None
+        try:
+            if knowledge_retrieval is not None:
+                knowledge_retrieval = knowledge_grants.authorize_chat_locked(
+                    conn, prepared=knowledge_retrieval, session_id=body.session_id,
+                    user_message_id=uid or "", request_nonce=body.request_nonce,
+                    content=body.content, provider=provider, model=model,
+                    grant_token=body.knowledge_grant_token,
+                    skip_restricted=body.knowledge_skip_restricted,
+                    recall_mode=recall_mode,
+                )
         except knowledge_grants.GrantError as error:
             if conn.in_transaction:
                 conn.rollback()
@@ -501,7 +609,6 @@ async def chat(body: ChatIn) -> StreamingResponse:
                     knowledge_search.SEARCH_PROTOCOL_VERSION, db.now(),
                 ),
             )
-        capability = _context_capability(provider, model)
         active_summary = (
             conversation_summaries.active_revision_internal(body.session_id)
             if context_controls.summary_injection_enabled() else None
@@ -532,8 +639,9 @@ async def chat(body: ChatIn) -> StreamingResponse:
     finally:
         conn.close()
 
-    if not body.regenerate and uid and recall_mode == "explicit":
+    if not body.regenerate and uid and recall_mode == "explicit" and content_has_text:
         # 只在后台记录影子判断；绝不修改本轮 messages 或 knowledge_block。
+        # 纯附件无文字消息不触发知识召回，无需入队影子判断。
         knowledge_recall.enqueue(
             session_id=body.session_id, user_message_id=uid,
             user_text=body.content, provider=provider,
@@ -1025,13 +1133,38 @@ def get_knowledge_recall_decision_stats(session_id: Optional[str] = None) -> dic
 class KnowledgeRecallPreflightIn(BaseModel):
     session_id: str
     request_nonce: str = Field(min_length=16, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
-    content: str = Field(min_length=1)
+    content: str = Field(default="", max_length=8192)
+    attachment_ids: list[str] = Field(default_factory=list)
 
 
 @app.post("/api/knowledge/recall/preflight")
 def preflight_knowledge_recall(body: KnowledgeRecallPreflightIn) -> dict:
     provider, model = _current_model()
     recall_mode = knowledge_recall.settings()["mode"]
+    # 纯附件无文字消息：跳过知识召回，不会触发远传授权询问
+    if not body.content.strip() and body.attachment_ids:
+        return {
+            "id": None,
+            "status": "not_needed",
+            "reason": "attachment_only",
+            "recall_mode": recall_mode,
+            "provider": {
+                "id": (provider or {}).get("id"),
+                "model": model,
+                "location": (provider or {}).get("execution_location") or "unknown",
+                "location_revision": max(1, int((provider or {}).get("location_revision") or 1)),
+            },
+            "documents": [],
+            "document_count": 0,
+            "chunk_count": 0,
+            "token_range": {"min": 0, "max": 0},
+            "single_use": False,
+            "can_allow_once": False,
+            "can_always_allow": False,
+            "expires_at": None,
+        }
+    if not body.content.strip() and not body.attachment_ids:
+        raise HTTPException(400, "content 和 attachment_ids 至少有一个非空")
     try:
         knowledge_grants.expire_due(limit=50)
         return knowledge_grants.preflight(
@@ -1170,6 +1303,7 @@ async def import_knowledge_document(request: Request) -> dict:
             )
         )
     except knowledge.KnowledgeImportError as error:
+        # 统一返回 {code, message} 结构化格式，前端 ApiError 可拿到 code 做分类 toast
         status = 413 if error.code in {"file_too_large", "decoded_text_too_large"} else (
             415 if error.code in {
                 "file_type_unsupported", "mime_type_mismatch", "encoding_unsupported",
@@ -1178,7 +1312,7 @@ async def import_knowledge_document(request: Request) -> dict:
                 "document_quota_exceeded", "storage_quota_exceeded",
             } else 400
         )
-        raise HTTPException(status, str(error)) from error
+        raise HTTPException(status, {"code": error.code, "message": str(error)}) from error
     except OSError as error:
         raise HTTPException(507, "无法把文件安全保存到本地知识库") from error
 
@@ -1216,10 +1350,11 @@ async def upload_chat_attachment(request: Request) -> dict:
         content_text = result["normalized_text"]
         char_count = result["char_count"]
     except knowledge_parser.ParserError as error:
+        # 统一返回 {code, message} 结构化格式，与 import_knowledge_document 对齐
         status = 415 if error.code in {
             "parser_unsupported", "encoding_unsupported",
         } else 400
-        raise HTTPException(status, str(error)) from error
+        raise HTTPException(status, {"code": error.code, "message": str(error)}) from error
     attachment_id = _secrets.token_hex(8)
     content_sha256 = hashlib.sha256(content_text.encode("utf-8")).hexdigest()
     mime_type = request.headers.get("content-type", "application/octet-stream")
@@ -2190,7 +2325,12 @@ def tool_logs() -> list[dict]:
 
 @app.get("/api/settings/{key}")
 def read_setting(key: str) -> dict:
-    default = db.DEFAULT_MEMORY_ENABLED if key == "memory_enabled" else ""
+    if key == "memory_enabled":
+        default = db.DEFAULT_MEMORY_ENABLED
+    elif key == "knowledge_default_policy":
+        default = "remote_allowed"
+    else:
+        default = ""
     return {"key": key, "value": db.get_setting(key, default)}
 
 
@@ -2205,6 +2345,10 @@ def write_setting(key: str, body: dict) -> dict:
     value = str(body.get("value", ""))
     if key == "memory_enabled" and value not in {"0", "1"}:
         raise HTTPException(400, "长期记忆开关只接受 0 或 1")
+    if key == "knowledge_default_policy" and value not in {
+        "remote_allowed", "ask_each_time", "local_only",
+    }:
+        raise HTTPException(400, "知识库默认策略只接受 remote_allowed/ask_each_time/local_only")
     db.set_setting(key, value)
     return {"key": key, "value": db.get_setting(key)}
 

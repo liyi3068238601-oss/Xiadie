@@ -2009,6 +2009,42 @@ MIGRATIONS = [
             ON message_attachments(message_id);
         """,
     ),
+    (
+        47,
+        """
+        -- 知识库引用策略陪伴化：非敏感文档默认直接引用（remote_allowed），不再每次询问
+        -- 敏感文档保持 ask_each_time，由 knowledge_policy.update_document_policy 强制
+        UPDATE knowledge_documents
+            SET transmission_policy='remote_allowed',
+                policy_revision=policy_revision+1,
+                policy_updated_at=updated_at
+            WHERE sensitivity='normal' AND transmission_policy='ask_each_time';
+        UPDATE knowledge_collections
+            SET default_transmission_policy='remote_allowed',
+                policy_revision=policy_revision+1,
+                policy_updated_at=updated_at
+            WHERE default_transmission_policy='ask_each_time';
+        INSERT INTO knowledge_document_policy_events(
+            id, document_id, before_policy, after_policy, policy_revision,
+            actor, reason_code, created_at
+        )
+        SELECT
+            lower(hex(randomblob(16))),
+            id,
+            'ask_each_time',
+            'remote_allowed',
+            policy_revision,
+            'system',
+            'migration_47_companion_default',
+            updated_at
+        FROM knowledge_documents
+        WHERE sensitivity='normal'
+            AND transmission_policy='remote_allowed'
+            AND policy_revision > 1;
+        INSERT OR IGNORE INTO settings(key, value)
+            VALUES('knowledge_default_policy', 'remote_allowed');
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

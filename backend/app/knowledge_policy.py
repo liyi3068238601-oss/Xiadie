@@ -12,6 +12,34 @@ REMOTE_PROVIDER_IDS = frozenset({
 })
 LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
 
+# 陪伴化展示文案：枚举值不变（向后兼容），但前端展示使用 label/description
+POLICY_LABELS: dict[str, dict[str, str]] = {
+    "ask_each_time": {
+        "label": "用之前问我",
+        "description": "遐蝶用这些资料前会先问你",
+    },
+    "local_only": {
+        "label": "只在本机用",
+        "description": "这些资料不会发送给在线模型",
+    },
+    "remote_allowed": {
+        "label": "可以分享给遐蝶",
+        "description": "遐蝶可以自由使用这些资料",
+    },
+}
+
+
+def policy_label(policy: str | None) -> str:
+    if not policy or policy not in POLICY_LABELS:
+        return ""
+    return POLICY_LABELS[policy]["label"]
+
+
+def policy_description(policy: str | None) -> str:
+    if not policy or policy not in POLICY_LABELS:
+        return ""
+    return POLICY_LABELS[policy]["description"]
+
 
 class KnowledgePolicyError(ValueError):
     def __init__(self, code: str, message: str):

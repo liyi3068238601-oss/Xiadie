@@ -200,12 +200,18 @@ def get_deletion_run(run_id: str) -> dict | None:
 
 
 def list_collections() -> list[dict]:
+    from . import knowledge_policy
     conn = db.connect()
     try:
-        return [dict(row) for row in conn.execute(
+        rows = [dict(row) for row in conn.execute(
             "SELECT id,name,description,status,default_transmission_policy,policy_revision,"
             "policy_updated_at,created_at,updated_at FROM knowledge_collections ORDER BY name,id"
         ).fetchall()]
+        for row in rows:
+            policy = row.get("default_transmission_policy")
+            row["policy_label"] = knowledge_policy.policy_label(policy)
+            row["policy_description"] = knowledge_policy.policy_description(policy)
+        return rows
     finally:
         conn.close()
 
