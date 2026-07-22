@@ -1,8 +1,8 @@
 # 遐蝶项目基线状态
 
-> 最近复核日期：2026-07-20
+> 最近复核日期：2026-07-22
 >
-> 基线提交：对话上下文 CTX.6 用户控制与隐私诊断（以本文件所在提交为准）
+> 基线提交：EAP.R6 strict review 收口与协议冻结（以本文件所在提交为准）
 >
 > 当前版本：`v0.1.0` MVP 骨架（知识库系统 K 系列已完成）
 >
@@ -35,9 +35,9 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; python -m pytest -q -p no:cacheprovider` | 通过：902 passed，1 warning；当前 schema 59 |
-| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：40 项；TypeScript 检查及 Vite 生产构建 188 modules 成功 |
-| Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误；桌宠、主窗口及 R4 设置页完成 Windows 实机 smoke |
+| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest -q` | 通过：937 passed，1 warning；当前 Schema 60 |
+| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：41 项；TypeScript 检查及 Vite 生产构建 188 modules 成功 |
+| Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误；桌宠、主窗口及 R6 主动陪伴设置页完成 Windows 实机 smoke |
 
 已知但不阻断当前开发的警告：
 
