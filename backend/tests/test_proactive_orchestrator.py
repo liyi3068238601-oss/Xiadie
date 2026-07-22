@@ -43,6 +43,7 @@ def reset_runtime_settings():
             "proactive_quiet_hours_start": "23",
             "proactive_quiet_hours_end": "9",
             orchestrator.MILESTONE_CURSOR_KEY: "",
+            orchestrator.MILESTONE_CURSOR_BACKUP_KEY: "",
         }.items()
     }
     db.set_setting("proactive_enabled", "1")
@@ -53,6 +54,7 @@ def reset_runtime_settings():
     db.set_setting("proactive_quiet_hours_start", "0")
     db.set_setting("proactive_quiet_hours_end", "0")
     db.set_setting(orchestrator.MILESTONE_CURSOR_KEY, str(db.now()))
+    db.set_setting(orchestrator.MILESTONE_CURSOR_BACKUP_KEY, str(db.now()))
     yield
     conn = db.connect()
     try:
@@ -126,6 +128,9 @@ def _enqueue_casual(session_id, assistant_id, *, due_at):
 def _materialize_only(source, *, now):
     claimed = orchestrator._claim_source("materializer", now)
     assert claimed and claimed["id"] == source["id"]
+    assert claimed["status"] == "claimed"
+    assert claimed["lease_owner"] == "materializer"
+    assert claimed["lease_expires_at"] == now + orchestrator.LEASE_SECONDS
     orchestrator._materialize_source(claimed, now)
     conn = db.connect()
     try:
@@ -137,7 +142,7 @@ def _materialize_only(source, *, now):
         conn.close()
 
 
-def test_schema_58_has_due_queue_lease_and_saga_tables():
+def test_schema_59_has_runtime_and_delivery_tables():
     conn = db.connect()
     try:
         version = conn.execute(
@@ -148,10 +153,11 @@ def test_schema_58_has_due_queue_lease_and_saga_tables():
         ).fetchall()}
     finally:
         conn.close()
-    assert version == "58"
+    assert version == "59"
     assert {
         "proactive_runtime_sources", "proactive_candidate_claims",
-        "proactive_runtime_sagas",
+        "proactive_runtime_sagas", "proactive_deliveries",
+        "proactive_delivery_attempts", "proactive_delivery_events",
     }.issubset(tables)
 
 
@@ -170,9 +176,7 @@ def test_real_due_source_reaches_shadow_decision_without_delivery():
     conn = db.connect()
     try:
         assert conn.execute("SELECT COUNT(*) FROM proactive_candidate_claims").fetchone()[0] == 0
-        assert conn.execute(
-            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='proactive_deliveries'"
-        ).fetchone()[0] == 0
+        assert conn.execute("SELECT COUNT(*) FROM proactive_deliveries").fetchone()[0] == 0
     finally:
         conn.close()
 
@@ -191,6 +195,23 @@ def test_source_correction_before_due_is_skipped_without_candidate():
     row = next(item for item in orchestrator.list_runtime_sources() if item["id"] == source["id"])
     assert row["status"] == "skipped" and row["result_code"] == "source_invalidated"
     assert row["candidate_id"] is None
+
+
+def test_malformed_source_payload_is_skipped_without_retry():
+    session_id, _, assistant_id = _session_turn()
+    now = db.now()
+    source = _enqueue_casual(session_id, assistant_id, due_at=now)
+    conn = db.connect()
+    try:
+        conn.execute(
+            "UPDATE proactive_runtime_sources SET payload_json='{}' WHERE id=?", (source["id"],),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    assert orchestrator.process_due(now=now, worker_id="bad-payload") == 1
+    row = next(item for item in orchestrator.list_runtime_sources() if item["id"] == source["id"])
+    assert row["status"] == "skipped" and row["result_code"] == "source_payload_invalid"
 
 
 def test_user_returns_before_due_source_and_no_stale_candidate_is_created():
@@ -213,6 +234,32 @@ def test_user_return_closes_same_episode_and_abandons_pending_candidate():
     assert episodes.get_episode(candidate.episode_id).status == episodes.EpisodeStatus.RESPONDED
     assert candidates.get_candidate(candidate_id).status == candidates.CandidateStatus.ABANDONED
     assert orchestrator.process_due(now=now + 2, worker_id="late") == 0
+
+
+def test_user_return_updates_roll_back_as_one_transaction(monkeypatch):
+    session_id, _, assistant_id = _session_turn()
+    now = db.now()
+    source = _enqueue_casual(session_id, assistant_id, due_at=now)
+    candidate_id = _materialize_only(source, now=now)
+    real_connect = db.connect
+
+    class FailingConnection:
+        def __init__(self, inner):
+            self.inner = inner
+
+        def execute(self, sql, params=()):
+            if "UPDATE proactive_candidates" in sql:
+                raise sqlite3.OperationalError("injected failure")
+            return self.inner.execute(sql, params)
+
+        def __getattr__(self, name):
+            return getattr(self.inner, name)
+
+    monkeypatch.setattr(db, "connect", lambda: FailingConnection(real_connect()))
+    with pytest.raises(sqlite3.OperationalError):
+        orchestrator.handle_user_message(session_id, now=now + 1)
+    assert candidates.get_candidate(candidate_id).status == candidates.CandidateStatus.PENDING
+    assert episodes.get_episode(candidates.get_candidate(candidate_id).episode_id).status == episodes.EpisodeStatus.PROPOSED
 
 
 def test_setting_closed_between_materialization_and_decision_is_rechecked():
@@ -304,6 +351,18 @@ def test_database_busy_cycle_is_conservative_and_recoverable(monkeypatch):
     assert orchestrator.process_due(now=now, worker_id="busy") == 0
     row = next(item for item in orchestrator.list_runtime_sources() if item["id"] == source["id"])
     assert row["status"] == "queued"
+
+
+def test_programming_errors_propagate_from_process_due(monkeypatch):
+    monkeypatch.setattr(
+        orchestrator, "discover_memory_milestones", lambda **_kwargs: 0,
+    )
+    monkeypatch.setattr(orchestrator, "_recover", lambda _now: None)
+    monkeypatch.setattr(
+        orchestrator, "_claim_source", lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("bug")),
+    )
+    with pytest.raises(RuntimeError, match="bug"):
+        orchestrator.process_due(now=db.now(), worker_id="bug")
 
 
 def test_worker_start_is_idempotent_and_stop_is_clean():
@@ -448,6 +507,17 @@ def test_completed_episode_and_saga_are_discovered_from_durable_cursor():
         orchestrator.SOURCE_EPISODE_MILESTONE,
         orchestrator.SOURCE_SAGA_MILESTONE,
     }
+
+
+def test_corrupt_milestone_cursor_uses_checked_backup(caplog):
+    now = db.now()
+    backup = orchestrator._encode_milestone_cursor(now - 10)
+    db.set_setting(orchestrator.MILESTONE_CURSOR_KEY, "corrupted")
+    db.set_setting(orchestrator.MILESTONE_CURSOR_BACKUP_KEY, backup)
+    assert orchestrator.discover_memory_milestones(now=now) == 0
+    current = db.get_setting(orchestrator.MILESTONE_CURSOR_KEY, "")
+    assert orchestrator._decode_milestone_cursor(current) == pytest.approx(now, abs=1e-6)
+    assert "proactive_milestone_cursor_invalid" in caplog.text
 
 
 def test_layer3_same_kind_lookup_is_one_batch_query(monkeypatch):

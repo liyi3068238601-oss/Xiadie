@@ -24,6 +24,21 @@ contextBridge.exposeInMainWorld("xiadie", {
   onPetState: (cb) =>
     ipcRenderer.on("pet-state", (_e, payload) => cb(payload)),
 
+  // EAP.R4 local-only proactive delivery.  The renderer never receives the API
+  // token or authorization authority; it can only confirm its visible render.
+  onProactiveDelivery: (cb) => {
+    const listener = (_e, payload) => cb(payload);
+    ipcRenderer.on("proactive-delivery", listener);
+    return () => ipcRenderer.removeListener("proactive-delivery", listener);
+  },
+  confirmProactiveDelivery: (id, success) =>
+    ipcRenderer.send("proactive-delivery-ack", { id, success }),
+  onProactiveChatMessage: (cb) => {
+    const listener = (_e, payload) => cb(payload);
+    ipcRenderer.on("proactive-chat-message", listener);
+    return () => ipcRenderer.removeListener("proactive-chat-message", listener);
+  },
+
   // 仅保存在当前渲染进程内存中；不进入 URL、日志或浏览器存储。
   getApiToken: () => apiToken,
 });

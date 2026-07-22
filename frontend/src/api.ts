@@ -1294,6 +1294,17 @@ export const desktop = (window as any).xiadie as
       dragPet: (dx: number, dy: number) => void;
       setPetState: (s: string, bubble?: string, cluster?: string) => void;
       onPetState: (cb: (p: { state: string; bubble?: string; cluster?: string }) => void) => void;
+      onProactiveDelivery: (cb: (p: {
+        id: string;
+        channel: "live2d" | "bubble";
+        payload: Record<string, any>;
+      }) => void) => () => void;
+      confirmProactiveDelivery: (id: string, success: boolean) => void;
+      onProactiveChatMessage: (cb: (p: {
+        session_id: string;
+        delivery_id: string;
+        message_id: string;
+      }) => void) => () => void;
       getApiToken: () => string;
     }
   | undefined;

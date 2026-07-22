@@ -2562,6 +2562,84 @@ MIGRATIONS = [
             ON proactive_runtime_sagas(status, next_attempt_at, updated_at);
         """,
     ),
+    (
+        59,
+        """
+        -- EAP.R4: auditable at-most-once local delivery ledger.
+        ALTER TABLE messages ADD COLUMN proactive_delivery_id TEXT;
+        CREATE UNIQUE INDEX idx_messages_proactive_delivery
+            ON messages(proactive_delivery_id) WHERE proactive_delivery_id IS NOT NULL;
+
+        CREATE TABLE proactive_deliveries (
+            id TEXT PRIMARY KEY,
+            decision_id TEXT NOT NULL UNIQUE REFERENCES proactive_decisions(id) ON DELETE CASCADE,
+            candidate_id TEXT NOT NULL REFERENCES proactive_candidates(id) ON DELETE CASCADE,
+            episode_id TEXT REFERENCES contact_episodes(id) ON DELETE SET NULL,
+            session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            level INTEGER NOT NULL CHECK(level BETWEEN 0 AND 4),
+            channel TEXT NOT NULL CHECK(channel IN (
+                'silent','live2d','bubble','chat','desktop_notification'
+            )),
+            payload_json TEXT NOT NULL,
+            payload_hash TEXT NOT NULL CHECK(length(payload_hash) = 64),
+            authorization_revision INTEGER NOT NULL CHECK(authorization_revision >= 0),
+            authorization_hash TEXT NOT NULL CHECK(length(authorization_hash) = 64),
+            source_revision TEXT NOT NULL,
+            source_hash TEXT NOT NULL CHECK(length(source_hash) = 64),
+            status TEXT NOT NULL CHECK(status IN (
+                'queued','claimed','delivering','delivered','failed',
+                'cancelled','suppressed','expired'
+            )),
+            attempt_count INTEGER NOT NULL DEFAULT 0 CHECK(attempt_count BETWEEN 0 AND 1),
+            lease_owner TEXT,
+            lease_token TEXT,
+            lease_expires_at REAL,
+            error_code TEXT,
+            delivered_at REAL,
+            acknowledged_at REAL,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_proactive_deliveries_claim
+            ON proactive_deliveries(status, lease_expires_at, created_at);
+        CREATE INDEX idx_proactive_deliveries_session
+            ON proactive_deliveries(session_id, created_at);
+
+        CREATE TABLE proactive_delivery_attempts (
+            id TEXT PRIMARY KEY,
+            delivery_id TEXT NOT NULL REFERENCES proactive_deliveries(id) ON DELETE CASCADE,
+            attempt_no INTEGER NOT NULL CHECK(attempt_no = 1),
+            consumer_id TEXT NOT NULL,
+            lease_token TEXT NOT NULL,
+            channel TEXT NOT NULL,
+            status TEXT NOT NULL CHECK(status IN (
+                'claimed','delivering','delivered','failed','uncertain'
+            )),
+            error_code TEXT,
+            claimed_at REAL NOT NULL,
+            invocation_started_at REAL,
+            confirmed_at REAL,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            UNIQUE(delivery_id, attempt_no)
+        );
+        CREATE INDEX idx_proactive_delivery_attempts_delivery
+            ON proactive_delivery_attempts(delivery_id, created_at);
+
+        CREATE TABLE proactive_delivery_events (
+            id TEXT PRIMARY KEY,
+            delivery_id TEXT NOT NULL REFERENCES proactive_deliveries(id) ON DELETE CASCADE,
+            event_type TEXT NOT NULL,
+            from_status TEXT,
+            to_status TEXT NOT NULL,
+            reason_code TEXT,
+            metadata_json TEXT NOT NULL DEFAULT '{}',
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_proactive_delivery_events_delivery
+            ON proactive_delivery_events(delivery_id, created_at, id);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

@@ -2,7 +2,7 @@
 
 - 版本：v0.3（完成度审计与收口补完版）
 - 日期：2026-07-22
-- 状态：EAP.R0～EAP.R3 已完成并提交；真实产品闭环仍未完成，下一阶段为 EAP.R4
+- 状态：EAP.R0～EAP.R4 已完成并提交；真实产品闭环仍未完成，下一阶段为 EAP.R5
 - 专项代号：`EAP`（Emotion, Attachment and Proactivity）
 - 前置条件：CTX.0～CTX.7 已冻结；现有 Affect/Relationship 阶段 0～4.1 已完成
 - 执行规则：每个阶段均须完成代码、测试、文档、阶段 Review 和本地 Git 提交；未解决 P0/P1 时不得进入下一阶段
@@ -1701,7 +1701,7 @@ R2 施工记录（2026-07-22）：`[x]` 已完成并通过独立 Review，0 个�
 
 完成门：无需测试代码手工串联领域函数，真实应用 worker 即可把有效来源推进到已裁决候选；仍不开放真实非静默投递。
 
-R3 施工记录（2026-07-22）：`[x]` 已完成，等待独立 Review。Schema 58 新增 `proactive_runtime_sources` due queue、`proactive_candidate_claims` 租约和 `proactive_runtime_sagas` 恢复账本，并为候选补充 source revision、due 时间和运行时来源唯一引用。唯一 `ProactiveOrchestrator` 由主应用 lifespan 管理；真实聊天产生 expected-return/受限问候来源，Companion Cognition 产生 grounded 情绪关心来源，Episode/Saga 通过不追溯历史的持久游标发现新完成里程碑，LIFE 仍只通过 seed fixture/adapter 进入 EAP。worker 在来源物化和裁决前后复核来源与硬门，组合既有 Decision、Intensity、ExpressionPlan 为可恢复 shadow saga；claim lease、重复启动、双 worker、数据库忙、崩溃恢复、用户提前回来、来源中途修改及 15 分钟～30 天时钟均有专项覆盖。所有 Decision 均标记 `is_shadow=1`，Schema 58 未创建 Delivery 表，也未开放任何真实投递。R2 Review 的 Layer 3 N+1 建议已用单次批量查询采纳。验收门禁：后端 `885 passed, 1 warning`，前端 `36 passed`，Vite production build（188 modules）及 Electron `main.js`/`preload.js` 语法检查通过。
+R3 施工记录（2026-07-22）：`[x]` 已完成并通过独立 Review。Schema 58 新增 `proactive_runtime_sources` due queue、`proactive_candidate_claims` 租约和 `proactive_runtime_sagas` 恢复账本，并为候选补充 source revision、due 时间和运行时来源唯一引用。唯一 `ProactiveOrchestrator` 由主应用 lifespan 管理；真实聊天产生 expected-return/受限问候来源，Companion Cognition 产生 grounded 情绪关心来源，Episode/Saga 通过不追溯历史的持久游标发现新完成里程碑，LIFE 仍只通过 seed fixture/adapter 进入 EAP。worker 在来源物化和裁决前后复核来源与硬门，组合既有 Decision、Intensity、ExpressionPlan 为可恢复 shadow saga；claim lease、重复启动、双 worker、数据库忙、崩溃恢复、用户提前回来、来源中途修改及 15 分钟～30 天时钟均有专项覆盖。R3 Review 的 1 项 P1 与 4 项 P2 全部采纳：claim 返回更新后行、来源载荷窄异常分类、里程碑游标校验和备份、用户返回单事务、worker 数据库错误与编程错误分流均已补齐专项回归。R2 Review 的 Layer 3 N+1 建议已用单次批量查询采纳。
 
 建议提交：`feat(eap): add recoverable proactive runtime orchestration`
 
@@ -1709,17 +1709,17 @@ R3 施工记录（2026-07-22）：`[x]` 已完成，等待独立 Review。Schema
 
 目标：建立唯一、可审计、at-most-once 的真实输出路径。
 
-- [ ] 新增顺序迁移：`proactive_deliveries`、投递尝试/事件表和必要唯一约束。
-- [ ] Delivery 至少记录 decision、candidate、episode、channel、payload hash、授权 revision、状态、attempt、错误码、delivered_at 和 acknowledged_at。
-- [ ] 定义投递状态机：`queued/claimed/delivering/delivered/failed/cancelled/suppressed/expired`。
-- [ ] 最终发送前重新检查所有硬边界；用户关闭、暂停、拒绝、来源失效或授权变化必须取消未投递项。
-- [ ] Level 0：只记录决定，不产生用户可见行为。
-- [ ] Level 1：通过现有统一 Live2D 状态源发出受限视线/表情/轻动作，不建立第二套前端情绪源。
-- [ ] Level 2：实现无系统通知的小气泡，支持自动消失和不要求回复。
-- [ ] Level 3：写入有明确 `proactive_delivery_id` 的主窗口 assistant message，并走正常消息刷新/流式兼容路径。
-- [ ] Level 4：只有 Windows 通知授权明确开启时才可投递；首次授权失败不得自动重试骚扰。
-- [ ] Level 5：本专项保持硬禁用，不实现 QQ/微信/邮件发送器。
-- [ ] `delivered` 只代表渠道成功确认；进程在调用渠道前后崩溃时不得重复投递。
+- [x] 新增顺序迁移：`proactive_deliveries`、投递尝试/事件表和必要唯一约束。
+- [x] Delivery 至少记录 decision、candidate、episode、channel、payload hash、授权 revision、状态、attempt、错误码、delivered_at 和 acknowledged_at。
+- [x] 定义投递状态机：`queued/claimed/delivering/delivered/failed/cancelled/suppressed/expired`。
+- [x] 最终发送前重新检查所有硬边界；用户关闭、暂停、拒绝、来源失效或授权变化必须取消未投递项。
+- [x] Level 0：只记录决定，不产生用户可见行为。
+- [x] Level 1：通过现有统一 Live2D 状态源发出受限视线/表情/轻动作，不建立第二套前端情绪源。
+- [x] Level 2：实现无系统通知的小气泡，支持自动消失和不要求回复。
+- [x] Level 3：写入有明确 `proactive_delivery_id` 的主窗口 assistant message，并走正常消息刷新/流式兼容路径。
+- [x] Level 4：只有 Windows 通知授权明确开启时才可投递；首次授权失败不得自动重试骚扰。
+- [x] Level 5：本专项保持硬禁用，不实现 QQ/微信/邮件发送器。
+- [x] `delivered` 只代表渠道成功确认；进程在调用渠道前后崩溃时不得重复投递。
 
 专项测试：
 
@@ -1729,6 +1729,8 @@ R3 施工记录（2026-07-22）：`[x]` 已完成，等待独立 Review。Schema
 - Electron 主窗口、Live2D、气泡和 Windows 通知真实集成测试。
 
 完成门：所有用户可见主动行为都能追溯到唯一 Delivery；关闭或暂停时用户可见行为为 0；Level 5 永远为 0。
+
+R4 施工记录（2026-07-22）：`[x]` 已完成，等待独立 Review。Schema 59 新增唯一 Delivery、单次 attempt 与事件账本，并为聊天消息增加唯一 `proactive_delivery_id`。真实本机投递继续采用显式实验开关，默认关闭；开启后，orchestrator 才生成非 shadow 决策和不可变投递载荷。Electron 只负责 claim/begin/ack，后端在唯一调用边界前以写事务复核来源、候选、过期时间、暂停/急停、类型开关、桌面通知授权和设置 revision。调用前崩溃可安全重新 claim，调用后未确认则标记 `delivery_confirmation_unknown` 并永不自动重试。Level 1 复用桌宠状态/表情路径，Level 2 气泡自动消失，Level 3 原子写主窗口消息并触发刷新，Level 4 仅在显式授权时调用 Windows Notification；Schema 与运行时均不能容纳 Level 5。专项覆盖双 consumer、数据库提交失败、来源/授权变化、失败确认、重启恢复和各本机 Level。验收门禁：后端 `902 passed, 1 warning`，改动范围 Ruff 通过；前端 `40 passed`，TypeScript/Vite production build（188 modules）通过；Electron 脚本语法、真实桌宠→主窗口启动及新设置页默认关闭 smoke 通过。全仓 Ruff 仍有 69 项既有历史债，本阶段改动文件为 0 项。
 
 建议提交：`feat(eap): add auditable local proactive delivery channels`
 

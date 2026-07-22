@@ -35,9 +35,9 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests -q` | 通过：885 passed，1 warning；当前 schema 58 |
-| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：36 项；TypeScript 检查及 Vite 生产构建 188 modules 成功 |
-| Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
+| 后端 | `cd backend; python -m pytest -q -p no:cacheprovider` | 通过：902 passed，1 warning；当前 schema 59 |
+| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：40 项；TypeScript 检查及 Vite 生产构建 188 modules 成功 |
+| Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误；桌宠、主窗口及 R4 设置页完成 Windows 实机 smoke |
 
 已知但不阻断当前开发的警告：
 
@@ -269,7 +269,7 @@ npm.cmd start
 | 重新生成 | 已改为新回复成功持久化时再替换旧回复，并有失败回归测试 | 后续版本化回复时再扩展历史保留策略 |
 | 上下文 | CTX.0～CTX.7 已完成总验收并通过独立 strict review；5/20/100/500 轮满足硬预算，当前用户消息受保护，摘要、跨会话历史、长期记忆、知识和 Lore 保持独立来源与优先级 | schema 45 与上下文 v1 已冻结；普通自动历史召回继续 shadow |
 | 情绪与关系 | `affect_state`、`relationship_state`、确定性积温、旁观观察器、9×5 语调网格、统一前端/Live2D 状态源已经可运行 | 进入情感意义、经历协同与受控主动陪伴专项；不重建现有内核 |
-| EAP 主动陪伴 | Schema 48～58、Protocol Registry、DecisionRun、Companion Cognition worker、严格 User Affect/Relationship/Feedback Schema、关系建议原子应用/撤销、设置硬边界、Presence reducer、ContactEpisode、Candidate/Decision、Intensity、Expression、LIFE seed adapter、可恢复 `ProactiveOrchestrator`、due queue/lease/saga、模拟器和设置 UI 已落地 | 普通聊天已不再机械增加 bond/trust；真实来源可由生产 worker 自动推进到 shadow 裁决，但尚无 Delivery/Feedback persistence，任何用户可见主动投递仍保持关闭。R0～R3 已完成，下一入口为 EAP.R4 |
+| EAP 主动陪伴 | Schema 48～59、Protocol Registry、DecisionRun、Companion Cognition worker、严格 User Affect/Relationship/Feedback Schema、关系建议原子应用/撤销、设置硬边界、Presence reducer、ContactEpisode、Candidate/Decision、Intensity、Expression、LIFE seed adapter、可恢复 `ProactiveOrchestrator`、本机 Delivery/attempt/event 账本和 Level 0～4 Electron 通道已落地 | 真实本机投递为显式实验开关且默认关闭；开启后仍由后端最终门禁与 at-most-once 状态机控制，Level 5 硬禁用。Feedback persistence、历史与纠正控制尚未完成；R0～R4 已完成，下一入口为 EAP.R5 |
 | 会话摘要/历史 | schema 45 与 v1 协议已冻结；摘要六类样本 6/6、显式历史召回固定集 4/4，重复手动重建已幂等合并；普通自动召回仍为 shadow | 只有取得明确授权的校准样本并另立 ADR 才考虑解除 shadow |
 | 模型设置 | provider/model 选择的服务端校验较弱 | v0.1.2 增加校验与错误恢复 |
 | 数据演进 | SQLite 已有顺序 schema 迁移并到达 57，但尚无独立迁移 CLI、降级和备份恢复工具 | Schema 48～55 保持不可变；EAP 收口从 56 顺序迁移；正式发布前补齐备份、恢复与迁移演练 |

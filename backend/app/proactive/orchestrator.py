@@ -6,13 +6,14 @@ user-visible action; R4 is the only stage allowed to add a delivery ledger.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import logging
 import sqlite3
 from typing import Optional
 
 from .. import db
-from . import candidates, decision, episodes, expression, intensity, life_adapter, presence
+from . import candidates, decision, episodes, expression, intensity, life_adapter, presence, settings
 from .run_ledger import compute_source_hash
 
 logger = logging.getLogger(__name__)
@@ -29,6 +30,7 @@ SOURCE_SAGA_MILESTONE = "saga_milestone"
 SOURCE_CASUAL_GREETING = "casual_greeting"
 SOURCE_LIFE_SEED = "life_seed"
 MILESTONE_CURSOR_KEY = "proactive_milestone_cursor"
+MILESTONE_CURSOR_BACKUP_KEY = "proactive_milestone_cursor_backup"
 
 _worker_task: asyncio.Task | None = None
 _wake_event: asyncio.Event | None = None
@@ -192,48 +194,72 @@ def handle_user_message(session_id: str, *, now: Optional[float] = None) -> int:
     now = db.now() if now is None else now
     conn = db.connect()
     try:
+        conn.execute("BEGIN IMMEDIATE")
         conn.execute(
             "UPDATE proactive_runtime_sources SET status='skipped',result_code='user_returned',"
             "lease_owner=NULL,lease_expires_at=NULL,updated_at=? "
             "WHERE session_id=? AND status IN ('queued','claimed')", (now, session_id),
         )
-        conn.commit()
-    finally:
-        conn.close()
-    active = episodes.get_active_episode_for_session(session_id)
-    if not active:
-        return 0
-    try:
-        episodes.apply_user_response(active.id, episodes.UserResponseType.NORMAL, now=now)
-    except ValueError:
-        return 0
-    conn = db.connect()
-    try:
+        placeholders = ",".join("?" * len(episodes.ACTIVE_STATUSES))
+        active = conn.execute(
+            f"SELECT * FROM contact_episodes WHERE session_id=? "
+            f"AND status IN ({placeholders}) ORDER BY updated_at DESC LIMIT 1",
+            (session_id, *episodes.ACTIVE_STATUSES),
+        ).fetchone()
+        if not active:
+            conn.commit()
+            return 0
+        conn.execute(
+            "UPDATE contact_episodes SET unanswered_pressure=?,status='responded',"
+            "outcome='replied',updated_at=? WHERE id=? AND status IN "
+            "('proposed','waiting','approached','deferred','quiet_waiting')",
+            (max(0.0, active["unanswered_pressure"] * 0.4), now, active["id"]),
+        )
         conn.execute(
             "UPDATE proactive_candidates SET status='abandoned',updated_at=? "
             "WHERE episode_id=? AND status IN ('pending','evaluating','deferred','approved')",
-            (now, active.id),
+            (now, active["id"]),
         )
         conn.execute(
             "UPDATE proactive_runtime_sources SET status='skipped',result_code='user_returned',"
             "lease_owner=NULL,lease_expires_at=NULL,updated_at=? "
             "WHERE candidate_id IN (SELECT id FROM proactive_candidates WHERE episode_id=?) "
             "AND status IN ('queued','claimed')",
-            (now, active.id),
+            (now, active["id"]),
         )
         conn.execute(
             "UPDATE proactive_runtime_sagas SET status='skipped',error_code='user_returned',"
             "updated_at=? WHERE candidate_id IN "
             "(SELECT id FROM proactive_candidates WHERE episode_id=?) "
-            "AND status IN ('claimed','recovery_pending')", (now, active.id),
+            "AND status IN ('claimed','recovery_pending')", (now, active["id"]),
         )
+        deliveries = conn.execute(
+            "SELECT id,status FROM proactive_deliveries WHERE candidate_id IN "
+            "(SELECT id FROM proactive_candidates WHERE episode_id=?) "
+            "AND status IN ('queued','claimed')", (active["id"],),
+        ).fetchall()
+        for delivery_row in deliveries:
+            conn.execute(
+                "UPDATE proactive_deliveries SET status='cancelled',lease_owner=NULL,lease_token=NULL,"
+                "lease_expires_at=NULL,error_code='user_returned',updated_at=? WHERE id=?",
+                (now, delivery_row["id"]),
+            )
+            conn.execute(
+                "INSERT INTO proactive_delivery_events(id,delivery_id,event_type,from_status,to_status,"
+                "reason_code,metadata_json,created_at) VALUES(?,?,?,?,'cancelled','user_returned','{}',?)",
+                (db.new_id(), delivery_row["id"], "user_returned", delivery_row["status"], now),
+            )
         conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()
     return 1
 
 
 def process_due(*, now: Optional[float] = None, limit: int = 20, worker_id: Optional[str] = None) -> int:
+    """Process local work; database-busy is conservative, programming errors propagate."""
     now = db.now() if now is None else now
     worker_id = worker_id or f"orchestrator-{db.new_id()}"
     discover_memory_milestones(now=now)
@@ -263,12 +289,21 @@ def discover_memory_milestones(*, now: Optional[float] = None) -> int:
     raw_cursor = db.get_setting(MILESTONE_CURSOR_KEY, "")
     if not raw_cursor:
         # Installation watermark: do not retroactively contact users about old memories.
-        db.set_setting(MILESTONE_CURSOR_KEY, str(now))
+        encoded = _encode_milestone_cursor(now)
+        _save_milestone_cursor(encoded, encoded)
         return 0
+    last_valid_raw = raw_cursor
     try:
-        cursor = float(raw_cursor)
+        cursor = _decode_milestone_cursor(raw_cursor)
     except ValueError:
-        cursor = now
+        logger.warning("proactive_milestone_cursor_invalid")
+        backup = db.get_setting(MILESTONE_CURSOR_BACKUP_KEY, "")
+        try:
+            cursor = _decode_milestone_cursor(backup)
+            last_valid_raw = backup
+        except ValueError:
+            logger.error("proactive_milestone_cursor_backup_invalid")
+            return 0
     conn = db.connect()
     try:
         episode_rows = conn.execute(
@@ -302,8 +337,57 @@ def discover_memory_milestones(*, now: Optional[float] = None) -> int:
             session_id=row["source_session_id"], source_type=SOURCE_SAGA_MILESTONE,
             source_id=row["id"], now=now,
         ) is not None)
-    db.set_setting(MILESTONE_CURSOR_KEY, str(now))
+    encoded = _encode_milestone_cursor(now)
+    _save_milestone_cursor(encoded, last_valid_raw)
     return queued
+
+
+def _encode_milestone_cursor(at: float) -> str:
+    value = f"{float(at):.6f}"
+    checksum = hashlib.sha256(f"v1:{value}".encode("utf-8")).hexdigest()
+    return json.dumps({"version": 1, "at": value, "checksum": checksum}, sort_keys=True)
+
+
+def _decode_milestone_cursor(raw: str) -> float:
+    if not raw:
+        raise ValueError("empty milestone cursor")
+    try:
+        return float(raw)  # migration compatibility with the R3 numeric cursor
+    except ValueError:
+        pass
+    try:
+        payload = json.loads(raw)
+        if payload.get("version") != 1:
+            raise ValueError("unsupported milestone cursor version")
+        value = str(payload["at"])
+        expected = hashlib.sha256(f"v1:{value}".encode("utf-8")).hexdigest()
+        if payload.get("checksum") != expected:
+            raise ValueError("milestone cursor checksum mismatch")
+        return float(value)
+    except (json.JSONDecodeError, KeyError, TypeError) as exc:
+        raise ValueError("malformed milestone cursor") from exc
+
+
+def _save_milestone_cursor(primary: str, backup: str) -> None:
+    conn = db.connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        conn.execute(
+            "INSERT INTO settings(key,value) VALUES(?,?) "
+            "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            (MILESTONE_CURSOR_BACKUP_KEY, backup),
+        )
+        conn.execute(
+            "INSERT INTO settings(key,value) VALUES(?,?) "
+            "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            (MILESTONE_CURSOR_KEY, primary),
+        )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
 def _claim_source(worker_id: str, now: float):
@@ -322,8 +406,11 @@ def _claim_source(worker_id: str, now: float):
             "lease_expires_at=?,updated_at=? WHERE id=? AND status='queued'",
             (worker_id, now + LEASE_SECONDS, now, row["id"]),
         ).rowcount
+        claimed = conn.execute(
+            "SELECT * FROM proactive_runtime_sources WHERE id=?", (row["id"],),
+        ).fetchone() if changed else None
         conn.commit()
-        return dict(row) if changed else None
+        return dict(claimed) if claimed else None
     finally:
         conn.close()
 
@@ -333,7 +420,15 @@ def _materialize_source(source: dict, now: float) -> None:
     if not snapshot or snapshot[0] != source["source_revision"] or snapshot[1] != source["source_hash"]:
         _finish_source(source["id"], "skipped", "source_invalidated", now)
         return
-    payload = json.loads(source["payload_json"])
+    try:
+        payload = json.loads(source["payload_json"])
+        for key in ("topic", "origin_type", "candidate_kind"):
+            if not isinstance(payload[key], str) or not payload[key].strip():
+                raise ValueError(f"invalid payload field: {key}")
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+        logger.error("proactive_source_payload_invalid source_id=%s", source["id"], exc_info=True)
+        _finish_source(source["id"], "skipped", "source_payload_invalid", now)
+        return
     try:
         refs = {
             "runtime_source_id": source["id"], "source_kind": source["source_kind"],
@@ -387,10 +482,13 @@ def _materialize_source(source: dict, now: float) -> None:
                 and life_adapter.get_seed(source["source_ref_id"]).consumed_at is None):
             life_adapter.consume_seed(source["source_ref_id"], episode_id=episode.id,
                                       candidate_id=candidate.id, now=now)
-    except Exception:  # recover source claim without creating a duplicate source row
+    except sqlite3.OperationalError:  # transient database failure: retry idempotently
         logger.exception("proactive_source_materialization_failed source_id=%s", source["id"])
         _finish_source(source["id"], "queued", "materialization_failed", now,
                        due_at=now + RETRY_SECONDS)
+    except ValueError:
+        logger.exception("proactive_source_domain_invalid source_id=%s", source["id"])
+        _finish_source(source["id"], "skipped", "source_domain_invalid", now)
 
 
 def _claim_candidate(worker_id: str, now: float):
@@ -443,7 +541,8 @@ def _evaluate_candidate(candidate, worker_id: str, now: float) -> None:
         if not _source_matches(source):
             _skip_candidate(candidate.id, worker_id, "source_invalidated_after_advice", before, now)
             return
-        result = decision.decide_candidate(candidate.id, now=now, is_shadow=True)
+        local_delivery = settings.load_settings()["proactive_local_delivery_enabled"] == "1"
+        result = decision.decide_candidate(candidate.id, now=now, is_shadow=not local_delivery)
         plan = intensity.get_intensity_plan_by_decision(result.id)
         if plan is None:
             level = intensity.select_minimum_sufficient_level(
@@ -455,7 +554,7 @@ def _evaluate_candidate(candidate, worker_id: str, now: float) -> None:
                 result.id, result.session_id, level=level,
                 expression_act=result.expression_act,
                 approach_value=result.approach_value,
-                reason="shadow orchestration; no delivery",
+                reason=("local delivery plan" if local_delivery else "shadow orchestration; no delivery"),
                 now=now,
             )
         expression_plan = expression.get_expression_plan_by_decision(result.id)
@@ -464,6 +563,11 @@ def _evaluate_candidate(candidate, worker_id: str, now: float) -> None:
                 result.session_id, decision_id=result.id, intensity_plan_id=plan.id,
                 expression_act=result.expression_act, now=now,
             )
+        if local_delivery:
+            # Enqueue before the saga becomes claimable.  A crash is recoverable via
+            # the decision-unique ledger row, while consumers require saga=completed.
+            from . import delivery
+            delivery.enqueue_decision(result.id, now=now)
         conn = db.connect()
         try:
             conn.execute(

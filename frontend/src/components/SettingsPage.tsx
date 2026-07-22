@@ -18,6 +18,7 @@ const TABS: { key: TabKey; label: string }[] = [
 // 陪伴与主动消息：后端 settings 键名与默认值（EAP v0.2 第 7.1 节）。
 const PROACTIVE_SETTING_KEYS = [
   "proactive_enabled",
+  "proactive_local_delivery_enabled",
   "proactive_desktop_notification_enabled",
   "proactive_external_channels_enabled",
   "proactive_kind_chat_continuation_enabled",
@@ -35,6 +36,7 @@ const PROACTIVE_SETTING_KEYS = [
 
 const PROACTIVE_DEFAULTS: Record<string, string> = {
   proactive_enabled: "1",
+  proactive_local_delivery_enabled: "0",
   proactive_desktop_notification_enabled: "0",
   proactive_external_channels_enabled: "0",
   proactive_kind_chat_continuation_enabled: "1",
@@ -1288,6 +1290,25 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
                 <p className="settings-card-hint">
                   遐蝶可能在合适的时候通过本机消息轻轻问候你。关闭后不会有任何真实主动投递。
                 </p>
+                <label className="settings-toggle-row">
+                  <div>
+                    <p>启用本机主动表达（实验）</p>
+                    <p className="settings-card-hint">
+                      开启后才会执行 Live2D、气泡、聊天消息或已授权的 Windows 通知；默认关闭。
+                    </p>
+                  </div>
+                  <label className="settings-toggle">
+                    <input
+                      type="checkbox"
+                      checked={proactiveSettings.proactive_local_delivery_enabled === "1"}
+                      onChange={(e) => updateProactiveSetting(
+                        "proactive_local_delivery_enabled", e.target.checked ? "1" : "0",
+                      )}
+                      aria-label="启用本机主动表达"
+                    />
+                    <span className="settings-toggle-slider" aria-hidden="true"></span>
+                  </label>
+                </label>
               </section>
 
               {/* 2. 允许的主动类型 */}
@@ -1491,7 +1512,7 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
                 {proactiveSettings.proactive_show_advanced_diagnostics === "1" && (
                   <div className="settings-diagnostics-info">
                     <p>协议版本：conversation-presence-v2 / proactive-decision-v2 / expression-plan-v1</p>
-                    <p>Schema 版本：58</p>
+                    <p>Schema 版本：59</p>
                     <p>（诊断详情将在后续版本中提供）</p>
                   </div>
                 )}

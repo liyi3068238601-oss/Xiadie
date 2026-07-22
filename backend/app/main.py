@@ -32,6 +32,7 @@ from .proactive import presence as proactive_presence
 from .proactive import settings as proactive_settings
 from .proactive import cognition_service as companion_cognition_service
 from .proactive import orchestrator as proactive_orchestrator
+from .proactive import delivery as proactive_delivery
 from .security import ALLOWED_ORIGINS, TOKEN_HEADER, local_api_guard
 
 logger = logging.getLogger(__name__)
@@ -918,8 +919,50 @@ def read_proactive_runtime() -> dict:
     return {
         "sources": proactive_orchestrator.list_runtime_sources(),
         "sagas": proactive_orchestrator.list_runtime_sagas(),
-        "delivery_enabled": False,
+        "deliveries": proactive_delivery.list_deliveries(),
+        "delivery_enabled": proactive_settings.load_settings()[
+            "proactive_local_delivery_enabled"
+        ] == "1",
     }
+
+
+class ProactiveDeliveryClaimIn(BaseModel):
+    consumer_id: str = Field(min_length=1, max_length=120)
+
+
+class ProactiveDeliveryBeginIn(ProactiveDeliveryClaimIn):
+    lease_token: str = Field(min_length=1, max_length=120)
+
+
+class ProactiveDeliveryAckIn(ProactiveDeliveryBeginIn):
+    success: bool
+    error_code: str | None = Field(default=None, max_length=80)
+
+
+@app.post("/api/proactive-deliveries/claim")
+def claim_proactive_delivery(body: ProactiveDeliveryClaimIn) -> dict:
+    return {"delivery": proactive_delivery.claim_next(body.consumer_id)}
+
+
+@app.post("/api/proactive-deliveries/{delivery_id}/begin")
+def begin_proactive_delivery(delivery_id: str, body: ProactiveDeliveryBeginIn) -> dict:
+    try:
+        return proactive_delivery.begin_delivery(
+            delivery_id, body.consumer_id, body.lease_token
+        )
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+
+@app.post("/api/proactive-deliveries/{delivery_id}/ack")
+def acknowledge_proactive_delivery(delivery_id: str, body: ProactiveDeliveryAckIn) -> dict:
+    try:
+        return proactive_delivery.acknowledge_delivery(
+            delivery_id, body.consumer_id, body.lease_token,
+            success=body.success, error_code=body.error_code,
+        )
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
 
 
 @app.post("/api/companion-state/reset")
@@ -2419,10 +2462,11 @@ def write_setting(key: str, body: dict) -> dict:
         raise HTTPException(400, "知识库默认策略只接受 remote_allowed/ask_each_time/local_only")
     if key.startswith("proactive_"):
         try:
-            value = proactive_settings.validate_setting(key, value)
+            value, _revision = proactive_settings.write_public_setting(key, value)
         except ValueError as exc:
             raise HTTPException(400, str(exc)) from exc
-    db.set_setting(key, value)
+    else:
+        db.set_setting(key, value)
     return {"key": key, "value": db.get_setting(key)}
 
 

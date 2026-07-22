@@ -66,6 +66,12 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
     if (noticeTimer.current !== null) window.clearTimeout(noticeTimer.current);
   }, [sessionId]);
 
+  useEffect(() => api.desktop?.onProactiveChatMessage?.((item) => {
+    if (!sessionId || item.session_id !== sessionId) return;
+    api.listMessages(sessionId).then(setMessages).catch(() => undefined);
+    onSessionsChanged();
+  }), [sessionId, onSessionsChanged]);
+
   useEffect(() => () => {
     memoryWatchId.current += 1;
     if (noticeTimer.current !== null) window.clearTimeout(noticeTimer.current);

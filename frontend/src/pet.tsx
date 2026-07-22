@@ -31,6 +31,34 @@ function Pet() {
     return () => clearTimeout(t);
   }, []);
 
+  // EAP.R4 uses the same state/expression path as ordinary pet reactions.  Ack
+  // only after the visible state has been applied; the backend never retries a
+  // post-invocation failure.
+  useEffect(() => desktop?.onProactiveDelivery?.((item: {
+    id: string;
+    channel: "live2d" | "bubble";
+    payload: { state?: PetState; action?: Record<string, string>; bubble_text?: string; dismiss_after_ms?: number };
+  }) => {
+    try {
+      if (item.channel === "live2d" && !modelRef.current) {
+        desktop.confirmProactiveDelivery?.(item.id, false);
+        return;
+      }
+      const nextState = item.payload.state || "remind";
+      latestState.current = { ...latestState.current, state: nextState };
+      reactToState(modelRef.current, nextState, latestState.current.cluster);
+      if (item.channel === "live2d") applyProactiveAction(modelRef.current, item.payload.action);
+      if (item.channel === "bubble") {
+        setBubble(item.payload.bubble_text || "（轻轻看向你）");
+        window.setTimeout(() => setBubble(null), item.payload.dismiss_after_ms || 5000);
+      }
+      bumpIdle();
+      desktop.confirmProactiveDelivery?.(item.id, true);
+    } catch {
+      desktop.confirmProactiveDelivery?.(item.id, false);
+    }
+  }), []);
+
   // 主窗口状态联动：工作模式控制动作，后端 cluster 独立控制面部表情。
   useEffect(() => {
     desktop?.onPetState?.((p: { state: PetState; bubble?: string; cluster?: string }) => {
@@ -283,6 +311,21 @@ function reactToState(model: any, state: PetState, cluster: string) {
   if (state === "executing" || state === "remind" || state === "welcome" || state === "done") {
     perk(model);
   }
+}
+
+function applyProactiveAction(model: any, action?: Record<string, string>) {
+  if (!model || !action) return;
+  const expressions: Record<string, number> = {
+    pout: 7, soft_smile: 3, concerned: 2, worried: 2,
+    hopeful: 6, calm: 0,
+  };
+  if (action.expression && action.expression in expressions) {
+    setExpression(model, expressions[action.expression]);
+  }
+  if (action.gaze === "direct") model.focus?.(PET_CX, PET_CY - 80);
+  else if (action.gaze === "sideways") model.focus?.(PET_CX + 70, PET_CY - 60);
+  else if (action.gaze === "up") model.focus?.(PET_CX, PET_CY - 130);
+  perk(model);
 }
 
 createRoot(document.getElementById("pet-root")!).render(<Pet />);

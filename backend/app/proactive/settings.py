@@ -58,6 +58,16 @@ def _csv(value: str) -> str:
     return ",".join(part.strip() for part in value.split(",") if part.strip())
 
 
+def _nonnegative_int(value: str) -> str:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("must be a non-negative integer") from exc
+    if str(parsed) != value or parsed < 0:
+        raise ValueError("must be a non-negative integer")
+    return str(parsed)
+
+
 @dataclass(frozen=True)
 class SettingSpec:
     default: str
@@ -67,6 +77,8 @@ class SettingSpec:
 
 SETTING_REGISTRY: dict[str, SettingSpec] = {
     "proactive_enabled": SettingSpec("1", _boolean),
+    # R4 rollout is explicit opt-in until the R5 feedback/control loop is complete.
+    "proactive_local_delivery_enabled": SettingSpec("0", _boolean),
     "proactive_emergency_stop": SettingSpec("0", _boolean),
     "proactive_desktop_notification_enabled": SettingSpec("0", _boolean),
     # This compatibility key is readable, but external delivery is not available in EAP.
@@ -78,6 +90,7 @@ SETTING_REGISTRY: dict[str, SettingSpec] = {
     "proactive_show_advanced_diagnostics": SettingSpec("0", _boolean),
     "proactive_rejected_topics": SettingSpec("", _csv, public=False),
     "proactive_rejected_kinds": SettingSpec("", _csv, public=False),
+    "proactive_settings_revision": SettingSpec("0", _nonnegative_int, public=False),
     **{
         f"proactive_kind_{kind}_enabled": SettingSpec("1", _boolean)
         for kind in PROACTIVE_KINDS
@@ -122,6 +135,36 @@ def load_settings(overrides: Optional[dict[str, str]] = None) -> dict[str, str]:
                 validated[key] = spec.default
     validated["proactive_external_channels_enabled"] = "0"
     return validated
+
+
+def write_public_setting(key: str, value: str) -> tuple[str, int]:
+    """Atomically update a public setting and its authorization revision."""
+    normalized = validate_setting(key, value, public_write=True)
+    conn = db.connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT value FROM settings WHERE key='proactive_settings_revision'"
+        ).fetchone()
+        try:
+            revision = int(row["value"] if row else 0) + 1
+        except (TypeError, ValueError):
+            revision = 1
+        for setting_key, setting_value in (
+            (key, normalized), ("proactive_settings_revision", str(revision)),
+        ):
+            conn.execute(
+                "INSERT INTO settings(key,value) VALUES(?,?) "
+                "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                (setting_key, setting_value),
+            )
+        conn.commit()
+        return normalized, revision
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
 FREQUENCY_COST_ADDITION = {
