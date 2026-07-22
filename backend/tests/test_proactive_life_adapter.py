@@ -791,15 +791,15 @@ def test_boundary_no_direct_send_path():
 
 # ---------- 6. schema 测试 ----------
 
-def test_schema_version_includes_cds1_migration_61():
-    """EAP remains frozen at 60; CDS.1 is the next owner and advances to 61."""
+def test_schema_version_includes_cds2_migration_62():
+    """EAP remains frozen at 60; CDS migrations now advance the live schema to 62."""
     db.init_db()
     conn = db.connect()
     try:
         row = conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
         ).fetchone()
-        assert row[0] == "61"
+        assert row[0] == "62"
     finally:
         conn.close()
 

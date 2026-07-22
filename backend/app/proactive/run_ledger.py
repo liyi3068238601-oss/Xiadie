@@ -69,6 +69,9 @@ class DecisionRun:
     provider_id: str | None
     model_id: str | None
     provider_location: str | None
+    provider_location_revision: int | None
+    logical_role: str
+    certification_level: str
     latency_ms: int | None
     input_tokens: int | None
     output_tokens: int | None
@@ -164,6 +167,8 @@ def _from_row(row) -> DecisionRun:
         attempt_count=row["attempt_count"], max_attempts=row["max_attempts"],
         next_attempt_at=row["next_attempt_at"], provider_id=row["provider_id"],
         model_id=row["model_id"], provider_location=row["provider_location"],
+        provider_location_revision=row["provider_location_revision"],
+        logical_role=row["logical_role"], certification_level=row["certification_level"],
         latency_ms=row["latency_ms"],
         input_tokens=row["input_tokens"], output_tokens=row["output_tokens"],
         error_code=row["error_code"], warnings=json.loads(row["warnings_json"]),
@@ -191,6 +196,8 @@ def create_or_get_run(
     max_attempts: int = 3, provider_id: str | None = None,
     model_id: str | None = None, now: float | None = None,
     policy_version: str = "", mode: str = "legacy", provider_location: str | None = None,
+    provider_location_revision: int | None = None, logical_role: str = "legacy",
+    certification_level: str = "unverified",
     source_snapshot: Iterable[dict[str, Any]] = (), snapshot_hash: str = "",
     candidate_snapshot_hash: str = "", candidate_count: int = 0,
     prompt_template_hash: str = "", input_schema_hash: str = "",
@@ -206,6 +213,12 @@ def create_or_get_run(
         raise ValueError("max_attempts must be positive")
     if mode not in {"legacy", "shadow", "advisory", "active"}:
         raise ValueError("invalid DecisionRun mode")
+    if logical_role not in {"legacy", "fast", "reasoning", "creative"}:
+        raise ValueError("invalid DecisionRun logical role")
+    if certification_level not in {
+        "unverified", "structured_capable", "decision_verified", "local_sensitive_verified",
+    }:
+        raise ValueError("invalid DecisionRun certification level")
     if candidate_count < 0:
         raise ValueError("candidate_count must not be negative")
     now = db.now() if now is None else now
@@ -223,15 +236,17 @@ def create_or_get_run(
                 "source_type,source_id,source_revision,source_hash,source_snapshot_json,"
                 "snapshot_hash,candidate_snapshot_hash,idempotency_key,status,attempt_count,"
                 "max_attempts,provider_id,model_id,provider_location,warnings_json,"
+                "provider_location_revision,logical_role,certification_level,"
                 "candidate_count,prompt_template_hash,input_schema_hash,output_schema_hash,"
                 "validator_version,fallback_version,model_binding_revision,temperature,top_p,"
                 "retention_class,expires_at,privacy_scope,aggregate_after_expiry,created_at,updated_at) "
-                "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (run_id, task_kind, protocol_version, policy_version, mode, source_type, source_id,
                  source_revision, source_hash,
                  json.dumps(list(source_snapshot), ensure_ascii=False, sort_keys=True),
                  snapshot_hash, candidate_snapshot_hash, idempotency_key, RunStatus.QUEUED, 0,
-                 max_attempts, provider_id, model_id, provider_location, "[]", candidate_count,
+                 max_attempts, provider_id, model_id, provider_location, "[]",
+                 provider_location_revision, logical_role, certification_level, candidate_count,
                  prompt_template_hash, input_schema_hash, output_schema_hash, validator_version,
                  fallback_version, model_binding_revision, temperature, top_p, retention_class,
                  expires_at, privacy_scope, int(aggregate_after_expiry), now, now),
@@ -328,16 +343,21 @@ def _record_event(
     )
 
 
-def record_decision_outcome(
+def _record_validated_decision_outcome(
     run_id: str, *, action: str, selected_count: int, confidence_band: str,
     reason_codes: Iterable[str], fallback_used: bool,
+    validated_candidate_snapshot_hash: str,
 ) -> DecisionRun:
-    """Persist only allowlisted, body-free outcome metadata; never raw model output."""
+    """Internal CDS collaborator; caller must validate IDs against this exact snapshot."""
     conn = db.connect()
     try:
         row = conn.execute("SELECT * FROM decision_runs WHERE id=?", (run_id,)).fetchone()
         if not row:
             raise ValueError("DecisionRun not found")
+        if not validated_candidate_snapshot_hash or (
+            validated_candidate_snapshot_hash != row["candidate_snapshot_hash"]
+        ):
+            raise ValueError("validated candidate snapshot mismatch")
         if selected_count < 0 or selected_count > row["candidate_count"]:
             raise ValueError("selected_count exceeds candidate_count")
         conn.execute(
@@ -365,7 +385,8 @@ def list_diagnostics(*, decision_kind: str | None = None, limit: int = 50) -> li
     try:
         rows = conn.execute(
             "SELECT id,task_kind,protocol_version,policy_version,mode,status,attempt_count,"
-            "provider_id,model_id,provider_location,latency_ms,input_tokens,output_tokens,"
+            "provider_id,model_id,provider_location,provider_location_revision,logical_role,"
+            "certification_level,latency_ms,input_tokens,output_tokens,"
             "error_code,warnings_json,candidate_count,selected_count,action,confidence_band,"
             "reason_codes_json,fallback_used,validator_version,fallback_version,"
             "model_binding_revision,retention_class,expires_at,privacy_scope,created_at,"
@@ -381,6 +402,9 @@ def list_diagnostics(*, decision_kind: str | None = None, limit: int = 50) -> li
         "mode": row["mode"], "status": row["status"],
         "attempt_count": row["attempt_count"], "provider_id": row["provider_id"],
         "model_id": row["model_id"], "provider_location": row["provider_location"],
+        "provider_location_revision": row["provider_location_revision"],
+        "logical_role": row["logical_role"],
+        "certification_level": row["certification_level"],
         "latency_ms": row["latency_ms"], "prompt_tokens": row["input_tokens"],
         "completion_tokens": row["output_tokens"], "error_code": row["error_code"],
         "warning_codes": json.loads(row["warnings_json"]),

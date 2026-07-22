@@ -2752,6 +2752,74 @@ MIGRATIONS = [
             WHERE expires_at IS NOT NULL;
         """,
     ),
+    (
+        62,
+        """
+        -- CDS.2: model routing, certification, circuit breakers and body-free budgets.
+        ALTER TABLE decision_runs ADD COLUMN logical_role TEXT NOT NULL DEFAULT 'legacy'
+            CHECK(logical_role IN ('legacy','fast','reasoning','creative'));
+        ALTER TABLE decision_runs ADD COLUMN provider_location_revision INTEGER
+            CHECK(provider_location_revision IS NULL OR provider_location_revision >= 1);
+        ALTER TABLE decision_runs ADD COLUMN certification_level TEXT NOT NULL DEFAULT 'unverified'
+            CHECK(certification_level IN (
+                'unverified','structured_capable','decision_verified','local_sensitive_verified'
+            ));
+
+        CREATE TABLE cognition_model_certifications (
+            id TEXT PRIMARY KEY,
+            provider_id TEXT NOT NULL,
+            model_id TEXT NOT NULL,
+            provider_location TEXT NOT NULL CHECK(provider_location IN ('local','remote','unknown')),
+            provider_location_revision INTEGER NOT NULL CHECK(provider_location_revision >= 1),
+            logical_role TEXT NOT NULL CHECK(logical_role IN ('fast','reasoning','creative')),
+            decision_kind TEXT NOT NULL,
+            protocol_version TEXT NOT NULL,
+            model_binding_revision TEXT NOT NULL,
+            certification_level TEXT NOT NULL CHECK(certification_level IN (
+                'unverified','structured_capable','decision_verified','local_sensitive_verified'
+            )),
+            probe_version TEXT NOT NULL,
+            last_error_code TEXT,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            UNIQUE(provider_id,model_id,provider_location,provider_location_revision,logical_role,
+                   decision_kind,protocol_version,model_binding_revision)
+        );
+
+        CREATE TABLE cognition_circuit_breakers (
+            id TEXT PRIMARY KEY,
+            provider_id TEXT NOT NULL,
+            model_id TEXT NOT NULL,
+            decision_kind TEXT NOT NULL,
+            protocol_version TEXT NOT NULL,
+            model_binding_revision TEXT NOT NULL,
+            state TEXT NOT NULL CHECK(state IN ('closed','open','half_open')),
+            consecutive_failures INTEGER NOT NULL DEFAULT 0 CHECK(consecutive_failures >= 0),
+            open_until REAL,
+            last_error_code TEXT,
+            updated_at REAL NOT NULL,
+            UNIQUE(provider_id,model_id,decision_kind,protocol_version,model_binding_revision)
+        );
+
+        CREATE TABLE cognition_budget_events (
+            id TEXT PRIMARY KEY,
+            task_id TEXT NOT NULL,
+            decision_kind TEXT NOT NULL,
+            logical_role TEXT NOT NULL CHECK(logical_role IN ('fast','reasoning','creative')),
+            provider_location TEXT NOT NULL CHECK(provider_location IN ('local','remote','unknown')),
+            priority TEXT NOT NULL CHECK(priority IN ('foreground','normal','background')),
+            status TEXT NOT NULL CHECK(status IN ('authorized','completed','rejected','cancelled')),
+            estimated_tokens INTEGER NOT NULL DEFAULT 0 CHECK(estimated_tokens >= 0),
+            actual_tokens INTEGER CHECK(actual_tokens IS NULL OR actual_tokens >= 0),
+            error_code TEXT,
+            created_at REAL NOT NULL,
+            completed_at REAL,
+            UNIQUE(task_id)
+        );
+        CREATE INDEX idx_cognition_budget_window
+            ON cognition_budget_events(created_at,provider_location,status);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

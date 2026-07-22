@@ -16,7 +16,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from . import (
-    archivist, archivist_worker, cognitive_decision, companion_state, context_assembler, context_budget,
+    archivist, archivist_worker, cognitive_decision, cognition_runtime, companion_state, context_assembler, context_budget,
     context_controls, context_diagnostics, conversation_summaries,
     conversation_summary_service, db,
     entities, episode_consolidator, history_recall,
@@ -479,6 +479,8 @@ def _context_capability(provider: dict | None, model: str):
 
 @app.post("/api/chat")
 async def chat(body: ChatIn) -> StreamingResponse:
+    # CDS.2: a real user turn preempts only not-started low-priority cognition work.
+    cognition_runtime.DEFAULT_GOVERNOR.cancel_pending_for_user_message()
     # 空 content 且无附件：拒绝（regenerate 不受此约束，因为复用历史消息）
     if not body.regenerate and not body.content.strip() and not body.attachment_ids:
         raise HTTPException(400, "content 和 attachment_ids 至少有一个非空")

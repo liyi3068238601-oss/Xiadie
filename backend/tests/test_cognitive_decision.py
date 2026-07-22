@@ -52,7 +52,7 @@ def _valid_output(candidate_id: str = "c1") -> str:
     })
 
 
-def test_schema_61_extends_shared_ledger_without_parallel_run_table():
+def test_schema_62_extends_shared_ledger_without_parallel_run_table():
     conn = db.connect()
     try:
         version = conn.execute(
@@ -64,13 +64,14 @@ def test_schema_61_extends_shared_ledger_without_parallel_run_table():
         )}
     finally:
         conn.close()
-    assert version == "61"
+    assert version == "62"
     assert {
         "policy_version", "mode", "source_snapshot_json", "snapshot_hash",
         "candidate_snapshot_hash", "candidate_count", "selected_count", "action",
         "confidence_band", "reason_codes_json", "fallback_used", "prompt_template_hash",
         "input_schema_hash", "output_schema_hash", "validator_version", "fallback_version",
         "model_binding_revision", "retention_class", "expires_at", "privacy_scope",
+        "logical_role", "provider_location_revision", "certification_level",
     } <= columns
     assert "decision_run_events" in tables
     assert not ({"cognitive_decision_runs", "cds_decision_runs"} & tables)
@@ -215,6 +216,17 @@ def test_failed_repair_uses_registered_fallback_without_storing_raw_output():
     finally:
         conn.close()
     assert secret_raw not in json.dumps({"run": row, "events": events}, ensure_ascii=False)
+
+
+def test_internal_outcome_writer_requires_the_validated_candidate_snapshot():
+    header, payload, candidates, _ = _request()
+    run, _ = cds.create_run(header, payload, candidates)
+    with pytest.raises(ValueError, match="snapshot mismatch"):
+        cds.run_ledger._record_validated_decision_outcome(  # noqa: SLF001
+            run.id, action="skip", selected_count=0, confidence_band="low",
+            reason_codes=("structured_fallback",), fallback_used=True,
+            validated_candidate_snapshot_hash="0" * 64,
+        )
 
 
 def test_reason_codes_are_allowlisted_and_cannot_store_model_text():

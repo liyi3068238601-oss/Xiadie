@@ -1,6 +1,6 @@
 # ADR-0051：CDS 复用共享 DecisionRun 并以 Schema 61 补齐协议元数据
 
-- 状态：Accepted，等待 CDS.1 独立 Review
+- 状态：Accepted；CDS.1 strict review 已通过（0 P0/P1）
 - 日期：2026-07-22
 
 ## 决策

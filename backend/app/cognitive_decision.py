@@ -11,7 +11,7 @@ import json
 import re
 from dataclasses import dataclass, fields
 from enum import Enum
-from typing import Any, Callable, Generic, TypeVar
+from typing import Any, Callable, Generic, TypeVar, get_origin, get_type_hints
 
 from . import db
 from .proactive import run_ledger
@@ -327,7 +327,9 @@ def create_run(
     header: CommonDecisionHeader, payload: Any, candidates: tuple[CandidateRef, ...], *,
     provider_id: str | None = None, model_id: str | None = None,
     provider_location: str | None = None, temperature: float | None = None,
-    top_p: float | None = None, now: float | None = None,
+    provider_location_revision: int | None = None, logical_role: str = "legacy",
+    certification_level: str = "unverified", top_p: float | None = None,
+    model_binding_revision: str | None = None, now: float | None = None,
 ) -> tuple[run_ledger.DecisionRun, bool]:
     definition = REGISTRY.get(header.decision_kind)
     if not isinstance(payload, definition.input_type):
@@ -356,12 +358,14 @@ def create_run(
             header.request_id, header.snapshot_hash, candidates_hash,
         ),
         provider_id=provider_id, model_id=model_id, provider_location=provider_location,
+        provider_location_revision=provider_location_revision, logical_role=logical_role,
+        certification_level=certification_level,
         prompt_template_hash=definition.prompt_template_hash,
         input_schema_hash=definition.input_schema_hash,
         output_schema_hash=definition.output_schema_hash,
         validator_version=definition.validator_version,
         fallback_version=definition.fallback_version,
-        model_binding_revision=definition.model_binding_revision,
+        model_binding_revision=model_binding_revision or definition.model_binding_revision,
         temperature=temperature, top_p=top_p,
         retention_class="short_diagnostic", expires_at=now + definition.result_ttl_seconds,
         privacy_scope=definition.privacy_class, aggregate_after_expiry=True, now=now,
@@ -393,8 +397,9 @@ def _decode_result_once(raw_output: str, result_type: type[ResultT]) -> tuple[Re
     if set(payload) != allowed:
         raise DecisionProtocolError("output_schema_invalid", "model result fields do not match schema")
     try:
+        resolved_types = get_type_hints(result_type)
         for item in fields(result_type):
-            if str(item.type).startswith("tuple") and isinstance(payload[item.name], list):
+            if get_origin(resolved_types.get(item.name)) is tuple and isinstance(payload[item.name], list):
                 payload[item.name] = tuple(payload[item.name])
         return result_type(**payload), repaired
     except (TypeError, ValueError) as exc:
@@ -404,6 +409,8 @@ def _decode_result_once(raw_output: str, result_type: type[ResultT]) -> tuple[Re
 def evaluate_output(
     run_id: str, header: CommonDecisionHeader, payload: Any, raw_output: str, *,
     current_snapshot: tuple[SourceSnapshot, ...], allow_active_application: bool = False,
+    latency_ms: int | None = None, input_tokens: int | None = None,
+    output_tokens: int | None = None,
 ) -> dict[str, Any]:
     """Validate one structured result and return an application gate, never raw output."""
     definition = REGISTRY.get(header.decision_kind)
@@ -435,10 +442,11 @@ def evaluate_output(
         definition.validator(payload, result)
     reason_codes = tuple(getattr(result, "reason_codes", ()))
     selected_ids = tuple(getattr(result, "selected_ids", ()))
-    run_ledger.record_decision_outcome(
+    run_ledger._record_validated_decision_outcome(  # noqa: SLF001 - shared runtime boundary
         run_id, action=getattr(result, "action"), selected_count=len(selected_ids),
         confidence_band=getattr(result, "confidence_band"), reason_codes=reason_codes,
         fallback_used=fallback_used,
+        validated_candidate_snapshot_hash=run.candidate_snapshot_hash,
     )
     warnings = ["json_repaired_once"] if repaired else []
     if error_code:
@@ -447,10 +455,12 @@ def evaluate_output(
     if not source_valid:
         run_ledger.transition_run(
             run_id, run_ledger.RunStatus.SKIPPED, error_code=error_code, warnings=warnings,
+            latency_ms=latency_ms, input_tokens=input_tokens, output_tokens=output_tokens,
         )
     else:
         run_ledger.transition_run(
             run_id, run_ledger.RunStatus.APPLIED, error_code=error_code, warnings=warnings,
+            latency_ms=latency_ms, input_tokens=input_tokens, output_tokens=output_tokens,
         )
     application_allowed = bool(
         source_valid and not fallback_used and header.mode is DecisionMode.ACTIVE
@@ -463,6 +473,43 @@ def evaluate_output(
         "confidence_band": getattr(result, "confidence_band"),
         "fallback_used": fallback_used, "json_repaired_once": repaired,
         "error_code": error_code, "application_allowed": application_allowed,
+    }
+
+
+def evaluate_failure(
+    run_id: str, header: CommonDecisionHeader, payload: Any, *, error_code: str,
+    latency_ms: int | None = None, input_tokens: int | None = None,
+    output_tokens: int | None = None,
+) -> dict[str, Any]:
+    """Finalize an unavailable model through the registered deterministic fallback."""
+    definition = REGISTRY.get(header.decision_kind)
+    run = run_ledger.get_run(run_id)
+    if not run or run.task_kind != header.decision_kind or run.snapshot_hash != header.snapshot_hash:
+        raise DecisionProtocolError("run_header_mismatch", "run is not bound to this header")
+    if run.status != run_ledger.RunStatus.QUEUED:
+        raise DecisionProtocolError("run_not_claimable", "decision run is already claimed or terminal")
+    run_ledger.transition_run(run_id, run_ledger.RunStatus.RUNNING)
+    result = definition.fallback(payload)
+    definition.validator(payload, result)
+    selected_ids = tuple(getattr(result, "selected_ids", ()))
+    reason_codes = tuple(getattr(result, "reason_codes", ()))
+    run_ledger._record_validated_decision_outcome(  # noqa: SLF001
+        run_id, action=getattr(result, "action"), selected_count=len(selected_ids),
+        confidence_band=getattr(result, "confidence_band"), reason_codes=reason_codes,
+        fallback_used=True, validated_candidate_snapshot_hash=run.candidate_snapshot_hash,
+    )
+    run_ledger.transition_run(
+        run_id, run_ledger.RunStatus.APPLIED, error_code=error_code,
+        warnings=(error_code,), latency_ms=latency_ms, input_tokens=input_tokens,
+        output_tokens=output_tokens,
+    )
+    return {
+        "run_id": run_id, "decision_kind": header.decision_kind,
+        "mode": header.mode.value, "action": getattr(result, "action"),
+        "selected_ids": list(selected_ids), "reason_codes": list(reason_codes),
+        "confidence_band": getattr(result, "confidence_band"), "fallback_used": True,
+        "json_repaired_once": False, "error_code": error_code,
+        "application_allowed": False,
     }
 
 

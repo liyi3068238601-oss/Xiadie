@@ -6,6 +6,7 @@
 """
 import asyncio
 import json
+import time
 from typing import AsyncIterator, Optional
 from urllib.parse import urlsplit
 
@@ -111,6 +112,9 @@ async def complete_json(
     messages: list[dict],
     *,
     max_tokens: int = JSON_COMPLETION_MAX_TOKENS,
+    timeout_seconds: float = JSON_COMPLETION_TIMEOUT_SECONDS,
+    temperature: float = 0.0,
+    top_p: float | None = None,
 ) -> dict:
     """执行受限的非流式 JSON 观察调用；不负责解析或信任模型输出。"""
     if provider is None or provider.get("id") == "mock" or not provider.get("base_url"):
@@ -124,11 +128,14 @@ async def complete_json(
         "model": model,
         "messages": messages,
         "stream": False,
-        "temperature": 0,
+        "temperature": float(temperature),
         "max_tokens": safe_max_tokens,
     }
+    if top_p is not None:
+        payload["top_p"] = float(top_p)
+    started = time.perf_counter()
     try:
-        async with httpx.AsyncClient(timeout=JSON_COMPLETION_TIMEOUT_SECONDS) as client:
+        async with httpx.AsyncClient(timeout=max(0.1, float(timeout_seconds))) as client:
             response = await client.post(url, headers=headers, json=payload)
         if response.status_code == 401:
             raise LLMError("观察模型鉴权失败", "API Key 无效或已过期。")
@@ -151,6 +158,7 @@ async def complete_json(
             "text": content,
             "prompt_tokens": _safe_token_count(usage.get("prompt_tokens")),
             "completion_tokens": _safe_token_count(usage.get("completion_tokens")),
+            "latency_ms": max(0, int((time.perf_counter() - started) * 1000)),
         }
     except httpx.ConnectError as exc:
         raise LLMError("无法连接观察模型", "稍后进入恢复队列重试。") from exc

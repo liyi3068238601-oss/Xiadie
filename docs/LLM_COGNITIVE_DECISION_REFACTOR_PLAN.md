@@ -846,17 +846,19 @@ test(cognition): freeze decision baselines and evaluation corpus
 
 ### CDS.2：模型路由、隐私、超时和熔断
 
-* [ ] 增加 fast/reasoning/creative 逻辑角色。
-* [ ] 复用当前 Provider。
-* [ ] 检查本地/远端数据位置。
-* [ ] 每个决策器独立超时和熔断。
-* [ ] 实现旧算法 fallback。
-* [ ] 记录 token、延迟和错误码。
-* [ ] 单一决策器失败不影响其他模块。
-* [ ] 实现按 `model binding + decision_kind + protocol version` 的模型认证；模型切换不得继承 Active 资格。
-* [ ] 自定义模型首次用于认知任务时执行最小 structured probe，未通过只允许 Shadow/fallback。
-* [ ] 建立 `CognitionBudgetGovernor`：滚动/每日预算、本地/远端并发、前台延迟、网络/电池状态、取消和任务优先级。
-* [ ] 用户新消息到达时取消尚未开始的低优先级日记、PWM 与离线细化，为当前聊天让出资源。
+* [x] 增加 fast/reasoning/creative 逻辑角色。
+* [x] 复用当前 Provider。
+* [x] 检查本地/远端数据位置。
+* [x] 每个决策器独立超时和熔断。
+* [x] 实现旧算法 fallback。
+* [x] 记录 token、延迟和错误码。
+* [x] 单一决策器失败不影响其他模块。
+* [x] 实现按 `model binding + decision_kind + protocol version` 的模型认证；模型切换不得继承 Active 资格。
+* [x] 自定义模型首次用于认知任务时执行最小 structured probe，未通过只允许 Shadow/fallback。
+* [x] 建立 `CognitionBudgetGovernor`：滚动/每日预算、本地/远端并发、前台延迟、网络/电池状态、取消和任务优先级。
+* [x] 用户新消息到达时取消尚未开始的低优先级日记、PWM 与离线细化，为当前聊天让出资源。
+
+施工记录（2026-07-22）：CDS.1 strict review 以 0 P0/P1 通过；两项 P2 已即时收紧 tuple 类型解析和 outcome 内部写边界，诊断细粒度角色权限因当前无真实角色体系延后 CDS.13。Schema 62 在唯一 `decision_runs` 上增加逻辑角色、位置修订和认证级别，并建立无正文认证、熔断、预算控制面。角色路由复用现有 Provider；binding/decision kind/protocol/location 任一变化均不继承认证。合成 structured probe、位置 fail-closed、per-kind 超时/熔断、统一 fallback、token/延迟/error 及聊天抢占信号已完成。当前仍仅有合成 `protocol_probe` Shadow，等待独立 review，未进入 CDS.3。详见 ADR-0052 与 `docs/reports/cds-2-model-runtime-audit.md`。
 
 ### CDS.3：PresenceAndThreadObserver 兼容校准
 

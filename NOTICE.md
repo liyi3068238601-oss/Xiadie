@@ -28,3 +28,8 @@
 
 - [jiwen](https://github.com/ClaraShafiq/jiwen)，Copyright (c) 2026 Clara Shafiq，MIT License。遐蝶参考其五维连续情绪状态与语气指导思路，并在现有 Python 后端中重新实现。
 - [MemoryConstellations](https://github.com/ClaraShafiq/MemoryConstellations)，Copyright (c) 2026 Clara Shafiq & Draco Malfoy。仓库 `LICENSE` 为 MIT，但 `package.json` 标注 ISC；当前只进行概念级架构参考，直接复用实质代码前须进一步确认并保留适用许可文本。
+- [KokoroFlow Chatter](https://github.com/tt-P607/kokoro_flow_chatter) 2.1.1，AGPL-3.0。其本地包仅保留在项目目录外，供 CIE 专项阅读控制流、状态机与边界场景；当前未将其源码、Prompt、资源或测试复制进本仓库。若以后进行源码级复用，须先完成许可证 ADR 并履行适用的 AGPL 义务。
+
+## 本项目许可证的适用范围
+
+仓库根目录 `LICENSE` 只授权遐蝶项目自身代码。上述第三方依赖、专有运行时、角色素材与项目外参考包不因本仓库采用 MIT 而改变其原有许可或使用限制。
