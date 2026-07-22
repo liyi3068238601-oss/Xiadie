@@ -2,7 +2,7 @@
 
 > 最近复核日期：2026-07-22
 >
-> 基线提交：EAP.R6 strict review 收口与协议冻结（以本文件所在提交为准）
+> 基线提交：CDS.0 离线评测与旧算法边界冻结（施工前置提交 `6b8aa47134f8a9a55131c73bb1148e6912421c4f`）
 >
 > 当前版本：`v0.1.0` MVP 骨架（知识库系统 K 系列已完成）
 >
@@ -35,7 +35,7 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest -q` | 通过：937 passed，1 warning；当前 Schema 60 |
+| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest -q` | 通过：941 passed，1 warning；其中施工前 ConstructionBaseline 为 937 passed，当前 Schema 60 |
 | 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：41 项；TypeScript 检查及 Vite 生产构建 188 modules 成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误；桌宠、主窗口及 R6 主动陪伴设置页完成 Windows 实机 smoke |
 
@@ -270,7 +270,7 @@ npm.cmd start
 | 上下文 | CTX.0～CTX.7 已完成总验收并通过独立 strict review；5/20/100/500 轮满足硬预算，当前用户消息受保护，摘要、跨会话历史、长期记忆、知识和 Lore 保持独立来源与优先级 | schema 45 与上下文 v1 已冻结；普通自动历史召回继续 shadow |
 | 情绪与关系 | `affect_state`、`relationship_state`、确定性积温、旁观观察器、9×5 语调网格、统一前端/Live2D 状态源已经可运行 | 进入情感意义、经历协同与受控主动陪伴专项；不重建现有内核 |
 | EAP 主动陪伴 | Schema 48～60、六个 EAP 协议、DecisionRun、生产 Orchestrator、grounded Feedback、Level 0～4 Delivery 与 Electron 通道已落地；长期生产模拟覆盖 15 分钟至 30 天及完整失败矩阵 | R0～R6 已通过独立 strict review（0 P0/P1）并正式冻结；真实本机投递仍为显式实验开关且默认关闭，Level 5 硬禁用。不兼容变更必须升协议版本 |
-| 下一专项 | CDS/LIFE/KIG v0.3 计划与共享所有权契约已纳入 `docs/` | 顺序固定为 CDS → LIFE → KIG；PR #1 未合并前只准备不施工，CDS.0 必须先锁定 `main` 合并 SHA 与 Schema 60 基线 |
+| CDS 认知决策 | CDS.0 已锁定 PR #1 合并 SHA、Schema 60、当前算法版本与 300 个纯合成离线场景；旧算法精确匹配率 63.67%，出现误选/漏选的场景率为 33%/18%，报告不含输入正文或用户数据 | 当前只完成基线施工并等待独立 review；未改变聊天行为或占用 Schema 61，review 通过前不进入 CDS.1 |
 | 会话摘要/历史 | schema 45 与 v1 协议已冻结；摘要六类样本 6/6、显式历史召回固定集 4/4，重复手动重建已幂等合并；普通自动召回仍为 shadow | 只有取得明确授权的校准样本并另立 ADR 才考虑解除 shadow |
 | 模型设置 | provider/model 选择的服务端校验较弱 | v0.1.2 增加校验与错误恢复 |
 | 数据演进 | SQLite 已有顺序 schema 迁移并到达 60，但尚无独立迁移 CLI、降级和备份恢复工具 | Schema 48～60 均保持不可变；后续按 CDS → LIFE → KIG 串行占用前序专项结束后的下一个版本，当前首个可用号为 61；正式发布前补齐备份、恢复与迁移演练 |

@@ -803,14 +803,16 @@ external_fact
 
 ### CDS.0：基线、评测集与边界冻结
 
-* [ ] 确认 EAP PR #1 已合并，记录不可变 `main` 合并 SHA；若走用户批准的固定 SHA 例外路径，记录批准证据和未来合并策略。
-* [ ] 填写共享规范中的完整 ConstructionBaseline；确认当前 Schema 60 与 `937 passed, 1 warning` 基线。
-* [ ] 冻结当前算法版本。
-* [ ] 建立至少 300 个离线评测场景。
-* [ ] 标注必须召回、可选召回和禁止召回。
-* [ ] 记录旧算法误召回、漏召回、延迟和 token。
-* [ ] 更新基线文档。
-* [ ] 本阶段不改变聊天行为。
+* [x] 确认 EAP PR #1 已合并，记录不可变 `main` 合并 SHA；若走用户批准的固定 SHA 例外路径，记录批准证据和未来合并策略。
+* [x] 填写共享规范中的完整 ConstructionBaseline；确认当前 Schema 60 与 `937 passed, 1 warning` 基线。
+* [x] 冻结当前算法版本。
+* [x] 建立至少 300 个离线评测场景。
+* [x] 标注必须召回、可选召回和禁止召回。
+* [x] 记录旧算法误召回、漏召回、延迟和 token。
+* [x] 更新基线文档。
+* [x] 本阶段不改变聊天行为。
+
+施工记录（2026-07-22）：PR #1 已合并，ConstructionBaseline 固定为 `main@6b8aa47134f8a9a55131c73bb1148e6912421c4f`、Schema 60、后端 `937 passed, 1 warning`、前端 `41 passed`。六条轨道共 300 个纯合成场景已按 must/may/forbidden 标注；旧算法精确匹配率 63.67%，出现误选/漏选的场景率为 33%/18%。完整版本、分轨指标、隐私边界和回滚说明见 `docs/reports/cds-0-construction-baseline.md`。当前等待独立 review，未进入 CDS.1。
 
 建议 PR：
 

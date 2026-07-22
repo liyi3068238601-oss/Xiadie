@@ -378,4 +378,4 @@ node --check preload.js
 
 EAP Schema 48～60 不回写；真实输出继续受后端最终授权复核、系统恢复保护窗与 at-most-once 状态机约束，Level 5 外部渠道保持硬禁用。三份 v0.3 权威计划与 `docs/SPECIALTY_OWNERSHIP_AND_CONTRACT_MATRIX.md` 已纳入仓库，固定顺序为 `CDS → LIFE → KIG`。
 
-当前 EAP PR #1 仍为 open/draft，因此 CDS 处于“准备施工、尚未正式开工”。默认必须先把 PR #1 合并到 `main`，再在 CDS.0 锁定不可变合并 SHA、Schema 60、冻结协议和 `937 passed` 测试基线；不得从旧 `main` 开工后再合入 EAP。下一可用 Schema 为 61，但只有出现真实字段缺口时才占用。
+EAP PR #1 已于 2026-07-22 合并，CDS.0 以不可变 `main` 合并 SHA `6b8aa47134f8a9a55131c73bb1148e6912421c4f`、Schema 60、冻结协议和后端 `937 passed, 1 warning` 为 ConstructionBaseline。300 个纯合成离线场景及旧算法误选、漏选、延迟和估算 token 已落盘；本阶段没有数据库或聊天行为变更，当前停在独立 review 节点，未确认前不得进入 CDS.1。下一可用 Schema 为 61，但只有出现真实字段缺口时才占用。
