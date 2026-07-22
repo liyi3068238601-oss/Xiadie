@@ -35,21 +35,21 @@ def _payload(text: str, *, message_id: str | None = "m-synthetic",
     )
 
 
-def test_fixture_is_deterministic_synthetic_and_has_600_balanced_turns():
+def test_fixture_is_deterministic_synthetic_and_has_900_balanced_turns():
     fixture = _fixture()
     generated = runpy.run_path(str(GENERATOR_PATH))["build_fixture"]()
     assert fixture == generated
     assert fixture["synthetic_only"] is True and fixture["contains_user_data"] is False
-    assert fixture["scenario_count"] == len(fixture["cases"]) == 660
+    assert fixture["scenario_count"] == len(fixture["cases"]) == 900
     groups = {case["group"] for case in fixture["cases"]}
-    assert len(groups) == 11
+    assert len(groups) == 15
     assert all(sum(case["group"] == group for case in fixture["cases"]) == 60 for group in groups)
 
 
 def test_report_is_body_free_bound_to_fixture_and_passes_completion_gates():
     report = json.loads(REPORT_PATH.read_text(encoding="utf-8"))
     assert report["fixture_sha256"] == hashlib.sha256(FIXTURE_PATH.read_bytes()).hexdigest()
-    assert report["sample_count"] == 660 and len(report["outcomes"]) == 660
+    assert report["sample_count"] == 900 and len(report["outcomes"]) == 900
     assert report["shadow_exact_rate"] == 1.0 and report["source_binding_rate"] == 1.0
     assert report["completion_gates"] == {
         "goodnight_expected_return_error_rate": 0.0,
@@ -103,6 +103,17 @@ def test_existing_bounded_thread_survives_the_return_turn_in_shadow():
     assert result.presence_state == "online"
     assert result.open_threads == ("test_result",)
     assert result.reason_codes == ("thread_continuation",)
+
+
+def test_strong_departure_signal_wins_without_erasing_the_existing_thread():
+    payload = _payload("晚安")
+    payload = observer.PresenceThreadInput(
+        **{**payload.__dict__, "current_open_threads": ("test_result",)}
+    )
+    result = observer.observe_shadow(payload)
+    assert result.presence_state == "away_sleep"
+    assert result.open_threads == ("test_result",)
+    assert result.followup_allowed is False
 
 
 def test_validator_rejects_unbound_evidence_and_thread_ids():

@@ -2,7 +2,7 @@
 
 > 日期：2026-07-22  
 > 基线：`0b07f00`（CDS.2）  
-> 状态：CDS.3 施工完成，等待独立 review；未进入 CDS.4。
+> 状态：CDS.3 strict review 已通过（0 P0/P1）；两项 P2 已采纳并完成回归，已进入 CDS.4。
 
 ## 1. CDS.2 strict review 处置
 
@@ -25,8 +25,8 @@
 ## 3. Shadow 协议与评测
 
 - 专属 `presence_thread_observer` Schema 输出 Presence、expect-return、closure、bounded thread、activity、follow-up 和 response need。
-- 660 轮固定纯合成场景覆盖睡眠、测试离开/返回、测试元讨论、结束、DND、忙碌、吃饭、晚安元讨论、普通聊天和未知沉默。
-- Shadow 精确匹配 100%，有效 message ID 绑定 100%；冻结 EAP v2 fallback 对新语义的精确匹配为 24.55%，差异主要来自新字段、meta context 和不虚构返回承诺。
+- review 后固定集扩为 900 轮，覆盖睡眠、测试/吃饭/洗澡离开与返回、混合离开、已有 thread 下的强信号、元讨论、结束、DND、忙碌、普通聊天和未知沉默。
+- Shadow 精确匹配 100%，有效 message ID 绑定 100%；冻结 EAP v2 fallback 对新语义的精确匹配为 18%，差异主要来自新字段、meta context、有界多 thread 和不虚构返回承诺。
 - 本结果是离线协议/参考策略校准，不是实际 LLM 质量声明；真实 binding 仍需 CDS.2 认证与独立 Shadow 才能晋级。
 
 完成门：
@@ -41,8 +41,13 @@
 
 未回写冻结 v2。`docs/reports/cds-3-presence-v3-proposal.md` 仅提出三态 expect-return、meta 优先、有界 thread code 和 message/TTL 绑定的 v3 方向及迁移影响，不代表 EAP 已接受或实施。
 
-## 5. 停线门
+## 5. CDS.3 strict review 处置
 
-CDS.3 必须经独立 review 确认 0 个未解决 P0/P1，方可进入 CDS.4。review 期间不得接入真实聊天执行、修改 EAP v2 或创建主动消息。
+外部 strict review 确认 0 P0、0 P1，允许进入 CDS.4。两项 P2 均采纳：
 
-施工自验：后端全量 `983 passed, 1 warning`；前端 `41 passed`、Vite production build 188 modules；改动范围 Ruff 与 `git diff --check` 通过。
+1. 已有 `current_open_threads` 不再抢在 sleep/end/DND/busy/extended 与明确离开信号之前；强信号获胜，但除明确结束外保留有界 thread，禁止追问。
+2. fixture 新增 `meal_return`、`shower_return`、混合离开和已有 thread 下睡眠场景；返回语句使用完成态“回来了”与计划态“回来”区分。
+
+EAP v2、reducer、候选和投递仍未修改；review 建议没有扩大 CDS 的写权限。
+
+CDS.3 review 后专项回归：900/900 Shadow 精确匹配，完成门仍为 0%/100%/0%；与 CDS.4 合并后的全量施工自验记录在 CDS.4 审计报告和总计划中。

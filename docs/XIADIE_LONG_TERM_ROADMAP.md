@@ -1049,3 +1049,4 @@ v2.0 的最终成功标准：普通用户能够把一个真实、复杂、跨资
 | 2026-07-22 | CDS.0 review 通过并完成 CDS.1 共享运行时施工 | CDS.0 strict review 确认 0 P0/P1；CDS.1 以 Schema 61 扩展唯一 `decision_runs`，实现 `cognitive-decision-v1`、专属 Schema 注册、候选白名单、多来源复核、三模式、一次 JSON 修复、公共事件与无正文诊断。当前仅合成 probe Shadow，等待 CDS.1 review。 |
 | 2026-07-22 | CDS.1 review 通过并完成 CDS.2 模型运行时施工 | CDS.1 strict review 确认 0 P0/P1；Schema 62 实现逻辑角色路由、位置 fail-closed、binding 认证、合成 structured probe、per-kind 超时/熔断、统一 fallback 与预算/取消控制面。当前仍仅合成 probe Shadow，等待 CDS.2 review。 |
 | 2026-07-22 | CDS.2 review 通过并完成 CDS.3 Presence/Thread 校准 | CDS.2 strict review 确认 0 P0/P1；采纳 binding 版本、角色 probe timeout 与预算清理建议。新增只读 Shadow 协议和 660 轮纯合成评测，三项门为 0%/100%/0%；EAP v2 未修改，语义差异仅形成 v3 提案，等待 CDS.3 review。 |
+| 2026-07-22 | CDS.3 review 通过并完成 CDS.4 RecallPlanner Shadow | CDS.3 strict review 确认 0 P0/P1，两项 P2 均采纳，Presence 固定集扩为 900 轮。新增只读 RecallPlanner 协议和 600 轮纯合成对照；任务/来源需求及必需来源召回 100%，禁止检索违规 0%。现有检索与 ContextPackage 未改，等待 CDS.4 review。 |

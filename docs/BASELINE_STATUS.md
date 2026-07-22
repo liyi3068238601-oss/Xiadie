@@ -2,7 +2,7 @@
 
 > 最近复核日期：2026-07-22
 >
-> 基线提交：CDS.3 Presence/Thread Shadow 兼容校准（ConstructionBaseline `6b8aa47134f8a9a55131c73bb1148e6912421c4f`）
+> 基线提交：CDS.4 RecallPlanner Shadow 施工（ConstructionBaseline 仍为 `6b8aa47134f8a9a55131c73bb1148e6912421c4f`）
 >
 > 当前版本：`v0.1.0` MVP 骨架（知识库系统 K 系列已完成）
 >
@@ -35,8 +35,8 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest -q` | 通过：983 passed，1 warning；其中施工前 ConstructionBaseline 为 937 passed，当前 Schema 62 |
-| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：41 项；TypeScript 检查及 Vite 生产构建 188 modules 成功 |
+| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest -q` | 通过：1591 passed，1 warning；其中施工前 ConstructionBaseline 为 937 passed，当前 Schema 62 |
+| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：41 项；TypeScript 检查及 Vite 生产构建 185 modules 成功 |
 | Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误；桌宠、主窗口及 R6 主动陪伴设置页完成 Windows 实机 smoke |
 
 已知但不阻断当前开发的警告：
@@ -270,7 +270,7 @@ npm.cmd start
 | 上下文 | CTX.0～CTX.7 已完成总验收并通过独立 strict review；5/20/100/500 轮满足硬预算，当前用户消息受保护，摘要、跨会话历史、长期记忆、知识和 Lore 保持独立来源与优先级 | schema 45 与上下文 v1 已冻结；普通自动历史召回继续 shadow |
 | 情绪与关系 | `affect_state`、`relationship_state`、确定性积温、旁观观察器、9×5 语调网格、统一前端/Live2D 状态源已经可运行 | 进入情感意义、经历协同与受控主动陪伴专项；不重建现有内核 |
 | EAP 主动陪伴 | Schema 48～60、六个 EAP 协议、DecisionRun、生产 Orchestrator、grounded Feedback、Level 0～4 Delivery 与 Electron 通道已落地；长期生产模拟覆盖 15 分钟至 30 天及完整失败矩阵 | R0～R6 已通过独立 strict review（0 P0/P1）并正式冻结；真实本机投递仍为显式实验开关且默认关闭，Level 5 硬禁用。不兼容变更必须升协议版本 |
-| CDS 认知决策 | CDS.0～CDS.2 strict review 均以 0 P0/P1 通过；CDS.3 新增只读 `presence_thread_observer` 专属协议和 660 轮纯合成兼容评测 | 当前两个 CDS contract 均最高为 Shadow，Presence observer 未接入聊天执行；EAP v2 仍是唯一写者。等待 CDS.3 独立 review，未确认前不进入 CDS.4 |
+| CDS 认知决策 | CDS.0～CDS.3 strict review 均以 0 P0/P1 通过；CDS.3 review 后固定集扩为 900 轮；CDS.4 新增只读 `recall_planner` 并完成 600 轮纯合成对照 | 所有真实 decision contract 均最高为 Shadow，均未接入聊天执行；EAP v2、CTX 与各检索领域仍保有写入和最终裁决权。等待 CDS.4 独立 review，未确认前不进入 CDS.5 |
 | 会话摘要/历史 | schema 45 与 v1 协议已冻结；摘要六类样本 6/6、显式历史召回固定集 4/4，重复手动重建已幂等合并；普通自动召回仍为 shadow | 只有取得明确授权的校准样本并另立 ADR 才考虑解除 shadow |
 | 模型设置 | provider/model 选择的服务端校验较弱 | v0.1.2 增加校验与错误恢复 |
 | 数据演进 | SQLite 已有顺序 schema 迁移并到达 62，但尚无独立迁移 CLI、降级和备份恢复工具 | Schema 48～60 均保持不可变；Schema 61/62 分属 CDS.1/CDS.2，当前下一可用号为 63；正式发布前补齐备份、恢复与迁移演练 |

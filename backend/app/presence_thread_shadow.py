@@ -33,6 +33,9 @@ _META = re.compile(r"翻译|分析|按钮|文档|台词|例句|标题|正则|字
 _SLEEP = re.compile(r"晚安|我.*睡了|先睡了|去睡|睡觉去了|我要睡|该睡了|困了.*睡")
 _END = re.compile(r"先这样|就这样吧|再见|拜拜|下次聊|今天先到这|先聊到这|回头聊|到这里|结束聊天")
 _DND = re.compile(r"勿扰|别打扰|不要打扰|不被打扰|别烦我|先别找我|不要找我|别来消息|暂停联系")
+_TEST_RETURN = re.compile(r"(?:测|测试|跑测).*完.*回来(?:了|啦)")
+_MEAL_RETURN = re.compile(r"(?:吃|用).*饭.*回来(?:了|啦)|吃完.*回来(?:了|啦)")
+_SHOWER_RETURN = re.compile(r"(?:洗澡|沐浴).*完.*回来(?:了|啦)|洗完澡.*回来(?:了|啦)")
 _TEST_DEPARTURE = re.compile(r"(?:我|先)?去.*(?:测|跑)|跑.*测试|测(?:试)?完.*回来|测试一下.*回来")
 _MEAL = re.compile(r"去吃饭|吃饭去|去吃个饭|去午饭|去晚饭|去早饭|去吃晚饭|去吃早饭|去觅食|吃完饭回来|吃点东西")
 _SHOWER = re.compile(r"去洗澡|去洗个澡|洗澡去|去沐浴")
@@ -94,6 +97,10 @@ def _result(*, payload: PresenceThreadInput, state: str, reason: str,
     )
 
 
+def _threads(payload: PresenceThreadInput, *additional: str) -> tuple[str, ...]:
+    return tuple(dict.fromkeys((*payload.current_open_threads, *additional)))
+
+
 def observe_shadow(payload: PresenceThreadInput) -> PresenceThreadResult:
     """Conservative offline reference used to calibrate the bounded output contract."""
     text = payload.text.strip()
@@ -109,22 +116,16 @@ def observe_shadow(payload: PresenceThreadInput) -> PresenceThreadResult:
             expect_return="unknown", closure="open", followup_allowed=True,
             response_need="normal",
         )
-    if payload.current_open_threads:
-        return _result(
-            payload=payload, state=presence.UserStatus.ONLINE, reason="thread_continuation",
-            expect_return="unknown", closure="open", threads=payload.current_open_threads,
-            activity="thread_return", followup_allowed=True, response_need="normal",
-        )
     if _DND.search(text):
         return _result(
             payload=payload, state=presence.UserStatus.DO_NOT_DISTURB,
             reason="explicit_boundary", expect_return="no", closure="paused",
-            activity="do_not_disturb",
+            threads=_threads(payload), activity="do_not_disturb",
         )
     if _SLEEP.search(text):
         return _result(
             payload=payload, state=presence.UserStatus.AWAY_SLEEP, reason="explicit_sleep",
-            expect_return="unknown", closure="paused", activity="sleep",
+            expect_return="unknown", closure="paused", threads=_threads(payload), activity="sleep",
         )
     if _END.search(text):
         return _result(
@@ -132,34 +133,65 @@ def observe_shadow(payload: PresenceThreadInput) -> PresenceThreadResult:
             reason="explicit_end", expect_return="unknown", closure="closed",
             activity="conversation_end",
         )
+    if _TEST_RETURN.search(text):
+        return _result(
+            payload=payload, state=presence.UserStatus.ONLINE,
+            reason="thread_continuation", expect_return="unknown", closure="open",
+            threads=_threads(payload, "test_result"), activity="thread_return",
+            followup_allowed=True, response_need="normal",
+        )
+    if _MEAL_RETURN.search(text):
+        return _result(
+            payload=payload, state=presence.UserStatus.ONLINE,
+            reason="thread_continuation", expect_return="unknown", closure="open",
+            threads=_threads(payload, "meal_return"), activity="thread_return",
+            followup_allowed=True, response_need="normal",
+        )
+    if _SHOWER_RETURN.search(text):
+        return _result(
+            payload=payload, state=presence.UserStatus.ONLINE,
+            reason="thread_continuation", expect_return="unknown", closure="open",
+            threads=_threads(payload, "shower_return"), activity="thread_return",
+            followup_allowed=True, response_need="normal",
+        )
     if _TEST_DEPARTURE.search(text):
         return _result(
             payload=payload, state=presence.UserStatus.AWAY_BRIEF,
             reason="explicit_departure", expect_return="yes", closure="paused",
-            threads=("test_result",), activity="testing", followup_allowed=True, hint=1800,
+            threads=_threads(payload, "test_result"), activity="testing",
+            followup_allowed=True, hint=1800,
         )
     if _MEAL.search(text):
         return _result(
             payload=payload, state=presence.UserStatus.AWAY_BRIEF,
             reason="explicit_departure", expect_return="yes", closure="paused",
-            threads=("meal_return",), activity="meal", followup_allowed=True, hint=1800,
+            threads=_threads(payload, "meal_return"), activity="meal",
+            followup_allowed=True, hint=1800,
         )
     if _SHOWER.search(text):
         return _result(
             payload=payload, state=presence.UserStatus.AWAY_BRIEF,
             reason="explicit_departure", expect_return="yes", closure="paused",
-            threads=("shower_return",), activity="shower", followup_allowed=True, hint=1800,
+            threads=_threads(payload, "shower_return"), activity="shower",
+            followup_allowed=True, hint=1800,
         )
     if _BUSY.search(text):
         return _result(
             payload=payload, state=presence.UserStatus.AWAY_BUSY, reason="explicit_busy",
-            expect_return="yes", closure="paused", activity="busy", hint=7200,
+            expect_return="yes", closure="paused", threads=_threads(payload),
+            activity="busy", hint=7200,
         )
     if _EXTENDED.search(text):
         return _result(
             payload=payload, state=presence.UserStatus.AWAY_EXTENDED,
             reason="explicit_extended", expect_return="yes", closure="paused",
-            activity="extended_absence", hint=86400,
+            threads=_threads(payload), activity="extended_absence", hint=86400,
+        )
+    if payload.current_open_threads:
+        return _result(
+            payload=payload, state=presence.UserStatus.ONLINE, reason="thread_continuation",
+            expect_return="unknown", closure="open", threads=payload.current_open_threads,
+            activity="thread_return", followup_allowed=True, response_need="normal",
         )
     return _result(
         payload=payload, state=presence.UserStatus.ONLINE, reason="ordinary_exchange",
@@ -211,8 +243,6 @@ def validate(payload: PresenceThreadInput, result: PresenceThreadResult) -> None
         raise cds.DecisionProtocolError("candidate_not_allowed", "result selected unbound semantics")
     if result.earliest_followup_hint_seconds is not None and result.earliest_followup_hint_seconds < 0:
         raise cds.DecisionProtocolError("followup_hint_invalid", "followup hint must be non-negative")
-    if not result.followup_allowed and result.open_threads:
-        raise cds.DecisionProtocolError("thread_followup_mismatch", "open thread requires followup permission")
 
 
 cds.REGISTRY.register(cds.DecisionKindDefinition(

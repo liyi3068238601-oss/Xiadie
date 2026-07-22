@@ -2,7 +2,7 @@
   "protocol_version": "presence-thread-shadow-eval-v1",
   "synthetic_only": true,
   "contains_user_data": false,
-  "scenario_count": 660,
+  "scenario_count": 900,
   "cases": [
     {
       "id": "sleep-01-01",
@@ -3422,6 +3422,5106 @@
           "test_result"
         ],
         "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-01-01",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-01-01",
+        "text": "吃完饭回来了",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-01-02",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-01-02",
+        "text": "吃完饭回来了。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-01-03",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-01-03",
+        "text": "吃完饭回来了！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-01-04",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-01-04",
+        "text": "吃完饭回来了呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-01-05",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-01-05",
+        "text": "吃完饭回来了哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-01-06",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-01-06",
+        "text": "吃完饭回来了，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-02-01",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-02-01",
+        "text": "我吃好了",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-02-02",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-02-02",
+        "text": "我吃好了。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-02-03",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-02-03",
+        "text": "我吃好了！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-02-04",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-02-04",
+        "text": "我吃好了呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-02-05",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-02-05",
+        "text": "我吃好了哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-02-06",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-02-06",
+        "text": "我吃好了，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-03-01",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-03-01",
+        "text": "午饭结束了",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-03-02",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-03-02",
+        "text": "午饭结束了。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-03-03",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-03-03",
+        "text": "午饭结束了！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-03-04",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-03-04",
+        "text": "午饭结束了呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-03-05",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-03-05",
+        "text": "午饭结束了哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-03-06",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-03-06",
+        "text": "午饭结束了，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-04-01",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-04-01",
+        "text": "晚饭吃完了",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-04-02",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-04-02",
+        "text": "晚饭吃完了。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-04-03",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-04-03",
+        "text": "晚饭吃完了！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-04-04",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-04-04",
+        "text": "晚饭吃完了呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-04-05",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-04-05",
+        "text": "晚饭吃完了哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-04-06",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-04-06",
+        "text": "晚饭吃完了，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-05-01",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-05-01",
+        "text": "我回来继续聊",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-05-02",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-05-02",
+        "text": "我回来继续聊。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-05-03",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-05-03",
+        "text": "我回来继续聊！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-05-04",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-05-04",
+        "text": "我回来继续聊呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-05-05",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-05-05",
+        "text": "我回来继续聊哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-05-06",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-05-06",
+        "text": "我回来继续聊，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-06-01",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-06-01",
+        "text": "刚才吃饭回来了",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-06-02",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-06-02",
+        "text": "刚才吃饭回来了。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-06-03",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-06-03",
+        "text": "刚才吃饭回来了！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-06-04",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-06-04",
+        "text": "刚才吃饭回来了呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-06-05",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-06-05",
+        "text": "刚才吃饭回来了哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-06-06",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-06-06",
+        "text": "刚才吃饭回来了，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-07-01",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-07-01",
+        "text": "吃完东西了",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-07-02",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-07-02",
+        "text": "吃完东西了。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-07-03",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-07-03",
+        "text": "吃完东西了！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-07-04",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-07-04",
+        "text": "吃完东西了呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-07-05",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-07-05",
+        "text": "吃完东西了哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-07-06",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-07-06",
+        "text": "吃完东西了，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-08-01",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-08-01",
+        "text": "我吃饱回来了",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-08-02",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-08-02",
+        "text": "我吃饱回来了。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-08-03",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-08-03",
+        "text": "我吃饱回来了！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-08-04",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-08-04",
+        "text": "我吃饱回来了呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-08-05",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-08-05",
+        "text": "我吃饱回来了哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-08-06",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-08-06",
+        "text": "我吃饱回来了，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-09-01",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-09-01",
+        "text": "饭后回来啦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-09-02",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-09-02",
+        "text": "饭后回来啦。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-09-03",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-09-03",
+        "text": "饭后回来啦！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-09-04",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-09-04",
+        "text": "饭后回来啦呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-09-05",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-09-05",
+        "text": "饭后回来啦哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-09-06",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-09-06",
+        "text": "饭后回来啦，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-10-01",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-10-01",
+        "text": "用餐结束了",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-10-02",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-10-02",
+        "text": "用餐结束了。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-10-03",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-10-03",
+        "text": "用餐结束了！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-10-04",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-10-04",
+        "text": "用餐结束了呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-10-05",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-10-05",
+        "text": "用餐结束了哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "meal_return-10-06",
+      "group": "meal_return",
+      "input": {
+        "message_id": "msg-meal_return-10-06",
+        "text": "用餐结束了，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "meal_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-01-01",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-01-01",
+        "text": "洗完澡回来了",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-01-02",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-01-02",
+        "text": "洗完澡回来了。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-01-03",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-01-03",
+        "text": "洗完澡回来了！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-01-04",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-01-04",
+        "text": "洗完澡回来了呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-01-05",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-01-05",
+        "text": "洗完澡回来了哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-01-06",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-01-06",
+        "text": "洗完澡回来了，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-02-01",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-02-01",
+        "text": "我洗好了",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-02-02",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-02-02",
+        "text": "我洗好了。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-02-03",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-02-03",
+        "text": "我洗好了！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-02-04",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-02-04",
+        "text": "我洗好了呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-02-05",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-02-05",
+        "text": "我洗好了哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-02-06",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-02-06",
+        "text": "我洗好了，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-03-01",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-03-01",
+        "text": "沐浴结束了",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-03-02",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-03-02",
+        "text": "沐浴结束了。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-03-03",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-03-03",
+        "text": "沐浴结束了！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-03-04",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-03-04",
+        "text": "沐浴结束了呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-03-05",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-03-05",
+        "text": "沐浴结束了哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-03-06",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-03-06",
+        "text": "沐浴结束了，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-04-01",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-04-01",
+        "text": "刚才洗澡回来了",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-04-02",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-04-02",
+        "text": "刚才洗澡回来了。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-04-03",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-04-03",
+        "text": "刚才洗澡回来了！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-04-04",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-04-04",
+        "text": "刚才洗澡回来了呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-04-05",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-04-05",
+        "text": "刚才洗澡回来了哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-04-06",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-04-06",
+        "text": "刚才洗澡回来了，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-05-01",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-05-01",
+        "text": "我回来继续聊",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-05-02",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-05-02",
+        "text": "我回来继续聊。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-05-03",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-05-03",
+        "text": "我回来继续聊！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-05-04",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-05-04",
+        "text": "我回来继续聊呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-05-05",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-05-05",
+        "text": "我回来继续聊哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-05-06",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-05-06",
+        "text": "我回来继续聊，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-06-01",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-06-01",
+        "text": "洗完了",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-06-02",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-06-02",
+        "text": "洗完了。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-06-03",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-06-03",
+        "text": "洗完了！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-06-04",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-06-04",
+        "text": "洗完了呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-06-05",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-06-05",
+        "text": "洗完了哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-06-06",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-06-06",
+        "text": "洗完了，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-07-01",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-07-01",
+        "text": "我收拾好回来了",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-07-02",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-07-02",
+        "text": "我收拾好回来了。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-07-03",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-07-03",
+        "text": "我收拾好回来了！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-07-04",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-07-04",
+        "text": "我收拾好回来了呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-07-05",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-07-05",
+        "text": "我收拾好回来了哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-07-06",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-07-06",
+        "text": "我收拾好回来了，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-08-01",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-08-01",
+        "text": "洗澡结束",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-08-02",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-08-02",
+        "text": "洗澡结束。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-08-03",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-08-03",
+        "text": "洗澡结束！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-08-04",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-08-04",
+        "text": "洗澡结束呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-08-05",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-08-05",
+        "text": "洗澡结束哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-08-06",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-08-06",
+        "text": "洗澡结束，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-09-01",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-09-01",
+        "text": "已经洗好了",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-09-02",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-09-02",
+        "text": "已经洗好了。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-09-03",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-09-03",
+        "text": "已经洗好了！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-09-04",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-09-04",
+        "text": "已经洗好了呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-09-05",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-09-05",
+        "text": "已经洗好了哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-09-06",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-09-06",
+        "text": "已经洗好了，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-10-01",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-10-01",
+        "text": "回来啦刚洗完",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-10-02",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-10-02",
+        "text": "回来啦刚洗完。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-10-03",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-10-03",
+        "text": "回来啦刚洗完！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-10-04",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-10-04",
+        "text": "回来啦刚洗完呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-10-05",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-10-05",
+        "text": "回来啦刚洗完哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "shower_return-10-06",
+      "group": "shower_return",
+      "input": {
+        "message_id": "msg-shower_return-10-06",
+        "text": "回来啦刚洗完，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "shower_return"
+        ]
+      },
+      "expected": {
+        "presence_state": "online",
+        "expect_return": "unknown",
+        "conversation_closure": "open",
+        "open_threads": [
+          "shower_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-01-01",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-01-01",
+        "text": "我去吃饭",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-01-02",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-01-02",
+        "text": "我去吃饭。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-01-03",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-01-03",
+        "text": "我去吃饭！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-01-04",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-01-04",
+        "text": "我去吃饭呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-01-05",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-01-05",
+        "text": "我去吃饭哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-01-06",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-01-06",
+        "text": "我去吃饭，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-02-01",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-02-01",
+        "text": "去吃个饭",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-02-02",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-02-02",
+        "text": "去吃个饭。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-02-03",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-02-03",
+        "text": "去吃个饭！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-02-04",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-02-04",
+        "text": "去吃个饭呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-02-05",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-02-05",
+        "text": "去吃个饭哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-02-06",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-02-06",
+        "text": "去吃个饭，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-03-01",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-03-01",
+        "text": "我去午饭",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-03-02",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-03-02",
+        "text": "我去午饭。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-03-03",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-03-03",
+        "text": "我去午饭！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-03-04",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-03-04",
+        "text": "我去午饭呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-03-05",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-03-05",
+        "text": "我去午饭哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-03-06",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-03-06",
+        "text": "我去午饭，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-04-01",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-04-01",
+        "text": "去吃晚饭",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-04-02",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-04-02",
+        "text": "去吃晚饭。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-04-03",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-04-03",
+        "text": "去吃晚饭！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-04-04",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-04-04",
+        "text": "去吃晚饭呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-04-05",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-04-05",
+        "text": "去吃晚饭哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-04-06",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-04-06",
+        "text": "去吃晚饭，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-05-01",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-05-01",
+        "text": "先去吃早饭",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-05-02",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-05-02",
+        "text": "先去吃早饭。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-05-03",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-05-03",
+        "text": "先去吃早饭！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-05-04",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-05-04",
+        "text": "先去吃早饭呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-05-05",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-05-05",
+        "text": "先去吃早饭哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-05-06",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-05-06",
+        "text": "先去吃早饭，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-06-01",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-06-01",
+        "text": "我去觅食",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-06-02",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-06-02",
+        "text": "我去觅食。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-06-03",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-06-03",
+        "text": "我去觅食！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-06-04",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-06-04",
+        "text": "我去觅食呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-06-05",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-06-05",
+        "text": "我去觅食哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-06-06",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-06-06",
+        "text": "我去觅食，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-07-01",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-07-01",
+        "text": "吃完饭回来",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-07-02",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-07-02",
+        "text": "吃完饭回来。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-07-03",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-07-03",
+        "text": "吃完饭回来！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-07-04",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-07-04",
+        "text": "吃完饭回来呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-07-05",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-07-05",
+        "text": "吃完饭回来哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-07-06",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-07-06",
+        "text": "吃完饭回来，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-08-01",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-08-01",
+        "text": "先吃饭去",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-08-02",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-08-02",
+        "text": "先吃饭去。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-08-03",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-08-03",
+        "text": "先吃饭去！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-08-04",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-08-04",
+        "text": "先吃饭去呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-08-05",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-08-05",
+        "text": "先吃饭去哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-08-06",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-08-06",
+        "text": "先吃饭去，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-09-01",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-09-01",
+        "text": "去吃点东西",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-09-02",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-09-02",
+        "text": "去吃点东西。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-09-03",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-09-03",
+        "text": "去吃点东西！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-09-04",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-09-04",
+        "text": "去吃点东西呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-09-05",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-09-05",
+        "text": "去吃点东西哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-09-06",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-09-06",
+        "text": "去吃点东西，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-10-01",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-10-01",
+        "text": "我要去吃饭",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-10-02",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-10-02",
+        "text": "我要去吃饭。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-10-03",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-10-03",
+        "text": "我要去吃饭！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-10-04",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-10-04",
+        "text": "我要去吃饭呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-10-05",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-10-05",
+        "text": "我要去吃饭哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "mixed_departure-10-06",
+      "group": "mixed_departure",
+      "input": {
+        "message_id": "msg-mixed_departure-10-06",
+        "text": "我要去吃饭，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_brief",
+        "expect_return": "yes",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result",
+          "meal_return"
+        ],
+        "followup_allowed": true
+      }
+    },
+    {
+      "id": "thread_sleep-01-01",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-01-01",
+        "text": "晚安",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-01-02",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-01-02",
+        "text": "晚安。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-01-03",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-01-03",
+        "text": "晚安！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-01-04",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-01-04",
+        "text": "晚安呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-01-05",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-01-05",
+        "text": "晚安哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-01-06",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-01-06",
+        "text": "晚安，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-02-01",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-02-01",
+        "text": "我去睡了",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-02-02",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-02-02",
+        "text": "我去睡了。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-02-03",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-02-03",
+        "text": "我去睡了！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-02-04",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-02-04",
+        "text": "我去睡了呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-02-05",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-02-05",
+        "text": "我去睡了哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-02-06",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-02-06",
+        "text": "我去睡了，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-03-01",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-03-01",
+        "text": "我要睡觉了",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-03-02",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-03-02",
+        "text": "我要睡觉了。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-03-03",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-03-03",
+        "text": "我要睡觉了！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-03-04",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-03-04",
+        "text": "我要睡觉了呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-03-05",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-03-05",
+        "text": "我要睡觉了哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-03-06",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-03-06",
+        "text": "我要睡觉了，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-04-01",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-04-01",
+        "text": "困了去睡",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-04-02",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-04-02",
+        "text": "困了去睡。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-04-03",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-04-03",
+        "text": "困了去睡！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-04-04",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-04-04",
+        "text": "困了去睡呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-04-05",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-04-05",
+        "text": "困了去睡哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-04-06",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-04-06",
+        "text": "困了去睡，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-05-01",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-05-01",
+        "text": "该睡了",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-05-02",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-05-02",
+        "text": "该睡了。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-05-03",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-05-03",
+        "text": "该睡了！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-05-04",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-05-04",
+        "text": "该睡了呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-05-05",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-05-05",
+        "text": "该睡了哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-05-06",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-05-06",
+        "text": "该睡了，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-06-01",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-06-01",
+        "text": "睡觉去了",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-06-02",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-06-02",
+        "text": "睡觉去了。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-06-03",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-06-03",
+        "text": "睡觉去了！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-06-04",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-06-04",
+        "text": "睡觉去了呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-06-05",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-06-05",
+        "text": "睡觉去了哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-06-06",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-06-06",
+        "text": "睡觉去了，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-07-01",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-07-01",
+        "text": "我先睡了",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-07-02",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-07-02",
+        "text": "我先睡了。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-07-03",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-07-03",
+        "text": "我先睡了！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-07-04",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-07-04",
+        "text": "我先睡了呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-07-05",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-07-05",
+        "text": "我先睡了哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-07-06",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-07-06",
+        "text": "我先睡了，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-08-01",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-08-01",
+        "text": "准备去睡",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-08-02",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-08-02",
+        "text": "准备去睡。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-08-03",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-08-03",
+        "text": "准备去睡！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-08-04",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-08-04",
+        "text": "准备去睡呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-08-05",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-08-05",
+        "text": "准备去睡哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-08-06",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-08-06",
+        "text": "准备去睡，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-09-01",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-09-01",
+        "text": "太困了我要睡",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-09-02",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-09-02",
+        "text": "太困了我要睡。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-09-03",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-09-03",
+        "text": "太困了我要睡！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-09-04",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-09-04",
+        "text": "太困了我要睡呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-09-05",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-09-05",
+        "text": "太困了我要睡哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-09-06",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-09-06",
+        "text": "太困了我要睡，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-10-01",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-10-01",
+        "text": "今晚先睡了",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-10-02",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-10-02",
+        "text": "今晚先睡了。",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-10-03",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-10-03",
+        "text": "今晚先睡了！",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-10-04",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-10-04",
+        "text": "今晚先睡了呀",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-10-05",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-10-05",
+        "text": "今晚先睡了哦",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
+      }
+    },
+    {
+      "id": "thread_sleep-10-06",
+      "group": "thread_sleep",
+      "input": {
+        "message_id": "msg-thread_sleep-10-06",
+        "text": "今晚先睡了，跟你说一声",
+        "silence_observed": false,
+        "current_open_threads": [
+          "test_result"
+        ]
+      },
+      "expected": {
+        "presence_state": "away_sleep",
+        "expect_return": "unknown",
+        "conversation_closure": "paused",
+        "open_threads": [
+          "test_result"
+        ],
+        "followup_allowed": false
       }
     },
     {

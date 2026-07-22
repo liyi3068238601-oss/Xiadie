@@ -3,23 +3,27 @@
   "protocol_version": "presence-thread-shadow-eval-v1",
   "synthetic_only": true,
   "contains_user_data": false,
-  "fixture_sha256": "812d42b4c3b428a373a31dab720a8627234bb760c1df4a43d1347b0eadb85cca",
-  "sample_count": 660,
+  "fixture_sha256": "d89b8a0104295215b3cea6d8930dea607d09eb3fd4b74e5ec5c23a3baaf7209c",
+  "sample_count": 900,
   "group_counts": {
     "busy": 60,
     "dnd": 60,
     "ended": 60,
     "meal": 60,
+    "meal_return": 60,
     "meta_sleep": 60,
+    "mixed_departure": 60,
     "ordinary": 60,
     "ordinary_testing": 60,
+    "shower_return": 60,
     "sleep": 60,
     "test_departure": 60,
     "test_return": 60,
+    "thread_sleep": 60,
     "unknown_silence": 60
   },
   "shadow_exact_rate": 1.0,
-  "legacy_exact_rate": 0.24545454545454545,
+  "legacy_exact_rate": 0.18,
   "source_binding_rate": 1.0,
   "completion_gates": {
     "goodnight_expected_return_error_rate": 0.0,
@@ -1645,6 +1649,2166 @@
       "legacy_exact": false,
       "shadow_state": "online",
       "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-01-01",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-01-02",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-01-03",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-01-04",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-01-05",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-01-06",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-02-01",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-02-02",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-02-03",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-02-04",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-02-05",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-02-06",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-03-01",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-03-02",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-03-03",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-03-04",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-03-05",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-03-06",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-04-01",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-04-02",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-04-03",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-04-04",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-04-05",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-04-06",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-05-01",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-05-02",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-05-03",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-05-04",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-05-05",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-05-06",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-06-01",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-06-02",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-06-03",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-06-04",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-06-05",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-06-06",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-07-01",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-07-02",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-07-03",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-07-04",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-07-05",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-07-06",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-08-01",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-08-02",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-08-03",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-08-04",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-08-05",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-08-06",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-09-01",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-09-02",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-09-03",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-09-04",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-09-05",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-09-06",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-10-01",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-10-02",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-10-03",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-10-04",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-10-05",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "meal_return-10-06",
+      "group": "meal_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-01-01",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-01-02",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-01-03",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-01-04",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-01-05",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-01-06",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-02-01",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-02-02",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-02-03",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-02-04",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-02-05",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-02-06",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-03-01",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-03-02",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-03-03",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-03-04",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-03-05",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-03-06",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-04-01",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-04-02",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-04-03",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-04-04",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-04-05",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-04-06",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-05-01",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-05-02",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-05-03",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-05-04",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-05-05",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-05-06",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-06-01",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-06-02",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-06-03",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-06-04",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-06-05",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-06-06",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-07-01",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-07-02",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-07-03",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-07-04",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-07-05",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-07-06",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-08-01",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-08-02",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-08-03",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-08-04",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-08-05",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-08-06",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-09-01",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-09-02",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-09-03",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-09-04",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-09-05",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-09-06",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-10-01",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-10-02",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-10-03",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-10-04",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-10-05",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "shower_return-10-06",
+      "group": "shower_return",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "online",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-01-01",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-01-02",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-01-03",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-01-04",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-01-05",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-01-06",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-02-01",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-02-02",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-02-03",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-02-04",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-02-05",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-02-06",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-03-01",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-03-02",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-03-03",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-03-04",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-03-05",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-03-06",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-04-01",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-04-02",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-04-03",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-04-04",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-04-05",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-04-06",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-05-01",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-05-02",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-05-03",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-05-04",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-05-05",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-05-06",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-06-01",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-06-02",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-06-03",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-06-04",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-06-05",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-06-06",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-07-01",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-07-02",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-07-03",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-07-04",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-07-05",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-07-06",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-08-01",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-08-02",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-08-03",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-08-04",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-08-05",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-08-06",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-09-01",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-09-02",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-09-03",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-09-04",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-09-05",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-09-06",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-10-01",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-10-02",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-10-03",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-10-04",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-10-05",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "mixed_departure-10-06",
+      "group": "mixed_departure",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_brief",
+      "legacy_state": "away_brief",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-01-01",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-01-02",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-01-03",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-01-04",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-01-05",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-01-06",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-02-01",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-02-02",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-02-03",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-02-04",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-02-05",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-02-06",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-03-01",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-03-02",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-03-03",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-03-04",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-03-05",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-03-06",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-04-01",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-04-02",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-04-03",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-04-04",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-04-05",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-04-06",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-05-01",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-05-02",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-05-03",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-05-04",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-05-05",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-05-06",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-06-01",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-06-02",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-06-03",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-06-04",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-06-05",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-06-06",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-07-01",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-07-02",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-07-03",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-07-04",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-07-05",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-07-06",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-08-01",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-08-02",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-08-03",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-08-04",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-08-05",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-08-06",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-09-01",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-09-02",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-09-03",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-09-04",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-09-05",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-09-06",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "online",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-10-01",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-10-02",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-10-03",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-10-04",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-10-05",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
+      "source_bound": true
+    },
+    {
+      "case_id": "thread_sleep-10-06",
+      "group": "thread_sleep",
+      "shadow_exact": true,
+      "legacy_exact": false,
+      "shadow_state": "away_sleep",
+      "legacy_state": "away_sleep",
       "source_bound": true
     },
     {

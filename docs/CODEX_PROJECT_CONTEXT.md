@@ -378,4 +378,4 @@ node --check preload.js
 
 EAP Schema 48～60 不回写；真实输出继续受后端最终授权复核、系统恢复保护窗与 at-most-once 状态机约束，Level 5 外部渠道保持硬禁用。三份 v0.3 权威计划与 `docs/SPECIALTY_OWNERSHIP_AND_CONTRACT_MATRIX.md` 已纳入仓库，固定顺序为 `CDS → LIFE → KIG`。
 
-EAP PR #1 已于 2026-07-22 合并，CDS ConstructionBaseline 固定为 `main@6b8aa47134f8a9a55131c73bb1148e6912421c4f`、Schema 60、冻结协议和后端 `937 passed, 1 warning`。CDS.0～CDS.2 strict review 均以 0 P0/P1 通过。Schema 61/62 已建立统一决策账本、角色路由、位置/认证、per-kind 超时/熔断与预算控制面。CDS.3 注册最高仅 Shadow 的 `presence_thread_observer` 并完成 660 轮纯合成兼容评测，三项门为 0%/100%/0%；主聊天不执行该 observer，EAP v2 仍是唯一 Presence 写者，差异只形成未实施的 v3 提案。等待 CDS.3 独立 review，未确认前不得进入 CDS.4；下一可用 Schema 仍为 63。
+EAP PR #1 已于 2026-07-22 合并，CDS ConstructionBaseline 固定为 `main@6b8aa47134f8a9a55131c73bb1148e6912421c4f`、Schema 60、冻结协议和后端 `937 passed, 1 warning`。CDS.0～CDS.3 strict review 均以 0 P0/P1 通过。Schema 61/62 已建立统一决策账本与模型运行时；CDS.3 review 后采纳两项 P2，Presence 固定集扩为 900 轮且完成门保持 0%/100%/0%。CDS.4 注册最高仅 Shadow 的 `recall_planner`，600 轮纯合成对照达到任务/来源需求精确匹配和必需来源召回 100%、禁止检索违规 0%；Planner 不检索、不读取正文、不生成候选、不注入 ContextPackage。主聊天仍不执行两个真实 decision kind，EAP v2、CTX 与各领域所有权不变。等待 CDS.4 独立 review，未确认前不得进入 CDS.5；下一可用 Schema仍为 63。

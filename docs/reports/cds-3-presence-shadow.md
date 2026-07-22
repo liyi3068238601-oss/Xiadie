@@ -1,9 +1,9 @@
 # CDS.3 PresenceAndThreadObserver Shadow 兼容评测
 
-- 样本：660 轮纯合成输入；不含用户数据，不调用真实 Provider。
-- Fixture SHA-256：`812d42b4c3b428a373a31dab720a8627234bb760c1df4a43d1347b0eadb85cca`
+- 样本：900 轮纯合成输入；不含用户数据，不调用真实 Provider。
+- Fixture SHA-256：`d89b8a0104295215b3cea6d8930dea607d09eb3fd4b74e5ec5c23a3baaf7209c`
 - Shadow 精确匹配：100.00%
-- 冻结 EAP v2 fallback 精确匹配：24.55%
+- 冻结 EAP v2 fallback 精确匹配：18.00%
 - 有效 message ID 绑定：100.00%
 
 ## 完成门

@@ -12,6 +12,10 @@ GROUPS = {
     "sleep": ["晚安", "我去睡了", "我要睡觉了", "困了去睡", "该睡了", "睡觉去了", "我先睡了", "准备去睡", "太困了我要睡", "今晚先睡了"],
     "test_departure": ["我去测试一下", "我去跑测试", "先去测一下", "去跑回归测试", "测试一下就回来", "测完我回来", "我去测新版本", "先去跑单测", "去测一轮", "我去跑一下测试"],
     "test_return": ["测试完成了", "我测完回来了", "回归测试跑完了", "测试结果出来了", "刚才的测试通过了", "我回来继续说测试", "测试失败了我回来了", "跑完单测了", "新版本测好了", "测试有结果了"],
+    "meal_return": ["吃完饭回来了", "我吃好了", "午饭结束了", "晚饭吃完了", "我回来继续聊", "刚才吃饭回来了", "吃完东西了", "我吃饱回来了", "饭后回来啦", "用餐结束了"],
+    "shower_return": ["洗完澡回来了", "我洗好了", "沐浴结束了", "刚才洗澡回来了", "我回来继续聊", "洗完了", "我收拾好回来了", "洗澡结束", "已经洗好了", "回来啦刚洗完"],
+    "mixed_departure": ["我去吃饭", "去吃个饭", "我去午饭", "去吃晚饭", "先去吃早饭", "我去觅食", "吃完饭回来", "先吃饭去", "去吃点东西", "我要去吃饭"],
+    "thread_sleep": ["晚安", "我去睡了", "我要睡觉了", "困了去睡", "该睡了", "睡觉去了", "我先睡了", "准备去睡", "太困了我要睡", "今晚先睡了"],
     "ordinary_testing": ["帮我测试这个函数", "测试一下这个想法", "如何测试接口", "写一个测试计划", "这个测试为什么失败", "分析测试日志", "测试按钮在哪里", "测试用例怎么写", "解释一下回归测试", "检查测试覆盖率"],
     "ended": ["先这样", "就这样吧", "再见", "拜拜", "下次聊", "今天先到这", "先聊到这", "我们回头聊", "今天就到这里", "暂时结束聊天"],
     "dnd": ["请勿扰", "别打扰我", "不要打扰", "先别找我", "别烦我", "我想安静别打扰", "现在不要找我", "先别来消息", "暂停联系", "我需要不被打扰"],
@@ -26,6 +30,10 @@ EXPECTED = {
     "sleep": ("away_sleep", "unknown", "paused", (), False),
     "test_departure": ("away_brief", "yes", "paused", ("test_result",), True),
     "test_return": ("online", "unknown", "open", ("test_result",), True),
+    "meal_return": ("online", "unknown", "open", ("meal_return",), True),
+    "shower_return": ("online", "unknown", "open", ("shower_return",), True),
+    "mixed_departure": ("away_brief", "yes", "paused", ("test_result", "meal_return"), True),
+    "thread_sleep": ("away_sleep", "unknown", "paused", ("test_result",), False),
     "ordinary_testing": ("online", "unknown", "open", (), True),
     "ended": ("ended_conversation", "unknown", "closed", (), False),
     "dnd": ("do_not_disturb", "no", "paused", (), False),
@@ -52,7 +60,11 @@ def build_fixture() -> dict:
                         "message_id": None if group == "unknown_silence" else f"msg-{case_id}",
                         "text": rendered,
                         "silence_observed": group == "unknown_silence",
-                        "current_open_threads": ["test_result"] if group == "test_return" else [],
+                        "current_open_threads": (
+                            ["test_result"] if group in {"test_return", "mixed_departure", "thread_sleep"}
+                            else ["meal_return"] if group == "meal_return"
+                            else ["shower_return"] if group == "shower_return" else []
+                        ),
                     },
                     "expected": {
                         "presence_state": state, "expect_return": expect_return,

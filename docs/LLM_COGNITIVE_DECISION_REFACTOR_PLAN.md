@@ -875,17 +875,19 @@ test(cognition): freeze decision baselines and evaluation corpus
 未知沉默被写为拒绝率        = 0
 ```
 
-施工记录（2026-07-22）：CDS.2 strict review 以 0 P0/P1 通过；两项 P2 已采纳为明确 binding 策略版本和 5/30/15 秒角色 probe timeout，陈旧预算 reservation/终态历史也补齐恢复清理。CDS.3 注册最高仅 Shadow 的 `presence_thread_observer` 专属协议，EAP 仍是 v2 唯一写者、fallback owner 和 application owner。660 轮纯合成兼容集覆盖离开/返回线程连续性，完成门为 0%/100%/0%，message ID 绑定 100%；未调用真实 Provider，不声称模型质量已认证。发现的 expect-return、meta context 与 thread code 差异只形成未实施的 v3 提案。详见 ADR-0053 与 `docs/reports/cds-3-presence-thread-audit.md`。当前等待独立 review，未进入 CDS.4。
+施工记录（2026-07-22）：CDS.2 strict review 以 0 P0/P1 通过。CDS.3 注册最高仅 Shadow 的 `presence_thread_observer`，EAP 仍是 v2 唯一写者与 application owner。CDS.3 strict review 再以 0 P0/P1 通过；两项 P2 均采纳，强信号优先于已有 thread，固定集扩为 900 轮并补齐 meal/shower return，精确匹配 100%，完成门保持 0%/100%/0%。差异仍只形成未实施的 v3 提案。详见 ADR-0053 与 `docs/reports/cds-3-presence-thread-audit.md`。已进入 CDS.4。
 
 ### CDS.4：RecallPlanner
 
-* [ ] 输出任务类型。
-* [ ] 判断 memory/history/knowledge/lore/episode_saga。
-* [ ] 生成受限查询。
-* [ ] 用户明确禁止检索时直接硬拒绝。
-* [ ] Shadow 比较旧触发算法。
-* [ ] Advisory 阶段只扩大候选，不直接注入。
-* [ ] 只输出共享 SourceKind、query intent 与有界查询建议；各领域的权限、候选生成和最终预算仍由 CTX/KIG/MEM 所有者裁决。
+* [x] 输出任务类型。
+* [x] 判断 memory/history/knowledge/lore/episode_saga。
+* [x] 生成受限查询。
+* [x] 用户明确禁止检索时直接硬拒绝。
+* [x] Shadow 比较旧触发算法。
+* [x] Advisory 阶段只扩大候选，不直接注入。
+* [x] 只输出共享 SourceKind、query intent 与有界查询建议；各领域的权限、候选生成和最终预算仍由 CTX/KIG/MEM 所有者裁决。
+
+施工记录（2026-07-22）：新增最高仅 Shadow 的 `recall_planner` 专属协议，覆盖十类任务、五类共享来源需求、受限 query intent/查询词与明确禁止检索硬拒绝；fallback/application owner 均为 CTX，结果带 `advisory_expand_only`，不执行检索、不读取正文、不生成候选、不注入 ContextPackage。12 组 600 轮纯合成固定集达到任务/需求精确匹配 100%、必需来源召回 100%、禁止检索违规 0%、查询和 source message 绑定 100%；冻结旧触发器来源精确匹配为 8.33%。主聊天未执行 Planner，Schema 仍为 62，真实模型尚未认证。详见 ADR-0054 与 `docs/reports/cds-4-recall-planner-audit.md`。当前等待独立 review，未进入 CDS.5。
 
 ### CDS.5：统一 CandidateReranker
 
