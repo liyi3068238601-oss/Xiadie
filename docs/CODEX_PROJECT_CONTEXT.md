@@ -372,9 +372,10 @@ node --check preload.js
 
 ## 14. 当前专项入口
 
-知识库 F.1～F.8、优化 K.0～K.9 与上下文 CTX.0～CTX.7 均已完成并冻结。当前专项施工入口为：
+知识库 F.1～F.8、优化 K.0～K.9、上下文 CTX.0～CTX.7 与 EAP.R0～R6 均已完成并技术冻结。下一专项施工入口为：
 
-`docs/EMOTION_RELATIONSHIP_AND_PROACTIVE_COMPANION_PLAN.md`
+`docs/LLM_COGNITIVE_DECISION_REFACTOR_PLAN.md`
 
-该专项只执行第 9.B 节 EAP.R0～EAP.R6；EAP.A～EAP.J 是历史计划，不再代表当前完成度。Schema 48～60 不回写；R6 strict review 已确认 0 个 P0/P1，六个协议与 Schema 60 已冻结。真实输出继续受后端最终授权复核、系统恢复保护窗与 at-most-once 状态机约束。
-Level 5 外部渠道保持硬禁用。后续统一按项目外计划执行 `CDS → LIFE → KIG`；下一可用 schema 当前为 61，由 CDS 首个确需迁移的阶段占用，LIFE/KIG 均使用前序专项结束后的下一个版本。仓库内不放置这些计划副本。
+EAP Schema 48～60 不回写；真实输出继续受后端最终授权复核、系统恢复保护窗与 at-most-once 状态机约束，Level 5 外部渠道保持硬禁用。三份 v0.3 权威计划与 `docs/SPECIALTY_OWNERSHIP_AND_CONTRACT_MATRIX.md` 已纳入仓库，固定顺序为 `CDS → LIFE → KIG`。
+
+当前 EAP PR #1 仍为 open/draft，因此 CDS 处于“准备施工、尚未正式开工”。默认必须先把 PR #1 合并到 `main`，再在 CDS.0 锁定不可变合并 SHA、Schema 60、冻结协议和 `937 passed` 测试基线；不得从旧 `main` 开工后再合入 EAP。下一可用 Schema 为 61，但只有出现真实字段缺口时才占用。

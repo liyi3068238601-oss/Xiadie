@@ -1044,3 +1044,4 @@ v2.0 的最终成功标准：普通用户能够把一个真实、复杂、跨资
 | 2026-07-22 | EAP.R4 本机投递安全闭环 | Schema 59 建立唯一 Delivery/attempt/event 账本；Level 0～4 接入后端最终门禁与 Electron，本机真实投递显式实验开启且默认关闭，Level 5 硬禁用。下一阶段为 R5 反馈、历史与用户控制。 |
 | 2026-07-22 | EAP.R5 反馈控制闭环与 R6 生产总验收施工 | Schema 60 完成 grounded feedback、历史与清除；生产模拟覆盖 15 分钟至 30 天及休眠、回拨、断网、Provider、崩溃、busy，新增 Windows resume 保护。协议保持 IMPLEMENTED，停线等待 R6 strict review；通过前不启动 LIFE/KIG。 |
 | 2026-07-22 | EAP.R6 strict review 通过并正式关闭专项 | 0 个 P0/P1，10/10 冻结指标通过；六个 EAP 协议与 Schema 60 正式冻结。后续专项固定为 CDS → LIFE → KIG，避免重复建设 DecisionRun、语义重排和跨源治理。 |
+| 2026-07-22 | CDS/LIFE/KIG v0.3 施工计划入库 | 采纳交叉专项 review：新增 ConstructionBaseline、唯一所有权矩阵、统一晋级/模型认证/预算/数据生命周期；LIFE 补单写者与真实性治理，KIG 拆为 KIG-R/KIG-P。PR #1 合并并锁定 SHA 前不启动 CDS 迁移施工。 |

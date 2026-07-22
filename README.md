@@ -12,6 +12,10 @@
 - [小步开发与 PR 检查清单](docs/PR_CHECKLIST.md)：每次改动的范围、风险、验证与交付标准。
 - [架构决策记录](docs/adr/README.md)：重大技术选择的记录规则与模板。
 - [EAP.R6 生产验收记录](docs/reports/eap-r6-production-acceptance.md)：主动陪伴长期、失败与安全指标证据；strict review 已确认 0 个未解决 P0/P1，六个协议与 Schema 60 已冻结。
+- [CDS 认知决策施工计划](docs/LLM_COGNITIVE_DECISION_REFACTOR_PLAN.md)：下一专项；复用 Schema 56 DecisionRun，等待 PR #1 合并后从锁定基线开工。
+- [LIFE 生活连续性施工计划](docs/LLM_DECISION_AND_LIFE_CONTINUITY_PLAN.md)：CDS 冻结后的第二专项。
+- [KIG 知识治理与 PWM 施工计划](docs/XIADIE_KNOWLEDGE_INTELLIGENCE_GOVERNANCE_AND_WORLD_MODEL_PLAN.md)：LIFE 冻结后的第三专项，分 KIG-R 与 KIG-P 两个里程碑。
+- [专项所有权与共享施工契约](docs/SPECIALTY_OWNERSHIP_AND_CONTRACT_MATRIX.md)：统一基线、所有权、晋级、模型认证、预算及数据生命周期门禁。
 
 ## 架构
 
