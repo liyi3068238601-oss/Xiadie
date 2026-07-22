@@ -33,6 +33,7 @@ from .proactive import settings as proactive_settings
 from .proactive import cognition_service as companion_cognition_service
 from .proactive import orchestrator as proactive_orchestrator
 from .proactive import delivery as proactive_delivery
+from .proactive import feedback as proactive_feedback
 from .security import ALLOWED_ORIGINS, TOKEN_HEADER, local_api_guard
 
 logger = logging.getLogger(__name__)
@@ -671,6 +672,15 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 body.session_id, uid, exc_info=True,
             )
         try:
+            proactive_feedback.capture_natural_feedback(
+                body.session_id, uid, body.content,
+            )
+        except Exception:  # noqa: BLE001 - feedback inference must not block chat
+            logger.warning(
+                "proactive_feedback_capture_failed session_id=%s message_id=%s",
+                body.session_id, uid, exc_info=True,
+            )
+        try:
             proactive_presence.update_presence(
                 body.session_id,
                 proactive_presence.detect_presence_signals(body.content),
@@ -939,6 +949,15 @@ class ProactiveDeliveryAckIn(ProactiveDeliveryBeginIn):
     error_code: str | None = Field(default=None, max_length=80)
 
 
+class ProactiveFeedbackIn(BaseModel):
+    feedback_kind: str = Field(min_length=1, max_length=40)
+    request_nonce: str = Field(min_length=1, max_length=120)
+
+
+class ProactiveFeedbackResolveIn(BaseModel):
+    accept: bool
+
+
 @app.post("/api/proactive-deliveries/claim")
 def claim_proactive_delivery(body: ProactiveDeliveryClaimIn) -> dict:
     return {"delivery": proactive_delivery.claim_next(body.consumer_id)}
@@ -963,6 +982,50 @@ def acknowledge_proactive_delivery(delivery_id: str, body: ProactiveDeliveryAckI
         )
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
+
+
+@app.get("/api/proactive/history")
+def proactive_history(limit: int = 50) -> list[dict]:
+    return proactive_feedback.list_history(limit)
+
+
+@app.get("/api/proactive/feedback/pending")
+def proactive_pending_feedback(limit: int = 50) -> list[dict]:
+    return proactive_feedback.list_pending(limit)
+
+
+@app.post("/api/proactive/deliveries/{delivery_id}/feedback")
+def submit_proactive_feedback(delivery_id: str, body: ProactiveFeedbackIn) -> dict:
+    try:
+        return proactive_feedback.create_feedback(
+            delivery_id, body.feedback_kind, request_nonce=body.request_nonce,
+        )
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+
+@app.post("/api/proactive/feedback/{feedback_id}/resolve")
+def resolve_proactive_feedback(feedback_id: str, body: ProactiveFeedbackResolveIn) -> dict:
+    try:
+        return proactive_feedback.resolve_feedback(feedback_id, accept=body.accept)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+
+@app.get("/api/proactive/diagnostics")
+def proactive_diagnostics(limit: int = 100) -> dict:
+    return proactive_feedback.diagnostics(limit)
+
+
+@app.delete("/api/proactive/data")
+def clear_proactive_data() -> dict:
+    return proactive_feedback.clear_pending_and_history()
+
+
+@app.post("/api/proactive/settings/reset")
+def reset_proactive_settings() -> dict:
+    values, revision = proactive_settings.reset_public_settings()
+    return {"settings": values, "revision": revision}
 
 
 @app.post("/api/companion-state/reset")

@@ -90,6 +90,7 @@ SETTING_REGISTRY: dict[str, SettingSpec] = {
     "proactive_show_advanced_diagnostics": SettingSpec("0", _boolean),
     "proactive_rejected_topics": SettingSpec("", _csv, public=False),
     "proactive_rejected_kinds": SettingSpec("", _csv, public=False),
+    "proactive_rejected_expression_acts": SettingSpec("", _csv, public=False),
     "proactive_settings_revision": SettingSpec("0", _nonnegative_int, public=False),
     **{
         f"proactive_kind_{kind}_enabled": SettingSpec("1", _boolean)
@@ -160,6 +161,47 @@ def write_public_setting(key: str, value: str) -> tuple[str, int]:
             )
         conn.commit()
         return normalized, revision
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def reset_public_settings() -> tuple[dict[str, str], int]:
+    """Reset the whole proactive control surface in one authorization revision."""
+    public_defaults = {
+        key: spec.default for key, spec in SETTING_REGISTRY.items() if spec.public
+    }
+    defaults = dict(public_defaults)
+    defaults.update({
+        "proactive_rejected_topics": "",
+        "proactive_rejected_kinds": "",
+        "proactive_rejected_expression_acts": "",
+    })
+    conn = db.connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT value FROM settings WHERE key='proactive_settings_revision'"
+        ).fetchone()
+        try:
+            revision = int(row["value"] if row else 0) + 1
+        except (TypeError, ValueError):
+            revision = 1
+        for key, value in defaults.items():
+            conn.execute(
+                "INSERT INTO settings(key,value) VALUES(?,?) "
+                "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                (key, value),
+            )
+        conn.execute(
+            "INSERT INTO settings(key,value) VALUES('proactive_settings_revision',?) "
+            "ON CONFLICT(key) DO UPDATE SET value=excluded.value", (str(revision),),
+        )
+        conn.execute("DELETE FROM proactive_preference_weights")
+        conn.commit()
+        return public_defaults, revision
     except Exception:
         conn.rollback()
         raise

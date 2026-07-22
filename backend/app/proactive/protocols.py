@@ -6,6 +6,10 @@
 协议命名遵循现有约定：<domain>-<role>-v<N>
 """
 
+from dataclasses import dataclass
+from enum import Enum
+from typing import Callable, Optional
+
 # Conversation Presence v2：用户在线状态、离开原因、open_thread
 # 与 affect-observer-v1 的 user_status 4 值枚举互补，扩展为 8 值
 CONVERSATION_PRESENCE_V2 = "conversation-presence-v2"
@@ -33,12 +37,6 @@ ALL_PROTOCOLS = (
     EXPRESSION_PLAN_V1,
     PROACTIVE_FEEDBACK_V1,
 )
-
-
-from dataclasses import dataclass
-from enum import Enum
-from typing import Callable, Optional
-
 
 class ProtocolStatus(str, Enum):
     IMPLEMENTED = "IMPLEMENTED"
@@ -92,8 +90,8 @@ PROTOCOL_REGISTRY = {
         "No executable validator or repository until EAP.R4.",
     ),
     PROACTIVE_FEEDBACK_V1: ProtocolDefinition(
-        PROACTIVE_FEEDBACK_V1, 1, ProtocolStatus.DRAFT, _validate_feedback,
-        "Strict schema is available; persistence and application arrive in EAP.R5.",
+        PROACTIVE_FEEDBACK_V1, 1, ProtocolStatus.IMPLEMENTED, _validate_feedback,
+        "Delivered feedback is persisted and grounded to one local delivery in EAP.R5.",
     ),
 }
 

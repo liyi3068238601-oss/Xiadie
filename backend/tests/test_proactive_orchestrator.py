@@ -142,7 +142,7 @@ def _materialize_only(source, *, now):
         conn.close()
 
 
-def test_schema_59_has_runtime_and_delivery_tables():
+def test_schema_60_has_runtime_delivery_and_feedback_tables():
     conn = db.connect()
     try:
         version = conn.execute(
@@ -153,7 +153,7 @@ def test_schema_59_has_runtime_and_delivery_tables():
         ).fetchall()}
     finally:
         conn.close()
-    assert version == "59"
+    assert version == "60"
     assert {
         "proactive_runtime_sources", "proactive_candidate_claims",
         "proactive_runtime_sagas", "proactive_deliveries",

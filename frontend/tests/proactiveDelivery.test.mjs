@@ -13,6 +13,8 @@ test("Electron bridge claims and begins before invoking local channels", async (
   assert.match(source, /Notification\.isSupported\(\)/);
   assert.match(source, /notice\.once\("show"/);
   assert.match(source, /notification_failed/);
+  assert.match(source, /notification_timeout/);
+  assert.match(source, /Math\.min\(30000/);
   assert.doesNotMatch(source, /external.*proactive-deliveries/i);
 });
 
@@ -38,5 +40,19 @@ test("real local delivery is a separate opt-in and schema diagnostics are curren
   const settings = await readFile(new URL("frontend/src/components/SettingsPage.tsx", root), "utf8");
   assert.match(settings, /proactive_local_delivery_enabled: "0"/);
   assert.match(settings, /启用本机主动表达（实验）/);
-  assert.match(settings, /Schema 版本：59/);
+  assert.match(settings, /Schema 版本：60/);
+});
+
+test("R5 proactive history, grounded feedback, diagnostics and selective clear are wired", async () => {
+  const settings = await readFile(new URL("frontend/src/components/SettingsPage.tsx", root), "utf8");
+  const api = await readFile(new URL("frontend/src/api.ts", root), "utf8");
+  for (const label of ["时机不对", "太频繁", "内容不对", "不再提这个话题", "不喜欢这种语气", "可以多一些"]) {
+    assert.match(settings, new RegExp(label));
+  }
+  assert.match(settings, /待确认反馈/);
+  assert.match(settings, /window\.confirm/);
+  assert.match(api, /\/api\/proactive\/history/);
+  assert.match(api, /\/api\/proactive\/diagnostics/);
+  assert.match(api, /\/api\/proactive\/settings\/reset/);
+  assert.doesNotMatch(settings, /清除候选功能开发中/);
 });

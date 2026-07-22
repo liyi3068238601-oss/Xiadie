@@ -14,20 +14,18 @@ decide_candidate 函数只是审计落库，不调用 main.py 发送消息。
 
 import json
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 
 from .. import db
 from .candidates import (
     CandidateStatus,
     ProactiveCandidate,
-    is_candidate_valid,
 )
 from .presence import (
     PresenceRecord,
     UserStatus,
     get_current_presence,
-    should_block_proactive,
 )
 from .protocols import PROACTIVE_DECISION_V2
 from .run_ledger import make_idempotency_key
@@ -271,6 +269,16 @@ def check_layer1_hard_boundary(
         rejected_topics = [t.strip() for t in rejected_topics_str.split(",") if t.strip()]
         if candidate.topic in rejected_topics:
             reasons.append(Layer1BlockReason.TOPIC_REJECTED)
+    conn = db.connect()
+    try:
+        hard_topic = conn.execute(
+            "SELECT 1 FROM proactive_preference_weights WHERE dimension='topic' AND value=? "
+            "AND acceptance_delta<=-0.9", (candidate.topic,),
+        ).fetchone()
+    finally:
+        conn.close()
+    if hard_topic and Layer1BlockReason.TOPIC_REJECTED not in reasons:
+        reasons.append(Layer1BlockReason.TOPIC_REJECTED)
 
     # KIND_REJECTED：用户明确拒绝该 candidate_kind
     rejected_kinds_str = settings.get("proactive_rejected_kinds", "")
@@ -572,6 +580,17 @@ def evaluate_contact_cost(
     if episode is not None and hasattr(episode, "unanswered_pressure"):
         cost += episode.unanswered_pressure * 0.4
 
+    conn = db.connect()
+    try:
+        learned = conn.execute(
+            "SELECT COALESCE(SUM(contact_cost_delta),0) FROM proactive_preference_weights "
+            "WHERE (dimension='kind' AND value=?) OR (dimension='topic' AND value=?)",
+            (candidate.candidate_kind, candidate.topic),
+        ).fetchone()[0]
+    finally:
+        conn.close()
+    cost += float(learned or 0.0)
+
     return _clamp(cost, 0.0, 1.0)
 
 
@@ -849,6 +868,21 @@ def decide_candidate(
             f"approach_value={approach_value:.3f}",
         ]
         source_refs = []
+
+    # Feedback may constrain presentation, but never changes relationship/trust state.
+    if expression_act is not None:
+        conn = db.connect()
+        try:
+            rejected_expression = conn.execute(
+                "SELECT 1 FROM proactive_preference_weights WHERE dimension='expression_act' "
+                "AND value IN (?, 'default') AND acceptance_delta<=-0.9 LIMIT 1",
+                (expression_act,),
+            ).fetchone()
+        finally:
+            conn.close()
+        if rejected_expression:
+            expression_act = None
+            reason_codes.append("feedback_expression_avoided")
 
     # 8. 计算 shadow_score（旧线性公式 Shadow 基线）
     # 简化：使用 candidate 字段和 layer3 factors 映射到各 weight 维度

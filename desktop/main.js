@@ -28,6 +28,7 @@ let tray = null;
 let backendProc = null;
 let deliveryTimer = null;
 let deliveryBusy = false;
+let deliveryIdleDelay = 2000;
 const deliveryConsumerId = `electron-${process.pid}-${randomBytes(8).toString("hex")}`;
 const rendererDeliveries = new Map();
 
@@ -74,14 +75,14 @@ async function acknowledgeDelivery(item, success, errorCode) {
 }
 
 async function pollProactiveDelivery() {
-  if (deliveryBusy || app.isQuitting) return;
+  if (deliveryBusy || app.isQuitting) return false;
   deliveryBusy = true;
   try {
     const claimedResponse = await backendJson("POST", "/api/proactive-deliveries/claim", {
       consumer_id: deliveryConsumerId,
     });
     const claimed = claimedResponse?.delivery;
-    if (!claimed) return;
+    if (!claimed) return false;
     const begun = await backendJson("POST", `/api/proactive-deliveries/${claimed.id}/begin`, {
       consumer_id: deliveryConsumerId,
       lease_token: claimed.lease_token,
@@ -90,51 +91,64 @@ async function pollProactiveDelivery() {
       mainWin?.webContents.send("proactive-chat-message", {
         session_id: begun.session_id, delivery_id: begun.id, message_id: begun.message_id,
       });
-      return;
+      return true;
     }
-    if (begun.status !== "delivering") return;
+    if (begun.status !== "delivering") return true;
     if (begun.channel === "live2d" || begun.channel === "bubble") {
       if (!petWin || petWin.isDestroyed()) {
         await acknowledgeDelivery(begun, false, "pet_window_unavailable");
-        return;
+        return true;
       }
       rendererDeliveries.set(begun.id, begun);
       petWin.webContents.send("proactive-delivery", {
         id: begun.id, channel: begun.channel, payload: begun.payload,
       });
-      return;
+      return true;
     }
     if (begun.channel === "desktop_notification") {
       if (!Notification.isSupported()) {
         await acknowledgeDelivery(begun, false, "notification_unsupported");
-        return;
+        return true;
       }
       const notice = new Notification({ title: begun.payload.title, body: begun.payload.body });
       let settled = false;
       const settle = (success, code) => {
         if (settled) return;
         settled = true;
+        clearTimeout(notificationTimeout);
         void acknowledgeDelivery(begun, success, code);
       };
+      const notificationTimeout = setTimeout(
+        () => settle(false, "notification_timeout"), 10000,
+      );
       notice.once("show", () => settle(true));
       notice.once("failed", () => settle(false, "notification_failed"));
       notice.show();
+      return true;
     }
   } catch (error) {
     console.warn("proactive delivery bridge unavailable:", error.message);
+    return false;
   } finally {
     deliveryBusy = false;
   }
+  return true;
+}
+
+async function deliveryLoop() {
+  const active = await pollProactiveDelivery();
+  deliveryIdleDelay = active ? 1000 : Math.min(30000, Math.max(2000, deliveryIdleDelay * 2));
+  if (!app.isQuitting) deliveryTimer = setTimeout(() => void deliveryLoop(), deliveryIdleDelay);
 }
 
 function startDeliveryBridge() {
-  if (deliveryTimer) return;
-  void pollProactiveDelivery();
-  deliveryTimer = setInterval(() => void pollProactiveDelivery(), 2000);
+  if (deliveryTimer || deliveryBusy) return;
+  deliveryIdleDelay = 2000;
+  void deliveryLoop();
 }
 
 function stopDeliveryBridge() {
-  if (deliveryTimer) clearInterval(deliveryTimer);
+  if (deliveryTimer) clearTimeout(deliveryTimer);
   deliveryTimer = null;
 }
 

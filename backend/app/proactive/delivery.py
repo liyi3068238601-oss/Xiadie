@@ -6,7 +6,7 @@ import json
 from typing import Optional
 
 from .. import db
-from . import decision, intensity, settings
+from . import decision, episodes, intensity, settings
 
 LEASE_SECONDS = 30.0
 CHANNELS = {0: "silent", 1: "live2d", 2: "bubble", 3: "chat", 4: "desktop_notification"}
@@ -32,6 +32,29 @@ def _event(conn, delivery_id, event_type, before, after, reason, now, metadata=N
         "INSERT INTO proactive_delivery_events(id,delivery_id,event_type,from_status,to_status,"
         "reason_code,metadata_json,created_at) VALUES(?,?,?,?,?,?,?,?)",
         (db.new_id(), delivery_id, event_type, before, after, reason, _json(metadata or {}), now),
+    )
+
+
+def _record_approach_locked(conn, episode_id: Optional[str], level: int, now: float) -> None:
+    """Record one confirmed approach in the delivery transaction."""
+    if not episode_id:
+        return
+    row = conn.execute(
+        "SELECT approach_count,unanswered_pressure,status FROM contact_episodes WHERE id=?",
+        (episode_id,),
+    ).fetchone()
+    if row is None:
+        return
+    count = int(row["approach_count"] or 0)
+    intrusiveness = episodes.CHANNEL_INTRUSIVENESS.get(level, 1.0)
+    repetition = episodes.REPETITION_FACTOR_BASE ** count
+    pressure = min(5.0, float(row["unanswered_pressure"] or 0) + level * intrusiveness * repetition)
+    status = "approached" if row["status"] in {"proposed", "waiting"} else row["status"]
+    conn.execute(
+        "UPDATE contact_episodes SET status=?,first_candidate_at=COALESCE(first_candidate_at,?),"
+        "last_approach_at=?,approach_count=approach_count+1,unanswered_pressure=?,"
+        "current_intensity=?,updated_at=? WHERE id=?",
+        (status, now, now, pressure, level, now, episode_id),
     )
 
 
@@ -89,12 +112,16 @@ def enqueue_decision(decision_id: str, *, now: Optional[float] = None) -> dict:
         source["candidate_kind"], source["source_revision"], source["source_hash"], now)
     payload = _payload(plan.level, result, plan)
     status, reason = "queued", None
-    if result.decision != decision.DecisionAction.SEND or plan.level == 0:
+    if plan.level == 0:
         status, reason = "suppressed", "decision_not_visible"
     elif policy.settings["proactive_local_delivery_enabled"] != "1":
         status, reason = "suppressed", "local_delivery_disabled"
-    elif policy.blocked_reasons or not intensity.is_level_authorized(plan.level, settings=policy.settings):
+    elif not intensity.is_level_authorized(plan.level, settings=policy.settings):
         status, reason = "suppressed", "channel_unauthorized"
+    elif result.decision != decision.DecisionAction.SEND:
+        status, reason = "suppressed", f"decision_{result.decision}"
+    elif policy.blocked_reasons:
+        status, reason = "suppressed", policy.blocked_reasons[0]
     delivery_id = db.new_id()
     conn = db.connect()
     try:
@@ -270,6 +297,7 @@ def begin_delivery(delivery_id: str, consumer_id: str, lease_token: str,
                          "updated_at=? WHERE id=?", (now, now, now, delivery_id))
             conn.execute("UPDATE proactive_candidates SET status='delivered',updated_at=? WHERE id=?",
                          (now, row["candidate_id"]))
+            _record_approach_locked(conn, row["episode_id"], row["level"], now)
             conn.execute("UPDATE sessions SET updated_at=? WHERE id=?", (now, row["session_id"]))
             _event(conn, delivery_id, "delivered", "claimed", "delivered", None, now,
                    {"message_id": message_id})
@@ -322,6 +350,7 @@ def acknowledge_delivery(delivery_id: str, consumer_id: str, lease_token: str, *
         if success:
             conn.execute("UPDATE proactive_candidates SET status='delivered',updated_at=? WHERE id=?",
                          (now, row["candidate_id"]))
+            _record_approach_locked(conn, row["episode_id"], row["level"], now)
         _event(conn, delivery_id, "acknowledged", "delivering", status, safe_error, now)
         conn.commit()
         return _public(conn.execute("SELECT * FROM proactive_deliveries WHERE id=?",
@@ -341,11 +370,12 @@ def list_deliveries(limit: int = 100) -> list[dict]:
             "SELECT * FROM proactive_deliveries ORDER BY created_at DESC,id DESC LIMIT ?",
             (max(1, min(limit, 500)),),
         ).fetchall():
-            item = _public(row)
-            # Consumer leases are invocation capabilities, not diagnostics.
-            item.pop("lease_token", None)
-            item.pop("lease_owner", None)
-            result.append(item)
+            value = dict(row)
+            result.append({key: value[key] for key in (
+                "id", "decision_id", "candidate_id", "episode_id", "session_id",
+                "level", "channel", "status", "attempt_count", "error_code",
+                "delivered_at", "acknowledged_at", "created_at", "updated_at",
+            )})
         return result
     finally:
         conn.close()

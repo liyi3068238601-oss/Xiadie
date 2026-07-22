@@ -2,7 +2,7 @@
 
 - 版本：v0.3（完成度审计与收口补完版）
 - 日期：2026-07-22
-- 状态：EAP.R0～EAP.R4 已完成并提交；真实产品闭环仍未完成，下一阶段为 EAP.R5
+- 状态：EAP.R0～EAP.R5 已施工；R5 等待独立 Review，正式冻结仍需 EAP.R6
 - 专项代号：`EAP`（Emotion, Attachment and Proactivity）
 - 前置条件：CTX.0～CTX.7 已冻结；现有 Affect/Relationship 阶段 0～4.1 已完成
 - 执行规则：每个阶段均须完成代码、测试、文档、阶段 Review 和本地 Git 提交；未解决 P0/P1 时不得进入下一阶段
@@ -1730,7 +1730,7 @@ R3 施工记录（2026-07-22）：`[x]` 已完成并通过独立 Review。Schema
 
 完成门：所有用户可见主动行为都能追溯到唯一 Delivery；关闭或暂停时用户可见行为为 0；Level 5 永远为 0。
 
-R4 施工记录（2026-07-22）：`[x]` 已完成，等待独立 Review。Schema 59 新增唯一 Delivery、单次 attempt 与事件账本，并为聊天消息增加唯一 `proactive_delivery_id`。真实本机投递继续采用显式实验开关，默认关闭；开启后，orchestrator 才生成非 shadow 决策和不可变投递载荷。Electron 只负责 claim/begin/ack，后端在唯一调用边界前以写事务复核来源、候选、过期时间、暂停/急停、类型开关、桌面通知授权和设置 revision。调用前崩溃可安全重新 claim，调用后未确认则标记 `delivery_confirmation_unknown` 并永不自动重试。Level 1 复用桌宠状态/表情路径，Level 2 气泡自动消失，Level 3 原子写主窗口消息并触发刷新，Level 4 仅在显式授权时调用 Windows Notification；Schema 与运行时均不能容纳 Level 5。专项覆盖双 consumer、数据库提交失败、来源/授权变化、失败确认、重启恢复和各本机 Level。验收门禁：后端 `902 passed, 1 warning`，改动范围 Ruff 通过；前端 `40 passed`，TypeScript/Vite production build（188 modules）通过；Electron 脚本语法、真实桌宠→主窗口启动及新设置页默认关闭 smoke 通过。全仓 Ruff 仍有 69 项既有历史债，本阶段改动文件为 0 项。
+R4 施工记录（2026-07-22）：`[x]` 已完成并通过独立 Review（78/78，0 个未解决 P0/P1）。Schema 59 新增唯一 Delivery、单次 attempt 与事件账本，并为聊天消息增加唯一 `proactive_delivery_id`。真实本机投递继续采用显式实验开关，默认关闭；开启后，orchestrator 才生成非 shadow 决策和不可变投递载荷。Electron 只负责 claim/begin/ack，后端在唯一调用边界前以写事务复核来源、候选、过期时间、暂停/急停、类型开关、桌面通知授权和设置 revision。调用前崩溃可安全重新 claim，调用后未确认则标记 `delivery_confirmation_unknown` 并永不自动重试。Level 1 复用桌宠状态/表情路径，Level 2 气泡自动消失，Level 3 原子写主窗口消息并触发刷新，Level 4 仅在显式授权时调用 Windows Notification；Schema 与运行时均不能容纳 Level 5。Review 建议中采纳 Level 4 未授权的精确错误分类、空闲自适应轮询、诊断最小化和通知超时；不采纳把同事务事件写入改成孤立 try/except 的建议，因为这会破坏状态与审计原子性；所谓 `_claim_source` 返回旧行与当前代码不符，已有更新后行回归测试。验收门禁：后端 `902 passed, 1 warning`，改动范围 Ruff 通过；前端 `40 passed`，TypeScript/Vite production build（188 modules）通过；Electron 脚本语法、真实桌宠→主窗口启动及新设置页默认关闭 smoke 通过。全仓 Ruff 仍有 69 项既有历史债，本阶段改动文件为 0 项。
 
 建议提交：`feat(eap): add auditable local proactive delivery channels`
 
@@ -1738,18 +1738,20 @@ R4 施工记录（2026-07-22）：`[x]` 已完成，等待独立 Review。Schema
 
 目标：让用户能自然纠正时机、频率、话题和语气，且反馈真实改变后续行为。
 
-- [ ] 新增 `proactive_feedback` 表、repository、API 和审计事件，实现 `proactive-feedback-v1`。
-- [ ] 支持显式反馈：时机不对、太频繁、内容不对、别再提此话题、别用这种语气、可以继续提醒。
-- [ ] 支持有高精度逐字证据的自然语言反馈候选；低置信度只进入待确认，不直接建立永久边界。
-- [ ] 反馈必须关联 Delivery/ContactEpisode/topic/kind/expression act，禁止无来源全局惩罚。
-- [ ] 将反馈映射到 topic/kind 硬边界、`unanswered_pressure`、contact cost 和表达偏好；不得降低 bond/trust。
-- [ ] 补齐主动消息历史 API/UI，显示时间、自然原因、渠道、结果和用户反馈，不显示裸分数。
-- [ ] 补齐开发者诊断 API/UI，显示 candidate、硬门、reason code、协议/策略版本和 source ID，不复制不必要正文。
-- [ ] 实现清除待处理候选/主动历史和重置设置；不得隐式删除聊天、记忆、关系或 LIFE 数据。
-- [ ] 设置重置使用单个后端原子 API，不从前端并发发送多个 PUT 后提前提示成功。
-- [ ] 为整个“陪伴与主动消息”Tab 增加专项前端测试和至少一条 Electron UI 流程测试。
+- [x] 新增 `proactive_feedback` 表、repository、API 和审计事件，实现 `proactive-feedback-v1`。
+- [x] 支持显式反馈：时机不对、太频繁、内容不对、别再提此话题、别用这种语气、可以继续提醒。
+- [x] 支持有高精度逐字证据的自然语言反馈候选；低置信度只进入待确认，不直接建立永久边界。
+- [x] 反馈必须关联 Delivery/ContactEpisode/topic/kind/expression act，禁止无来源全局惩罚。
+- [x] 将反馈映射到 topic/kind 硬边界、`unanswered_pressure`、contact cost 和表达偏好；不得降低 bond/trust。
+- [x] 补齐主动消息历史 API/UI，显示时间、自然原因、渠道、结果和用户反馈，不显示裸分数。
+- [x] 补齐开发者诊断 API/UI，显示 candidate、硬门、reason code、协议/策略版本和 source ID，不复制不必要正文。
+- [x] 实现清除待处理候选/主动历史和重置设置；不得隐式删除聊天、记忆、关系或 LIFE 数据。
+- [x] 设置重置使用单个后端原子 API，不从前端并发发送多个 PUT 后提前提示成功。
+- [x] 为整个“陪伴与主动消息”Tab 增加专项前端测试和至少一条 Electron UI 流程测试。
 
 完成门：用户所有可见控制均有后端语义；“暂停”“别再提”“太频繁”在下一次评估前生效；历史和清除功能不再显示“开发中”。
+
+R5 施工记录（2026-07-22）：`[x]` 已完成，等待独立 Review。Schema 60 新增 grounded feedback、偏好权重与反馈事件账本；六类显式反馈都绑定唯一已确认 Delivery，并定向映射到 Episode pressure、topic/kind contact cost 或 expression act，绝不修改 bond/trust。确定性高精度逐字表达可直接应用，模糊表达只进入待确认。成功投递在同一事务记录接近压力；历史与诊断 API 仅返回自然原因、状态、ID、门控与协议字段，不暴露 payload、正文、hash、lease 或裸分数。设置页已接入历史反馈、低置信确认、隐私化诊断、带确认的选择性清除及单 API 原子重置；清除保留聊天、记忆、关系和 LIFE 数据，明确偏好继续保留。R4 Review 收尾同时补齐 Level 4 精确错误、1～30 秒空闲退避和 10 秒通知超时。专项后端回归 `28 passed`，后端全量 `917 passed, 1 warning`，改动范围 Ruff 通过；前端 `41 passed`，TypeScript/Vite production build（185 modules）通过；Electron `main.js`/`preload.js` 语法检查通过。真实 Electron UI 流程已验证主动陪伴 Tab、Schema 60 隐私化诊断和清除前确认框，并取消清除，未删除测试数据。
 
 建议提交：`feat(eap): close proactive feedback and user control loop`
 

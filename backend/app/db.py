@@ -2640,6 +2640,64 @@ MIGRATIONS = [
             ON proactive_delivery_events(delivery_id, created_at, id);
         """,
     ),
+    (
+        60,
+        """
+        -- EAP.R5: grounded proactive feedback and learned local preferences.
+        CREATE TABLE proactive_feedback (
+            id TEXT PRIMARY KEY,
+            delivery_id TEXT NOT NULL REFERENCES proactive_deliveries(id) ON DELETE CASCADE,
+            episode_id TEXT REFERENCES contact_episodes(id) ON DELETE SET NULL,
+            session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            feedback_kind TEXT NOT NULL CHECK(feedback_kind IN (
+                'wrong_timing','too_frequent','wrong_content','reject_topic',
+                'reject_tone','allow_more'
+            )),
+            source TEXT NOT NULL CHECK(source IN ('explicit','natural_language')),
+            status TEXT NOT NULL CHECK(status IN ('pending','applied','rejected','revoked')),
+            evidence_message_id TEXT REFERENCES messages(id) ON DELETE SET NULL,
+            evidence_quote TEXT CHECK(evidence_quote IS NULL OR length(evidence_quote) BETWEEN 1 AND 160),
+            target_topic TEXT,
+            target_kind TEXT,
+            target_expression_act TEXT,
+            confidence REAL NOT NULL CHECK(confidence BETWEEN 0 AND 1),
+            policy_effect_json TEXT NOT NULL DEFAULT '{}',
+            idempotency_key TEXT NOT NULL UNIQUE,
+            protocol_version TEXT NOT NULL,
+            resolved_at REAL,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_proactive_feedback_delivery
+            ON proactive_feedback(delivery_id, created_at);
+        CREATE INDEX idx_proactive_feedback_pending
+            ON proactive_feedback(status, created_at);
+
+        CREATE TABLE proactive_preference_weights (
+            id TEXT PRIMARY KEY,
+            dimension TEXT NOT NULL CHECK(dimension IN ('topic','kind','expression_act')),
+            value TEXT NOT NULL,
+            contact_cost_delta REAL NOT NULL DEFAULT 0 CHECK(contact_cost_delta BETWEEN -1 AND 1),
+            acceptance_delta REAL NOT NULL DEFAULT 0 CHECK(acceptance_delta BETWEEN -1 AND 1),
+            source_feedback_id TEXT REFERENCES proactive_feedback(id) ON DELETE SET NULL,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            UNIQUE(dimension, value)
+        );
+
+        CREATE TABLE proactive_feedback_events (
+            id TEXT PRIMARY KEY,
+            feedback_id TEXT NOT NULL REFERENCES proactive_feedback(id) ON DELETE CASCADE,
+            event_type TEXT NOT NULL,
+            from_status TEXT,
+            to_status TEXT NOT NULL,
+            metadata_json TEXT NOT NULL DEFAULT '{}',
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_proactive_feedback_events_feedback
+            ON proactive_feedback_events(feedback_id, created_at, id);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

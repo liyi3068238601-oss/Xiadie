@@ -535,15 +535,23 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
   const [proactiveLoading, setProactiveLoading] = useState(true);
   const [proactiveError, setProactiveError] = useState("");
   const [proactiveSettings, setProactiveSettings] = useState<Record<string, string>>({});
+  const [proactiveHistory, setProactiveHistory] = useState<api.ProactiveHistoryItem[]>([]);
+  const [pendingFeedback, setPendingFeedback] = useState<api.ProactiveFeedback[]>([]);
+  const [proactiveDiagnostics, setProactiveDiagnostics] = useState<Record<string, unknown>>({});
 
   const loadProactiveSettings = () => {
     setProactiveLoading(true);
-    Promise.all(
+    Promise.all([
+      Promise.all(
       PROACTIVE_SETTING_KEYS.map((k) =>
         api.getSetting(k).catch(() => ({ key: k, value: PROACTIVE_DEFAULTS[k] || "" }))
       )
-    )
-      .then((results) => {
+      ),
+      api.listProactiveHistory(),
+      api.listPendingProactiveFeedback(),
+      api.getProactiveDiagnostics(),
+    ])
+      .then(([results, history, pending, diagnostics]) => {
         const map: Record<string, string> = {};
         results.forEach((r, i) => {
           const key = PROACTIVE_SETTING_KEYS[i];
@@ -551,10 +559,25 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
           map[key] = r.value || PROACTIVE_DEFAULTS[key] || "";
         });
         setProactiveSettings(map);
+        setProactiveHistory(history);
+        setPendingFeedback(pending);
+        setProactiveDiagnostics(diagnostics);
         setProactiveError("");
       })
       .catch((e) => setProactiveError(e.message || "加载失败"))
       .finally(() => setProactiveLoading(false));
+  };
+
+  const addProactiveFeedback = (deliveryId: string, kind: string) => {
+    api.submitProactiveFeedback(deliveryId, kind)
+      .then(() => { toast("反馈已应用到后续主动陪伴"); loadProactiveSettings(); })
+      .catch((e) => toast(e.message || "反馈失败"));
+  };
+
+  const resolvePendingFeedback = (feedbackId: string, accept: boolean) => {
+    api.resolveProactiveFeedback(feedbackId, accept)
+      .then(() => { toast(accept ? "已确认反馈" : "已忽略反馈"); loadProactiveSettings(); })
+      .catch((e) => toast(e.message || "处理失败"));
   };
 
   const updateProactiveSetting = (key: string, value: string) => {
@@ -1488,11 +1511,46 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
               <section className="settings-card">
                 <div className="settings-card-title-row">
                   <span className="settings-card-title">主动消息历史</span>
-                  <span className="settings-status-pill settings-status-off">开发中</span>
                 </div>
-                <p className="settings-card-hint">显示时间、自然原因、结果，可标记"时机不对/太频繁/内容不对"。</p>
-                <div className="settings-empty">暂无主动消息历史</div>
+                <p className="settings-card-hint">只显示自然原因、渠道与结果；反馈只影响对应话题、类型或表达方式。</p>
+                {proactiveHistory.length === 0 && <div className="settings-empty">暂无主动消息历史</div>}
+                {proactiveHistory.map((item) => (
+                  <div className="settings-toggle-row" key={item.id} data-testid="proactive-history-item">
+                    <div>
+                      <p>{item.natural_reason}</p>
+                      <p className="settings-card-hint">
+                        {new Date(item.created_at * 1000).toLocaleString("zh-CN")} · {item.channel} · {item.status}
+                      </p>
+                      <div className="settings-data-actions">
+                        {[
+                          ["wrong_timing", "时机不对"], ["too_frequent", "太频繁"],
+                          ["wrong_content", "内容不对"], ["reject_topic", "不再提这个话题"],
+                          ["reject_tone", "不喜欢这种语气"], ["allow_more", "可以多一些"],
+                        ].map(([kind, label]) => (
+                          <button className="btn ghost" key={kind}
+                            onClick={() => addProactiveFeedback(item.id, kind)}>{label}</button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </section>
+
+              {pendingFeedback.length > 0 && (
+                <section className="settings-card">
+                  <span className="settings-card-title">待确认反馈</span>
+                  <p className="settings-card-hint">模糊表达不会自动改变策略，请确认是否代表你的真实偏好。</p>
+                  {pendingFeedback.map((item) => (
+                    <div className="settings-toggle-row" key={item.id}>
+                      <span>“{item.evidence_quote}” 是否表示你不希望继续这类主动消息？</span>
+                      <div className="settings-data-actions">
+                        <button className="btn ghost" onClick={() => resolvePendingFeedback(item.id, true)}>确认</button>
+                        <button className="btn ghost" onClick={() => resolvePendingFeedback(item.id, false)}>忽略</button>
+                      </div>
+                    </div>
+                  ))}
+                </section>
+              )}
 
               {/* 8. 高级诊断 */}
               <section className="settings-card">
@@ -1511,33 +1569,34 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
                 <p className="settings-card-hint">仅开发模式显示候选、硬门、reason code 和策略版本。</p>
                 {proactiveSettings.proactive_show_advanced_diagnostics === "1" && (
                   <div className="settings-diagnostics-info">
-                    <p>协议版本：conversation-presence-v2 / proactive-decision-v2 / expression-plan-v1</p>
-                    <p>Schema 版本：59</p>
-                    <p>（诊断详情将在后续版本中提供）</p>
+                    <p>协议版本：conversation-presence-v2 / proactive-decision-v2 / proactive-feedback-v1</p>
+                    <p>Schema 版本：60</p>
+                    <pre>{JSON.stringify(proactiveDiagnostics, null, 2)}</pre>
                   </div>
                 )}
               </section>
 
-              {/* 9. 重置 / 清除候选（开发中） */}
+              {/* 9. 原子重置 / 选择性清除 */}
               <section className="settings-card">
                 <div className="settings-card-title-row">
                   <span className="settings-card-title">重置与清除</span>
-                  <span className="settings-status-pill settings-status-off">开发中</span>
                 </div>
-                <p className="settings-card-hint">清除所有候选与历史（保留聊天、记忆和关系数据）。</p>
+                <p className="settings-card-hint">清除候选与主动历史；聊天、记忆、关系与 LIFE 数据都会保留。</p>
                 <div className="settings-data-actions">
-                  <button className="btn ghost" onClick={() => toast("清除候选功能开发中")}>
+                  <button className="btn ghost" onClick={() => {
+                    if (!window.confirm("清除全部主动候选与历史？聊天、记忆、关系和 LIFE 数据会保留。")) return;
+                    api.clearProactiveData()
+                      .then(() => { toast("已清除主动候选与历史"); loadProactiveSettings(); })
+                      .catch((e) => toast(e.message || "清除失败"));
+                  }}>
                     清除所有候选
                   </button>
                   <button
                     className="btn ghost"
                     onClick={() => {
-                      PROACTIVE_SETTING_KEYS.forEach((k) => {
-                        if (PROACTIVE_DEFAULTS[k] !== undefined) {
-                          updateProactiveSetting(k, PROACTIVE_DEFAULTS[k]);
-                        }
-                      });
-                      toast("已重置主动陪伴设置为默认值");
+                      api.resetProactiveSettings()
+                        .then(() => { toast("已原子重置主动陪伴设置"); loadProactiveSettings(); })
+                        .catch((e) => toast(e.message || "重置失败"));
                     }}
                   >
                     重置为默认

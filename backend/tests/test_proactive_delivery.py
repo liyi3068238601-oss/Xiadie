@@ -86,6 +86,29 @@ def test_level0_is_audited_without_visible_attempt(monkeypatch):
     assert delivery.claim_next("electron") is None
 
 
+def test_level4_without_notification_authorization_is_classified_precisely(monkeypatch):
+    _, _, queued = _build_delivery(monkeypatch, 4)
+    conn = db.connect()
+    try:
+        conn.execute("DELETE FROM proactive_deliveries WHERE id=?", (queued["id"],))
+        conn.commit()
+    finally:
+        conn.close()
+    settings.write_public_setting("proactive_desktop_notification_enabled", "0")
+    row = delivery.enqueue_decision(queued["decision_id"])
+    assert row["status"] == "suppressed"
+    assert row["error_code"] == "channel_unauthorized"
+
+
+def test_public_delivery_diagnostics_exclude_payload_and_authorization_material(monkeypatch):
+    _build_delivery(monkeypatch, 2)
+    row = delivery.list_deliveries()[0]
+    assert "payload" not in row
+    assert "payload_hash" not in row
+    assert "authorization_hash" not in row
+    assert "source_hash" not in row
+
+
 @pytest.mark.parametrize("level", [1, 2, 4])
 def test_local_channels_have_one_confirmed_attempt(monkeypatch, level):
     now, _, queued = _build_delivery(monkeypatch, level)

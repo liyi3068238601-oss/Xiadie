@@ -216,7 +216,7 @@ def test_schema_29_parse_artifact_is_metadata_only_and_cascades():
     try:
         assert conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
-        ).fetchone()["value"] == "59"
+        ).fetchone()["value"] == "60"
         columns = {
             row["name"] for row in conn.execute("PRAGMA table_info(knowledge_parse_artifacts)")
         }
