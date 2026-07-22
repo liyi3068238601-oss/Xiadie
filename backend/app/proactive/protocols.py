@@ -39,6 +39,7 @@ ALL_PROTOCOLS = (
 )
 
 class ProtocolStatus(str, Enum):
+    FROZEN = "FROZEN"
     IMPLEMENTED = "IMPLEMENTED"
     DRAFT = "DRAFT"
     PLACEHOLDER = "PLACEHOLDER"
@@ -70,27 +71,27 @@ def _validate_relationship(*args, **kwargs):
 
 PROTOCOL_REGISTRY = {
     CONVERSATION_PRESENCE_V2: ProtocolDefinition(
-        CONVERSATION_PRESENCE_V2, 2, ProtocolStatus.IMPLEMENTED, None,
+        CONVERSATION_PRESENCE_V2, 2, ProtocolStatus.FROZEN, None,
         "Stable eight-value user_status contract; incompatible changes require v3.",
     ),
     USER_AFFECT_OBSERVATION_V1: ProtocolDefinition(
-        USER_AFFECT_OBSERVATION_V1, 1, ProtocolStatus.IMPLEMENTED, _validate_user_affect,
+        USER_AFFECT_OBSERVATION_V1, 1, ProtocolStatus.FROZEN, _validate_user_affect,
         "Grounded schema and Companion Cognition result repository are active since EAP.R2.",
     ),
     RELATIONSHIP_MEANING_V1: ProtocolDefinition(
-        RELATIONSHIP_MEANING_V1, 1, ProtocolStatus.IMPLEMENTED, _validate_relationship,
+        RELATIONSHIP_MEANING_V1, 1, ProtocolStatus.FROZEN, _validate_relationship,
         "Grounded validator and atomic apply/revoke repository are active since EAP.R2.",
     ),
     PROACTIVE_DECISION_V2: ProtocolDefinition(
-        PROACTIVE_DECISION_V2, 2, ProtocolStatus.IMPLEMENTED, None,
+        PROACTIVE_DECISION_V2, 2, ProtocolStatus.FROZEN, None,
         "Existing decision records remain authoritative; DecisionRun is an adapter target.",
     ),
     EXPRESSION_PLAN_V1: ProtocolDefinition(
-        EXPRESSION_PLAN_V1, 1, ProtocolStatus.IMPLEMENTED, None,
+        EXPRESSION_PLAN_V1, 1, ProtocolStatus.FROZEN, None,
         "Expression repository, intensity consumers, and local renderers are active since EAP.R4.",
     ),
     PROACTIVE_FEEDBACK_V1: ProtocolDefinition(
-        PROACTIVE_FEEDBACK_V1, 1, ProtocolStatus.IMPLEMENTED, _validate_feedback,
+        PROACTIVE_FEEDBACK_V1, 1, ProtocolStatus.FROZEN, _validate_feedback,
         "Delivered feedback is persisted and grounded to one local delivery in EAP.R5.",
     ),
 }

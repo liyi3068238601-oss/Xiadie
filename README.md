@@ -11,7 +11,7 @@
 - [项目基线状态](docs/BASELINE_STATUS.md)：当前环境、验证结果、已有能力与已知风险。
 - [小步开发与 PR 检查清单](docs/PR_CHECKLIST.md)：每次改动的范围、风险、验证与交付标准。
 - [架构决策记录](docs/adr/README.md)：重大技术选择的记录规则与模板。
-- [EAP.R6 生产验收记录](docs/reports/eap-r6-production-acceptance.md)：主动陪伴长期、失败与安全指标证据；当前等待 strict review，尚未冻结。
+- [EAP.R6 生产验收记录](docs/reports/eap-r6-production-acceptance.md)：主动陪伴长期、失败与安全指标证据；strict review 已确认 0 个未解决 P0/P1，六个协议与 Schema 60 已冻结。
 
 ## 架构
 

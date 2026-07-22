@@ -2,7 +2,7 @@
 
 - 版本：v0.3（完成度审计与收口补完版）
 - 日期：2026-07-22
-- 状态：EAP.R0～EAP.R6 已施工；R6 等待独立 strict Review，协议与 Schema 60 尚未冻结
+- 状态：EAP.R0～EAP.R6 已完成并通过独立 strict Review；EAP v1 协议与 Schema 60 已正式冻结
 - 专项代号：`EAP`（Emotion, Attachment and Proactivity）
 - 前置条件：CTX.0～CTX.7 已冻结；现有 Affect/Relationship 阶段 0～4.1 已完成
 - 执行规则：每个阶段均须完成代码、测试、文档、阶段 Review 和本地 Git 提交；未解决 P0/P1 时不得进入下一阶段
@@ -1536,7 +1536,7 @@ EAP v1 冻结后，外部渠道仍不得直接启用。下一入口必须先完�
 
 ### 9.B.1 审计结论
 
-本节以 2026-07-22 的真实代码为准。测试通过只能证明已接线能力和独立领域模块在测试输入下行为稳定，不能替代产品主链验收。
+下表是 2026-07-22 R0 开工时的审计快照，用于说明后续补差来源，不再代表专项最终状态。测试通过只能证明已接线能力和独立领域模块在测试输入下行为稳定，不能替代产品主链验收；最终状态以本节后续 R0～R6 施工记录、冻结表和 R6 验收报告为准。
 
 当前应使用以下状态：
 
@@ -1554,9 +1554,9 @@ EAP v1 冻结后，外部渠道仍不得直接启用。下一入口必须先完�
 | LIFE 接口 | `[~]` 接口预留 | `life_proactive_seeds` 与 adapter | LIFE 实际数据模型完成后接入；这不阻塞 EAP 核心闭环冻结 |
 | 设置页 | `[~]` UI 已有 | 总开关、类型、安静时段、频率、渠道、暂停和诊断入口 | 后端默认/校验、所有控制真实生效、历史/反馈/清除 API 和专项前端测试 |
 | 长期模拟 | `[~]` 测试工具已实现 | 确定性时间线模拟和四类测试样例 | 使用与生产相同的 orchestration/delivery 代码路径；休眠、崩溃、并发、时区真实验收 |
-| 协议冻结 | `[ ]` 未达到 | 6 个版本字符串已定义 | Schema、validator、repository、真实调用路径、兼容测试和独立 Review 后才能 FROZEN |
+| 协议冻结 | `[ ]` R0 时未达到 | 6 个版本字符串已定义 | 当时仍需 Schema、validator、repository、真实调用路径、兼容测试和独立 Review |
 
-当前只有 Presence hook 进入聊天主链。不得用测试文件直接调用领域函数的“端到端场景”替代真实应用端到端验收。
+R0 时只有 Presence hook 进入聊天主链；R1～R6 已逐项补齐其余缺口。不得用测试文件直接调用领域函数的“端到端场景”替代真实应用端到端验收。
 
 协议状态定义：
 
@@ -1567,18 +1567,18 @@ EAP v1 冻结后，外部渠道仍不得直接启用。下一入口必须先完�
 | `SHADOW` | 已由真实生产路径调用并记录结果，但不改变正式状态或产生用户可见行为 |
 | `FROZEN` | 生产者、消费者、来源校验、失败降级、兼容测试和独立 Review 全部完成，且 0 个未解决 P0/P1 |
 
-EAP 六个新增协议的当前状态：
+EAP 六个新增协议的最终冻结状态：
 
-| 协议 | 当前状态 | 证据与缺口 |
+| 协议 | 当前状态 | 冻结证据 |
 |---|---|---|
-| `conversation-presence-v2` | `IMPLEMENTED` | 表、领域函数、测试和聊天 hook 已存在；枚举契约、过期 worker 和候选消费者未闭环 |
-| `user-affect-observation-v1` | `DRAFT` | 只有版本常量 |
-| `relationship-meaning-v1` | `IMPLEMENTED` | 建议表、限幅和测试已存在；无真实生产者和 apply/revoke 主链 |
-| `proactive-decision-v2` | `IMPLEMENTED` | 决策表、三层裁决和测试已存在；无生产 orchestrator，不能称为 Shadow |
-| `expression-plan-v1` | `IMPLEMENTED` | 表、向量/迟滞逻辑和测试已存在；无真实表达消费者 |
-| `proactive-feedback-v1` | `DRAFT` | 只有版本常量，无表、Schema、API 或消费者 |
+| `conversation-presence-v2` | `FROZEN` | 聊天 hook、可靠时钟、过期 worker、候选消费、恢复保护与兼容测试均已进入生产路径 |
+| `user-affect-observation-v1` | `FROZEN` | 观察 Provider、Schema 校验、降级隔离、存储与真实编排消费均已闭环 |
+| `relationship-meaning-v1` | `FROZEN` | 生产者、限幅、apply/revoke、审计与故障隔离均已闭环 |
+| `proactive-decision-v2` | `FROZEN` | DecisionRun、三层裁决、真实 orchestrator、来源复核、并发 claim 与安全门均已闭环 |
+| `expression-plan-v1` | `FROZEN` | 强度授权、表达迟滞、统一 Live2D 状态源及 Delivery 消费均已闭环 |
+| `proactive-feedback-v1` | `FROZEN` | grounded feedback、显式/自然语言入口、历史/清除、策略应用与撤销均已闭环 |
 
-`affect-observer-v1` 属于既有 Affect 子系统，不计入上述六个 EAP 新增协议；KIG/LIFE 引用时必须保持这一所有权区别。上述状态表是 R0 的文档事实源；R1 再实现可执行 Protocol Registry。
+`affect-observer-v1` 属于既有 Affect 子系统，不计入上述六个 EAP 新增协议；KIG/LIFE 引用时必须保持这一所有权区别。上述状态表是 R6 strict review 后的最终事实源；运行时 Protocol Registry 与此处一致。
 
 ### 9.B.2 收口范围与非目标
 
@@ -1767,9 +1767,9 @@ R5 施工记录（2026-07-22）：`[x]` 已完成并通过独立 Review（0 个 
 - [x] 验证真实聊天仍可在 EAP worker、Provider、通知或 Live2D 失败时正常完成。
 - [x] 验证普通聊天 bond 机械增长率为 0，用户沉默导致 bond/trust 下降率为 0。
 - [x] 验证关闭/暂停/拒绝后的违规投递率为 0，重复投递率为 0，来源可追溯率为 100%。
-- [ ] 完成独立 strict Review，确认 0 个未解决 P0/P1。
+- [x] 完成独立 strict Review，确认 0 个未解决 P0/P1。
 - [x] 更新本计划、基线、项目上下文、README、长期路线、用户说明和 LIFE/KIG 前置条件；项目外两份原版保持不动。
-- [ ] 只有此时才能把实际完成的协议、策略和最后一个 EAP schema 标记为 FROZEN。
+- [x] 六个 EAP 协议、运行策略和 Schema 60 已在 strict Review 通过后标记为 FROZEN。
 
 冻结前必须同时满足：
 
@@ -1788,7 +1788,9 @@ Level 5 外部渠道投递                        = 0
 
 建议提交：`feat(eap): complete review and freeze proactive companion runtime`
 
-R6 施工记录（2026-07-22）：生产模拟器已改走真实消息、Presence、source、orchestrator、decision、intensity、expression、Delivery 和 feedback repository；长期与失败矩阵、指标和第 14 节映射见 `docs/reports/eap-r6-production-acceptance.md`。新增持久化时钟回拨保护，以及 Electron `powerMonitor` 驱动的系统恢复保护窗，防止休眠唤醒后到期任务瞬发。主聊天已验证在 EAP hook 与观察 Provider 失败时正常完成；通知/Live2D 失败只终结对应 Delivery。自然度抽样发现并修复内部英文 topic 进入用户载荷的问题。门禁为后端 `937 passed, 1 warning`、前端 `41 passed`、TypeScript/Vite production build（188 modules）、改动范围 Ruff 与 Electron 脚本通过；Windows 重新生成 564,038,879 bytes NSIS，release resource verification 与真实 Electron 桌宠/主窗口/主动设置页 smoke 通过。端口 8756 存在健康但无可见 PID 的监听者，未强杀、未自动执行安装向导。当前协议仍为 `IMPLEMENTED`、Schema 60 仍为未冻结；本阶段提交后停线等待独立 strict Review。
+R6 施工记录（2026-07-22）：生产模拟器已改走真实消息、Presence、source、orchestrator、decision、intensity、expression、Delivery 和 feedback repository；长期与失败矩阵、指标和第 14 节映射见 `docs/reports/eap-r6-production-acceptance.md`。新增持久化时钟回拨保护，以及 Electron `powerMonitor` 驱动的系统恢复保护窗，防止休眠唤醒后到期任务瞬发。主聊天已验证在 EAP hook 与观察 Provider 失败时正常完成；通知/Live2D 失败只终结对应 Delivery。自然度抽样发现并修复内部英文 topic 进入用户载荷的问题。门禁为后端 `937 passed, 1 warning`、前端 `41 passed`、TypeScript/Vite production build（188 modules）、改动范围 Ruff 与 Electron 脚本通过；Windows 重新生成 564,038,879 bytes NSIS，release resource verification 与真实 Electron 桌宠/主窗口/主动设置页 smoke 通过。端口 8756 存在健康但无可见 PID 的监听者，未强杀、未自动执行安装向导。独立 strict review 随后确认 0 个未解决 P0/P1；P2-3 已采纳，另两项按真实轮询和 fail-closed 语义保留。六个协议与 Schema 60 已正式冻结。
+
+R6 strict Review 收尾（2026-07-22）：审查确认 0 个 P0/P1、10/10 冻结指标通过，批准六个 EAP 协议及 Schema 60 正式 `FROZEN`。P2-3 的条件表达式已改为明确 `if`；P2-1 不采纳降频写水位建议，因为生产轮询为 30 秒且逐周期持久化是崩溃安全边界，审查所述“约每 1 秒”与实际代码不符；P2-2 保留 `max(existing,new)`，连续 resume 延长保护窗属于预期 fail-closed 行为，只在后续诊断中观察频率。EAP 专项至此关闭；不兼容变更必须升协议版本并另立计划。
 
 ### 9.B.3 收口施工顺序与停线规则
 

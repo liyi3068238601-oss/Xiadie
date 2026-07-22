@@ -1,9 +1,9 @@
 # EAP.R6 生产路径总验收记录
 
 - 日期：2026-07-22
-- 状态：施工验收完成，等待独立 strict review
+- 状态：独立 strict review 已通过，EAP 专项正式冻结
 - 范围：EAP.R0～R6；不修改项目外 LIFE/KIG 原版计划
-- 冻结结论：尚未冻结。只有 strict review 确认 0 个未解决 P0/P1 后，才把协议与 Schema 60 标记为 FROZEN。
+- 冻结结论：strict review 确认 0 个未解决 P0/P1；六个 EAP 协议与 Schema 60 已标记为 FROZEN。
 
 ## 1. Review 处理结论
 
@@ -61,7 +61,7 @@ R5 review 的 3 个 P2 中，仅“`proactive_rejected_expression_acts` 为无�
 | 无有效来源的主动候选/投递 | 0 | 通过 |
 | 可见 Delivery 来源可追溯率 | 100% | 通过 |
 | Level 5 外部渠道投递 | 0 | 通过 |
-| 未解决 P0/P1 | 待 strict review 确认 | 未冻结 |
+| 未解决 P0/P1 | 0 | 通过并冻结 |
 
 ## 6. 后续入口
 
@@ -69,4 +69,4 @@ R5 review 的 3 个 P2 中，仅“`proactive_rejected_expression_acts` 为无�
 
 Windows 实机已验证当前 Electron 桌宠、主窗口、设置与主动陪伴控制页加载。运行安装向导前发现 8756 已被一个能返回遐蝶 health、但 Windows 进程表无法映射 PID 的监听者占用；本轮没有强杀未知监听者，也没有自动安装/覆盖用户环境。严格审查如要求“安装目录启动”而非“安装包资源 + 当前 Electron UI”组合证据，应在释放 8756 后单独复跑；这不影响构建产物完整性结论。
 
-本次提交后停线等待新 review。通过并完成必要整改后，才执行协议/Schema 60 正式冻结，再以 `E:\Xiadie\LLM_DECISION_AND_LIFE_CONTINUITY_PLAN.md` 和 `E:\Xiadie\XIADIE_KNOWLEDGE_INTELLIGENCE_GOVERNANCE_AND_WORLD_MODEL_PLAN.md` 两份项目外原版为基准规划 LIFE/KIG；仓库内不恢复副本。
+独立 strict review 已确认 0 个未解决 P0/P1。P2-3 的显式初始化分支建议已采纳；P2-1 基于“约 1 秒轮询”的前提与生产默认 30 秒轮询不符，不引入会削弱崩溃恢复水位的内存缓存；P2-2 所述 resume guard 延长属于连续恢复事件下的预期 fail-closed 行为，保留实现并纳入运行监控。六个协议与 Schema 60 已正式冻结。后续按项目外权威计划执行 `CDS → LIFE → KIG`，仓库内不恢复计划副本。

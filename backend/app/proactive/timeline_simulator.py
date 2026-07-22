@@ -327,7 +327,8 @@ class TimelineSimulator:
 
     def production_turn(self, user_text: str, assistant_text: str = "我在这里") -> dict:
         """Persist a real chat turn and call the same hooks as app.main."""
-        self.initialize_production() if not self._session_exists() else None
+        if not self._session_exists():
+            self.initialize_production()
         user_id, assistant_id = db.new_id(), db.new_id()
         conn = db.connect()
         try:

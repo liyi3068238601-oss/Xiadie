@@ -73,8 +73,7 @@
   自然召回、远传策略、一次性授权、记忆隔离和生命周期均以 ADR-0036～ADR-0044 为准。
 - 对话上下文 CTX.0～CTX.7：`docs/CONVERSATION_CONTEXT_AND_SUMMARY_PLAN.md`。该计划已完成总验收并通过独立 strict review；
   schema 45 与上下文 v1 已冻结，普通自动历史召回继续 shadow。
-- 当前专项：`docs/EMOTION_RELATIONSHIP_AND_PROACTIVE_COMPANION_PLAN.md` 第 9.B 节 EAP.R0～EAP.R6。Schema 48～60 与真实候选、决策、表达、投递、反馈和用户控制闭环已施工，
-  R6 正等待独立 strict review；不得另建重复情绪状态源，也不得在 review 前宣称协议冻结。
+- 已关闭专项：`docs/EMOTION_RELATIONSHIP_AND_PROACTIVE_COMPANION_PLAN.md` 第 9.B 节 EAP.R0～EAP.R6。Schema 48～60 与六个 EAP 协议已通过独立 strict review 并正式冻结；不得另建重复情绪、关系或主动投递源。
 
 ---
 
@@ -377,5 +376,5 @@ node --check preload.js
 
 `docs/EMOTION_RELATIONSHIP_AND_PROACTIVE_COMPANION_PLAN.md`
 
-该专项只执行第 9.B 节 EAP.R0～EAP.R6；EAP.A～EAP.J 是历史计划，不再代表当前完成度。Schema 48～60 不回写；当前 R0～R6 已施工，下一动作是 R6 独立 strict review，不是 LIFE/KIG 施工。真实输出受后端最终授权复核、系统恢复保护窗与 at-most-once 状态机约束。
-Level 5 外部渠道保持硬禁用。只有 R6 review 确认 0 个未解决 P0/P1 并正式冻结后，才以项目外 LIFE/KIG 原版为依据规划下一专项和 schema；仓库内不放置副本。
+该专项只执行第 9.B 节 EAP.R0～EAP.R6；EAP.A～EAP.J 是历史计划，不再代表当前完成度。Schema 48～60 不回写；R6 strict review 已确认 0 个 P0/P1，六个协议与 Schema 60 已冻结。真实输出继续受后端最终授权复核、系统恢复保护窗与 at-most-once 状态机约束。
+Level 5 外部渠道保持硬禁用。后续统一按项目外计划执行 `CDS → LIFE → KIG`；下一可用 schema 当前为 61，由 CDS 首个确需迁移的阶段占用，LIFE/KIG 均使用前序专项结束后的下一个版本。仓库内不放置这些计划副本。
