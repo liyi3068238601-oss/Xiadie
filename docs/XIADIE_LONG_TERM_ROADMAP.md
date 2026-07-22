@@ -1042,3 +1042,4 @@ v2.0 的最终成功标准：普通用户能够把一个真实、复杂、跨资
 | 2026-07-20 | CTX.7 独立 strict review 通过并正式关闭专项 | 审查确认 0 个未解决 P0/P1；shadow 与 Provider token 校准保留为独立后续工作，摘要不得直接写长期记忆。下一专项转向情绪、关系积温与主动陪伴。 |
 | 2026-07-22 | EAP v0.2 完成度审计并重开收口 | Schema 48～55、领域模块和测试已落地，但只有 Presence hook 接入主链；真实编排、投递、反馈、设置硬边界和关系意义应用未闭环。改以 EAP.R0～R6 为唯一入口，LIFE 延后到 EAP 正式冻结之后。 |
 | 2026-07-22 | EAP.R4 本机投递安全闭环 | Schema 59 建立唯一 Delivery/attempt/event 账本；Level 0～4 接入后端最终门禁与 Electron，本机真实投递显式实验开启且默认关闭，Level 5 硬禁用。下一阶段为 R5 反馈、历史与用户控制。 |
+| 2026-07-22 | EAP.R5 反馈控制闭环与 R6 生产总验收施工 | Schema 60 完成 grounded feedback、历史与清除；生产模拟覆盖 15 分钟至 30 天及休眠、回拨、断网、Provider、崩溃、busy，新增 Windows resume 保护。协议保持 IMPLEMENTED，停线等待 R6 strict review；通过前不启动 LIFE/KIG。 |

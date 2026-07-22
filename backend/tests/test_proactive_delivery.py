@@ -147,6 +147,8 @@ def test_level3_message_commit_is_atomic_and_unique(monkeypatch):
             (session_id, queued["id"]),
         ).fetchall()
         assert len(row) == 1 and row[0]["role"] == "assistant"
+        assert row[0]["content"] == "路过来看看你。你忙你的，有空再聊。"
+        assert "light check-in" not in row[0]["content"]
         assert conn.execute("SELECT COUNT(*) FROM proactive_delivery_attempts").fetchone()[0] == 1
     finally:
         conn.close()

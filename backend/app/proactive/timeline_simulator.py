@@ -2,7 +2,7 @@
 
 按 spec 第 14 节四类验收场景要求，本模块提供确定性时间线模拟器，
 用于长期场景测试（15 分钟~30 天）。模拟器封装一组工具，按确定性时间线推进
-（不依赖 wall clock），调度 presence/episode/decision/intensity/expression 各模块。
+（不依赖 wall clock），并可驱动真实 orchestrator/delivery/feedback 生产路径。
 
 关键设计：
 - 使用受控时间（不依赖 time.time()），通过 unittest.mock.patch 控制 db.now()
@@ -11,22 +11,25 @@
 - 记录所有决策、强度计划、表达计划用于审计
 - 不实际调用 LLM（测试中使用 None 或 mock llm_advice）
 
-模块隔离：本模块只导入 db/proactive 子包，不接入 main.py。
-本阶段不新建 migration（无新表），schema_version 保持 55。
+模块隔离：本模块不接入 main.py，但调用与主应用相同的生产 repository 和 reducer。
+旧的纯领域辅助方法只为兼容既有场景保留；R6 验收必须使用 production_* 方法。
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 from unittest.mock import patch
 
 from .. import db
 from . import candidates as candidates_mod
 from . import decision as decision_mod
+from . import delivery as delivery_mod
 from . import episodes as episodes_mod
 from . import expression as expression_mod
+from . import feedback as feedback_mod
 from . import intensity as intensity_mod
+from . import orchestrator as orchestrator_mod
 from . import presence as presence_mod
-from . import relationship as relationship_mod
+from . import settings as settings_mod
 
 
 # 场景时长常量（spec 第 14 节）
@@ -81,9 +84,24 @@ def _cleanup_session(session_id: str) -> None:
     conn = db.connect()
     try:
         # 按外键依赖顺序清理
+        conn.execute(
+            "DELETE FROM proactive_preference_weights WHERE source_feedback_id IN "
+            "(SELECT id FROM proactive_feedback WHERE session_id=?)", (session_id,),
+        )
+        conn.execute("DELETE FROM proactive_feedback WHERE session_id=?", (session_id,))
+        conn.execute("DELETE FROM proactive_deliveries WHERE session_id=?", (session_id,))
         conn.execute("DELETE FROM expression_plans WHERE session_id=?", (session_id,))
         conn.execute("DELETE FROM proactive_intensity_plans WHERE session_id=?", (session_id,))
         conn.execute("DELETE FROM proactive_decisions WHERE session_id=?", (session_id,))
+        conn.execute(
+            "DELETE FROM proactive_candidate_claims WHERE candidate_id IN "
+            "(SELECT id FROM proactive_candidates WHERE session_id=?)", (session_id,),
+        )
+        conn.execute(
+            "DELETE FROM proactive_runtime_sagas WHERE candidate_id IN "
+            "(SELECT id FROM proactive_candidates WHERE session_id=?)", (session_id,),
+        )
+        conn.execute("DELETE FROM proactive_runtime_sources WHERE session_id=?", (session_id,))
         conn.execute("DELETE FROM proactive_candidates WHERE session_id=?", (session_id,))
         conn.execute("DELETE FROM conversation_presence WHERE session_id=?", (session_id,))
         conn.execute("DELETE FROM contact_episodes WHERE session_id=?", (session_id,))
@@ -141,6 +159,8 @@ class TimelineSimulator:
         self._candidates: list = []  # ProactiveCandidate 对象列表
         self._candidate_ids: list = []
         self._presence_records: list = []
+        self._production_message_ids: list[str] = []
+        self._production_feedback: list[dict] = []
         self._db_now_patcher = None
         self._mocking_active = False
 
@@ -279,6 +299,187 @@ class TimelineSimulator:
         )
         return record
 
+    # ---------- R6 生产路径驱动 ----------
+
+    def initialize_production(self, *, delivery_enabled: bool = True) -> None:
+        """Create the session and configure controls through production setting APIs."""
+        db.init_db()
+        conn = db.connect()
+        try:
+            exists = conn.execute(
+                "SELECT 1 FROM sessions WHERE id=?", (self.session_id,),
+            ).fetchone()
+        finally:
+            conn.close()
+        if not exists:
+            _setup_session(self.session_id)
+        for key, value in (
+            ("proactive_enabled", "1"),
+            ("proactive_local_delivery_enabled", "1" if delivery_enabled else "0"),
+            ("proactive_desktop_notification_enabled", "0"),
+            ("proactive_quiet_hours_start", "0"),
+            ("proactive_quiet_hours_end", "0"),
+            ("proactive_pause_until", ""),
+        ):
+            settings_mod.write_public_setting(key, value)
+        db.set_setting("proactive_emergency_stop", "0")
+        db.set_setting("proactive_last_reliable_now", "0")
+
+    def production_turn(self, user_text: str, assistant_text: str = "我在这里") -> dict:
+        """Persist a real chat turn and call the same hooks as app.main."""
+        self.initialize_production() if not self._session_exists() else None
+        user_id, assistant_id = db.new_id(), db.new_id()
+        conn = db.connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            conn.execute(
+                "INSERT INTO messages(id,session_id,role,content,created_at) VALUES(?,?,?,?,?)",
+                (user_id, self.session_id, "user", user_text, self._current_time),
+            )
+            conn.execute(
+                "INSERT INTO messages(id,session_id,role,content,created_at) VALUES(?,?,?,?,?)",
+                (assistant_id, self.session_id, "assistant", assistant_text, self._current_time),
+            )
+            conn.execute(
+                "UPDATE sessions SET updated_at=? WHERE id=?",
+                (self._current_time, self.session_id),
+            )
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+        orchestrator_mod.handle_user_message(self.session_id, now=self._current_time)
+        inferred = feedback_mod.capture_natural_feedback(
+            self.session_id, user_id, user_text, now=self._current_time,
+        )
+        if inferred:
+            self._production_feedback.append(inferred)
+        signal = presence_mod.detect_presence_signals(user_text)
+        presence_mod.update_presence(
+            self.session_id, signal, source_message_id=user_id,
+            detected_at=self._current_time,
+        )
+        queued = orchestrator_mod.enqueue_after_chat(
+            session_id=self.session_id, user_message_id=user_id,
+            assistant_message_id=assistant_id, now=self._current_time,
+        )
+        self._production_message_ids.extend((user_id, assistant_id))
+        self._record_event(
+            "production_turn",
+            {"user_message_id": user_id, "assistant_message_id": assistant_id,
+             "queued_source_ids": [item["id"] for item in queued]},
+            description="真实聊天 hook 已执行",
+        )
+        return {"user_message_id": user_id, "assistant_message_id": assistant_id,
+                "sources": queued, "feedback": inferred}
+
+    def _session_exists(self) -> bool:
+        conn = db.connect()
+        try:
+            return conn.execute(
+                "SELECT 1 FROM sessions WHERE id=?", (self.session_id,),
+            ).fetchone() is not None
+        finally:
+            conn.close()
+
+    def run_production_cycle(self, *, level: Optional[int] = None) -> int:
+        """Drive expiry, decay and the real recoverable orchestrator."""
+        presence_mod.expire_stale_presences(now=self._current_time)
+        episodes_mod.expire_episodes(now=self._current_time)
+        episodes_mod.decay_all_pressures(now=self._current_time)
+        level_patch = (
+            patch.object(intensity_mod, "select_minimum_sufficient_level", return_value=level)
+            if level is not None else None
+        )
+        if level_patch:
+            level_patch.start()
+        try:
+            processed = orchestrator_mod.process_due(
+                now=self._current_time, worker_id=f"timeline-{self.session_id}",
+            )
+        finally:
+            if level_patch:
+                level_patch.stop()
+        self._record_event(
+            "production_cycle", {"processed": processed},
+            description="生产 orchestrator 周期",
+        )
+        return processed
+
+    def consume_production_deliveries(self, consumer_id: str = "timeline") -> list[dict]:
+        """Consume confirmed local deliveries through claim/begin/ack."""
+        completed: list[dict] = []
+        while True:
+            claimed = delivery_mod.claim_next(consumer_id, now=self._current_time)
+            if not claimed:
+                break
+            begun = delivery_mod.begin_delivery(
+                claimed["id"], consumer_id, claimed["lease_token"], now=self._current_time,
+            )
+            if begun["status"] == "delivering":
+                begun = delivery_mod.acknowledge_delivery(
+                    begun["id"], consumer_id, begun["lease_token"],
+                    success=True, now=self._current_time,
+                )
+            completed.append(begun)
+        self._record_event(
+            "production_delivery", {"delivery_ids": [item["id"] for item in completed]},
+            description="生产 Delivery 消费",
+        )
+        return completed
+
+    def production_feedback(self, delivery_id: str, feedback_kind: str) -> dict:
+        item = feedback_mod.create_feedback(
+            delivery_id, feedback_kind, request_nonce=db.new_id(), now=self._current_time,
+        )
+        self._production_feedback.append(item)
+        self._record_event(
+            "production_feedback", {"feedback_id": item["id"], "kind": feedback_kind},
+            description="grounded feedback 已应用",
+        )
+        return item
+
+    def production_metrics(self) -> dict:
+        """Return body-free release metrics calculated from production ledgers."""
+        conn = db.connect()
+        try:
+            visible = conn.execute(
+                "SELECT COUNT(*) FROM proactive_deliveries WHERE session_id=? "
+                "AND level>0 AND status='delivered'", (self.session_id,),
+            ).fetchone()[0]
+            traced = conn.execute(
+                "SELECT COUNT(*) FROM proactive_deliveries d "
+                "JOIN proactive_decisions pd ON pd.id=d.decision_id "
+                "JOIN proactive_candidates c ON c.id=d.candidate_id "
+                "WHERE d.session_id=? AND d.level>0 AND d.status='delivered'",
+                (self.session_id,),
+            ).fetchone()[0]
+            duplicates = conn.execute(
+                "SELECT COUNT(*) FROM (SELECT decision_id FROM proactive_deliveries "
+                "WHERE session_id=? GROUP BY decision_id HAVING COUNT(*)>1)",
+                (self.session_id,),
+            ).fetchone()[0]
+            level5 = conn.execute(
+                "SELECT COUNT(*) FROM proactive_deliveries WHERE session_id=? AND level=5",
+                (self.session_id,),
+            ).fetchone()[0]
+            orphan_sources = conn.execute(
+                "SELECT COUNT(*) FROM proactive_candidates c LEFT JOIN proactive_runtime_sources s "
+                "ON s.id=c.runtime_source_id WHERE c.session_id=? AND s.id IS NULL",
+                (self.session_id,),
+            ).fetchone()[0]
+        finally:
+            conn.close()
+        return {
+            "visible_deliveries": visible,
+            "traceability_rate": 1.0 if visible == 0 else traced / visible,
+            "duplicate_delivery_count": duplicates,
+            "level5_delivery_count": level5,
+            "orphan_source_count": orphan_sources,
+        }
+
     def user_responds(
         self, response_type: str, *,
         delay: float = 0,
@@ -344,6 +545,7 @@ class TimelineSimulator:
             self.session_id, signal, detected_at=self._current_time,
         )
         self._presence_records.append(record)
+        settings_mod.mark_system_resume(now=self._current_time)
         self._record_event('wake', {}, description='用户醒来')
         return record
 
@@ -379,8 +581,13 @@ class TimelineSimulator:
         """
         if delay > 0:
             self.advance(delay)
+        delivery_changes = delivery_mod.recover_stale(now=self._current_time)
+        processed = orchestrator_mod.process_due(
+            now=self._current_time, worker_id=f"recovery-{self.session_id}",
+        )
         self._record_event(
-            'crash_recovery', {}, description='应用崩溃恢复',
+            'crash_recovery', {"delivery_changes": delivery_changes, "processed": processed},
+            description='应用崩溃恢复',
         )
 
     def simulate_network_disconnect(
@@ -388,8 +595,8 @@ class TimelineSimulator:
     ):
         """模拟网络断开。
 
-        网络断开期间决策可计算但投递应被阻断。
-        本方法只记录事件，实际阻断逻辑由调用方/测试验证。
+        EAP v1 只有本机通道，因此断网不应破坏本机决策与投递；任何
+        需要网络的观察 Provider 失败都由其独立 worker 保守降级。
         """
         if delay > 0:
             self.advance(delay)

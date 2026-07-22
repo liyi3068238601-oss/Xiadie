@@ -1028,6 +1028,11 @@ def reset_proactive_settings() -> dict:
     return {"settings": values, "revision": revision}
 
 
+@app.post("/api/proactive/runtime/system-resume")
+def notify_proactive_system_resume() -> dict:
+    return {"guard_until": proactive_settings.mark_system_resume()}
+
+
 @app.post("/api/companion-state/reset")
 def reset_companion_state() -> dict:
     return companion_state.reset_state()

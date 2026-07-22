@@ -1,7 +1,9 @@
 // 遐蝶桌面壳（需求第 3、10 节）：
 // 默认只显示 Live2D 桌宠窗口；点击桌宠打开主窗口；系统托盘常驻。
 // 不做启动多窗口堆叠。
-const { app, BrowserWindow, Tray, Menu, ipcMain, screen, shell, Notification } = require("electron");
+const {
+  app, BrowserWindow, Tray, Menu, ipcMain, screen, shell, Notification, powerMonitor,
+} = require("electron");
 const path = require("path");
 const { fileURLToPath } = require("url");
 const { spawn } = require("child_process");
@@ -393,6 +395,12 @@ ipcMain.on("proactive-delivery-ack", (event, payload) => {
 app.whenReady().then(() => {
   startBackend();
   createTray();
+  powerMonitor.on("suspend", () => stopDeliveryBridge());
+  powerMonitor.on("resume", () => {
+    void backendJson("POST", "/api/proactive/runtime/system-resume")
+      .catch((error) => console.warn("proactive resume guard unavailable:", error.message))
+      .finally(() => startDeliveryBridge());
+  });
   if (isDev) {
     createPetWindow();
     startDeliveryBridge();

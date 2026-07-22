@@ -44,9 +44,11 @@ def test_registry_tracks_implemented_runtime_and_feedback_protocols():
     affect = protocols.get_protocol(protocols.USER_AFFECT_OBSERVATION_V1)
     relationship = protocols.get_protocol(protocols.RELATIONSHIP_MEANING_V1)
     feedback = protocols.get_protocol(protocols.PROACTIVE_FEEDBACK_V1)
+    expression = protocols.get_protocol(protocols.EXPRESSION_PLAN_V1)
     assert affect.status is protocols.ProtocolStatus.IMPLEMENTED
     assert relationship.status is protocols.ProtocolStatus.IMPLEMENTED
     assert feedback.status is protocols.ProtocolStatus.IMPLEMENTED
+    assert expression.status is protocols.ProtocolStatus.IMPLEMENTED
     assert callable(affect.validator)
     assert callable(relationship.validator)
     assert callable(feedback.validator)

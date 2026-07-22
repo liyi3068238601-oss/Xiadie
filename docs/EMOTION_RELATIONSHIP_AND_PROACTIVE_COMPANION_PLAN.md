@@ -2,7 +2,7 @@
 
 - 版本：v0.3（完成度审计与收口补完版）
 - 日期：2026-07-22
-- 状态：EAP.R0～EAP.R5 已施工；R5 等待独立 Review，正式冻结仍需 EAP.R6
+- 状态：EAP.R0～EAP.R6 已施工；R6 等待独立 strict Review，协议与 Schema 60 尚未冻结
 - 专项代号：`EAP`（Emotion, Attachment and Proactivity）
 - 前置条件：CTX.0～CTX.7 已冻结；现有 Affect/Relationship 阶段 0～4.1 已完成
 - 执行规则：每个阶段均须完成代码、测试、文档、阶段 Review 和本地 Git 提交；未解决 P0/P1 时不得进入下一阶段
@@ -1751,7 +1751,7 @@ R4 施工记录（2026-07-22）：`[x]` 已完成并通过独立 Review（78/78�
 
 完成门：用户所有可见控制均有后端语义；“暂停”“别再提”“太频繁”在下一次评估前生效；历史和清除功能不再显示“开发中”。
 
-R5 施工记录（2026-07-22）：`[x]` 已完成，等待独立 Review。Schema 60 新增 grounded feedback、偏好权重与反馈事件账本；六类显式反馈都绑定唯一已确认 Delivery，并定向映射到 Episode pressure、topic/kind contact cost 或 expression act，绝不修改 bond/trust。确定性高精度逐字表达可直接应用，模糊表达只进入待确认。成功投递在同一事务记录接近压力；历史与诊断 API 仅返回自然原因、状态、ID、门控与协议字段，不暴露 payload、正文、hash、lease 或裸分数。设置页已接入历史反馈、低置信确认、隐私化诊断、带确认的选择性清除及单 API 原子重置；清除保留聊天、记忆、关系和 LIFE 数据，明确偏好继续保留。R4 Review 收尾同时补齐 Level 4 精确错误、1～30 秒空闲退避和 10 秒通知超时。专项后端回归 `28 passed`，后端全量 `917 passed, 1 warning`，改动范围 Ruff 通过；前端 `41 passed`，TypeScript/Vite production build（185 modules）通过；Electron `main.js`/`preload.js` 语法检查通过。真实 Electron UI 流程已验证主动陪伴 Tab、Schema 60 隐私化诊断和清除前确认框，并取消清除，未删除测试数据。
+R5 施工记录（2026-07-22）：`[x]` 已完成并通过独立 Review（0 个 P1，3 个 P2 建议）。Schema 60 新增 grounded feedback、偏好权重与反馈事件账本；六类显式反馈都绑定唯一已确认 Delivery，并定向映射到 Episode pressure、topic/kind contact cost 或 expression act，绝不修改 bond/trust。确定性高精度逐字表达可直接应用，模糊表达只进入待确认。成功投递在同一事务记录接近压力；历史与诊断 API 仅返回自然原因、状态、ID、门控与协议字段，不暴露 payload、正文、hash、lease 或裸分数。设置页已接入历史反馈、低置信确认、隐私化诊断、带确认的选择性清除及单 API 原子重置；清除保留聊天、记忆、关系和 LIFE 数据，明确偏好继续保留。Review 中采纳死设置清理，并额外消除历史查询 N+1；不采纳“无 Delivery 仍捕获自然反馈”“历史泄露 payload/hash”和 `_claim_source` 旧行三项与当前代码不符的判断。
 
 建议提交：`feat(eap): close proactive feedback and user control loop`
 
@@ -1759,16 +1759,16 @@ R5 施工记录（2026-07-22）：`[x]` 已完成，等待独立 Review。Schema
 
 目标：只在真实生产路径满足完成定义后关闭专项。
 
-- [ ] 重构现有 `timeline_simulator.py`，让它驱动生产 reducer、orchestrator、decision、delivery 和 feedback repository，而不是测试专用旁路。
-- [ ] 覆盖 15 分钟、8 小时、24 小时、3 天、30 天；覆盖时区变化、时钟回拨、Windows 休眠/唤醒、断网、Provider 失败、应用崩溃和数据库忙。
-- [ ] 覆盖积极回应、连续忽略、明确拒绝、关闭、暂停、类型关闭、话题拒绝、表达修复和重新授权。
-- [ ] 完成第 14 节全部验收场景；对无法自动判断的自然度样本保存人工评分记录。
-- [ ] 后端全量测试、前端测试、TypeScript、Vite build、Electron 脚本和 Windows 安装版 smoke test 全部通过。
-- [ ] 验证真实聊天仍可在 EAP worker、Provider、通知或 Live2D 失败时正常完成。
-- [ ] 验证普通聊天 bond 机械增长率为 0，用户沉默导致 bond/trust 下降率为 0。
-- [ ] 验证关闭/暂停/拒绝后的违规投递率为 0，重复投递率为 0，来源可追溯率为 100%。
+- [x] 重构现有 `timeline_simulator.py`，让它驱动生产 reducer、orchestrator、decision、delivery 和 feedback repository，而不是测试专用旁路。
+- [x] 覆盖 15 分钟、8 小时、24 小时、3 天、30 天；覆盖时区变化、时钟回拨、Windows 休眠/唤醒、断网、Provider 失败、应用崩溃和数据库忙。
+- [x] 覆盖积极回应、连续忽略、明确拒绝、关闭、暂停、类型关闭、话题拒绝、表达修复和重新授权。
+- [x] 完成第 14 节全部验收场景；对无法自动判断的自然度样本保存工程人工初评记录。
+- [x] 后端全量测试、前端测试、TypeScript、Vite build、Electron 脚本和 Windows 安装包资源/UI smoke test 全部通过。
+- [x] 验证真实聊天仍可在 EAP worker、Provider、通知或 Live2D 失败时正常完成。
+- [x] 验证普通聊天 bond 机械增长率为 0，用户沉默导致 bond/trust 下降率为 0。
+- [x] 验证关闭/暂停/拒绝后的违规投递率为 0，重复投递率为 0，来源可追溯率为 100%。
 - [ ] 完成独立 strict Review，确认 0 个未解决 P0/P1。
-- [ ] 更新本计划、基线、项目上下文、README、长期路线、用户说明和 LIFE/KIG 前置条件。
+- [x] 更新本计划、基线、项目上下文、README、长期路线、用户说明和 LIFE/KIG 前置条件；项目外两份原版保持不动。
 - [ ] 只有此时才能把实际完成的协议、策略和最后一个 EAP schema 标记为 FROZEN。
 
 冻结前必须同时满足：
@@ -1787,6 +1787,8 @@ Level 5 外部渠道投递                        = 0
 ```
 
 建议提交：`feat(eap): complete review and freeze proactive companion runtime`
+
+R6 施工记录（2026-07-22）：生产模拟器已改走真实消息、Presence、source、orchestrator、decision、intensity、expression、Delivery 和 feedback repository；长期与失败矩阵、指标和第 14 节映射见 `docs/reports/eap-r6-production-acceptance.md`。新增持久化时钟回拨保护，以及 Electron `powerMonitor` 驱动的系统恢复保护窗，防止休眠唤醒后到期任务瞬发。主聊天已验证在 EAP hook 与观察 Provider 失败时正常完成；通知/Live2D 失败只终结对应 Delivery。自然度抽样发现并修复内部英文 topic 进入用户载荷的问题。门禁为后端 `937 passed, 1 warning`、前端 `41 passed`、TypeScript/Vite production build（188 modules）、改动范围 Ruff 与 Electron 脚本通过；Windows 重新生成 564,038,879 bytes NSIS，release resource verification 与真实 Electron 桌宠/主窗口/主动设置页 smoke 通过。端口 8756 存在健康但无可见 PID 的监听者，未强杀、未自动执行安装向导。当前协议仍为 `IMPLEMENTED`、Schema 60 仍为未冻结；本阶段提交后停线等待独立 strict Review。
 
 ### 9.B.3 收口施工顺序与停线规则
 

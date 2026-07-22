@@ -274,17 +274,24 @@ def list_history(limit: int = 50) -> list[dict]:
             "JOIN proactive_decisions pd ON pd.id=d.decision_id "
             "ORDER BY d.created_at DESC LIMIT ?", (max(1, min(limit, 200)),),
         ).fetchall()
+        feedback_by_delivery: dict[str, list[dict]] = {}
+        if deliveries:
+            placeholders = ",".join("?" for _ in deliveries)
+            rows = conn.execute(
+                "SELECT id,delivery_id,feedback_kind,source,status,evidence_quote,created_at "
+                f"FROM proactive_feedback WHERE delivery_id IN ({placeholders}) "
+                "ORDER BY created_at",
+                tuple(row["id"] for row in deliveries),
+            ).fetchall()
+            for row in rows:
+                feedback_by_delivery.setdefault(row["delivery_id"], []).append(dict(row))
         result = []
         for delivery in deliveries:
             item = dict(delivery)
             item["natural_reason"] = NATURAL_REASONS.get(
                 item["candidate_kind"], "基于当前对话状态产生的一次克制接近"
             )
-            item["feedback"] = [dict(row) for row in conn.execute(
-                "SELECT id,delivery_id,feedback_kind,source,status,evidence_quote,created_at "
-                "FROM proactive_feedback WHERE delivery_id=? ORDER BY created_at",
-                (item["id"],),
-            ).fetchall()]
+            item["feedback"] = feedback_by_delivery.get(item["id"], [])
             result.append(item)
         return result
     finally:

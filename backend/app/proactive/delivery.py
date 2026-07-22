@@ -58,8 +58,22 @@ def _record_approach_locked(conn, episode_id: Optional[str], level: int, now: fl
     )
 
 
-def _payload(level, result, plan):
+def _visible_text(candidate_kind: str, topic: str) -> str:
+    topic = topic.strip()[:80]
+    templates = {
+        "casual_greeting": "路过来看看你。你忙你的，有空再聊。",
+        "emotional_care": "感觉你刚才有些不好受。我在这里，不急着回应。",
+        "return_followup": f"你之前提到「{topic}」，结果怎么样？不急，方便时再告诉我。",
+        "chat_continuation": f"刚才的「{topic}」还想继续聊聊。你有空时我再听。",
+        "milestone_followup": f"刚想起「{topic}」。有空时，想听听你现在的感受。",
+        "life_share": f"我想和你分享：{topic}",
+    }
+    return templates.get(candidate_kind, topic or "想来看看你。")[:240]
+
+
+def _payload(level, result, plan, candidate_kind):
     topic = (result.topic or "想来看看你").strip()[:240]
+    visible_text = _visible_text(candidate_kind, topic)
     if level == 1:
         return {"state": "remind", "action": plan.live2d_action or {
             "expression": "soft_smile", "motion": "lean_in"}}
@@ -67,9 +81,9 @@ def _payload(level, result, plan):
         return {"state": "remind", "bubble_text": (plan.bubble_text or "（轻轻看向你）")[:240],
                 "dismiss_after_ms": 5000}
     if level == 3:
-        return {"content": topic}
+        return {"content": visible_text}
     if level == 4:
-        return {"title": "遐蝶", "body": topic}
+        return {"title": "遐蝶", "body": visible_text}
     return {}
 
 
@@ -110,7 +124,7 @@ def enqueue_decision(decision_id: str, *, now: Optional[float] = None) -> dict:
         conn.close()
     policy, revision, auth_hash = _authorization(
         source["candidate_kind"], source["source_revision"], source["source_hash"], now)
-    payload = _payload(plan.level, result, plan)
+    payload = _payload(plan.level, result, plan, source["candidate_kind"])
     status, reason = "queued", None
     if plan.level == 0:
         status, reason = "suppressed", "decision_not_visible"

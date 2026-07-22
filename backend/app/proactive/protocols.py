@@ -71,7 +71,7 @@ def _validate_relationship(*args, **kwargs):
 PROTOCOL_REGISTRY = {
     CONVERSATION_PRESENCE_V2: ProtocolDefinition(
         CONVERSATION_PRESENCE_V2, 2, ProtocolStatus.IMPLEMENTED, None,
-        "Frozen eight-value user_status contract; incompatible changes require v3.",
+        "Stable eight-value user_status contract; incompatible changes require v3.",
     ),
     USER_AFFECT_OBSERVATION_V1: ProtocolDefinition(
         USER_AFFECT_OBSERVATION_V1, 1, ProtocolStatus.IMPLEMENTED, _validate_user_affect,
@@ -86,8 +86,8 @@ PROTOCOL_REGISTRY = {
         "Existing decision records remain authoritative; DecisionRun is an adapter target.",
     ),
     EXPRESSION_PLAN_V1: ProtocolDefinition(
-        EXPRESSION_PLAN_V1, 1, ProtocolStatus.DRAFT, None,
-        "No executable validator or repository until EAP.R4.",
+        EXPRESSION_PLAN_V1, 1, ProtocolStatus.IMPLEMENTED, None,
+        "Expression repository, intensity consumers, and local renderers are active since EAP.R4.",
     ),
     PROACTIVE_FEEDBACK_V1: ProtocolDefinition(
         PROACTIVE_FEEDBACK_V1, 1, ProtocolStatus.IMPLEMENTED, _validate_feedback,

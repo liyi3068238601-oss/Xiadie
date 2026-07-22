@@ -68,6 +68,16 @@ def _nonnegative_int(value: str) -> str:
     return str(parsed)
 
 
+def _nonnegative_float(value: str) -> str:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("must be a non-negative finite number") from exc
+    if parsed < 0 or parsed != parsed or parsed in {float("inf"), float("-inf")}:
+        raise ValueError("must be a non-negative finite number")
+    return str(parsed)
+
+
 @dataclass(frozen=True)
 class SettingSpec:
     default: str
@@ -90,8 +100,9 @@ SETTING_REGISTRY: dict[str, SettingSpec] = {
     "proactive_show_advanced_diagnostics": SettingSpec("0", _boolean),
     "proactive_rejected_topics": SettingSpec("", _csv, public=False),
     "proactive_rejected_kinds": SettingSpec("", _csv, public=False),
-    "proactive_rejected_expression_acts": SettingSpec("", _csv, public=False),
     "proactive_settings_revision": SettingSpec("0", _nonnegative_int, public=False),
+    "proactive_last_reliable_now": SettingSpec("0", _nonnegative_float, public=False),
+    "proactive_resume_guard_until": SettingSpec("0", _nonnegative_float, public=False),
     **{
         f"proactive_kind_{kind}_enabled": SettingSpec("1", _boolean)
         for kind in PROACTIVE_KINDS
@@ -177,7 +188,6 @@ def reset_public_settings() -> tuple[dict[str, str], int]:
     defaults.update({
         "proactive_rejected_topics": "",
         "proactive_rejected_kinds": "",
-        "proactive_rejected_expression_acts": "",
     })
     conn = db.connect()
     try:
@@ -237,6 +247,8 @@ def effective_policy(
     """Resolve hard boundaries; clock rollback and invalid pause values fail closed."""
     now = db.now() if now is None else now
     values = load_settings(overrides)
+    if last_seen_now is None:
+        last_seen_now = float(values["proactive_last_reliable_now"])
     reasons: list[str] = []
     if values["proactive_enabled"] != "1":
         reasons.append("proactive_disabled")
@@ -244,6 +256,8 @@ def effective_policy(
         reasons.append("emergency_stop")
     if last_seen_now is not None and now < last_seen_now:
         reasons.append("clock_rollback")
+    if now < float(values["proactive_resume_guard_until"]):
+        reasons.append("system_resume_guard")
     pause = values["proactive_pause_until"]
     if pause:
         try:
@@ -258,3 +272,63 @@ def effective_policy(
             reasons.append("candidate_kind_disabled")
     mode = values["proactive_frequency_mode"]
     return EffectivePolicy(values, tuple(reasons), FREQUENCY_COST_ADDITION[mode])
+
+
+def observe_reliable_clock(now: float) -> bool:
+    """Persist a monotonic wall-clock watermark; a rollback fails closed."""
+    conn = db.connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT value FROM settings WHERE key='proactive_last_reliable_now'"
+        ).fetchone()
+        try:
+            previous = float(row["value"] if row else 0)
+        except (TypeError, ValueError):
+            previous = now
+        if now < previous:
+            conn.commit()
+            return False
+        conn.execute(
+            "INSERT INTO settings(key,value) VALUES('proactive_last_reliable_now',?) "
+            "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            (str(float(now)),),
+        )
+        conn.commit()
+        return True
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def mark_system_resume(now: Optional[float] = None, *, grace_seconds: float = 300.0) -> float:
+    """Fail closed briefly after an OS resume so overdue work cannot burst out."""
+    now = db.now() if now is None else now
+    if grace_seconds < 0:
+        raise ValueError("grace_seconds must be non-negative")
+    guard_until = now + grace_seconds
+    conn = db.connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT value FROM settings WHERE key='proactive_resume_guard_until'"
+        ).fetchone()
+        try:
+            existing = float(row["value"] if row else 0)
+        except (TypeError, ValueError):
+            existing = 0
+        guard_until = max(existing, guard_until)
+        conn.execute(
+            "INSERT INTO settings(key,value) VALUES('proactive_resume_guard_until',?) "
+            "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            (str(float(guard_until)),),
+        )
+        conn.commit()
+        return guard_until
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()

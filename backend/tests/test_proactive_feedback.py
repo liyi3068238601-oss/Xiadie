@@ -36,8 +36,8 @@ def isolated_feedback_runtime():
         db.set_setting(key, value)
 
 
-def _delivered(monkeypatch, *, level=3):
-    now = db.now()
+def _delivered(monkeypatch, *, level=3, now=None):
+    now = db.now() if now is None else now
     session_id, user_id, assistant_id = db.new_id(), db.new_id(), db.new_id()
     conn = db.connect()
     try:
@@ -147,6 +147,16 @@ def test_vague_natural_feedback_waits_for_confirmation(monkeypatch):
     assert resolved["status"] == "applied"
 
 
+def test_natural_feedback_without_a_delivered_action_is_ignored():
+    assert feedback.capture_natural_feedback(
+        db.new_id(), db.new_id(), "有点烦",
+    ) is None
+
+
+def test_expression_rejection_uses_grounded_preferences_not_a_dead_setting_key():
+    assert "proactive_rejected_expression_acts" not in settings.SETTING_REGISTRY
+
+
 def test_rejected_topic_becomes_a_hard_boundary(monkeypatch):
     _, delivery_id, _ = _delivered(monkeypatch)
     feedback.create_feedback(delivery_id, "reject_topic", request_nonce="topic")
@@ -174,6 +184,27 @@ def test_history_and_diagnostics_do_not_expose_payload_scores_or_hashes(monkeypa
     assert "reason_codes" in diagnostic_json
     assert "confidence" not in history_json
     assert "policy_effect" not in history_json
+
+
+def test_history_batches_feedback_without_n_plus_one(monkeypatch):
+    start = db.now()
+    _delivered(monkeypatch, now=start)
+    _delivered(monkeypatch, now=start + 25 * 3600)
+    statements: list[str] = []
+    original_connect = db.connect
+
+    def tracked_connect():
+        conn = original_connect()
+        conn.set_trace_callback(statements.append)
+        return conn
+
+    monkeypatch.setattr(db, "connect", tracked_connect)
+    assert len(feedback.list_history()) == 2
+    feedback_selects = [
+        sql for sql in statements
+        if sql.lstrip().upper().startswith("SELECT") and "FROM proactive_feedback" in sql
+    ]
+    assert len(feedback_selects) == 1
 
 
 def test_atomic_reset_and_selective_clear_preserve_user_data(monkeypatch):

@@ -212,7 +212,7 @@ def test_auto_memory_creates_traceable_candidate_then_accepts():
 
 
 def test_sensitive_memory_never_enters_chat_digest():
-    from app import db, memory
+    from app import memory
 
     item = memory.create_memory(
         "L1",
@@ -567,7 +567,7 @@ def test_companion_state_changes_after_successful_chat_and_resets():
 
 
 def test_affect_timeline_is_deterministic_and_handles_one_night_and_seven_days():
-    from app.affect import engine
+    from app.affect import engine, repository
 
     initial = {
         "affect": dict(engine.DEFAULT_AFFECT),
@@ -597,6 +597,7 @@ def test_affect_timeline_is_deterministic_and_handles_one_night_and_seven_days()
     assert -1 <= week["affect"]["arousal"] <= 1
     assert -0.25 <= week["affect"]["guardedness_transient"] <= 0.25
 
+    repository.reset()
     ticked = client.post("/api/companion-state/tick", json={"minutes": 480}).json()
     assert ticked["affect"]["contact_need"] > 0.05
     assert client.post("/api/companion-state/tick", json={"minutes": 0}).status_code == 422
@@ -757,6 +758,40 @@ def test_observer_failure_does_not_break_chat_done_event(monkeypatch):
     run = next(item for item in runs if item["source_session_id"] == session["id"])
     assert run["status"] == "recovery_pending"
     assert run["result"] is None
+
+
+def test_proactive_runtime_hook_failures_do_not_break_chat_done_event(monkeypatch):
+    from app import llm
+    from app.proactive import orchestrator as proactive_orchestrator
+
+    async def fake_stream(*_args, **_kwargs):
+        yield "主聊天仍然正常完成"
+
+    def fail_hook(*_args, **_kwargs):
+        raise RuntimeError("proactive worker unavailable")
+
+    monkeypatch.setattr(llm, "stream_chat", fake_stream)
+    monkeypatch.setattr(proactive_orchestrator, "handle_user_message", fail_hook)
+    monkeypatch.setattr(proactive_orchestrator, "enqueue_after_chat", fail_hook)
+    session = client.post("/api/sessions", json={}).json()
+    with client.stream(
+        "POST", "/api/chat",
+        json={"session_id": session["id"], "content": "继续聊天"},
+    ) as response:
+        body = "".join(response.iter_text())
+    assert response.status_code == 200
+    assert "event: done" in body and "主聊天仍然正常完成" in body
+
+
+def test_system_resume_api_enables_a_fail_closed_guard():
+    from app.proactive import settings as proactive_settings
+
+    response = client.post("/api/proactive/runtime/system-resume")
+    assert response.status_code == 200
+    guard_until = response.json()["guard_until"]
+    assert guard_until > db.now()
+    assert "system_resume_guard" in proactive_settings.effective_policy().blocked_reasons
+    db.set_setting("proactive_resume_guard_until", "0")
 
 
 def test_observer_model_config_api_validates_dedicated_model():

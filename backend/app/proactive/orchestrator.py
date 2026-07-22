@@ -1,7 +1,7 @@
-"""Recoverable, shadow-only proactive runtime orchestration (EAP.R3).
+"""Recoverable proactive runtime orchestration (EAP.R3-R6).
 
-The orchestrator owns candidate creation and evaluation.  It never delivers a
-user-visible action; R4 is the only stage allowed to add a delivery ledger.
+The orchestrator owns candidate creation and evaluation. User-visible actions
+remain isolated behind the R4 delivery ledger and its final authorization gate.
 """
 from __future__ import annotations
 
@@ -89,7 +89,7 @@ def enqueue_after_chat(
                 session_id=session_id, source_kind=SOURCE_EXPECTED_RETURN,
                 source_ref_id=current.id, source_revision=snapshot[0], source_hash=snapshot[1],
                 payload={
-                    "topic": current.open_thread_topic or "unfinished conversation",
+                    "topic": current.open_thread_topic or "之前没聊完的事",
                     "open_thread": current.open_thread_topic,
                     "origin_type": episodes.OriginType.EXPECTED_RETURN,
                     "candidate_kind": candidates.CandidateKind.RETURN_FOLLOWUP,
@@ -105,7 +105,7 @@ def enqueue_after_chat(
             source_ref_id=assistant_message_id, source_revision=snapshot[0],
             source_hash=snapshot[1],
             payload={
-                "topic": "light check-in", "open_thread": None,
+                "topic": "轻量问候", "open_thread": None,
                 "origin_type": episodes.OriginType.LIFE_SHARE,
                 "candidate_kind": candidates.CandidateKind.CASUAL_GREETING,
             },
@@ -129,7 +129,7 @@ def enqueue_emotional_care(
         session_id=session_id, source_kind=SOURCE_EMOTIONAL_CARE,
         source_ref_id=run_id, source_revision=snapshot[0], source_hash=snapshot[1],
         payload={
-            "topic": "emotional care", "open_thread": None,
+            "topic": "情绪关怀", "open_thread": None,
             "origin_type": episodes.OriginType.EMOTIONAL_CARE,
             "candidate_kind": candidates.CandidateKind.EMOTIONAL_CARE,
         },
@@ -262,6 +262,12 @@ def process_due(*, now: Optional[float] = None, limit: int = 20, worker_id: Opti
     """Process local work; database-busy is conservative, programming errors propagate."""
     now = db.now() if now is None else now
     worker_id = worker_id or f"orchestrator-{db.new_id()}"
+    if not settings.observe_reliable_clock(now):
+        logger.warning("proactive_orchestrator_clock_rollback")
+        return 0
+    if "system_resume_guard" in settings.effective_policy(now=now).blocked_reasons:
+        logger.info("proactive_orchestrator_resume_guard")
+        return 0
     discover_memory_milestones(now=now)
     _recover(now)
     processed = 0
@@ -776,7 +782,7 @@ def _presence_snapshot(presence_id: str):
             return None
         value = dict(row)
         digest = _hash(value)
-        return digest, digest, row["open_thread_topic"] or "unfinished conversation"
+        return digest, digest, row["open_thread_topic"] or "之前没聊完的事"
     finally:
         conn.close()
 
@@ -799,7 +805,7 @@ def _cognition_snapshot(run_id: str):
         digest = compute_source_hash([dict(item) for item in messages])
         if digest != row["source_hash"]:
             return None
-        return row["source_revision"], row["source_hash"], "emotional care"
+        return row["source_revision"], row["source_hash"], "情绪关怀"
     finally:
         conn.close()
 
