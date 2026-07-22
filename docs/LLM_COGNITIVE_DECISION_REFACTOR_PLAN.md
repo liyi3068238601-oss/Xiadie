@@ -862,10 +862,10 @@ test(cognition): freeze decision baselines and evaluation corpus
 
 ### CDS.3：PresenceAndThreadObserver 兼容校准
 
-* [ ] 复核已冻结 EAP Presence 的聊天后异步路径、来源绑定与恢复语义，不重建 observer 或改写 v2。
-* [ ] 使用固定样本和至少 500 轮 Shadow 对照评估误判、漏判与线程连续性。
-* [ ] 如发现不兼容语义缺口，只提交新协议版本提案和迁移影响，不在 CDS 内直接修改冻结协议。
-* [ ] CDS 结果不得直接创建主动消息；真实候选与投递权继续归 EAP。
+* [x] 复核已冻结 EAP Presence 的聊天后异步路径、来源绑定与恢复语义，不重建 observer 或改写 v2。
+* [x] 使用固定样本和至少 500 轮 Shadow 对照评估误判、漏判与线程连续性。
+* [x] 如发现不兼容语义缺口，只提交新协议版本提案和迁移影响，不在 CDS 内直接修改冻结协议。
+* [x] CDS 结果不得直接创建主动消息；真实候选与投递权继续归 EAP。
 
 完成门：
 
@@ -874,6 +874,8 @@ test(cognition): freeze decision baselines and evaluation corpus
 “去测试一下”开放话题识别率  ≥ 95%
 未知沉默被写为拒绝率        = 0
 ```
+
+施工记录（2026-07-22）：CDS.2 strict review 以 0 P0/P1 通过；两项 P2 已采纳为明确 binding 策略版本和 5/30/15 秒角色 probe timeout，陈旧预算 reservation/终态历史也补齐恢复清理。CDS.3 注册最高仅 Shadow 的 `presence_thread_observer` 专属协议，EAP 仍是 v2 唯一写者、fallback owner 和 application owner。660 轮纯合成兼容集覆盖离开/返回线程连续性，完成门为 0%/100%/0%，message ID 绑定 100%；未调用真实 Provider，不声称模型质量已认证。发现的 expect-return、meta context 与 thread code 差异只形成未实施的 v3 提案。详见 ADR-0053 与 `docs/reports/cds-3-presence-thread-audit.md`。当前等待独立 review，未进入 CDS.4。
 
 ### CDS.4：RecallPlanner
 

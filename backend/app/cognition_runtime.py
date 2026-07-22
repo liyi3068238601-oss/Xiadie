@@ -16,6 +16,11 @@ from . import cognitive_decision as cds
 from . import db, llm
 
 PROBE_VERSION = "cognitive-structured-probe-v1"
+PROBE_TIMEOUT_SECONDS = {
+    "fast": 5.0,
+    "reasoning": 30.0,
+    "creative": 15.0,
+}
 
 
 class LogicalRole(str, Enum):
@@ -159,7 +164,7 @@ async def run_structured_probe(binding: ModelBinding, decision_kind: str) -> boo
     try:
         completion = await llm.complete_json(
             binding.provider, binding.model_id, messages,
-            timeout_seconds=cds.REGISTRY.get("protocol_probe").timeout_seconds,
+            timeout_seconds=PROBE_TIMEOUT_SECONDS[binding.logical_role.value],
         )
         result, repaired = cds._decode_result_once(  # noqa: SLF001 - exact shared parser probe
             completion["text"], cds.ProtocolProbeResult,
@@ -319,23 +324,6 @@ class CognitionBudgetGovernor:
             conn.close()
         return error is None, error
 
-    def mark_started(self, task_id: str) -> None:
-        self._started.add(task_id)
-
-    def complete(self, task_id: str, *, actual_tokens: int = 0,
-                 error_code: str | None = None, now: float | None = None) -> None:
-        self._started.discard(task_id)
-        conn = db.connect()
-        try:
-            conn.execute(
-                "UPDATE cognition_budget_events SET status='completed',actual_tokens=?,"
-                "error_code=?,completed_at=? WHERE task_id=? AND status='authorized'",
-                (max(0, int(actual_tokens)), error_code, db.now() if now is None else now, task_id),
-            )
-            conn.commit()
-        finally:
-            conn.close()
-
     def cancel_pending_for_user_message(self, *, now: float | None = None) -> list[str]:
         """Cancel only not-started low-priority diary/PWM/offline refinements."""
         conn = db.connect()
@@ -357,6 +345,45 @@ class CognitionBudgetGovernor:
         finally:
             conn.close()
 
+    def mark_started(self, task_id: str) -> None:
+        self._started.add(task_id)
+
+    def complete(self, task_id: str, *, actual_tokens: int = 0,
+                 error_code: str | None = None, now: float | None = None) -> None:
+        self._started.discard(task_id)
+        conn = db.connect()
+        try:
+            conn.execute(
+                "UPDATE cognition_budget_events SET status='completed',actual_tokens=?,"
+                "error_code=?,completed_at=? WHERE task_id=? AND status='authorized'",
+                (max(0, int(actual_tokens)), error_code, db.now() if now is None else now, task_id),
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+
+def recover_control_plane(*, now: float | None = None, stale_after_seconds: float = 3600,
+                          retention_seconds: float = 30 * 86400) -> dict[str, int]:
+    """Release crashed reservations and prune old terminal body-free events."""
+    now = db.now() if now is None else now
+    conn = db.connect()
+    try:
+        recovered = conn.execute(
+            "UPDATE cognition_budget_events SET status='cancelled',"
+            "error_code='runtime_recovered',completed_at=? "
+            "WHERE status='authorized' AND created_at<?",
+            (now, now - max(1.0, stale_after_seconds)),
+        ).rowcount
+        deleted = conn.execute(
+            "DELETE FROM cognition_budget_events WHERE status IN "
+            "('completed','rejected','cancelled') AND completed_at<?",
+            (now - max(1.0, retention_seconds),),
+        ).rowcount
+        conn.commit()
+        return {"recovered": recovered, "deleted": deleted}
+    finally:
+        conn.close()
 
 DEFAULT_GOVERNOR = CognitionBudgetGovernor()
 

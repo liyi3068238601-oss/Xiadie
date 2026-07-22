@@ -19,6 +19,7 @@ from .proactive import run_ledger
 PROTOCOL_VERSION = "cognitive-decision-v1"
 SNAPSHOT_VERSION = "decision-source-snapshot-v1"
 REGISTRY_VERSION = "decision-kind-registry-v1"
+MODEL_BINDING_POLICY_VERSION = "cognition-binding-v1"
 DIAGNOSTIC_TTL_SECONDS = 30 * 24 * 60 * 60
 MAX_RAW_OUTPUT_CHARS = 16_000
 _HEX64 = re.compile(r"^[0-9a-f]{64}$")
@@ -306,7 +307,7 @@ REGISTRY.register(DecisionKindDefinition(
     max_candidates=8,
     timeout_seconds=2.0,
     result_ttl_seconds=DIAGNOSTIC_TTL_SECONDS,
-    model_binding_revision="unbound-v1",
+    model_binding_revision=MODEL_BINDING_POLICY_VERSION,
     mode=DecisionMode.SHADOW,
     prompt_template_hash=_canonical_hash("cds-protocol-probe-v1"),
 ))

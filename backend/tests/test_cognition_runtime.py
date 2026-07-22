@@ -131,6 +131,23 @@ def test_structured_probe_is_synthetic_and_requires_exact_json(monkeypatch):
     assert runtime.get_certification(binding, "protocol_probe") is runtime.CertificationLevel.STRUCTURED_CAPABLE
 
 
+@pytest.mark.parametrize(
+    ("role", "expected_timeout"),
+    [(runtime.LogicalRole.FAST, 5.0), (runtime.LogicalRole.REASONING, 30.0),
+     (runtime.LogicalRole.CREATIVE, 15.0)],
+)
+def test_structured_probe_timeout_is_role_specific(monkeypatch, role, expected_timeout):
+    seen = []
+
+    async def complete(_provider, _model, _messages, **kwargs):
+        seen.append(kwargs["timeout_seconds"])
+        raise llm.LLMError("synthetic failure")
+
+    monkeypatch.setattr(llm, "complete_json", complete)
+    assert asyncio.run(runtime.run_structured_probe(_binding(role), "protocol_probe")) is False
+    assert seen == [expected_timeout]
+
+
 def test_circuit_is_per_decision_kind_and_recovers_after_cooldown():
     binding = _binding()
     for _ in range(3):
@@ -169,6 +186,23 @@ def test_governor_enforces_budget_environment_and_cancels_only_pending_backgroun
     finally:
         conn.close()
     assert states == {"pending": "cancelled", "running": "authorized", "normal": "authorized"}
+
+
+def test_control_plane_recovery_releases_stale_authorizations_and_prunes_terminal_rows():
+    governor = runtime.CognitionBudgetGovernor()
+    assert governor.authorize(
+        task_id="stale-auth", decision_kind="diary", role=runtime.LogicalRole.FAST,
+        location="local", priority=runtime.TaskPriority.BACKGROUND, estimated_tokens=1, now=100,
+    )[0]
+    assert governor.authorize(
+        task_id="old-terminal", decision_kind="diary", role=runtime.LogicalRole.FAST,
+        location="local", priority=runtime.TaskPriority.BACKGROUND, estimated_tokens=1, now=100,
+    )[0]
+    governor.complete("old-terminal", now=101)
+    result = runtime.recover_control_plane(
+        now=200, stale_after_seconds=50, retention_seconds=50,
+    )
+    assert result == {"recovered": 1, "deleted": 1}
 
 
 def test_provider_failure_returns_fallback_and_records_metrics(monkeypatch):

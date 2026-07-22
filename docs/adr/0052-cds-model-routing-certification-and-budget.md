@@ -1,6 +1,6 @@
 # ADR-0052：CDS 模型绑定认证、位置门禁与预算控制面
 
-- 状态：Accepted，等待 CDS.2 独立 Review
+- 状态：Accepted；CDS.2 strict review 已通过（0 P0/P1）
 - 日期：2026-07-22
 - 关联：CDS.2、ADR-0051、`cognitive-decision-v1`
 

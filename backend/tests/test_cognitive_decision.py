@@ -113,6 +113,7 @@ def test_registry_uses_kind_specific_schemas_and_rejects_duplicates():
     assert definition.input_type is cds.ProtocolProbeInput
     assert definition.result_type is cds.ProtocolProbeResult
     assert len(definition.input_schema_hash) == len(definition.output_schema_hash) == 64
+    assert definition.model_binding_revision == cds.MODEL_BINDING_POLICY_VERSION
     with pytest.raises(cds.DecisionProtocolError, match="already registered"):
         cds.REGISTRY.register(definition)
 

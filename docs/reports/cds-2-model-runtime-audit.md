@@ -2,7 +2,7 @@
 
 > 日期：2026-07-22  
 > 基线：`c14555b`（CDS.1）  
-> 状态：CDS.2 施工完成，等待独立 review；未进入 CDS.3。
+> 状态：CDS.2 strict review 已通过（0 P0/P1）；已进入 CDS.3。
 
 ## 1. CDS.1 strict review 处置
 

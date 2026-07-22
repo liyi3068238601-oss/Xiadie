@@ -23,9 +23,11 @@ from . import (
     episode_summary_service, episodes, knowledge, knowledge_cleanup, knowledge_context,
     knowledge_embeddings, knowledge_grants,
     knowledge_management, knowledge_parser, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search,
-    knowledge_worker, llm, lore, memory, memory_conflicts, saga_consolidator, saga_lifecycle, saga_summary,
+    knowledge_worker, llm, lore, memory, memory_conflicts,
+    saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, secret_store, slow_lifecycle,
 )
+from . import presence_thread_shadow  # noqa: F401 - registers CDS.3 Shadow contract
 from . import memory_observer_service
 from .affect import observer_service as affect_observer_service
 from .proactive import presence as proactive_presence
@@ -65,6 +67,7 @@ def cleanup_orphan_attachments(max_age_seconds: float = 3600) -> int:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db.init_db()
+    cognition_runtime.recover_control_plane()
     # 启动时清理上一次运行遗留的孤儿附件（message_id IS NULL 且超过 1 小时）
     cleanup_orphan_attachments()
     conversation_summaries.recover_stale_runs()

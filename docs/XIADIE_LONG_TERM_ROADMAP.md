@@ -1048,3 +1048,4 @@ v2.0 的最终成功标准：普通用户能够把一个真实、复杂、跨资
 | 2026-07-22 | CDS.0 离线基线施工完成，等待 review | PR #1 已合并；以 `6b8aa47134f8a9a55131c73bb1148e6912421c4f`、Schema 60 和 `937 passed, 1 warning` 为 ConstructionBaseline，冻结六条旧算法轨道并建立 300 个纯合成场景。未改变聊天行为或占用 Schema 61，review 通过前不进入 CDS.1。 |
 | 2026-07-22 | CDS.0 review 通过并完成 CDS.1 共享运行时施工 | CDS.0 strict review 确认 0 P0/P1；CDS.1 以 Schema 61 扩展唯一 `decision_runs`，实现 `cognitive-decision-v1`、专属 Schema 注册、候选白名单、多来源复核、三模式、一次 JSON 修复、公共事件与无正文诊断。当前仅合成 probe Shadow，等待 CDS.1 review。 |
 | 2026-07-22 | CDS.1 review 通过并完成 CDS.2 模型运行时施工 | CDS.1 strict review 确认 0 P0/P1；Schema 62 实现逻辑角色路由、位置 fail-closed、binding 认证、合成 structured probe、per-kind 超时/熔断、统一 fallback 与预算/取消控制面。当前仍仅合成 probe Shadow，等待 CDS.2 review。 |
+| 2026-07-22 | CDS.2 review 通过并完成 CDS.3 Presence/Thread 校准 | CDS.2 strict review 确认 0 P0/P1；采纳 binding 版本、角色 probe timeout 与预算清理建议。新增只读 Shadow 协议和 660 轮纯合成评测，三项门为 0%/100%/0%；EAP v2 未修改，语义差异仅形成 v3 提案，等待 CDS.3 review。 |
