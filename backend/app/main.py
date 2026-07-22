@@ -16,7 +16,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from . import (
-    archivist, archivist_worker, companion_state, context_assembler, context_budget,
+    archivist, archivist_worker, cognitive_decision, companion_state, context_assembler, context_budget,
     context_controls, context_diagnostics, conversation_summaries,
     conversation_summary_service, db,
     entities, episode_consolidator, history_recall,
@@ -1015,6 +1015,12 @@ def resolve_proactive_feedback(feedback_id: str, body: ProactiveFeedbackResolveI
 @app.get("/api/proactive/diagnostics")
 def proactive_diagnostics(limit: int = 100) -> dict:
     return proactive_feedback.diagnostics(limit)
+
+
+@app.get("/api/cognition/diagnostics")
+def cognition_diagnostics(decision_kind: str | None = None, limit: int = 50) -> dict:
+    """Read-only CDS diagnostics with a strict body-free field allowlist."""
+    return cognitive_decision.diagnostics(decision_kind=decision_kind, limit=limit)
 
 
 @app.delete("/api/proactive/data")

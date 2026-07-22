@@ -822,16 +822,18 @@ test(cognition): freeze decision baselines and evaluation corpus
 
 ### CDS.1：复用并扩展统一决策协议、账本与验证器
 
-* [ ] 审计 Schema 56 的 `decision_runs`、repository、事件与真实消费者，形成复用/补差矩阵。
-* [ ] 复用现有通用 DecisionRun；只有无法兼容表达的最小字段才允许新增迁移，禁止平行 run/event 表。
-* [ ] 实现 `CommonDecisionHeader`、DecisionKind 专属输入/结果 Schema 和 `DecisionKindRegistry`，禁止万能自由 JSON。
-* [ ] 实现候选 ID 白名单。
-* [ ] 实现多来源 `source_snapshot[]`、aggregate hash 与逐来源 revision/hash 复核。
-* [ ] 实现 Shadow/Advisory/Active。
-* [ ] 实现一次 JSON 修复。
-* [ ] 原始模型输出不落库。
-* [ ] 提供只读诊断 API。
-* [ ] 补齐 prompt/schema/validator/fallback/model binding/采样参数等可复现实验字段；诊断保留遵守共享 TTL 与临时聊天规则。
+* [x] 审计 Schema 56 的 `decision_runs`、repository、事件与真实消费者，形成复用/补差矩阵。
+* [x] 复用现有通用 DecisionRun；只有无法兼容表达的最小字段才允许新增迁移，禁止平行 run/event 表。
+* [x] 实现 `CommonDecisionHeader`、DecisionKind 专属输入/结果 Schema 和 `DecisionKindRegistry`，禁止万能自由 JSON。
+* [x] 实现候选 ID 白名单。
+* [x] 实现多来源 `source_snapshot[]`、aggregate hash 与逐来源 revision/hash 复核。
+* [x] 实现 Shadow/Advisory/Active。
+* [x] 实现一次 JSON 修复。
+* [x] 原始模型输出不落库。
+* [x] 提供只读诊断 API。
+* [x] 补齐 prompt/schema/validator/fallback/model binding/采样参数等可复现实验字段；诊断保留遵守共享 TTL 与临时聊天规则。
+
+施工记录（2026-07-22）：CDS.0 strict review 以 0 P0/P1 通过；三条 P2 的处置及 Schema 56 复用审计见 `docs/reports/cds-1-decision-runtime-audit.md`。确认原表缺少多来源快照、专属 Schema 绑定、三模式、复现实验字段、TTL 与公共状态事件，因此以 ADR-0051 占用首个可用 Schema 61 扩展 `decision_runs`，未建立平行 run 表。`cognitive-decision-v1` 已实现专属注册表、候选白名单、逐来源/聚合 hash 复核、一次 JSON 修复、fallback、模式门禁及无正文只读诊断。当前生产注册表只有纯合成 `protocol_probe` 且最高为 Shadow；不调用 Provider、不改变聊天或领域状态。等待独立 review，未进入 CDS.2。
 
 完成门：
 

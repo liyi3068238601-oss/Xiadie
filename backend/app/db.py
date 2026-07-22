@@ -2698,6 +2698,60 @@ MIGRATIONS = [
             ON proactive_feedback_events(feedback_id, created_at, id);
         """,
     ),
+    (
+        61,
+        """
+        -- CDS.1: extend the shared Schema 56 DecisionRun instead of creating a parallel ledger.
+        ALTER TABLE decision_runs ADD COLUMN policy_version TEXT NOT NULL DEFAULT '';
+        ALTER TABLE decision_runs ADD COLUMN mode TEXT NOT NULL DEFAULT 'legacy'
+            CHECK(mode IN ('legacy','shadow','advisory','active'));
+        ALTER TABLE decision_runs ADD COLUMN provider_location TEXT;
+        ALTER TABLE decision_runs ADD COLUMN source_snapshot_json TEXT NOT NULL DEFAULT '[]';
+        ALTER TABLE decision_runs ADD COLUMN snapshot_hash TEXT NOT NULL DEFAULT '';
+        ALTER TABLE decision_runs ADD COLUMN candidate_snapshot_hash TEXT NOT NULL DEFAULT '';
+        ALTER TABLE decision_runs ADD COLUMN candidate_count INTEGER NOT NULL DEFAULT 0
+            CHECK(candidate_count >= 0);
+        ALTER TABLE decision_runs ADD COLUMN selected_count INTEGER NOT NULL DEFAULT 0
+            CHECK(selected_count >= 0 AND selected_count <= candidate_count);
+        ALTER TABLE decision_runs ADD COLUMN action TEXT;
+        ALTER TABLE decision_runs ADD COLUMN confidence_band TEXT;
+        ALTER TABLE decision_runs ADD COLUMN reason_codes_json TEXT NOT NULL DEFAULT '[]';
+        ALTER TABLE decision_runs ADD COLUMN fallback_used INTEGER NOT NULL DEFAULT 0
+            CHECK(fallback_used IN (0,1));
+        ALTER TABLE decision_runs ADD COLUMN prompt_template_hash TEXT NOT NULL DEFAULT '';
+        ALTER TABLE decision_runs ADD COLUMN input_schema_hash TEXT NOT NULL DEFAULT '';
+        ALTER TABLE decision_runs ADD COLUMN output_schema_hash TEXT NOT NULL DEFAULT '';
+        ALTER TABLE decision_runs ADD COLUMN validator_version TEXT NOT NULL DEFAULT '';
+        ALTER TABLE decision_runs ADD COLUMN fallback_version TEXT NOT NULL DEFAULT '';
+        ALTER TABLE decision_runs ADD COLUMN model_binding_revision TEXT NOT NULL DEFAULT '';
+        ALTER TABLE decision_runs ADD COLUMN temperature REAL;
+        ALTER TABLE decision_runs ADD COLUMN top_p REAL;
+        ALTER TABLE decision_runs ADD COLUMN retention_class TEXT NOT NULL DEFAULT 'operational';
+        ALTER TABLE decision_runs ADD COLUMN expires_at REAL;
+        ALTER TABLE decision_runs ADD COLUMN privacy_scope TEXT NOT NULL DEFAULT 'body_free';
+        ALTER TABLE decision_runs ADD COLUMN aggregate_after_expiry INTEGER NOT NULL DEFAULT 1
+            CHECK(aggregate_after_expiry IN (0,1));
+
+        CREATE TABLE decision_run_events (
+            id TEXT PRIMARY KEY,
+            run_id TEXT NOT NULL REFERENCES decision_runs(id) ON DELETE CASCADE,
+            event_type TEXT NOT NULL,
+            from_status TEXT,
+            to_status TEXT NOT NULL,
+            mode TEXT NOT NULL CHECK(mode IN ('legacy','shadow','advisory','active')),
+            error_code TEXT,
+            warning_codes_json TEXT NOT NULL DEFAULT '[]',
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_decision_run_events_run
+            ON decision_run_events(run_id, created_at, id);
+        CREATE INDEX idx_decision_runs_diagnostics
+            ON decision_runs(task_kind, mode, created_at);
+        CREATE INDEX idx_decision_runs_expiry
+            ON decision_runs(expires_at)
+            WHERE expires_at IS NOT NULL;
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

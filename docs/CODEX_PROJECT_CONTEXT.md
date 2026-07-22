@@ -378,4 +378,4 @@ node --check preload.js
 
 EAP Schema 48～60 不回写；真实输出继续受后端最终授权复核、系统恢复保护窗与 at-most-once 状态机约束，Level 5 外部渠道保持硬禁用。三份 v0.3 权威计划与 `docs/SPECIALTY_OWNERSHIP_AND_CONTRACT_MATRIX.md` 已纳入仓库，固定顺序为 `CDS → LIFE → KIG`。
 
-EAP PR #1 已于 2026-07-22 合并，CDS.0 以不可变 `main` 合并 SHA `6b8aa47134f8a9a55131c73bb1148e6912421c4f`、Schema 60、冻结协议和后端 `937 passed, 1 warning` 为 ConstructionBaseline。300 个纯合成离线场景及旧算法误选、漏选、延迟和估算 token 已落盘；本阶段没有数据库或聊天行为变更，当前停在独立 review 节点，未确认前不得进入 CDS.1。下一可用 Schema 为 61，但只有出现真实字段缺口时才占用。
+EAP PR #1 已于 2026-07-22 合并，CDS ConstructionBaseline 固定为 `main@6b8aa47134f8a9a55131c73bb1148e6912421c4f`、Schema 60、冻结协议和后端 `937 passed, 1 warning`。CDS.0 strict review 已以 0 P0/P1 通过。CDS.1 审计确认 Schema 56 存在真实表达缺口，Schema 61 已在唯一共享 `decision_runs` 上补齐 `cognitive-decision-v1` 的多来源快照、专属 Schema 注册、候选白名单、三模式、复现实验字段、TTL、事件和无正文诊断；没有平行 run 表、Provider 调用或聊天行为改变。当前等待 CDS.1 独立 review，未确认前不得进入 CDS.2；下一可用 Schema 为 62。

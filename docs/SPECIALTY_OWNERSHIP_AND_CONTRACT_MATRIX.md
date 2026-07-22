@@ -28,11 +28,11 @@ ConstructionBaseline
 | 字段 | 当前值/规则 |
 |---|---|
 | repository | `liyi3068238601-oss/Xiadie` |
-| predecessor_pr | EAP draft PR `#1` |
+| predecessor_pr | EAP PR `#1`，已合并 |
 | base_branch | `main` |
-| integration state | EAP 已技术冻结，但 PR #1 尚未合并；技术冻结不等于仓库集成完成 |
-| base_commit_sha | CDS.0 开工时填写 PR #1 的 `main` 合并提交；不得填写会继续移动的分支名 |
-| schema_version | 60；Schema 48～60 不回写 |
+| integration state | EAP 已技术冻结并合入 `main`；CDS.0/1 已按顺序施工 |
+| base_commit_sha | CDS ConstructionBaseline：`6b8aa47134f8a9a55131c73bb1148e6912421c4f` |
+| schema_version | ConstructionBaseline 60；CDS.1 当前 61；Schema 48～60 不回写 |
 | frozen_protocols | CTX v1；EAP 六协议；以 Protocol Registry、ADR 和冻结报告为准 |
 | test_baseline | 后端 `937 passed, 1 warning`；前端 `41 passed`；Vite 188 modules；R6 Windows 验收见专项报告 |
 | plan_version | CDS/LIFE/KIG v0.3；本矩阵 v1.0 |
