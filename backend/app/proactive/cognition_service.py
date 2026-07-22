@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 from contextlib import suppress
 
 from .. import db, llm
@@ -13,6 +14,8 @@ from .run_ledger import (
     RunStatus, compute_source_hash, create_or_get_run, get_run, make_idempotency_key,
     transition_run,
 )
+
+logger = logging.getLogger(__name__)
 
 TASK_KIND = "companion_cognition"
 MAX_INPUT_CHARS = 12_000
@@ -247,6 +250,17 @@ def _apply_result(
         conn.commit()
     finally:
         conn.close()
+    try:
+        # Local import avoids a module cycle: cognition is a source producer,
+        # while the orchestrator owns every candidate and decision.
+        from . import orchestrator
+        affect = result["user_affect"]
+        orchestrator.enqueue_emotional_care(
+            run_id=run.id, session_id=context["session_id"],
+            state=affect["state"], confidence=affect["confidence"],
+        )
+    except Exception:  # noqa: BLE001 - cognition application remains authoritative
+        logger.exception("cognition_proactive_source_enqueue_failed run_id=%s", run.id)
     warning_values = list(warnings or [])
     if error_code:
         warning_values.append(error_code)

@@ -31,6 +31,7 @@ from .affect import observer_service as affect_observer_service
 from .proactive import presence as proactive_presence
 from .proactive import settings as proactive_settings
 from .proactive import cognition_service as companion_cognition_service
+from .proactive import orchestrator as proactive_orchestrator
 from .security import ALLOWED_ORIGINS, TOKEN_HEADER, local_api_guard
 
 logger = logging.getLogger(__name__)
@@ -68,6 +69,7 @@ async def lifespan(app: FastAPI):
     await conversation_summary_service.start_worker()
     await affect_observer_service.start_worker()
     await companion_cognition_service.start_worker()
+    await proactive_orchestrator.start_worker()
     await memory_observer_service.start_worker()
     await episode_consolidator.start_worker()
     await saga_consolidator.start_worker()
@@ -83,6 +85,7 @@ async def lifespan(app: FastAPI):
         await saga_consolidator.stop_worker()
         await episode_consolidator.stop_worker()
         await memory_observer_service.stop_worker()
+        await proactive_orchestrator.stop_worker()
         await companion_cognition_service.stop_worker()
         await affect_observer_service.stop_worker()
         await conversation_summary_service.stop_worker()
@@ -660,6 +663,13 @@ async def chat(body: ChatIn) -> StreamingResponse:
     # presence 更新失败不应阻塞聊天（try/except 包裹）。
     if not body.regenerate and uid and content_has_text:
         try:
+            proactive_orchestrator.handle_user_message(body.session_id)
+        except Exception:  # noqa: BLE001 - proactive recovery must not block chat
+            logger.warning(
+                "proactive_user_return_failed session_id=%s message_id=%s",
+                body.session_id, uid, exc_info=True,
+            )
+        try:
             proactive_presence.update_presence(
                 body.session_id,
                 proactive_presence.detect_presence_signals(body.content),
@@ -843,6 +853,17 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 user_message_id=uid,
                 assistant_message_id=aid,
             )
+            try:
+                proactive_orchestrator.enqueue_after_chat(
+                    session_id=body.session_id,
+                    user_message_id=uid,
+                    assistant_message_id=aid,
+                )
+            except Exception:  # noqa: BLE001 - orchestration must not break a completed chat
+                logger.warning(
+                    "proactive_source_enqueue_failed session_id=%s message_id=%s",
+                    body.session_id, aid, exc_info=True,
+                )
         try:
             conversation_summary_service.enqueue_after_chat(
                 session_id=body.session_id, chat_provider=provider, chat_model=model,
@@ -890,6 +911,15 @@ def read_companion_state() -> dict:
 @app.get("/api/companion-state/cognition-runs")
 def read_companion_cognition_runs() -> list[dict]:
     return companion_cognition_service.list_runs()
+
+
+@app.get("/api/companion-state/proactive-runtime")
+def read_proactive_runtime() -> dict:
+    return {
+        "sources": proactive_orchestrator.list_runtime_sources(),
+        "sagas": proactive_orchestrator.list_runtime_sagas(),
+        "delivery_enabled": False,
+    }
 
 
 @app.post("/api/companion-state/reset")

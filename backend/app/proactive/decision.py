@@ -455,24 +455,25 @@ def compute_layer3_factors(
         ]
         consecutive_ignored = len(same_session_sent)
 
-    # SAME_KIND_COOLDOWN：同类型在冷却窗口内有 send 决策
-    same_kind_cooldown = 0
-    for d in sent_decisions:
-        if d.created_at < now - SAME_KIND_COOLDOWN_SECONDS:
-            continue
-        # 需要查 candidate.candidate_kind；本阶段简化为查库
-        # 这里直接通过 candidate_id 反查（避免复杂关联）
+    # SAME_KIND_COOLDOWN：批量读取候选类型，避免按 decision 逐条反查的 N+1。
+    recent_candidate_ids = [
+        d.candidate_id for d in sent_decisions
+        if d.created_at >= now - SAME_KIND_COOLDOWN_SECONDS
+    ]
+    recent_kinds = set()
+    if recent_candidate_ids:
         conn = db.connect()
         try:
-            row = conn.execute(
-                "SELECT candidate_kind FROM proactive_candidates WHERE id=?",
-                (d.candidate_id,),
-            ).fetchone()
-            if row and row["candidate_kind"] == candidate.candidate_kind:
-                same_kind_cooldown = 1
-                break
+            placeholders = ",".join("?" * len(recent_candidate_ids))
+            recent_kinds = {
+                row["candidate_kind"] for row in conn.execute(
+                    f"SELECT candidate_kind FROM proactive_candidates WHERE id IN ({placeholders})",
+                    recent_candidate_ids,
+                ).fetchall()
+            }
         finally:
             conn.close()
+    same_kind_cooldown = int(candidate.candidate_kind in recent_kinds)
 
     factors = {
         Layer3Factor.TODAY_ALREADY_PROACTIVE: today_already,

@@ -68,7 +68,7 @@ npm start
 ## 测试与构建
 
 ```bash
-cd backend && python -m pytest tests -q          # 后端 API 与领域回归测试（当前 867 项）
+cd backend && python -m pytest tests -q          # 后端 API 与领域回归测试（当前 885 项）
 cd frontend && npm run build                    # 前端类型检查 + 生产构建
 ```
 

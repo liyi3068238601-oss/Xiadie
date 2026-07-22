@@ -1491,7 +1491,7 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
                 {proactiveSettings.proactive_show_advanced_diagnostics === "1" && (
                   <div className="settings-diagnostics-info">
                     <p>协议版本：conversation-presence-v2 / proactive-decision-v2 / expression-plan-v1</p>
-                    <p>Schema 版本：57</p>
+                    <p>Schema 版本：58</p>
                     <p>（诊断详情将在后续版本中提供）</p>
                   </div>
                 )}

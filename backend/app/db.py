@@ -2490,6 +2490,78 @@ MIGRATIONS = [
             ON companion_cognition_results(session_id, source_assistant_message_id);
         """,
     ),
+    (
+        58,
+        """
+        -- EAP.R3: recoverable source queue, candidate leases and shadow orchestration saga.
+        ALTER TABLE proactive_candidates ADD COLUMN source_revision TEXT NOT NULL DEFAULT '';
+        ALTER TABLE proactive_candidates ADD COLUMN due_at REAL;
+        ALTER TABLE proactive_candidates ADD COLUMN runtime_source_id TEXT;
+        CREATE INDEX idx_proactive_candidates_due
+            ON proactive_candidates(status, due_at, expires_at);
+        CREATE UNIQUE INDEX idx_proactive_candidates_runtime_source
+            ON proactive_candidates(runtime_source_id) WHERE runtime_source_id IS NOT NULL;
+
+        CREATE TABLE proactive_runtime_sources (
+            id TEXT PRIMARY KEY,
+            session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            source_kind TEXT NOT NULL CHECK(source_kind IN (
+                'expected_return','emotional_care','episode_milestone',
+                'saga_milestone','casual_greeting','life_seed'
+            )),
+            source_ref_id TEXT NOT NULL,
+            source_revision TEXT NOT NULL,
+            source_hash TEXT NOT NULL CHECK(length(source_hash) = 64),
+            payload_json TEXT NOT NULL DEFAULT '{}',
+            due_at REAL NOT NULL,
+            expires_at REAL NOT NULL,
+            status TEXT NOT NULL DEFAULT 'queued' CHECK(status IN (
+                'queued','claimed','processed','skipped','expired'
+            )),
+            lease_owner TEXT,
+            lease_expires_at REAL,
+            candidate_id TEXT REFERENCES proactive_candidates(id) ON DELETE SET NULL,
+            result_code TEXT,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            UNIQUE(source_kind, source_ref_id, source_revision)
+        );
+        CREATE INDEX idx_proactive_runtime_sources_due
+            ON proactive_runtime_sources(status, due_at, lease_expires_at);
+
+        CREATE TABLE proactive_candidate_claims (
+            candidate_id TEXT PRIMARY KEY REFERENCES proactive_candidates(id) ON DELETE CASCADE,
+            source_revision TEXT NOT NULL,
+            lease_owner TEXT NOT NULL,
+            lease_expires_at REAL NOT NULL,
+            claimed_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_proactive_candidate_claims_expiry
+            ON proactive_candidate_claims(lease_expires_at);
+
+        CREATE TABLE proactive_runtime_sagas (
+            candidate_id TEXT PRIMARY KEY REFERENCES proactive_candidates(id) ON DELETE CASCADE,
+            source_revision TEXT NOT NULL,
+            decision_id TEXT REFERENCES proactive_decisions(id) ON DELETE SET NULL,
+            intensity_plan_id TEXT REFERENCES proactive_intensity_plans(id) ON DELETE SET NULL,
+            expression_plan_id TEXT REFERENCES expression_plans(id) ON DELETE SET NULL,
+            status TEXT NOT NULL DEFAULT 'claimed' CHECK(status IN (
+                'claimed','decided','planned','completed','recovery_pending','skipped'
+            )),
+            attempt_count INTEGER NOT NULL DEFAULT 0 CHECK(attempt_count >= 0),
+            max_attempts INTEGER NOT NULL DEFAULT 3 CHECK(max_attempts BETWEEN 1 AND 10),
+            next_attempt_at REAL,
+            error_code TEXT,
+            gate_before_json TEXT NOT NULL DEFAULT '{}',
+            gate_after_json TEXT NOT NULL DEFAULT '{}',
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_proactive_runtime_sagas_recovery
+            ON proactive_runtime_sagas(status, next_attempt_at, updated_at);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

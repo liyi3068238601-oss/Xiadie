@@ -8,6 +8,7 @@ from app import db, llm
 from app import main as main_module
 from app.affect import observer_service, repository
 from app.proactive import cognition, cognition_service, relationship
+from app.proactive import orchestrator
 from app.proactive.run_ledger import get_run
 
 client = TestClient(
@@ -150,6 +151,32 @@ def test_unavailable_observer_uses_zero_relationship_fallback():
     assert "cognition_model_unavailable" in run.warnings
     assert after["relationship"]["bond"] == before["relationship"]["bond"]
     assert after["relationship"]["trust"] == before["relationship"]["trust"]
+
+
+def test_grounded_low_affect_enqueues_emotional_care_source(monkeypatch):
+    sid, uid, aid = _turn()
+    provider = _provider()
+    result = _valid_result()
+    result["user_affect"].update(
+        state="low", needs=["comfort"], confidence=0.9,
+        reason="grounded low affect",
+    )
+
+    async def complete(*_args, **_kwargs):
+        return {"text": json.dumps(result, ensure_ascii=False)}
+
+    monkeypatch.setattr(llm, "complete_json", complete)
+    queued = cognition_service.enqueue_turn(
+        chat_provider=provider, chat_model="test-model", session_id=sid,
+        user_message_id=uid, assistant_message_id=aid,
+    )
+    asyncio.run(cognition_service.process_due())
+    sources = [
+        item for item in orchestrator.list_runtime_sources(limit=200)
+        if item["source_kind"] == orchestrator.SOURCE_EMOTIONAL_CARE
+        and item["source_ref_id"] == queued["id"]
+    ]
+    assert len(sources) == 1 and sources[0]["status"] == "queued"
 
 
 def test_source_change_before_claim_is_skipped(monkeypatch):

@@ -2,7 +2,7 @@
 
 - 版本：v0.3（完成度审计与收口补完版）
 - 日期：2026-07-22
-- 状态：EAP.R0～EAP.R2 已完成并提交；真实产品闭环仍未完成，下一阶段为 EAP.R3
+- 状态：EAP.R0～EAP.R3 已完成并提交；真实产品闭环仍未完成，下一阶段为 EAP.R4
 - 专项代号：`EAP`（Emotion, Attachment and Proactivity）
 - 前置条件：CTX.0～CTX.7 已冻结；现有 Affect/Relationship 阶段 0～4.1 已完成
 - 执行规则：每个阶段均须完成代码、测试、文档、阶段 Review 和本地 Git 提交；未解决 P0/P1 时不得进入下一阶段
@@ -1673,7 +1673,7 @@ R1 施工记录（2026-07-22）：`[x]` 已完成并通过独立 Review，0 个�
 
 完成门：真实聊天路径中的普通问答 bond 增量为 0；所有非零关系变化均可回溯到有效来源和协议版本。
 
-R2 施工记录（2026-07-22）：`[x]` 已完成，等待独立 Review。Schema 57 为关系建议增加 source revision/hash、逐字证据、应用/撤销事件引用，并新增 `companion_cognition_results`；后台任务复用现有观察模型配置与有限重试，但运行账本统一使用 R1 `DecisionRun`。真实聊天和重新生成均入队 Companion Cognition；无模型、超时、解析失败使用 `unknown + ordinary_exchange` 保守结果。Fallback 只更新短期 affect 与 `interaction_count`，不再修改 bond/trust；遗留 Affect Observer 即使恢复旧任务也会抑制其 relationship delta。关系应用只写现有 `relationship_state`，并按实际限幅增量补偿撤销；来源删除/改写会撤销，重新生成会创建新 revision，晚于应用的用户手动关系修正不会被自动覆盖。未追溯改写任何历史关系数据。验收门禁：后端 `867 passed, 1 warning`，前端 `36 passed`，前端生产构建及 Electron `main.js`/`preload.js` 语法检查通过。
+R2 施工记录（2026-07-22）：`[x]` 已完成并通过独立 Review，0 个未解决 P0/P1。Schema 57 为关系建议增加 source revision/hash、逐字证据、应用/撤销事件引用，并新增 `companion_cognition_results`；后台任务复用现有观察模型配置与有限重试，但运行账本统一使用 R1 `DecisionRun`。真实聊天和重新生成均入队 Companion Cognition；无模型、超时、解析失败使用 `unknown + ordinary_exchange` 保守结果。Fallback 只更新短期 affect 与 `interaction_count`，不再修改 bond/trust；遗留 Affect Observer 即使恢复旧任务也会抑制其 relationship delta。关系应用只写现有 `relationship_state`，并按实际限幅增量补偿撤销；来源删除/改写会撤销，重新生成会创建新 revision，晚于应用的用户手动关系修正不会被自动覆盖。未追溯改写任何历史关系数据。Review 唯一 P2 为 `compute_layer3_factors` N+1，已在 R3 以批量候选类型查询修复。R2 验收门禁：后端 `867 passed, 1 warning`，前端 `36 passed`，前端生产构建及 Electron `main.js`/`preload.js` 语法检查通过。
 
 建议提交：`feat(eap): connect grounded user affect and relationship meaning`
 
@@ -1681,16 +1681,16 @@ R2 施工记录（2026-07-22）：`[x]` 已完成，等待独立 Review。Schema
 
 目标：把 Presence、情绪、共同经历和 LIFE seed 适配器接入同一候选与评估 worker。
 
-- [ ] 建立唯一 `ProactiveOrchestrator`，由应用 lifespan 启动/停止，不允许各模块自行发送。
-- [ ] 使用数据库 due queue 和可恢复游标，不使用每分钟无条件调用 LLM 的轮询方式。
-- [ ] 实现生产候选来源：OpenThread/expected return、情绪关心、Episode/Saga 里程碑、受限普通问候和 LIFE seed adapter。
-- [ ] 每个候选必须包含真实 source refs、revision/hash、过期时间和 candidate kind。
-- [ ] 建立候选 claim/lease，两个 worker 对同一候选只能有一个进入决策和投递。
-- [ ] 在 LLM 调用前后都重新执行总开关、暂停、类型、Presence、来源有效性和渠道授权硬门。
-- [ ] 把 `decide_candidate`、Intensity 和 ExpressionPlan 组合为单一事务边界或可恢复 saga，避免留下“decision 已写入但 candidate 状态未更新”的半完成状态。
-- [ ] 用户新消息到达时关联同一 ContactEpisode，更新 responded/closed/feedback；过期候选不得复活。
-- [ ] LIFE seed 只作为候选来源；没有 LIFE 表时使用 fixture 验证接口，不伪造 LifeEvent。
-- [ ] Shadow 决定绝不进入真实投递队列。
+- [x] 建立唯一 `ProactiveOrchestrator`，由应用 lifespan 启动/停止，不允许各模块自行发送。
+- [x] 使用数据库 due queue 和可恢复游标，不使用每分钟无条件调用 LLM 的轮询方式。
+- [x] 实现生产候选来源：OpenThread/expected return、情绪关心、Episode/Saga 里程碑、受限普通问候和 LIFE seed adapter。
+- [x] 每个候选必须包含真实 source refs、revision/hash、过期时间和 candidate kind。
+- [x] 建立候选 claim/lease，两个 worker 对同一候选只能有一个进入决策和投递。
+- [x] 在 LLM 调用前后都重新执行总开关、暂停、类型、Presence、来源有效性和渠道授权硬门。
+- [x] 把 `decide_candidate`、Intensity 和 ExpressionPlan 组合为单一事务边界或可恢复 saga，避免留下“decision 已写入但 candidate 状态未更新”的半完成状态。
+- [x] 用户新消息到达时关联同一 ContactEpisode，更新 responded/closed/feedback；过期候选不得复活。
+- [x] LIFE seed 只作为候选来源；没有 LIFE 表时使用 fixture 验证接口，不伪造 LifeEvent。
+- [x] Shadow 决定绝不进入真实投递队列。
 
 专项测试：
 
@@ -1700,6 +1700,8 @@ R2 施工记录（2026-07-22）：`[x]` 已完成，等待独立 Review。Schema
 - LIFE seed fixture 只能生成 EAP candidate，不能直接创建 decision/delivery。
 
 完成门：无需测试代码手工串联领域函数，真实应用 worker 即可把有效来源推进到已裁决候选；仍不开放真实非静默投递。
+
+R3 施工记录（2026-07-22）：`[x]` 已完成，等待独立 Review。Schema 58 新增 `proactive_runtime_sources` due queue、`proactive_candidate_claims` 租约和 `proactive_runtime_sagas` 恢复账本，并为候选补充 source revision、due 时间和运行时来源唯一引用。唯一 `ProactiveOrchestrator` 由主应用 lifespan 管理；真实聊天产生 expected-return/受限问候来源，Companion Cognition 产生 grounded 情绪关心来源，Episode/Saga 通过不追溯历史的持久游标发现新完成里程碑，LIFE 仍只通过 seed fixture/adapter 进入 EAP。worker 在来源物化和裁决前后复核来源与硬门，组合既有 Decision、Intensity、ExpressionPlan 为可恢复 shadow saga；claim lease、重复启动、双 worker、数据库忙、崩溃恢复、用户提前回来、来源中途修改及 15 分钟～30 天时钟均有专项覆盖。所有 Decision 均标记 `is_shadow=1`，Schema 58 未创建 Delivery 表，也未开放任何真实投递。R2 Review 的 Layer 3 N+1 建议已用单次批量查询采纳。验收门禁：后端 `885 passed, 1 warning`，前端 `36 passed`，Vite production build（188 modules）及 Electron `main.js`/`preload.js` 语法检查通过。
 
 建议提交：`feat(eap): add recoverable proactive runtime orchestration`
 
