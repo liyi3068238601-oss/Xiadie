@@ -1,8 +1,8 @@
 # 遐蝶完整情感、关系积温与主动陪伴专项施工计划
 
-- 版本：v0.2
-- 日期：2026-07-21
-- 状态：v0.2 修订中
+- 版本：v0.3（完成度审计与收口补完版）
+- 日期：2026-07-22
+- 状态：v0.2 领域模块已落地，但真实产品闭环未完成；EAP.R0～EAP.R6 待施工
 - 专项代号：`EAP`（Emotion, Attachment and Proactivity）
 - 前置条件：CTX.0～CTX.7 已冻结；现有 Affect/Relationship 阶段 0～4.1 已完成
 - 执行规则：每个阶段均须完成代码、测试、文档、阶段 Review 和本地 Git 提交；未解决 P0/P1 时不得进入下一阶段
@@ -11,6 +11,8 @@
 - 关联专项：CTX、LIFE、KIG、Memory/Affect
 
 > v0.2 修订说明：本版本把 EAP 从"安全通知系统"重新定位为"连续心境 + 关系感 + 接近倾向的陪伴闭环"。v0.1 中"主动默认关闭、禁止连续主动、未回复后按固定次数冷却、禁止责备和催促、统一线性总分直接决定发送、普通消息旁技术解释"等条款已被删除或改写，详见下文各节修订标记与文末"v0.2 修订总结"。v0.1 的 EAP.0~EAP.10 阶段保留为历史，标注被 v0.2 的 EAP.A~EAP.J 取代。
+
+> v0.3 完成度审计（2026-07-22）：commit `fd9042c` 已新增 Schema 48～55、`proactive/` 领域模块、确定性模拟器和设置页，后端全量 `820 passed`、前端 `36 passed`、TypeScript/Vite build 通过。但主应用目前只接入 Conversation Presence 更新，候选生成、关系意义应用、主动决策、强度/表达、真实投递和用户反馈尚未组成运行时闭环；部分设置只保存、不参与后端裁决；两个所谓“已冻结协议”只有版本常量。因此撤回“EAP.A～EAP.J 全阶段完成”和“6 个协议已正式冻结”的结论。本版新增第 9.B 节作为唯一有效的收口施工入口；第 9.A 节保留为 v0.2 施工前历史清单，不再代表当前完成度。
 
 ---
 
@@ -1528,6 +1530,282 @@ EAP v1 冻结后，外部渠道仍不得直接启用。下一入口必须先完�
 
 ---
 
+## 9.B EAP 完成度审计与收口补完计划（v0.3，当前唯一施工入口）
+
+### 9.B.1 审计结论
+
+本节以 2026-07-22 的真实代码为准。测试通过只能证明已接线能力和独立领域模块在测试输入下行为稳定，不能替代产品主链验收。
+
+当前应使用以下状态：
+
+| 能力 | 当前状态 | 已有实现 | 完成前仍缺少 |
+|---|---|---|---|
+| Schema 48～55 | `[x]` 已落地 | Presence、关系建议、ContactEpisode、Candidate/Decision、Intensity、Expression、LIFE seed 表 | 禁止修改历史迁移；新缺口使用后续迁移 |
+| Conversation Presence | `[~]` 部分接线 | 用户消息入库后运行规则识别并写表 | 枚举契约统一、过期/恢复 worker、诊断、来源 revision 和端到端候选触发 |
+| User Affect Observation | `[ ]` 未实现 | 只有 `user-affect-observation-v1` 版本常量 | 严格 Schema、来源校验、repository、worker、降级与测试 |
+| Relationship Meaning | `[~]` 领域模块完成 | 9 类标签、限幅、建议表和幂等键 | 真实 LLM/规则生产者、原子应用/撤销、主链接入；移除普通聊天机械涨 bond |
+| ContactEpisode | `[~]` 领域模块完成 | 状态机、压力累积/衰减和纯模块测试 | 真实候选来源、用户回复/拒绝回写、worker 驱动和崩溃恢复 |
+| Proactive Candidate/Decision | `[~]` 领域模块完成 | 候选表、三层裁决、Shadow 分数和测试 | 调度编排、真实来源失效检查、用户设置全量生效、并发 claim 和真实 LLM 建议 |
+| Intensity/Expression | `[~]` 领域模块完成 | Level 0～5 选择、表达向量、迟滞数据结构 | 接入统一 Live2D 状态源、气泡/聊天/通知渠道和实际表达消费 |
+| Proactive Delivery | `[ ]` 未实现 | 无正式投递表和投递服务 | at-most-once 投递账本、渠道适配器、授权复核、重启恢复和失败状态机 |
+| Proactive Feedback | `[ ]` 未实现 | 只有 `proactive-feedback-v1` 版本常量 | 反馈 Schema、表/API、自然语言与显式反馈入口、策略应用和撤销 |
+| LIFE 接口 | `[~]` 接口预留 | `life_proactive_seeds` 与 adapter | LIFE 实际数据模型完成后接入；这不阻塞 EAP 核心闭环冻结 |
+| 设置页 | `[~]` UI 已有 | 总开关、类型、安静时段、频率、渠道、暂停和诊断入口 | 后端默认/校验、所有控制真实生效、历史/反馈/清除 API 和专项前端测试 |
+| 长期模拟 | `[~]` 测试工具已实现 | 确定性时间线模拟和四类测试样例 | 使用与生产相同的 orchestration/delivery 代码路径；休眠、崩溃、并发、时区真实验收 |
+| 协议冻结 | `[ ]` 未达到 | 6 个版本字符串已定义 | Schema、validator、repository、真实调用路径、兼容测试和独立 Review 后才能 FROZEN |
+
+当前只有 Presence hook 进入聊天主链。不得用测试文件直接调用领域函数的“端到端场景”替代真实应用端到端验收。
+
+协议状态定义：
+
+| 状态 | 判定标准 |
+|---|---|
+| `DRAFT` | 只有名称/版本常量，或 Schema、validator、repository 任一关键部分尚不存在 |
+| `IMPLEMENTED` | 领域 Schema、validator/repository 和专项测试已存在，但尚未进入真实生产调用路径 |
+| `SHADOW` | 已由真实生产路径调用并记录结果，但不改变正式状态或产生用户可见行为 |
+| `FROZEN` | 生产者、消费者、来源校验、失败降级、兼容测试和独立 Review 全部完成，且 0 个未解决 P0/P1 |
+
+EAP 六个新增协议的当前状态：
+
+| 协议 | 当前状态 | 证据与缺口 |
+|---|---|---|
+| `conversation-presence-v2` | `IMPLEMENTED` | 表、领域函数、测试和聊天 hook 已存在；枚举契约、过期 worker 和候选消费者未闭环 |
+| `user-affect-observation-v1` | `DRAFT` | 只有版本常量 |
+| `relationship-meaning-v1` | `IMPLEMENTED` | 建议表、限幅和测试已存在；无真实生产者和 apply/revoke 主链 |
+| `proactive-decision-v2` | `IMPLEMENTED` | 决策表、三层裁决和测试已存在；无生产 orchestrator，不能称为 Shadow |
+| `expression-plan-v1` | `IMPLEMENTED` | 表、向量/迟滞逻辑和测试已存在；无真实表达消费者 |
+| `proactive-feedback-v1` | `DRAFT` | 只有版本常量，无表、Schema、API 或消费者 |
+
+`affect-observer-v1` 属于既有 Affect 子系统，不计入上述六个 EAP 新增协议；KIG/LIFE 引用时必须保持这一所有权区别。上述状态表是 R0 的文档事实源；R1 再实现可执行 Protocol Registry。
+
+### 9.B.2 收口范围与非目标
+
+本轮收口必须完成：
+
+1. 把已有领域模块接成唯一、可恢复、可审计的 EAP 运行时闭环。
+2. 让总开关、暂停、类型、安静时段、频率和渠道授权全部成为后端硬边界。
+3. 让普通聊天不再机械增加 bond，让关系变化只来自有来源的关系意义建议。
+4. 建立真实投递与反馈账本，保证关闭、暂停、拒绝和重启后不会误发或重发。
+5. 让 Live2D、气泡、主窗口消息和桌面通知消费同一决定与表达计划。
+6. 修正文档、协议状态和项目基线，使“已实现”“部分实现”“冻结”均有真实证据。
+
+本轮不包含：
+
+- LIFE 的 LifeEvent、日程、日记、ImportantDate、PersonalGoal 和 SelfTimeline 实体实现。
+- QQ、微信、邮件等外部渠道正式投递；Level 5 必须保持硬禁用，即使通用设置键被误写为开启也不能发送。
+- 后台常驻系统服务、工具执行、MCP 或任意桌面自动化。
+- KIG 的跨源 Query Planner、知识语义重排、Claim/PWM 和世界模型。
+- 修改 Schema 48～55 的历史迁移，或重新建立 affect/relationship/Fragment/Episode/Saga。
+
+### EAP.R0：纠正完成声明、冻结状态与迁移所有权
+
+目标：先恢复可信基线，避免 LIFE/KIG 在错误前置条件上施工。
+
+- [x] 将 EAP.A～EAP.J 标注为 v0.2 历史施工清单；以第 9.B 节作为当前状态来源。
+- [x] 建立协议状态表：`DRAFT`、`IMPLEMENTED`、`SHADOW`、`FROZEN`；版本常量本身不算协议实现。
+- [x] 核对 6 个 EAP 协议各自的 Schema、validator、repository、生产调用路径和消费者。
+- [x] 将未达到冻结条件的协议恢复为 `DRAFT` 或 `IMPLEMENTED`，不得继续对外宣称 FROZEN。
+- [x] 冻结 Schema 48～55 历史文本；EAP 收口新增迁移从 Schema 56 顺序开始。
+- [x] 在当前施工基线中撤销 LIFE 对 Schema 56 的预占；项目外 LIFE 原版保持原样，待 EAP.R6 后以原版为基准优化时改用第一个可用版本。
+- [x] 更新 `BASELINE_STATUS.md`、`CODEX_PROJECT_CONTEXT.md`、README 测试数和长期路线中的旧状态。
+- [x] 明确计划书来源：EAP 以仓库 `docs/` 本文件为事实源；LIFE/KIG 以项目外两份原版为后续优化基准，仓库内后续修改版已按用户要求删除，优化完成前不复制回仓库。
+
+完成门：
+
+- 文档不再出现“只有常量却已冻结”“只有独立模块却已完成闭环”的表述。
+- 当前施工只允许 EAP 从 Schema 56 顺序占用；项目外 LIFE/KIG 原版暂不参与施工，后续优化时必须重新分配 schema，因而当前迁移所有权无冲突。
+- 当前后端、前端和构建基线通过。
+
+R0 施工记录（2026-07-22）：`[x]` 已完成，等待独立 Review。验证结果为后端 `820 passed, 1 warning`、前端 `36 passed`、TypeScript/Vite build 通过（185 modules）、Electron `main.js`/`preload.js` 语法检查通过。仓库内 LIFE/KIG 后续修改版已按用户要求删除；项目外两份原版恢复到原路径并保持不改动，作为将来计划优化的输入。
+
+建议提交：`docs(eap): reopen incomplete runtime closure after implementation audit`
+
+### EAP.R1：协议治理、设置硬边界与 Presence 契约
+
+目标：建立运行时闭环可以依赖的统一协议与用户控制底座。
+
+- [ ] 建立最小 Protocol Registry，记录协议名、版本、状态、validator 和兼容范围。
+- [ ] 把 `run_ledger.py` 从哈希/常量工具补成可复用的 DecisionRun repository，至少包含 source revision/hash、状态、尝试次数、错误码、模型元数据、幂等键和时间戳。
+- [ ] 不强制迁移所有历史 run 表；通过 adapter 兼容现有 observer/summary/knowledge run。
+- [ ] 为 `user-affect-observation-v1` 和 `proactive-feedback-v1` 定义严格结构化 Schema 与 validator。
+- [ ] 建立后端主动陪伴设置注册表，统一默认值、合法值、读取和写入校验。
+- [ ] 后端必须强制执行：总开关、紧急停止、暂停截止时间、六类主动类型、安静时段、频率模式、桌面通知授权和外部渠道硬禁用。
+- [ ] 暂停和安静时段使用本地时区进行可靠计算；非法时间、过期暂停和系统时间倒退保守处理。
+- [ ] 统一 `conversation-presence-v2` 的实际 8 值枚举与文档；如果需要不兼容改名，新增 `conversation-presence-v3`，不得静默改写 v2。
+- [ ] Presence 过期、用户重新出现、明确结束、睡眠和 DND 的状态转换必须由单一 reducer 管理。
+
+专项测试：
+
+- 每个设置的默认值、非法值、持久化和裁决效果。
+- 任意 `proactive_enabled=0`、有效暂停或 emergency stop 均产生 0 次非静默行为。
+- 六类 kind 任意关闭后，对应候选 100% 被硬门阻断。
+- 自定义安静时段和跨午夜、时区变化、时钟回拨。
+- Presence v2/v3 兼容、过期和来源变化。
+
+完成门：设置页不存在“能保存但不生效”的控制；协议状态和真实实现一致。
+
+建议提交：`feat(eap): enforce protocol registry settings and presence contracts`
+
+### EAP.R2：User Affect 与关系意义真实接线
+
+目标：关闭“普通聊天仍机械涨 bond”和“关系建议永远停在 proposed”的核心缺口。
+
+- [ ] 新增本轮 Companion Cognition 后台任务，优先复用现有 Affect Observer 的队列、Provider 配置和失败降级模式。
+- [ ] 产出有逐字用户证据的 User Affect Observation；不得做医学诊断，不得把知识库、助手文本或摘要作为用户状态唯一证据。
+- [ ] 产出 9 类 Relationship Meaning 建议；普通寒暄、一次性问答和无证据结果使用 `ordinary_exchange`。
+- [ ] 修改 fallback interaction：保留 `interaction_count` 和必要的短期 affect 响应，但普通消息不再无条件增加 bond/trust。
+- [ ] 为 `episode_relationship_delta_suggestions` 实现 `proposed → applied/revoked` 原子状态机、revision/hash 复核和审计事件。
+- [ ] 应用关系 delta 时使用现有 `relationship_state` repository，禁止建立第二套正式关系状态。
+- [ ] 同一 source revision 只应用一次；来源被删除、纠正或失效时支持撤销/重算，但不得自动重写用户手动修正。
+- [ ] 用户沉默、离线、未回复和关闭主动陪伴不得降低 bond/trust。
+- [ ] 不对历史普通聊天自动追溯扣回 bond；是否迁移旧数据必须另立显式数据修正方案。
+
+专项测试：
+
+- 普通问答、感谢、可靠帮助、共同成功、脆弱披露、边界尊重/修复、重逢、冲突九类。
+- 无 Observer、Provider 超时、解析失败和来源变化时的保守 fallback。
+- 重复 worker、重启、并发 apply、撤销后重算。
+- 现有 affect/relationship 全量回归和真实聊天 API 集成测试。
+
+完成门：真实聊天路径中的普通问答 bond 增量为 0；所有非零关系变化均可回溯到有效来源和协议版本。
+
+建议提交：`feat(eap): connect grounded user affect and relationship meaning`
+
+### EAP.R3：候选生成、ContactEpisode 与运行时编排
+
+目标：把 Presence、情绪、共同经历和 LIFE seed 适配器接入同一候选与评估 worker。
+
+- [ ] 建立唯一 `ProactiveOrchestrator`，由应用 lifespan 启动/停止，不允许各模块自行发送。
+- [ ] 使用数据库 due queue 和可恢复游标，不使用每分钟无条件调用 LLM 的轮询方式。
+- [ ] 实现生产候选来源：OpenThread/expected return、情绪关心、Episode/Saga 里程碑、受限普通问候和 LIFE seed adapter。
+- [ ] 每个候选必须包含真实 source refs、revision/hash、过期时间和 candidate kind。
+- [ ] 建立候选 claim/lease，两个 worker 对同一候选只能有一个进入决策和投递。
+- [ ] 在 LLM 调用前后都重新执行总开关、暂停、类型、Presence、来源有效性和渠道授权硬门。
+- [ ] 把 `decide_candidate`、Intensity 和 ExpressionPlan 组合为单一事务边界或可恢复 saga，避免留下“decision 已写入但 candidate 状态未更新”的半完成状态。
+- [ ] 用户新消息到达时关联同一 ContactEpisode，更新 responded/closed/feedback；过期候选不得复活。
+- [ ] LIFE seed 只作为候选来源；没有 LIFE 表时使用 fixture 验证接口，不伪造 LifeEvent。
+- [ ] Shadow 决定绝不进入真实投递队列。
+
+专项测试：
+
+- 主应用 lifespan 启停、worker 崩溃恢复、重复启动、双 worker 竞争和数据库忙。
+- 来源在决策中途删除/纠正、用户在草稿完成前回来、设置在决策中途关闭。
+- 15 分钟～30 天的 due queue 推进；测试时钟与生产 orchestrator 使用同一代码路径。
+- LIFE seed fixture 只能生成 EAP candidate，不能直接创建 decision/delivery。
+
+完成门：无需测试代码手工串联领域函数，真实应用 worker 即可把有效来源推进到已裁决候选；仍不开放真实非静默投递。
+
+建议提交：`feat(eap): add recoverable proactive runtime orchestration`
+
+### EAP.R4：投递账本与本机表达渠道
+
+目标：建立唯一、可审计、at-most-once 的真实输出路径。
+
+- [ ] 新增顺序迁移：`proactive_deliveries`、投递尝试/事件表和必要唯一约束。
+- [ ] Delivery 至少记录 decision、candidate、episode、channel、payload hash、授权 revision、状态、attempt、错误码、delivered_at 和 acknowledged_at。
+- [ ] 定义投递状态机：`queued/claimed/delivering/delivered/failed/cancelled/suppressed/expired`。
+- [ ] 最终发送前重新检查所有硬边界；用户关闭、暂停、拒绝、来源失效或授权变化必须取消未投递项。
+- [ ] Level 0：只记录决定，不产生用户可见行为。
+- [ ] Level 1：通过现有统一 Live2D 状态源发出受限视线/表情/轻动作，不建立第二套前端情绪源。
+- [ ] Level 2：实现无系统通知的小气泡，支持自动消失和不要求回复。
+- [ ] Level 3：写入有明确 `proactive_delivery_id` 的主窗口 assistant message，并走正常消息刷新/流式兼容路径。
+- [ ] Level 4：只有 Windows 通知授权明确开启时才可投递；首次授权失败不得自动重试骚扰。
+- [ ] Level 5：本专项保持硬禁用，不实现 QQ/微信/邮件发送器。
+- [ ] `delivered` 只代表渠道成功确认；进程在调用渠道前后崩溃时不得重复投递。
+
+专项测试：
+
+- 每个 Level 的授权、降级与取消。
+- 两个 worker、进程崩溃、数据库提交失败和渠道超时下的 at-most-once 语义。
+- 已投递消息重启不重发，未确认状态进入人工可解释的保守恢复。
+- Electron 主窗口、Live2D、气泡和 Windows 通知真实集成测试。
+
+完成门：所有用户可见主动行为都能追溯到唯一 Delivery；关闭或暂停时用户可见行为为 0；Level 5 永远为 0。
+
+建议提交：`feat(eap): add auditable local proactive delivery channels`
+
+### EAP.R5：反馈闭环、用户控制与可解释历史
+
+目标：让用户能自然纠正时机、频率、话题和语气，且反馈真实改变后续行为。
+
+- [ ] 新增 `proactive_feedback` 表、repository、API 和审计事件，实现 `proactive-feedback-v1`。
+- [ ] 支持显式反馈：时机不对、太频繁、内容不对、别再提此话题、别用这种语气、可以继续提醒。
+- [ ] 支持有高精度逐字证据的自然语言反馈候选；低置信度只进入待确认，不直接建立永久边界。
+- [ ] 反馈必须关联 Delivery/ContactEpisode/topic/kind/expression act，禁止无来源全局惩罚。
+- [ ] 将反馈映射到 topic/kind 硬边界、`unanswered_pressure`、contact cost 和表达偏好；不得降低 bond/trust。
+- [ ] 补齐主动消息历史 API/UI，显示时间、自然原因、渠道、结果和用户反馈，不显示裸分数。
+- [ ] 补齐开发者诊断 API/UI，显示 candidate、硬门、reason code、协议/策略版本和 source ID，不复制不必要正文。
+- [ ] 实现清除待处理候选/主动历史和重置设置；不得隐式删除聊天、记忆、关系或 LIFE 数据。
+- [ ] 设置重置使用单个后端原子 API，不从前端并发发送多个 PUT 后提前提示成功。
+- [ ] 为整个“陪伴与主动消息”Tab 增加专项前端测试和至少一条 Electron UI 流程测试。
+
+完成门：用户所有可见控制均有后端语义；“暂停”“别再提”“太频繁”在下一次评估前生效；历史和清除功能不再显示“开发中”。
+
+建议提交：`feat(eap): close proactive feedback and user control loop`
+
+### EAP.R6：生产路径长期模拟、总验收与正式冻结
+
+目标：只在真实生产路径满足完成定义后关闭专项。
+
+- [ ] 重构现有 `timeline_simulator.py`，让它驱动生产 reducer、orchestrator、decision、delivery 和 feedback repository，而不是测试专用旁路。
+- [ ] 覆盖 15 分钟、8 小时、24 小时、3 天、30 天；覆盖时区变化、时钟回拨、Windows 休眠/唤醒、断网、Provider 失败、应用崩溃和数据库忙。
+- [ ] 覆盖积极回应、连续忽略、明确拒绝、关闭、暂停、类型关闭、话题拒绝、表达修复和重新授权。
+- [ ] 完成第 14 节全部验收场景；对无法自动判断的自然度样本保存人工评分记录。
+- [ ] 后端全量测试、前端测试、TypeScript、Vite build、Electron 脚本和 Windows 安装版 smoke test 全部通过。
+- [ ] 验证真实聊天仍可在 EAP worker、Provider、通知或 Live2D 失败时正常完成。
+- [ ] 验证普通聊天 bond 机械增长率为 0，用户沉默导致 bond/trust 下降率为 0。
+- [ ] 验证关闭/暂停/拒绝后的违规投递率为 0，重复投递率为 0，来源可追溯率为 100%。
+- [ ] 完成独立 strict Review，确认 0 个未解决 P0/P1。
+- [ ] 更新本计划、基线、项目上下文、README、长期路线、用户说明和 LIFE/KIG 前置条件。
+- [ ] 只有此时才能把实际完成的协议、策略和最后一个 EAP schema 标记为 FROZEN。
+
+冻结前必须同时满足：
+
+```text
+真实运行时闭环可达率                       = 100%
+关闭/暂停/拒绝后用户可见主动行为             = 0
+重复投递率                                 = 0
+普通聊天机械 bond 增长率                    = 0
+沉默导致 bond/trust 下降率                  = 0
+无有效来源的非零关系变化                    = 0
+无有效来源的主动候选/投递                   = 0
+所有用户可见行为 Delivery 可追溯率           = 100%
+Level 5 外部渠道投递                        = 0
+未解决 P0/P1                              = 0
+```
+
+建议提交：`feat(eap): complete review and freeze proactive companion runtime`
+
+### 9.B.3 收口施工顺序与停线规则
+
+```text
+EAP.R0 可信基线与迁移所有权
+  ↓
+EAP.R1 协议、设置硬边界与 Presence
+  ↓
+EAP.R2 User Affect 与关系意义真实接线
+  ↓
+EAP.R3 候选、Episode 与运行时编排（仍不真实投递）
+  ↓
+EAP.R4 本机投递账本与表达渠道
+  ↓
+EAP.R5 反馈、历史、清除和用户控制
+  ↓
+EAP.R6 生产路径长期模拟、独立 Review 与冻结
+  ↓
+LIFE 从下一个可用 schema 版本开始
+```
+
+停线规则：
+
+1. R0～R3 未完成前，不允许开启任何真实非静默投递。
+2. R4 未完成 at-most-once 和最终授权复核前，不允许桌面通知。
+3. R5 未完成暂停、拒绝和反馈闭环前，不得把主动陪伴作为正式默认体验发布。
+4. 任一阶段发现用户关闭/暂停仍可投递、重复投递或普通聊天机械涨 bond，均按 P1 阻断后续阶段。
+5. LIFE 可以继续审查计划，但在 EAP.R6 正式冻结前不得开始占用 schema 或接入主动主链。
+
+---
+
 ## 10. 数据迁移与回滚原则
 
 - 每阶段使用顺序 schema 迁移，禁止编辑历史迁移。
@@ -1537,6 +1815,8 @@ EAP v1 冻结后，外部渠道仍不得直接启用。下一入口必须先完�
 - 候选和投递表可停止消费并保留审计；清理必须由用户明确操作。
 - 算法版本、policy 版本和协议版本必须随事件保存，保证旧决定可回放。
 - 不以修改系统时间直接重算历史；检测异常时抑制发送并等待下一可靠时间点。
+- Schema 48～55 视为已发布历史迁移，不回写；EAP.R0 起从 Schema 56 顺序补表，LIFE 改用 EAP 之后第一个可用版本。
+- 回滚运行时接线时优先关闭 worker 和投递消费，不删除 Delivery/Feedback 审计；任何数据清理必须走用户可见的明确操作。
 
 ---
 
@@ -1773,5 +2053,4 @@ Review 建议必须分为：
 
 ### 声明
 
-未提前勾选未经代码和测试验证的施工项。所有新施工项（EAP.A~EAP.J）标注为 `[ ]`（未开始），待代码和测试验证后逐步勾选。v0.1 的 EAP.0~EAP.10 阶段保留为历史记录，不删除、不改写已完成勾选。
-
+v0.1 的 EAP.0～EAP.10 与 v0.2 的 EAP.A～EAP.J 均作为历史计划记录保留，其旧勾选和“能力状态”不再代表当前完成度。2026-07-22 起以第 9.B.1 节审计矩阵和 EAP.R0～EAP.R6 为唯一施工、验收与冻结依据；未经真实生产路径、专项测试和阶段 Review 验证的条目不得提前勾选。
