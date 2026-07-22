@@ -27,6 +27,12 @@ class UserStatus:
     UNKNOWN = "unknown"                  # 未知/无法判断
 
 # 状态优先级（数值越大优先级越高，命中高优先级时覆盖低优先级）
+USER_STATUS_VALUES = frozenset({
+    UserStatus.ONLINE, UserStatus.AWAY_BRIEF, UserStatus.AWAY_SLEEP,
+    UserStatus.AWAY_BUSY, UserStatus.AWAY_EXTENDED, UserStatus.ENDED_CONVERSATION,
+    UserStatus.DO_NOT_DISTURB, UserStatus.UNKNOWN,
+})
+
 PRIORITY = {
     UserStatus.DO_NOT_DISTURB: 7,
     UserStatus.ENDED_CONVERSATION: 6,
@@ -70,6 +76,36 @@ class PresenceSignal:
 
 # 程序规则识别模式（高精度表达，避免误判）
 # 按 spec："实现程序规则识别'晚安/我去测试/先这样'等高精度表达"
+@dataclass(frozen=True)
+class PresenceTransition:
+    signal: Optional[PresenceSignal]
+    active: bool
+    reason: str
+
+
+def reduce_presence(
+    current: Optional["PresenceRecord"],
+    *,
+    event: str,
+    signal: Optional[PresenceSignal] = None,
+    now: Optional[float] = None,
+) -> PresenceTransition:
+    """The sole transition policy for v2 signal, reappearance, end, DND and expiry."""
+    now = db.now() if now is None else now
+    if event == "signal":
+        if signal is None or signal.user_status not in USER_STATUS_VALUES:
+            raise ValueError("invalid conversation-presence-v2 signal")
+        if signal.expected_return_seconds is not None and signal.expected_return_seconds < 0:
+            raise ValueError("expected_return_seconds must not be negative")
+        reason = "reappearance" if signal.user_status == UserStatus.ONLINE else "signal"
+        return PresenceTransition(signal=signal, active=True, reason=reason)
+    if event == "expire":
+        if current and current.is_active and current.expires_at is not None and current.expires_at <= now:
+            return PresenceTransition(signal=None, active=False, reason="expired")
+        return PresenceTransition(signal=None, active=bool(current and current.is_active), reason="unchanged")
+    raise ValueError("unknown presence transition event")
+
+
 PRESENCE_PATTERNS = [
     # 睡眠（晚安、睡了、去睡觉）
     (
@@ -180,12 +216,21 @@ def update_presence(
     - 按 spec："新消息到达时自动使过期离开状态结束"
     """
     now = detected_at if detected_at is not None else db.now()
+    transition = reduce_presence(
+        get_current_presence(session_id), event="signal", signal=signal, now=now
+    )
+    signal = transition.signal
+    assert signal is not None
 
     # 计算过期时间和预计返回时间
     expires_seconds = DEFAULT_EXPIRY.get(signal.user_status)
-    expected_seconds = signal.expected_return_seconds or DEFAULT_EXPECTED_RETURN.get(signal.user_status)
-    expires_at = now + expires_seconds if expires_seconds else None
-    expected_return_at = now + expected_seconds if expected_seconds else None
+    expected_seconds = (
+        signal.expected_return_seconds
+        if signal.expected_return_seconds is not None
+        else DEFAULT_EXPECTED_RETURN.get(signal.user_status)
+    )
+    expires_at = now + expires_seconds if expires_seconds is not None else None
+    expected_return_at = now + expected_seconds if expected_seconds is not None else None
 
     priority = PRIORITY.get(signal.user_status, 0)
     record_id = db.new_id()
@@ -256,13 +301,27 @@ def expire_stale_presences(now: Optional[float] = None) -> int:
     now = now if now is not None else db.now()
     conn = db.connect()
     try:
-        cursor = conn.execute(
-            "UPDATE conversation_presence SET is_active=0, updated_at=? "
-            "WHERE is_active=1 AND expires_at IS NOT NULL AND expires_at < ?",
-            (now, now),
-        )
+        rows = conn.execute(
+            "SELECT * FROM conversation_presence WHERE is_active=1 AND expires_at IS NOT NULL"
+        ).fetchall()
+        expired_ids = []
+        for row in rows:
+            current = PresenceRecord(
+                id=row["id"], session_id=row["session_id"], user_status=row["user_status"],
+                detected_at=row["detected_at"], expires_at=row["expires_at"],
+                expected_return_at=row["expected_return_at"], open_thread=bool(row["open_thread"]),
+                open_thread_topic=row["open_thread_topic"], source_message_id=row["source_message_id"],
+                priority=row["priority"], is_active=bool(row["is_active"]),
+            )
+            if not reduce_presence(current, event="expire", now=now).active:
+                expired_ids.append(row["id"])
+        for record_id in expired_ids:
+            conn.execute(
+                "UPDATE conversation_presence SET is_active=0, updated_at=? WHERE id=?",
+                (now, record_id),
+            )
         conn.commit()
-        return cursor.rowcount or 0
+        return len(expired_ids)
     finally:
         conn.close()
 

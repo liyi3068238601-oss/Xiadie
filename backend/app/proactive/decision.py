@@ -31,6 +31,7 @@ from .presence import (
 )
 from .protocols import PROACTIVE_DECISION_V2
 from .run_ledger import make_idempotency_key
+from .settings import effective_policy
 
 
 # 决策动作（spec 第 6.3 节）
@@ -60,6 +61,7 @@ class Layer1BlockReason:
     SOURCE_INVALIDATED = "source_invalidated"             # 来源消息已删除/撤销
     ALREADY_DELIVERED = "already_delivered"               # 相同候选已投递
     EMERGENCY_STOP = "emergency_stop"                     # 应用急停/不可打断
+    PROACTIVE_PAUSED = "proactive_paused"
 
 
 # 第二层延后原因（spec 第 6.1 节，7 项）
@@ -245,19 +247,8 @@ def check_layer1_hard_boundary(
     """
     now = now if now is not None else db.now()
 
-    # 加载 settings
-    if settings is None:
-        settings = {}
-        settings["proactive_enabled"] = db.get_setting("proactive_enabled", "1")
-        settings["proactive_emergency_stop"] = db.get_setting(
-            "proactive_emergency_stop", "0"
-        )
-        settings["proactive_rejected_topics"] = db.get_setting(
-            "proactive_rejected_topics", ""
-        )
-        settings["proactive_rejected_kinds"] = db.get_setting(
-            "proactive_rejected_kinds", ""
-        )
+    policy = effective_policy(now=now, candidate_kind=candidate.candidate_kind, overrides=settings)
+    settings = policy.settings
 
     reasons = []
 
@@ -268,6 +259,11 @@ def check_layer1_hard_boundary(
     # EMERGENCY_STOP：应用急停/不可打断
     if settings.get("proactive_emergency_stop", "0") == "1":
         reasons.append(Layer1BlockReason.EMERGENCY_STOP)
+
+    if "proactive_paused" in policy.blocked_reasons:
+        reasons.append(Layer1BlockReason.PROACTIVE_PAUSED)
+    if "candidate_kind_disabled" in policy.blocked_reasons:
+        reasons.append(Layer1BlockReason.KIND_REJECTED)
 
     # TOPIC_REJECTED：用户明确拒绝该话题（settings 中以逗号分隔存储）
     rejected_topics_str = settings.get("proactive_rejected_topics", "")
@@ -314,8 +310,8 @@ def check_layer2_defer_conditions(
     *,
     now: Optional[float] = None,
     presence: Optional[PresenceRecord] = None,
-    quiet_hours_start: int = DEFAULT_QUIET_HOURS_START,
-    quiet_hours_end: int = DEFAULT_QUIET_HOURS_END,
+    quiet_hours_start: Optional[int] = None,
+    quiet_hours_end: Optional[int] = None,
 ) -> Layer2Result:
     """第二层延后条件检查（spec 第 6.1 节）。
 
@@ -329,6 +325,11 @@ def check_layer2_defer_conditions(
     - TIMING_NOT_RIGHT：本阶段简化，不命中
     """
     now = now if now is not None else db.now()
+    policy_settings = effective_policy(now=now).settings
+    if quiet_hours_start is None:
+        quiet_hours_start = int(policy_settings["proactive_quiet_hours_start"])
+    if quiet_hours_end is None:
+        quiet_hours_end = int(policy_settings["proactive_quiet_hours_end"])
 
     # 加载 presence
     if presence is None:
@@ -363,10 +364,18 @@ def check_layer2_defer_conditions(
                 next_window = presence.expected_return_at
 
     # QUIET_HOURS：当前小时在安静时段范围内
-    if _is_in_quiet_hours(now, quiet_hours_start, quiet_hours_end):
+    try:
+        in_quiet_hours = _is_in_quiet_hours(now, quiet_hours_start, quiet_hours_end)
+    except (OSError, OverflowError, ValueError):
+        # An invalid local clock must suppress timing-sensitive proactive output.
+        in_quiet_hours = True
+    if in_quiet_hours:
         reasons.append(Layer2DeferReason.QUIET_HOURS)
         if next_window is None:
-            next_window = _compute_next_quiet_window_end(now, quiet_hours_end)
+            try:
+                next_window = _compute_next_quiet_window_end(now, quiet_hours_end)
+            except (OSError, OverflowError, ValueError):
+                next_window = None
 
     return Layer2Result(
         deferred=len(reasons) > 0,
@@ -532,7 +541,8 @@ def evaluate_contact_cost(
     if presence is None:
         presence = get_current_presence(candidate.session_id)
 
-    cost = 0.2
+    policy = effective_policy(now=now, candidate_kind=candidate.candidate_kind)
+    cost = 0.2 + policy.frequency_cost_addition
 
     if presence and presence.is_active:
         status = presence.user_status

@@ -1410,8 +1410,8 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
                     <label className="settings-toggle">
                       <input
                         type="checkbox"
-                        checked={proactiveSettings.proactive_external_channels_enabled === "1"}
-                        onChange={(e) => updateProactiveSetting("proactive_external_channels_enabled", e.target.checked ? "1" : "0")}
+                        checked={false}
+                        disabled
                         aria-label="外部渠道消息"
                       />
                       <span className="settings-toggle-slider" aria-hidden="true"></span>
@@ -1491,7 +1491,7 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
                 {proactiveSettings.proactive_show_advanced_diagnostics === "1" && (
                   <div className="settings-diagnostics-info">
                     <p>协议版本：conversation-presence-v2 / proactive-decision-v2 / expression-plan-v1</p>
-                    <p>Schema 版本：55</p>
+                    <p>Schema 版本：56</p>
                     <p>（诊断详情将在后续版本中提供）</p>
                   </div>
                 )}

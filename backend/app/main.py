@@ -5,6 +5,7 @@
 """
 import hashlib
 import json
+import logging
 from contextlib import asynccontextmanager
 from typing import Optional
 from urllib.parse import unquote
@@ -28,7 +29,10 @@ from . import (
 from . import memory_observer_service
 from .affect import observer_service as affect_observer_service
 from .proactive import presence as proactive_presence
+from .proactive import settings as proactive_settings
 from .security import ALLOWED_ORIGINS, TOKEN_HEADER, local_api_guard
+
+logger = logging.getLogger(__name__)
 
 
 def cleanup_orphan_attachments(max_age_seconds: float = 3600) -> int:
@@ -658,8 +662,11 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 proactive_presence.detect_presence_signals(body.content),
                 source_message_id=uid,
             )
-        except Exception:  # noqa: BLE001 - presence 失败不能阻塞陪伴聊天
-            pass
+        except Exception:  # noqa: BLE001 - presence failure must not block chat
+            logger.warning(
+                "presence_update_failed session_id=%s message_id=%s",
+                body.session_id, uid, exc_info=True,
+            )
 
     async def gen():
         nonlocal context_package, messages, trimmed_count
@@ -2343,6 +2350,11 @@ def read_setting(key: str) -> dict:
         default = db.DEFAULT_MEMORY_ENABLED
     elif key == "knowledge_default_policy":
         default = "remote_allowed"
+    elif key.startswith("proactive_"):
+        spec = proactive_settings.SETTING_REGISTRY.get(key)
+        if spec is None:
+            raise HTTPException(404, "未知的主动陪伴设置项")
+        default = spec.default
     else:
         default = ""
     return {"key": key, "value": db.get_setting(key, default)}
@@ -2363,6 +2375,11 @@ def write_setting(key: str, body: dict) -> dict:
         "remote_allowed", "ask_each_time", "local_only",
     }:
         raise HTTPException(400, "知识库默认策略只接受 remote_allowed/ask_each_time/local_only")
+    if key.startswith("proactive_"):
+        try:
+            value = proactive_settings.validate_setting(key, value)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
     db.set_setting(key, value)
     return {"key": key, "value": db.get_setting(key)}
 

@@ -283,7 +283,7 @@ def test_schema_version_is_52():
         row = conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
         ).fetchone()
-        assert row[0] == "55"
+        assert row[0] == "56"
     finally:
         conn.close()
 

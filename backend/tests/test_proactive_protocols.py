@@ -30,6 +30,25 @@ def test_no_duplicate_protocols():
     assert len(set(protocols.ALL_PROTOCOLS)) == 6
 
 
+def test_registry_covers_all_protocols_and_exposes_lifecycle_metadata():
+    assert set(protocols.PROTOCOL_REGISTRY) == set(protocols.ALL_PROTOCOLS)
+    for name in protocols.ALL_PROTOCOLS:
+        definition = protocols.get_protocol(name)
+        assert definition.name == name
+        assert definition.version in {1, 2}
+        assert definition.status in protocols.ProtocolStatus
+        assert definition.compatibility
+
+
+def test_registry_does_not_overstate_schema_only_protocols():
+    affect = protocols.get_protocol(protocols.USER_AFFECT_OBSERVATION_V1)
+    feedback = protocols.get_protocol(protocols.PROACTIVE_FEEDBACK_V1)
+    assert affect.status is protocols.ProtocolStatus.DRAFT
+    assert feedback.status is protocols.ProtocolStatus.DRAFT
+    assert callable(affect.validator)
+    assert callable(feedback.validator)
+
+
 def test_protocols_do_not_collide_with_existing():
     """EAP 协议不与现有 13 个协议冲突。"""
     existing = {

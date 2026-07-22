@@ -2,7 +2,7 @@
 
 - 版本：v0.3（完成度审计与收口补完版）
 - 日期：2026-07-22
-- 状态：v0.2 领域模块已落地，但真实产品闭环未完成；EAP.R0～EAP.R6 待施工
+- 状态：EAP.R0～EAP.R1 已完成并提交；真实产品闭环仍未完成，下一阶段为 EAP.R2
 - 专项代号：`EAP`（Emotion, Attachment and Proactivity）
 - 前置条件：CTX.0～CTX.7 已冻结；现有 Affect/Relationship 阶段 0～4.1 已完成
 - 执行规则：每个阶段均须完成代码、测试、文档、阶段 Review 和本地 Git 提交；未解决 P0/P1 时不得进入下一阶段
@@ -1405,6 +1405,8 @@ EAP v1 冻结后，外部渠道仍不得直接启用。下一入口必须先完�
 
 ## 9.A 施工阶段重组 EAP.A~EAP.J（v0.2）
 
+> **历史归档警告：本节 EAP.A～EAP.J 的勾选、能力状态和完成描述均不是当前项目完成度，不得用于施工或验收。当前唯一有效入口是第 9.B 节 EAP.R0～EAP.R6。**
+
 > v0.2 新增：从 EAP.0~EAP.10 调整为 EAP.A~EAP.J。旧阶段中已实现且符合新方向的能力审查后直接标记 `[x]`，部分符合的标记 `[~]` 并只补差距，未实现的标记 `[ ]`。所有新施工项标注为 `[ ]`（未开始），不提前勾选未经代码和测试验证的施工项。
 
 ### EAP.A：修订产品边界、默认策略和旧条款
@@ -1616,7 +1618,7 @@ EAP 六个新增协议的当前状态：
 - 当前施工只允许 EAP 从 Schema 56 顺序占用；项目外 LIFE/KIG 原版暂不参与施工，后续优化时必须重新分配 schema，因而当前迁移所有权无冲突。
 - 当前后端、前端和构建基线通过。
 
-R0 施工记录（2026-07-22）：`[x]` 已完成，等待独立 Review。验证结果为后端 `820 passed, 1 warning`、前端 `36 passed`、TypeScript/Vite build 通过（185 modules）、Electron `main.js`/`preload.js` 语法检查通过。仓库内 LIFE/KIG 后续修改版已按用户要求删除；项目外两份原版恢复到原路径并保持不改动，作为将来计划优化的输入。
+R0 施工记录（2026-07-22）：`[x]` 已完成并通过独立 Review。Review 无 P0；采纳的 P1/P2 建议进入 R1，`compute_layer3_factors` 的 N+1 查询归入 R3 编排与性能施工。验证结果为后端 `820 passed, 1 warning`、前端 `36 passed`、TypeScript/Vite build 通过（185 modules）、Electron `main.js`/`preload.js` 语法检查通过。仓库内 LIFE/KIG 后续修改版已按用户要求删除；项目外两份原版恢复到原路径并保持不改动，作为将来计划优化的输入。
 
 建议提交：`docs(eap): reopen incomplete runtime closure after implementation audit`
 
@@ -1624,15 +1626,15 @@ R0 施工记录（2026-07-22）：`[x]` 已完成，等待独立 Review。验证
 
 目标：建立运行时闭环可以依赖的统一协议与用户控制底座。
 
-- [ ] 建立最小 Protocol Registry，记录协议名、版本、状态、validator 和兼容范围。
-- [ ] 把 `run_ledger.py` 从哈希/常量工具补成可复用的 DecisionRun repository，至少包含 source revision/hash、状态、尝试次数、错误码、模型元数据、幂等键和时间戳。
-- [ ] 不强制迁移所有历史 run 表；通过 adapter 兼容现有 observer/summary/knowledge run。
-- [ ] 为 `user-affect-observation-v1` 和 `proactive-feedback-v1` 定义严格结构化 Schema 与 validator。
-- [ ] 建立后端主动陪伴设置注册表，统一默认值、合法值、读取和写入校验。
-- [ ] 后端必须强制执行：总开关、紧急停止、暂停截止时间、六类主动类型、安静时段、频率模式、桌面通知授权和外部渠道硬禁用。
-- [ ] 暂停和安静时段使用本地时区进行可靠计算；非法时间、过期暂停和系统时间倒退保守处理。
-- [ ] 统一 `conversation-presence-v2` 的实际 8 值枚举与文档；如果需要不兼容改名，新增 `conversation-presence-v3`，不得静默改写 v2。
-- [ ] Presence 过期、用户重新出现、明确结束、睡眠和 DND 的状态转换必须由单一 reducer 管理。
+- [x] 建立最小 Protocol Registry，记录协议名、版本、状态、validator 和兼容范围。
+- [x] 把 `run_ledger.py` 从哈希/常量工具补成可复用的 DecisionRun repository，至少包含 source revision/hash、状态、尝试次数、错误码、模型元数据、幂等键和时间戳。
+- [x] 不强制迁移所有历史 run 表；通过 adapter 兼容现有 observer/summary/knowledge run。
+- [x] 为 `user-affect-observation-v1` 和 `proactive-feedback-v1` 定义严格结构化 Schema 与 validator。
+- [x] 建立后端主动陪伴设置注册表，统一默认值、合法值、读取和写入校验。
+- [x] 后端必须强制执行：总开关、紧急停止、暂停截止时间、六类主动类型、安静时段、频率模式、桌面通知授权和外部渠道硬禁用。
+- [x] 暂停和安静时段使用本地时区进行可靠计算；非法时间、过期暂停和系统时间倒退保守处理。
+- [x] 统一 `conversation-presence-v2` 的实际 8 值枚举与文档；如果需要不兼容改名，新增 `conversation-presence-v3`，不得静默改写 v2。
+- [x] Presence 过期、用户重新出现、明确结束、睡眠和 DND 的状态转换必须由单一 reducer 管理。
 
 专项测试：
 
@@ -1643,6 +1645,8 @@ R0 施工记录（2026-07-22）：`[x]` 已完成，等待独立 Review。验证
 - Presence v2/v3 兼容、过期和来源变化。
 
 完成门：设置页不存在“能保存但不生效”的控制；协议状态和真实实现一致。
+
+R1 施工记录（2026-07-22）：`[x]` 已完成，等待独立 Review。新增 Schema 56 `decision_runs`，保留历史 run 表并提供只读 adapter；协议注册表只把已有完整实现标为 `IMPLEMENTED`，只有 Schema 的协议继续标为 `DRAFT`。设置 API、决策硬门、强度授权和设置页统一执行后端注册表语义；Level 5 外部渠道在 API、运行时与 UI 三层硬禁用。Presence hook 异常改为结构化 warning，不再静默吞掉。R0 Review 的 N+1 建议明确延后到 R3，与唯一 orchestrator 和批量查询一并处理。验证结果：后端 `841 passed, 2 warnings`，前端 `36 passed`，TypeScript/Vite build 通过（188 modules），Electron `main.js`/`preload.js` 语法检查通过。
 
 建议提交：`feat(eap): enforce protocol registry settings and presence contracts`
 

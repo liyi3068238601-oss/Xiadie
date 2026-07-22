@@ -132,6 +132,25 @@ def test_priority_order():
     assert presence.PRIORITY[UserStatus.ONLINE] > presence.PRIORITY[UserStatus.UNKNOWN]
 
 
+def test_presence_v2_enum_is_frozen_to_eight_values():
+    assert presence.USER_STATUS_VALUES == {
+        "online", "away_brief", "away_sleep", "away_busy", "away_extended",
+        "ended_conversation", "do_not_disturb", "unknown",
+    }
+
+
+def test_presence_reducer_handles_reappearance_and_rejects_unknown_status():
+    transition = presence.reduce_presence(
+        None, event="signal", signal=presence.PresenceSignal(UserStatus.ONLINE), now=100,
+    )
+    assert transition.active is True
+    assert transition.reason == "reappearance"
+    with pytest.raises(ValueError, match="invalid conversation-presence-v2 signal"):
+        presence.reduce_presence(
+            None, event="signal", signal=presence.PresenceSignal("new_status"), now=100,
+        )
+
+
 # ---------- 3. 过期时间测试 ----------
 
 def test_expiry_for_away_brief():
@@ -417,7 +436,7 @@ def test_schema_version_is_52():
         row = conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
         ).fetchone()
-        assert row[0] == "55"
+        assert row[0] == "56"
     finally:
         conn.close()
 

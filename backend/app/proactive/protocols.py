@@ -33,3 +33,68 @@ ALL_PROTOCOLS = (
     EXPRESSION_PLAN_V1,
     PROACTIVE_FEEDBACK_V1,
 )
+
+
+from dataclasses import dataclass
+from enum import Enum
+from typing import Callable, Optional
+
+
+class ProtocolStatus(str, Enum):
+    IMPLEMENTED = "IMPLEMENTED"
+    DRAFT = "DRAFT"
+    PLACEHOLDER = "PLACEHOLDER"
+
+
+@dataclass(frozen=True)
+class ProtocolDefinition:
+    name: str
+    version: int
+    status: ProtocolStatus
+    validator: Optional[Callable]
+    compatibility: str
+
+
+def _validate_user_affect(*args, **kwargs):
+    from .schemas import validate_user_affect
+    return validate_user_affect(*args, **kwargs)
+
+
+def _validate_feedback(*args, **kwargs):
+    from .schemas import validate_proactive_feedback
+    return validate_proactive_feedback(*args, **kwargs)
+
+
+PROTOCOL_REGISTRY = {
+    CONVERSATION_PRESENCE_V2: ProtocolDefinition(
+        CONVERSATION_PRESENCE_V2, 2, ProtocolStatus.IMPLEMENTED, None,
+        "Frozen eight-value user_status contract; incompatible changes require v3.",
+    ),
+    USER_AFFECT_OBSERVATION_V1: ProtocolDefinition(
+        USER_AFFECT_OBSERVATION_V1, 1, ProtocolStatus.DRAFT, _validate_user_affect,
+        "Strict schema is available; repository and worker arrive in EAP.R2.",
+    ),
+    RELATIONSHIP_MEANING_V1: ProtocolDefinition(
+        RELATIONSHIP_MEANING_V1, 1, ProtocolStatus.DRAFT, None,
+        "No executable validator or repository until EAP.R2.",
+    ),
+    PROACTIVE_DECISION_V2: ProtocolDefinition(
+        PROACTIVE_DECISION_V2, 2, ProtocolStatus.IMPLEMENTED, None,
+        "Existing decision records remain authoritative; DecisionRun is an adapter target.",
+    ),
+    EXPRESSION_PLAN_V1: ProtocolDefinition(
+        EXPRESSION_PLAN_V1, 1, ProtocolStatus.DRAFT, None,
+        "No executable validator or repository until EAP.R4.",
+    ),
+    PROACTIVE_FEEDBACK_V1: ProtocolDefinition(
+        PROACTIVE_FEEDBACK_V1, 1, ProtocolStatus.DRAFT, _validate_feedback,
+        "Strict schema is available; persistence and application arrive in EAP.R5.",
+    ),
+}
+
+
+def get_protocol(name: str) -> ProtocolDefinition:
+    try:
+        return PROTOCOL_REGISTRY[name]
+    except KeyError as exc:
+        raise ValueError(f"unknown protocol: {name}") from exc

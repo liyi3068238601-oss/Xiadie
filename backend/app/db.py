@@ -2375,6 +2375,41 @@ MIGRATIONS = [
             ON life_proactive_seeds(source_event_type, source_event_id, source_revision);
         """,
     ),
+    (
+        56,
+        """
+        CREATE TABLE IF NOT EXISTS decision_runs (
+            id TEXT PRIMARY KEY,
+            task_kind TEXT NOT NULL,
+            protocol_version TEXT NOT NULL,
+            source_type TEXT NOT NULL,
+            source_id TEXT NOT NULL,
+            source_revision TEXT NOT NULL DEFAULT '',
+            source_hash TEXT NOT NULL,
+            idempotency_key TEXT NOT NULL UNIQUE,
+            status TEXT NOT NULL DEFAULT 'queued' CHECK(status IN (
+                'queued','running','applied','recovery_pending','exhausted','skipped'
+            )),
+            attempt_count INTEGER NOT NULL DEFAULT 0 CHECK(attempt_count >= 0),
+            max_attempts INTEGER NOT NULL DEFAULT 3 CHECK(max_attempts > 0),
+            next_attempt_at REAL,
+            provider_id TEXT,
+            model_id TEXT,
+            latency_ms INTEGER CHECK(latency_ms IS NULL OR latency_ms >= 0),
+            input_tokens INTEGER CHECK(input_tokens IS NULL OR input_tokens >= 0),
+            output_tokens INTEGER CHECK(output_tokens IS NULL OR output_tokens >= 0),
+            error_code TEXT,
+            warnings_json TEXT NOT NULL DEFAULT '[]',
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            completed_at REAL
+        );
+        CREATE INDEX IF NOT EXISTS idx_decision_runs_recovery
+            ON decision_runs(status, next_attempt_at, updated_at);
+        CREATE INDEX IF NOT EXISTS idx_decision_runs_source
+            ON decision_runs(source_type, source_id, source_revision);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
@@ -2469,15 +2504,11 @@ def init_db() -> None:
         # - Live2D 无文字表达：默认开启
         # - Windows 系统通知：首次使用时询问（默认 0，前端引导用户授权）
         # - QQ、微信、邮件等外部渠道：必须逐渠道明确授权（默认 0）
-        conn.execute(
-            "INSERT OR IGNORE INTO settings(key, value) VALUES('proactive_enabled', '1')"
-        )
-        conn.execute(
-            "INSERT OR IGNORE INTO settings(key, value) VALUES('proactive_desktop_notification_enabled', '0')"
-        )
-        conn.execute(
-            "INSERT OR IGNORE INTO settings(key, value) VALUES('proactive_external_channels_enabled', '0')"
-        )
+        from .proactive.settings import DEFAULTS as proactive_defaults
+        for key, value in proactive_defaults.items():
+            conn.execute(
+                "INSERT OR IGNORE INTO settings(key, value) VALUES(?, ?)", (key, value)
+            )
         conn.commit()
     finally:
         conn.close()

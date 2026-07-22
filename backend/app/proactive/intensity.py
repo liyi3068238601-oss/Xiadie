@@ -165,7 +165,7 @@ def is_level_authorized(level: int, *, settings: Optional[dict] = None) -> bool:
     if level == 4:
         return settings.get("proactive_desktop_notification_enabled", "0") == "1"
     if level == 5:
-        return settings.get("proactive_external_channels_enabled", "0") == "1"
+        return False  # External proactive delivery is a hard-disabled product boundary.
     return False
 
 

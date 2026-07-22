@@ -224,7 +224,7 @@ def test_is_level_authorized_with_desktop_enabled():
 
 
 def test_is_level_authorized_with_external_enabled():
-    """Level 5 在 external_channels_enabled='1' 时 True。"""
+    """Level 5 remains hard disabled even if a legacy value says enabled."""
     db.init_db()
     settings = {
         "proactive_enabled": "1",
@@ -232,7 +232,7 @@ def test_is_level_authorized_with_external_enabled():
         "proactive_external_channels_enabled": "1",
     }
     assert is_level_authorized(4, settings=settings) is False
-    assert is_level_authorized(5, settings=settings) is True
+    assert is_level_authorized(5, settings=settings) is False
 
 
 def test_is_level_authorized_proactive_disabled():
@@ -887,7 +887,7 @@ def test_schema_version_is_54():
         row = conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
         ).fetchone()
-        assert row[0] == "55"
+        assert row[0] == "56"
     finally:
         conn.close()
 

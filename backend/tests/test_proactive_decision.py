@@ -696,7 +696,7 @@ def test_evaluate_contact_cost_basic():
             presence=_make_presence_record(session_id, UserStatus.UNKNOWN, is_active=False),
             layer3_factors=None,
         )
-        assert cost == pytest.approx(0.2)  # 只有基础分
+        assert cost == pytest.approx(0.35)  # 基础分 + restrained 频率保护
     finally:
         _cleanup_session(session_id)
 
@@ -710,8 +710,8 @@ def test_evaluate_contact_cost_with_presence_busy():
         candidate = _make_candidate(session_id)
         presence = _make_presence_record(session_id, UserStatus.AWAY_BUSY)
         cost = evaluate_contact_cost(candidate, presence=presence)
-        # 0.2 + 0.4 = 0.6
-        assert cost == pytest.approx(0.6)
+        # 0.2 + 0.15 restrained + 0.4 busy = 0.75
+        assert cost == pytest.approx(0.75)
     finally:
         _cleanup_session(session_id)
 
@@ -1278,7 +1278,7 @@ def test_schema_version_is_52():
         row = conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
         ).fetchone()
-        assert row[0] == "55"
+        assert row[0] == "56"
     finally:
         conn.close()
 

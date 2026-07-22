@@ -1,7 +1,9 @@
 """EAP 公共 run 账本工具测试：source_hash、RunStatus、idempotency_key。"""
 import hashlib
 import json
+import pytest
 
+from app import db
 from app.proactive import run_ledger
 from app.proactive.protocols import PROACTIVE_DECISION_V2
 
@@ -74,3 +76,57 @@ def test_run_status_constants():
     assert run_ledger.RunStatus.RECOVERY_PENDING == "recovery_pending"
     assert run_ledger.RunStatus.EXHAUSTED == "exhausted"
     assert run_ledger.RunStatus.SKIPPED == "skipped"
+
+
+def test_legacy_adapter_does_not_require_table_migration():
+    adapted = run_ledger.adapt_legacy_run(
+        {"id": "legacy-1", "status": "done", "revision": "7", "hash": "abc"},
+        legacy_table="conversation_summary_runs", protocol_version="conversation-summary-v1",
+        revision_field="revision", hash_field="hash",
+    )
+    assert adapted.legacy_id == "legacy-1"
+    assert adapted.source_revision == "7"
+    assert adapted.source_hash == "abc"
+    assert adapted.status == run_ledger.RunStatus.SKIPPED
+
+
+def test_decision_run_repository_is_idempotent_and_auditable():
+    db.init_db()
+    key = run_ledger.make_idempotency_key(PROACTIVE_DECISION_V2, db.new_id())
+    created, was_created = run_ledger.create_or_get_run(
+        task_kind="proactive_decision", protocol_version=PROACTIVE_DECISION_V2,
+        source_type="candidate", source_id="candidate-1", source_revision="r1",
+        source_hash="a" * 64, idempotency_key=key, max_attempts=2, now=100.0,
+    )
+    duplicate, duplicate_created = run_ledger.create_or_get_run(
+        task_kind="proactive_decision", protocol_version=PROACTIVE_DECISION_V2,
+        source_type="candidate", source_id="candidate-1", source_revision="r1",
+        source_hash="a" * 64, idempotency_key=key, max_attempts=2, now=101.0,
+    )
+    assert was_created is True and duplicate_created is False
+    assert duplicate.id == created.id
+    running = run_ledger.transition_run(
+        created.id, run_ledger.RunStatus.RUNNING, provider_id="mock", model_id="xiadie-mock",
+        now=102.0,
+    )
+    applied = run_ledger.transition_run(
+        created.id, run_ledger.RunStatus.APPLIED, latency_ms=12,
+        input_tokens=3, output_tokens=4, warnings=["bounded"], now=103.0,
+    )
+    assert running.attempt_count == 1
+    assert applied.completed_at == 103.0
+    assert applied.provider_id == "mock"
+    assert applied.model_id == "xiadie-mock"
+    assert applied.warnings == ["bounded"]
+
+
+def test_decision_run_rejects_invalid_transition():
+    db.init_db()
+    key = run_ledger.make_idempotency_key(PROACTIVE_DECISION_V2, db.new_id())
+    run, _ = run_ledger.create_or_get_run(
+        task_kind="test", protocol_version=PROACTIVE_DECISION_V2,
+        source_type="candidate", source_id="candidate-2", source_revision="",
+        source_hash="b" * 64, idempotency_key=key,
+    )
+    with pytest.raises(ValueError, match="invalid DecisionRun transition"):
+        run_ledger.transition_run(run.id, run_ledger.RunStatus.APPLIED)
