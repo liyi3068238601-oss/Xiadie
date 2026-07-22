@@ -24,10 +24,12 @@ def clean_knowledge_lifecycle_data():
         conn.execute("DELETE FROM sessions")
         conn.execute("DELETE FROM knowledge_deletion_runs")
         conn.execute("DELETE FROM knowledge_documents")
+        # 重置集合默认为 ask_each_time 并清除全局默认策略设置，让集合默认生效（测试语义：集合默认）
         conn.execute(
             "UPDATE knowledge_collections SET default_transmission_policy='ask_each_time',"
             "policy_revision=1,policy_updated_at=updated_at WHERE id='default'"
         )
+        conn.execute("DELETE FROM settings WHERE key='knowledge_default_policy'")
         conn.commit()
     finally:
         conn.close()
@@ -46,6 +48,7 @@ def clean_knowledge_lifecycle_data():
             "UPDATE knowledge_collections SET default_transmission_policy='ask_each_time',"
             "policy_revision=1 WHERE id='default'"
         )
+        conn.execute("DELETE FROM settings WHERE key='knowledge_default_policy'")
         conn.commit()
     finally:
         conn.close()

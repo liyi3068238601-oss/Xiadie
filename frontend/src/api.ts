@@ -59,6 +59,7 @@ export interface Message {
   favorite: boolean;
   created_at: number;
   knowledge_citations?: KnowledgeCitation[];
+  attachments?: ChatAttachmentResult[];
 }
 export interface KnowledgeCitation {
   id: string;
@@ -854,8 +855,12 @@ export const updateKnowledgeRecallSettings = (body: {
 });
 export const preflightKnowledgeTransmission = (
   session_id: string, request_nonce: string, content: string,
+  attachment_ids?: string[],
 ) => j<KnowledgeGrantPreflight>("/api/knowledge/recall/preflight", {
-  method: "POST", body: JSON.stringify({ session_id, request_nonce, content }),
+  method: "POST", body: JSON.stringify({
+    session_id, request_nonce, content,
+    attachment_ids: attachment_ids ?? [],
+  }),
 });
 export const resolveKnowledgeTransmissionGrant = (body: {
   grant_id: string;
@@ -1086,6 +1091,51 @@ export const setSetting = (key: string, value: string) =>
     method: "PUT",
     body: JSON.stringify({ value }),
   });
+
+export interface ProactiveFeedback {
+  id: string;
+  delivery_id: string;
+  feedback_kind: string;
+  source: "explicit" | "natural_language";
+  status: "pending" | "applied" | "rejected" | "revoked";
+  evidence_quote?: string | null;
+  created_at: number;
+}
+
+export interface ProactiveHistoryItem {
+  id: string;
+  level: number;
+  channel: string;
+  status: string;
+  error_code?: string | null;
+  candidate_kind: string;
+  topic?: string | null;
+  natural_reason: string;
+  created_at: number;
+  feedback: ProactiveFeedback[];
+}
+
+export const listProactiveHistory = (limit = 50) =>
+  j<ProactiveHistoryItem[]>(`/api/proactive/history?limit=${limit}`);
+export const listPendingProactiveFeedback = (limit = 50) =>
+  j<ProactiveFeedback[]>(`/api/proactive/feedback/pending?limit=${limit}`);
+export const submitProactiveFeedback = (deliveryId: string, feedbackKind: string) =>
+  j<ProactiveFeedback>(`/api/proactive/deliveries/${encodeURIComponent(deliveryId)}/feedback`, {
+    method: "POST",
+    body: JSON.stringify({ feedback_kind: feedbackKind, request_nonce: crypto.randomUUID() }),
+  });
+export const resolveProactiveFeedback = (feedbackId: string, accept: boolean) =>
+  j<ProactiveFeedback>(`/api/proactive/feedback/${encodeURIComponent(feedbackId)}/resolve`, {
+    method: "POST", body: JSON.stringify({ accept }),
+  });
+export const getProactiveDiagnostics = (limit = 100) =>
+  j<Record<string, unknown>>(`/api/proactive/diagnostics?limit=${limit}`);
+export const clearProactiveData = () =>
+  j<Record<string, unknown>>("/api/proactive/data", { method: "DELETE" });
+export const resetProactiveSettings = () =>
+  j<{ settings: Record<string, string>; revision: number }>(
+    "/api/proactive/settings/reset", { method: "POST" },
+  );
 export const setContextControls = (body: Partial<Pick<ContextControls,
   "reference_chat_history" | "summary_injection_enabled">>) =>
   j<ContextControls>("/api/context/controls", {
@@ -1188,6 +1238,34 @@ export async function uploadChatAttachment(
   return response.json();
 }
 
+// 删除未绑定的附件（message_id IS NULL），用于用户点 × 移除 ready 附件时清理后端记录
+export async function deleteChatAttachment(attachmentId: string): Promise<void> {
+  await j<void>(`/api/chat/attachments/${encodeURIComponent(attachmentId)}`, {
+    method: "DELETE",
+  });
+}
+
+export async function getMessageAttachmentContent(
+  messageId: string, attachmentId: string,
+): Promise<{
+  id: string;
+  filename: string;
+  mime_type: string;
+  char_count: number;
+  content: string;
+}> {
+  const r = await fetch(
+    API_BASE + `/api/messages/${encodeURIComponent(messageId)}/attachments/${encodeURIComponent(attachmentId)}/content`,
+    { headers: requestHeaders() },
+  );
+  if (!r.ok) {
+    let detail = r.statusText;
+    try { detail = (await r.json()).detail || detail; } catch { /* ignore */ }
+    throw new ApiError(r.status, detail);
+  }
+  return r.json();
+}
+
 // 用 fetch+ReadableStream 解析 SSE（EventSource 不支持 POST）
 export async function streamChat(
   session_id: string,
@@ -1261,6 +1339,17 @@ export const desktop = (window as any).xiadie as
       dragPet: (dx: number, dy: number) => void;
       setPetState: (s: string, bubble?: string, cluster?: string) => void;
       onPetState: (cb: (p: { state: string; bubble?: string; cluster?: string }) => void) => void;
+      onProactiveDelivery: (cb: (p: {
+        id: string;
+        channel: "live2d" | "bubble";
+        payload: Record<string, any>;
+      }) => void) => () => void;
+      confirmProactiveDelivery: (id: string, success: boolean) => void;
+      onProactiveChatMessage: (cb: (p: {
+        session_id: string;
+        delivery_id: string;
+        message_id: string;
+      }) => void) => () => void;
       getApiToken: () => string;
     }
   | undefined;

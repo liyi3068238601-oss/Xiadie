@@ -5,6 +5,7 @@
 """
 import hashlib
 import json
+import logging
 from contextlib import asynccontextmanager
 from typing import Optional
 from urllib.parse import unquote
@@ -27,15 +28,50 @@ from . import (
 )
 from . import memory_observer_service
 from .affect import observer_service as affect_observer_service
+from .proactive import presence as proactive_presence
+from .proactive import settings as proactive_settings
+from .proactive import cognition_service as companion_cognition_service
+from .proactive import orchestrator as proactive_orchestrator
+from .proactive import delivery as proactive_delivery
+from .proactive import feedback as proactive_feedback
 from .security import ALLOWED_ORIGINS, TOKEN_HEADER, local_api_guard
+
+logger = logging.getLogger(__name__)
+
+
+def cleanup_orphan_attachments(max_age_seconds: float = 3600) -> int:
+    """清理 message_attachments 表中的孤儿数据。
+
+    孤儿来源：用户上传附件后未发送（关闭应用、切换会话、点 × 移除），
+    或 preflight 返回 pending 后用户取消授权。这些附件 message_id IS NULL，
+    不会被 messages ON DELETE CASCADE 清理。
+
+    只清理创建时间超过 max_age_seconds 的孤儿，避免清理正在上传/发送中的附件。
+    返回被清理的行数。
+    """
+    cutoff = db.now() - max_age_seconds
+    conn = db.connect()
+    try:
+        cursor = conn.execute(
+            "DELETE FROM message_attachments WHERE message_id IS NULL AND created_at < ?",
+            (cutoff,),
+        )
+        conn.commit()
+        return cursor.rowcount or 0
+    finally:
+        conn.close()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db.init_db()
+    # 启动时清理上一次运行遗留的孤儿附件（message_id IS NULL 且超过 1 小时）
+    cleanup_orphan_attachments()
     conversation_summaries.recover_stale_runs()
     await conversation_summary_service.start_worker()
     await affect_observer_service.start_worker()
+    await companion_cognition_service.start_worker()
+    await proactive_orchestrator.start_worker()
     await memory_observer_service.start_worker()
     await episode_consolidator.start_worker()
     await saga_consolidator.start_worker()
@@ -51,6 +87,8 @@ async def lifespan(app: FastAPI):
         await saga_consolidator.stop_worker()
         await episode_consolidator.stop_worker()
         await memory_observer_service.stop_worker()
+        await proactive_orchestrator.stop_worker()
+        await companion_cognition_service.stop_worker()
         await affect_observer_service.stop_worker()
         await conversation_summary_service.stop_worker()
 
@@ -168,9 +206,80 @@ def list_messages(sid: str) -> list[dict]:
         for citation in citations:
             public = knowledge_context.citation_public(citation)
             by_message.setdefault(public["assistant_message_id"], []).append(public)
+        attachments_by_message: dict[str, list[dict]] = {}
+        attach_rows = conn.execute(
+            "SELECT id, message_id, filename, mime_type, char_count, content_sha256, created_at"
+            " FROM message_attachments WHERE message_id IN"
+            " (SELECT id FROM messages WHERE session_id=?) ORDER BY message_id, created_at",
+            (sid,),
+        ).fetchall()
+        for attach in attach_rows:
+            if not attach["message_id"]:
+                continue
+            attachments_by_message.setdefault(attach["message_id"], []).append({
+                "id": attach["id"],
+                "filename": attach["filename"],
+                "mime_type": attach["mime_type"],
+                "char_count": attach["char_count"],
+                "content_preview": "",
+                "content_sha256": attach["content_sha256"],
+                "created_at": attach["created_at"],
+            })
         for message in messages:
             message["knowledge_citations"] = by_message.get(message["id"], [])
+            message["attachments"] = attachments_by_message.get(message["id"], [])
         return messages
+    finally:
+        conn.close()
+
+
+@app.get("/api/messages/{mid}/attachments/{aid}/content")
+def get_message_attachment_content(mid: str, aid: str) -> dict:
+    """返回附件全文，供前端点击查看。仅本机访问，不暴露 token。"""
+    conn = db.connect()
+    try:
+        row = conn.execute(
+            "SELECT id, message_id, filename, mime_type, content_text, char_count"
+            " FROM message_attachments WHERE id=? AND message_id=?",
+            (aid, mid),
+        ).fetchone()
+        if not row:
+            raise HTTPException(404, "附件不存在")
+        return {
+            "id": row["id"],
+            "filename": row["filename"],
+            "mime_type": row["mime_type"],
+            "char_count": row["char_count"],
+            "content": row["content_text"],
+        }
+    finally:
+        conn.close()
+
+
+@app.delete("/api/chat/attachments/{attachment_id}")
+def delete_chat_attachment(attachment_id: str) -> dict:
+    """删除未绑定的附件（message_id IS NULL）。
+
+    用于前端用户点 × 移除 ready 附件时立即清理后端记录，避免孤儿数据。
+    已绑定到消息（message_id IS NOT NULL）的附件不能通过此端点删除，
+    应通过删除消息级联清理。
+    """
+    conn = db.connect()
+    try:
+        cursor = conn.execute(
+            "DELETE FROM message_attachments WHERE id=? AND message_id IS NULL",
+            (attachment_id,),
+        )
+        conn.commit()
+        if cursor.rowcount == 0:
+            row = conn.execute(
+                "SELECT message_id FROM message_attachments WHERE id=?",
+                (attachment_id,),
+            ).fetchone()
+            if row is None:
+                raise HTTPException(404, "附件不存在")
+            raise HTTPException(409, "附件已绑定到消息，不能单独删除")
+        return {"deleted": True}
     finally:
         conn.close()
 
@@ -370,6 +479,9 @@ def _context_capability(provider: dict | None, model: str):
 
 @app.post("/api/chat")
 async def chat(body: ChatIn) -> StreamingResponse:
+    # 空 content 且无附件：拒绝（regenerate 不受此约束，因为复用历史消息）
+    if not body.regenerate and not body.content.strip() and not body.attachment_ids:
+        raise HTTPException(400, "content 和 attachment_ids 至少有一个非空")
     uid: str | None = None
     replace_assistant_id: str | None = None
     provider, model = _current_model()
@@ -410,19 +522,28 @@ async def chat(body: ChatIn) -> StreamingResponse:
         style = companion_state.get_style_guidance(next_state)
         lore_digest = lore.retrieve_lore(body.content)
         recall_mode = knowledge_recall.settings()["mode"]
-        knowledge_retrieval, recall_decision = knowledge_context.prepare_for_mode(
-            body.content, mode=recall_mode, provider=provider,
-            lore_text=lore_digest, memory_text=digest, session_id=body.session_id,
-        )
-        try:
-            knowledge_retrieval = knowledge_grants.authorize_chat_locked(
-                conn, prepared=knowledge_retrieval, session_id=body.session_id,
-                user_message_id=uid or "", request_nonce=body.request_nonce,
-                content=body.content, provider=provider, model=model,
-                grant_token=body.knowledge_grant_token,
-                skip_restricted=body.knowledge_skip_restricted,
-                recall_mode=recall_mode,
+        # 提前计算 capability，供知识召回动态预算和上下文装配共用
+        capability = _context_capability(provider, model)
+        # 纯附件无文字消息：跳过知识召回（避免误触发远传授权询问）
+        content_has_text = bool(body.content.strip())
+        if content_has_text:
+            knowledge_retrieval, recall_decision = knowledge_context.prepare_for_mode(
+                body.content, mode=recall_mode, provider=provider,
+                lore_text=lore_digest, memory_text=digest, session_id=body.session_id,
+                capability=capability,
             )
+        else:
+            knowledge_retrieval, recall_decision = None, None
+        try:
+            if knowledge_retrieval is not None:
+                knowledge_retrieval = knowledge_grants.authorize_chat_locked(
+                    conn, prepared=knowledge_retrieval, session_id=body.session_id,
+                    user_message_id=uid or "", request_nonce=body.request_nonce,
+                    content=body.content, provider=provider, model=model,
+                    grant_token=body.knowledge_grant_token,
+                    skip_restricted=body.knowledge_skip_restricted,
+                    recall_mode=recall_mode,
+                )
         except knowledge_grants.GrantError as error:
             if conn.in_transaction:
                 conn.rollback()
@@ -501,7 +622,6 @@ async def chat(body: ChatIn) -> StreamingResponse:
                     knowledge_search.SEARCH_PROTOCOL_VERSION, db.now(),
                 ),
             )
-        capability = _context_capability(provider, model)
         active_summary = (
             conversation_summaries.active_revision_internal(body.session_id)
             if context_controls.summary_injection_enabled() else None
@@ -532,12 +652,45 @@ async def chat(body: ChatIn) -> StreamingResponse:
     finally:
         conn.close()
 
-    if not body.regenerate and uid and recall_mode == "explicit":
+    if not body.regenerate and uid and recall_mode == "explicit" and content_has_text:
         # 只在后台记录影子判断；绝不修改本轮 messages 或 knowledge_block。
+        # 纯附件无文字消息不触发知识召回，无需入队影子判断。
         knowledge_recall.enqueue(
             session_id=body.session_id, user_message_id=uid,
             user_text=body.content, provider=provider,
         )
+
+    # EAP v0.2 Conversation Presence v2：用户消息入库后更新 presence 状态。
+    # 按 spec："新消息到达时自动使过期离开状态结束"；程序规则识别高精度表达。
+    # presence 更新失败不应阻塞聊天（try/except 包裹）。
+    if not body.regenerate and uid and content_has_text:
+        try:
+            proactive_orchestrator.handle_user_message(body.session_id)
+        except Exception:  # noqa: BLE001 - proactive recovery must not block chat
+            logger.warning(
+                "proactive_user_return_failed session_id=%s message_id=%s",
+                body.session_id, uid, exc_info=True,
+            )
+        try:
+            proactive_feedback.capture_natural_feedback(
+                body.session_id, uid, body.content,
+            )
+        except Exception:  # noqa: BLE001 - feedback inference must not block chat
+            logger.warning(
+                "proactive_feedback_capture_failed session_id=%s message_id=%s",
+                body.session_id, uid, exc_info=True,
+            )
+        try:
+            proactive_presence.update_presence(
+                body.session_id,
+                proactive_presence.detect_presence_signals(body.content),
+                source_message_id=uid,
+            )
+        except Exception:  # noqa: BLE001 - presence failure must not block chat
+            logger.warning(
+                "presence_update_failed session_id=%s message_id=%s",
+                body.session_id, uid, exc_info=True,
+            )
 
     async def gen():
         nonlocal context_package, messages, trimmed_count
@@ -688,13 +841,6 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 source_session_id=body.session_id,
                 source_message_id=uid,
             )
-            affect_observation = affect_observer_service.enqueue_turn(
-                chat_provider=provider,
-                chat_model=model,
-                session_id=body.session_id,
-                user_message_id=uid,
-                assistant_message_id=aid,
-            )
             try:
                 memory_observation = memory_observer_service.enqueue_turn(
                     chat_provider=provider,
@@ -708,6 +854,27 @@ async def chat(body: ChatIn) -> StreamingResponse:
                     "status": "unlogged_failure",
                     "error_code": "observer_enqueue_failed",
                 }
+        if uid:
+            # Regeneration creates a new source revision: the worker revokes the old
+            # suggestion and evaluates the replacement without incrementing interaction_count.
+            affect_observation = companion_cognition_service.enqueue_turn(
+                chat_provider=provider,
+                chat_model=model,
+                session_id=body.session_id,
+                user_message_id=uid,
+                assistant_message_id=aid,
+            )
+            try:
+                proactive_orchestrator.enqueue_after_chat(
+                    session_id=body.session_id,
+                    user_message_id=uid,
+                    assistant_message_id=aid,
+                )
+            except Exception:  # noqa: BLE001 - orchestration must not break a completed chat
+                logger.warning(
+                    "proactive_source_enqueue_failed session_id=%s message_id=%s",
+                    body.session_id, aid, exc_info=True,
+                )
         try:
             conversation_summary_service.enqueue_after_chat(
                 session_id=body.session_id, chat_provider=provider, chat_model=model,
@@ -734,6 +901,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 "memory_candidate": candidate,
                 "companion_state": saved_companion_state,
                 "affect_observation": affect_observation,
+                "companion_cognition": affect_observation,
                 "memory_observation": memory_observation,
                 "content": full,
                 "knowledge_citations": [
@@ -749,6 +917,120 @@ async def chat(body: ChatIn) -> StreamingResponse:
 @app.get("/api/companion-state")
 def read_companion_state() -> dict:
     return companion_state.get_state()
+
+
+@app.get("/api/companion-state/cognition-runs")
+def read_companion_cognition_runs() -> list[dict]:
+    return companion_cognition_service.list_runs()
+
+
+@app.get("/api/companion-state/proactive-runtime")
+def read_proactive_runtime() -> dict:
+    return {
+        "sources": proactive_orchestrator.list_runtime_sources(),
+        "sagas": proactive_orchestrator.list_runtime_sagas(),
+        "deliveries": proactive_delivery.list_deliveries(),
+        "delivery_enabled": proactive_settings.load_settings()[
+            "proactive_local_delivery_enabled"
+        ] == "1",
+    }
+
+
+class ProactiveDeliveryClaimIn(BaseModel):
+    consumer_id: str = Field(min_length=1, max_length=120)
+
+
+class ProactiveDeliveryBeginIn(ProactiveDeliveryClaimIn):
+    lease_token: str = Field(min_length=1, max_length=120)
+
+
+class ProactiveDeliveryAckIn(ProactiveDeliveryBeginIn):
+    success: bool
+    error_code: str | None = Field(default=None, max_length=80)
+
+
+class ProactiveFeedbackIn(BaseModel):
+    feedback_kind: str = Field(min_length=1, max_length=40)
+    request_nonce: str = Field(min_length=1, max_length=120)
+
+
+class ProactiveFeedbackResolveIn(BaseModel):
+    accept: bool
+
+
+@app.post("/api/proactive-deliveries/claim")
+def claim_proactive_delivery(body: ProactiveDeliveryClaimIn) -> dict:
+    return {"delivery": proactive_delivery.claim_next(body.consumer_id)}
+
+
+@app.post("/api/proactive-deliveries/{delivery_id}/begin")
+def begin_proactive_delivery(delivery_id: str, body: ProactiveDeliveryBeginIn) -> dict:
+    try:
+        return proactive_delivery.begin_delivery(
+            delivery_id, body.consumer_id, body.lease_token
+        )
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+
+@app.post("/api/proactive-deliveries/{delivery_id}/ack")
+def acknowledge_proactive_delivery(delivery_id: str, body: ProactiveDeliveryAckIn) -> dict:
+    try:
+        return proactive_delivery.acknowledge_delivery(
+            delivery_id, body.consumer_id, body.lease_token,
+            success=body.success, error_code=body.error_code,
+        )
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+
+@app.get("/api/proactive/history")
+def proactive_history(limit: int = 50) -> list[dict]:
+    return proactive_feedback.list_history(limit)
+
+
+@app.get("/api/proactive/feedback/pending")
+def proactive_pending_feedback(limit: int = 50) -> list[dict]:
+    return proactive_feedback.list_pending(limit)
+
+
+@app.post("/api/proactive/deliveries/{delivery_id}/feedback")
+def submit_proactive_feedback(delivery_id: str, body: ProactiveFeedbackIn) -> dict:
+    try:
+        return proactive_feedback.create_feedback(
+            delivery_id, body.feedback_kind, request_nonce=body.request_nonce,
+        )
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+
+@app.post("/api/proactive/feedback/{feedback_id}/resolve")
+def resolve_proactive_feedback(feedback_id: str, body: ProactiveFeedbackResolveIn) -> dict:
+    try:
+        return proactive_feedback.resolve_feedback(feedback_id, accept=body.accept)
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+
+@app.get("/api/proactive/diagnostics")
+def proactive_diagnostics(limit: int = 100) -> dict:
+    return proactive_feedback.diagnostics(limit)
+
+
+@app.delete("/api/proactive/data")
+def clear_proactive_data() -> dict:
+    return proactive_feedback.clear_pending_and_history()
+
+
+@app.post("/api/proactive/settings/reset")
+def reset_proactive_settings() -> dict:
+    values, revision = proactive_settings.reset_public_settings()
+    return {"settings": values, "revision": revision}
+
+
+@app.post("/api/proactive/runtime/system-resume")
+def notify_proactive_system_resume() -> dict:
+    return {"guard_until": proactive_settings.mark_system_resume()}
 
 
 @app.post("/api/companion-state/reset")
@@ -1025,13 +1307,38 @@ def get_knowledge_recall_decision_stats(session_id: Optional[str] = None) -> dic
 class KnowledgeRecallPreflightIn(BaseModel):
     session_id: str
     request_nonce: str = Field(min_length=16, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
-    content: str = Field(min_length=1)
+    content: str = Field(default="", max_length=8192)
+    attachment_ids: list[str] = Field(default_factory=list)
 
 
 @app.post("/api/knowledge/recall/preflight")
 def preflight_knowledge_recall(body: KnowledgeRecallPreflightIn) -> dict:
     provider, model = _current_model()
     recall_mode = knowledge_recall.settings()["mode"]
+    # 纯附件无文字消息：跳过知识召回，不会触发远传授权询问
+    if not body.content.strip() and body.attachment_ids:
+        return {
+            "id": None,
+            "status": "not_needed",
+            "reason": "attachment_only",
+            "recall_mode": recall_mode,
+            "provider": {
+                "id": (provider or {}).get("id"),
+                "model": model,
+                "location": (provider or {}).get("execution_location") or "unknown",
+                "location_revision": max(1, int((provider or {}).get("location_revision") or 1)),
+            },
+            "documents": [],
+            "document_count": 0,
+            "chunk_count": 0,
+            "token_range": {"min": 0, "max": 0},
+            "single_use": False,
+            "can_allow_once": False,
+            "can_always_allow": False,
+            "expires_at": None,
+        }
+    if not body.content.strip() and not body.attachment_ids:
+        raise HTTPException(400, "content 和 attachment_ids 至少有一个非空")
     try:
         knowledge_grants.expire_due(limit=50)
         return knowledge_grants.preflight(
@@ -1170,6 +1477,7 @@ async def import_knowledge_document(request: Request) -> dict:
             )
         )
     except knowledge.KnowledgeImportError as error:
+        # 统一返回 {code, message} 结构化格式，前端 ApiError 可拿到 code 做分类 toast
         status = 413 if error.code in {"file_too_large", "decoded_text_too_large"} else (
             415 if error.code in {
                 "file_type_unsupported", "mime_type_mismatch", "encoding_unsupported",
@@ -1178,7 +1486,7 @@ async def import_knowledge_document(request: Request) -> dict:
                 "document_quota_exceeded", "storage_quota_exceeded",
             } else 400
         )
-        raise HTTPException(status, str(error)) from error
+        raise HTTPException(status, {"code": error.code, "message": str(error)}) from error
     except OSError as error:
         raise HTTPException(507, "无法把文件安全保存到本地知识库") from error
 
@@ -1216,10 +1524,11 @@ async def upload_chat_attachment(request: Request) -> dict:
         content_text = result["normalized_text"]
         char_count = result["char_count"]
     except knowledge_parser.ParserError as error:
+        # 统一返回 {code, message} 结构化格式，与 import_knowledge_document 对齐
         status = 415 if error.code in {
             "parser_unsupported", "encoding_unsupported",
         } else 400
-        raise HTTPException(status, str(error)) from error
+        raise HTTPException(status, {"code": error.code, "message": str(error)}) from error
     attachment_id = _secrets.token_hex(8)
     content_sha256 = hashlib.sha256(content_text.encode("utf-8")).hexdigest()
     mime_type = request.headers.get("content-type", "application/octet-stream")
@@ -2190,7 +2499,17 @@ def tool_logs() -> list[dict]:
 
 @app.get("/api/settings/{key}")
 def read_setting(key: str) -> dict:
-    default = db.DEFAULT_MEMORY_ENABLED if key == "memory_enabled" else ""
+    if key == "memory_enabled":
+        default = db.DEFAULT_MEMORY_ENABLED
+    elif key == "knowledge_default_policy":
+        default = "remote_allowed"
+    elif key.startswith("proactive_"):
+        spec = proactive_settings.SETTING_REGISTRY.get(key)
+        if spec is None:
+            raise HTTPException(404, "未知的主动陪伴设置项")
+        default = spec.default
+    else:
+        default = ""
     return {"key": key, "value": db.get_setting(key, default)}
 
 
@@ -2205,7 +2524,17 @@ def write_setting(key: str, body: dict) -> dict:
     value = str(body.get("value", ""))
     if key == "memory_enabled" and value not in {"0", "1"}:
         raise HTTPException(400, "长期记忆开关只接受 0 或 1")
-    db.set_setting(key, value)
+    if key == "knowledge_default_policy" and value not in {
+        "remote_allowed", "ask_each_time", "local_only",
+    }:
+        raise HTTPException(400, "知识库默认策略只接受 remote_allowed/ask_each_time/local_only")
+    if key.startswith("proactive_"):
+        try:
+            value, _revision = proactive_settings.write_public_setting(key, value)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
+    else:
+        db.set_setting(key, value)
     return {"key": key, "value": db.get_setting(key)}
 
 

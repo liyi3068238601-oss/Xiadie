@@ -13,10 +13,12 @@ test("chat performs local preflight before streaming restricted knowledge", () =
   assert.match(api, /knowledge_skip_restricted/);
 });
 
-test("grant confirmation exposes all four explicit user choices", () => {
-  for (const label of ["只允许这一次", "本次不使用资料", "以后始终允许", "设为仅限本地"]) {
-    assert.match(chat, new RegExp(label));
-  }
+test("grant confirmation exposes explicit user choices for knowledge transmission", () => {
+  // 当前 UI 暴露两个主按钮（可以用 / 这次可以用 / 这次不要用），
+  // footnote 说明"这次不要用"的语义。GrantAction 类型保留 4 种内部动作。
+  assert.match(chat, /可以用|这次可以用/);
+  assert.match(chat, /这次不要用/);
+  assert.match(chat, /本轮不使用资料/);
   assert.match(chat, /位置：/);
   assert.match(chat, /token_range/);
   assert.match(css, /\.knowledge-grant-card/);

@@ -1040,3 +1040,8 @@ v2.0 的最终成功标准：普通用户能够把一个真实、复杂、跨资
 | 2026-07-14 | 加入伴侣状态与记忆星座阶段 | 融合 jiwen 与 MemoryConstellations，并保持单后端、可追溯和受控主动性。 |
 | 2026-07-20 | 完成 CTX.0～CTX.7 上下文专项内部总验收 | 冻结硬预算、滚动摘要、跨会话显式回忆和用户控制；普通自动召回继续 shadow，产品主线回到陪伴式受控 Agent 地基。 |
 | 2026-07-20 | CTX.7 独立 strict review 通过并正式关闭专项 | 审查确认 0 个未解决 P0/P1；shadow 与 Provider token 校准保留为独立后续工作，摘要不得直接写长期记忆。下一专项转向情绪、关系积温与主动陪伴。 |
+| 2026-07-22 | EAP v0.2 完成度审计并重开收口 | Schema 48～55、领域模块和测试已落地，但只有 Presence hook 接入主链；真实编排、投递、反馈、设置硬边界和关系意义应用未闭环。改以 EAP.R0～R6 为唯一入口，LIFE 延后到 EAP 正式冻结之后。 |
+| 2026-07-22 | EAP.R4 本机投递安全闭环 | Schema 59 建立唯一 Delivery/attempt/event 账本；Level 0～4 接入后端最终门禁与 Electron，本机真实投递显式实验开启且默认关闭，Level 5 硬禁用。下一阶段为 R5 反馈、历史与用户控制。 |
+| 2026-07-22 | EAP.R5 反馈控制闭环与 R6 生产总验收施工 | Schema 60 完成 grounded feedback、历史与清除；生产模拟覆盖 15 分钟至 30 天及休眠、回拨、断网、Provider、崩溃、busy，新增 Windows resume 保护。协议保持 IMPLEMENTED，停线等待 R6 strict review；通过前不启动 LIFE/KIG。 |
+| 2026-07-22 | EAP.R6 strict review 通过并正式关闭专项 | 0 个 P0/P1，10/10 冻结指标通过；六个 EAP 协议与 Schema 60 正式冻结。后续专项固定为 CDS → LIFE → KIG，避免重复建设 DecisionRun、语义重排和跨源治理。 |
+| 2026-07-22 | CDS/LIFE/KIG v0.3 施工计划入库 | 采纳交叉专项 review：新增 ConstructionBaseline、唯一所有权矩阵、统一晋级/模型认证/预算/数据生命周期；LIFE 补单写者与真实性治理，KIG 拆为 KIG-R/KIG-P。PR #1 合并并锁定 SHA 前不启动 CDS 迁移施工。 |

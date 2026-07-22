@@ -11,6 +11,11 @@
 - [项目基线状态](docs/BASELINE_STATUS.md)：当前环境、验证结果、已有能力与已知风险。
 - [小步开发与 PR 检查清单](docs/PR_CHECKLIST.md)：每次改动的范围、风险、验证与交付标准。
 - [架构决策记录](docs/adr/README.md)：重大技术选择的记录规则与模板。
+- [EAP.R6 生产验收记录](docs/reports/eap-r6-production-acceptance.md)：主动陪伴长期、失败与安全指标证据；strict review 已确认 0 个未解决 P0/P1，六个协议与 Schema 60 已冻结。
+- [CDS 认知决策施工计划](docs/LLM_COGNITIVE_DECISION_REFACTOR_PLAN.md)：下一专项；复用 Schema 56 DecisionRun，等待 PR #1 合并后从锁定基线开工。
+- [LIFE 生活连续性施工计划](docs/LLM_DECISION_AND_LIFE_CONTINUITY_PLAN.md)：CDS 冻结后的第二专项。
+- [KIG 知识治理与 PWM 施工计划](docs/XIADIE_KNOWLEDGE_INTELLIGENCE_GOVERNANCE_AND_WORLD_MODEL_PLAN.md)：LIFE 冻结后的第三专项，分 KIG-R 与 KIG-P 两个里程碑。
+- [专项所有权与共享施工契约](docs/SPECIALTY_OWNERSHIP_AND_CONTRACT_MATRIX.md)：统一基线、所有权、晋级、模型认证、预算及数据生命周期门禁。
 
 ## 架构
 
@@ -36,6 +41,7 @@ desktop (Electron 壳)
 - **任务** TASK-001..006：自然语言/按钮创建、状态流转、今日任务、聊天来源。
 - **权限框架** 8.1：S0–S4 分级说明与只读审计视图；高风险默认需确认，无一键全开。
 - **设置** 6.9：模型 API / 外观 / Live2D / 记忆 / 权限 / 数据 六分组；无模型替换入口。
+- **受控主动陪伴**：本机 Level 1～4 通道、at-most-once Delivery、暂停/关闭/类型开关、grounded feedback、历史/清除和 Windows 唤醒保护已接线；真实投递仍需显式实验开启，Level 5 外部渠道硬禁用。
 
 ## 本地开发
 
@@ -68,7 +74,7 @@ npm start
 ## 测试与构建
 
 ```bash
-cd backend && python -m pytest tests -q          # 后端 API 与领域回归测试（492 项）
+cd backend && python -m pytest tests -q          # 后端 API 与领域回归测试
 cd frontend && npm run build                    # 前端类型检查 + 生产构建
 ```
 

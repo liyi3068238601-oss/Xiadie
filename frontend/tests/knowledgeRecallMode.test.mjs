@@ -13,6 +13,6 @@ test("knowledge page exposes conservative off explicit smart modes", () => {
 });
 
 test("smart mode UI keeps remote authorization explicit", () => {
-  assert.match(page, /远传仍遵守逐次授权/);
+  assert.match(page, /发送给在线模型仍遵守你设置的偏好/);
   assert.match(page, /updateKnowledgeRecallSettings/);
 });

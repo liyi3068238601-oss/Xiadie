@@ -1,7 +1,9 @@
 // 遐蝶桌面壳（需求第 3、10 节）：
 // 默认只显示 Live2D 桌宠窗口；点击桌宠打开主窗口；系统托盘常驻。
 // 不做启动多窗口堆叠。
-const { app, BrowserWindow, Tray, Menu, ipcMain, screen, shell } = require("electron");
+const {
+  app, BrowserWindow, Tray, Menu, ipcMain, screen, shell, Notification, powerMonitor,
+} = require("electron");
 const path = require("path");
 const { fileURLToPath } = require("url");
 const { spawn } = require("child_process");
@@ -26,6 +28,131 @@ let petWin = null;
 let mainWin = null;
 let tray = null;
 let backendProc = null;
+let deliveryTimer = null;
+let deliveryBusy = false;
+let deliveryIdleDelay = 2000;
+const deliveryConsumerId = `electron-${process.pid}-${randomBytes(8).toString("hex")}`;
+const rendererDeliveries = new Map();
+
+function backendJson(method, apiPath, body) {
+  return new Promise((resolve, reject) => {
+    const encoded = body === undefined ? null : Buffer.from(JSON.stringify(body));
+    const req = http.request({
+      hostname: "127.0.0.1", port: BACKEND_PORT, path: apiPath, method,
+      headers: {
+        "X-Xiadie-Token": API_TOKEN,
+        ...(encoded ? { "Content-Type": "application/json", "Content-Length": encoded.length } : {}),
+      },
+      timeout: 5000,
+    }, (res) => {
+      const chunks = [];
+      res.on("data", (chunk) => chunks.push(chunk));
+      res.on("end", () => {
+        const raw = Buffer.concat(chunks).toString("utf8");
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+          return reject(new Error(`backend_${res.statusCode || "error"}`));
+        }
+        try { resolve(raw ? JSON.parse(raw) : null); }
+        catch { reject(new Error("backend_invalid_json")); }
+      });
+    });
+    req.on("timeout", () => req.destroy(new Error("backend_timeout")));
+    req.on("error", reject);
+    if (encoded) req.write(encoded);
+    req.end();
+  });
+}
+
+async function acknowledgeDelivery(item, success, errorCode) {
+  try {
+    await backendJson("POST", `/api/proactive-deliveries/${item.id}/ack`, {
+      consumer_id: deliveryConsumerId,
+      lease_token: item.lease_token,
+      success,
+      error_code: success ? null : errorCode,
+    });
+  } finally {
+    rendererDeliveries.delete(item.id);
+  }
+}
+
+async function pollProactiveDelivery() {
+  if (deliveryBusy || app.isQuitting) return false;
+  deliveryBusy = true;
+  try {
+    const claimedResponse = await backendJson("POST", "/api/proactive-deliveries/claim", {
+      consumer_id: deliveryConsumerId,
+    });
+    const claimed = claimedResponse?.delivery;
+    if (!claimed) return false;
+    const begun = await backendJson("POST", `/api/proactive-deliveries/${claimed.id}/begin`, {
+      consumer_id: deliveryConsumerId,
+      lease_token: claimed.lease_token,
+    });
+    if (begun.status === "delivered" && begun.channel === "chat") {
+      mainWin?.webContents.send("proactive-chat-message", {
+        session_id: begun.session_id, delivery_id: begun.id, message_id: begun.message_id,
+      });
+      return true;
+    }
+    if (begun.status !== "delivering") return true;
+    if (begun.channel === "live2d" || begun.channel === "bubble") {
+      if (!petWin || petWin.isDestroyed()) {
+        await acknowledgeDelivery(begun, false, "pet_window_unavailable");
+        return true;
+      }
+      rendererDeliveries.set(begun.id, begun);
+      petWin.webContents.send("proactive-delivery", {
+        id: begun.id, channel: begun.channel, payload: begun.payload,
+      });
+      return true;
+    }
+    if (begun.channel === "desktop_notification") {
+      if (!Notification.isSupported()) {
+        await acknowledgeDelivery(begun, false, "notification_unsupported");
+        return true;
+      }
+      const notice = new Notification({ title: begun.payload.title, body: begun.payload.body });
+      let settled = false;
+      const settle = (success, code) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(notificationTimeout);
+        void acknowledgeDelivery(begun, success, code);
+      };
+      const notificationTimeout = setTimeout(
+        () => settle(false, "notification_timeout"), 10000,
+      );
+      notice.once("show", () => settle(true));
+      notice.once("failed", () => settle(false, "notification_failed"));
+      notice.show();
+      return true;
+    }
+  } catch (error) {
+    console.warn("proactive delivery bridge unavailable:", error.message);
+    return false;
+  } finally {
+    deliveryBusy = false;
+  }
+  return true;
+}
+
+async function deliveryLoop() {
+  const active = await pollProactiveDelivery();
+  deliveryIdleDelay = active ? 1000 : Math.min(30000, Math.max(2000, deliveryIdleDelay * 2));
+  if (!app.isQuitting) deliveryTimer = setTimeout(() => void deliveryLoop(), deliveryIdleDelay);
+}
+
+function startDeliveryBridge() {
+  if (deliveryTimer || deliveryBusy) return;
+  deliveryIdleDelay = 2000;
+  void deliveryLoop();
+}
+
+function stopDeliveryBridge() {
+  if (deliveryTimer) clearTimeout(deliveryTimer);
+  deliveryTimer = null;
+}
 
 // ---- 前端资源定位：dev 用 vite server，prod 用打包进 resources 的静态文件 ----
 function frontendUrl(page) {
@@ -256,14 +383,32 @@ ipcMain.on("pet-state", (_e, payload) => {
   if (petWin && !petWin.isDestroyed()) petWin.webContents.send("pet-state", payload);
 });
 
+ipcMain.on("proactive-delivery-ack", (event, payload) => {
+  if (!petWin || event.sender.id !== petWin.webContents.id) return;
+  const item = rendererDeliveries.get(payload?.id);
+  if (!item) return;
+  void acknowledgeDelivery(item, payload.success === true,
+    payload.success === true ? null : "pet_render_failed");
+});
+
 // ---------------------------------------------------------------- 生命周期
 app.whenReady().then(() => {
   startBackend();
   createTray();
+  powerMonitor.on("suspend", () => stopDeliveryBridge());
+  powerMonitor.on("resume", () => {
+    void backendJson("POST", "/api/proactive/runtime/system-resume")
+      .catch((error) => console.warn("proactive resume guard unavailable:", error.message))
+      .finally(() => startDeliveryBridge());
+  });
   if (isDev) {
     createPetWindow();
+    startDeliveryBridge();
   } else {
-    waitForBackend(() => createPetWindow());
+    waitForBackend((ready) => {
+      createPetWindow();
+      if (ready) startDeliveryBridge();
+    });
   }
 });
 
@@ -280,5 +425,6 @@ app.on("activate", () => {
 
 app.on("before-quit", () => {
   app.isQuitting = true;
+  stopDeliveryBridge();
   if (backendProc) backendProc.kill();
 });

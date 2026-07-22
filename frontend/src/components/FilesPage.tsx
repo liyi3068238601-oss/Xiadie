@@ -4,6 +4,21 @@ import { toast } from "./../store";
 
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
+// 上传错误按 status code 分类，优先使用后端返回的中文 message
+// 后端 import_knowledge_document 已统一返回 {code, message} 结构化格式
+const classifyUploadError = (e: { status?: number; message?: string }): string => {
+  if (e.status === 401) return "令牌失效，请重启遐蝶";
+  const msg = e.message || "";
+  if (/Failed to fetch|NetworkError|ERR_CONNECTION/i.test(msg)) {
+    return "无法连接到后端，请确认遐蝶已正常启动";
+  }
+  if (e.status === 413) return msg || "文件超过 10 MiB 限制";
+  if (e.status === 415) return msg || "文件类型不支持";
+  if (e.status === 409) return msg || "知识库已满或内容冲突";
+  if (e.status && e.status >= 500) return `后端异常：${msg || "服务异常"}`;
+  return msg || "文件导入失败";
+};
+
 // 需求 6.6 的知识库原则
 const PRINCIPLES: { title: string; desc: string }[] = [
   {
@@ -132,13 +147,7 @@ export function FilesPage() {
       setSensitive(false);
       await refresh();
     } catch (error: any) {
-      // "Failed to fetch" 是浏览器原生 TypeError，意味着网络层无法连接
-      // （后端未启动、端口未监听等），显示中文友好提示
-      const msg = error?.message || "";
-      const friendly = /Failed to fetch|NetworkError|network/i.test(msg)
-        ? "无法连接到后端，请确认遐蝶已正常启动"
-        : msg || "文件导入失败";
-      toast(friendly);
+      toast(classifyUploadError(error));
     } finally {
       setImporting(false);
     }
@@ -223,10 +232,10 @@ export function FilesPage() {
     setActionBusy(`policy:${document.id}`);
     try {
       await api.updateKnowledgeTransmissionPolicy(document.id, transmissionPolicy);
-      toast("文档远传策略已更新");
+      toast("资料偏好已更新");
       await refresh();
     } catch (error: any) {
-      toast(error.message || "远传策略更新失败");
+      toast(error.message || "资料偏好更新失败");
     } finally {
       setActionBusy(null);
     }
@@ -664,16 +673,16 @@ export function FilesPage() {
                 <small>{group.documents.length} 个文件</small>
               </div>
               {group.collection && <label className="knowledge-group-policy" onClick={(event) => event.stopPropagation()}>
-                <span>新文档默认</span>
+                <span>新资料默认</span>
                 <select value={group.collection.default_transmission_policy}
                   disabled={actionBusy === `collection-policy:${group.id}`}
                   onChange={(event) => changeCollectionPolicy(
                     group.collection!,
                     event.target.value as api.KnowledgeDocument["transmission_policy"],
                   )}>
-                  <option value="ask_each_time">每次询问</option>
-                  <option value="local_only">仅限本地</option>
-                  <option value="remote_allowed">允许发送命中片段</option>
+                  <option value="ask_each_time">用之前问我</option>
+                  <option value="local_only">只在本机用</option>
+                  <option value="remote_allowed">可以分享给遐蝶</option>
                 </select>
               </label>}
             </div>
@@ -868,20 +877,20 @@ function FileRow(props: FileRowProps) {
             <div>最近召回：{document.last_recalled_at
               ? new Date(document.last_recalled_at * 1000).toLocaleString("zh-CN") : "尚未召回"}
               · 累计 {document.recall_count || 0} 次 · 引用 {document.citation_count || 0} 条</div>
-            <div>远传策略：{transmissionPolicyLabel(document.transmission_policy)} · revision {document.policy_revision}</div>
+            <div>遐蝶能用这些资料吗：{transmissionPolicyLabel(document.transmission_policy)} · revision {document.policy_revision}</div>
           </details>
           <div className="knowledge-row-actions">
             <label className="knowledge-policy-control">
-              <span>发送给聊天模型</span>
+              <span>遐蝶能用这些资料吗</span>
               <select value={document.transmission_policy}
                 disabled={actionBusy === `policy:${document.id}`}
                 onChange={(event) => props.onUpdatePolicy(
                   document,
                   event.target.value as api.KnowledgeDocument["transmission_policy"],
                 )}>
-                <option value="ask_each_time">每次询问</option>
-                <option value="local_only">仅限本地</option>
-                {document.sensitivity !== "sensitive" && <option value="remote_allowed">允许发送命中片段</option>}
+                <option value="ask_each_time">用之前问我</option>
+                <option value="local_only">只在本机用</option>
+                {document.sensitivity !== "sensitive" && <option value="remote_allowed">可以分享给遐蝶</option>}
               </select>
             </label>
             {document.latest_run && <button className="btn ghost" onClick={() => props.onToggleRun(document)}>
@@ -971,16 +980,16 @@ function FileCard(props: FileRowProps) {
           </details>
           <div className="knowledge-row-actions">
             <label className="knowledge-policy-control">
-              <span>远传</span>
+              <span>遐蝶能用这些资料吗</span>
               <select value={document.transmission_policy}
                 disabled={actionBusy === `policy:${document.id}`}
                 onChange={(event) => props.onUpdatePolicy(
                   document,
                   event.target.value as api.KnowledgeDocument["transmission_policy"],
                 )}>
-                <option value="ask_each_time">每次询问</option>
-                <option value="local_only">仅限本地</option>
-                {document.sensitivity !== "sensitive" && <option value="remote_allowed">允许发送</option>}
+                <option value="ask_each_time">用之前问我</option>
+                <option value="local_only">只在本机用</option>
+                {document.sensitivity !== "sensitive" && <option value="remote_allowed">可以分享给遐蝶</option>}
               </select>
             </label>
             {document.latest_run && <button className="btn ghost" onClick={() => props.onToggleRun(document)}>
@@ -1018,7 +1027,7 @@ function formatBytes(value: number): string {
 
 function recallModeDescription(mode: api.KnowledgeRecallSettings["mode"]): string {
   if (mode === "off") return "完全不查询知识库，即使消息里明确提到文档也不会召回。";
-  if (mode === "smart") return "明确请求照常处理；自然对话仅在高置信命中时使用，远传仍遵守逐次授权。";
+  if (mode === "smart") return "明确请求照常处理；自然对话仅在高置信命中时使用，发送给在线模型仍遵守你设置的偏好。";
   return "默认模式：只有你明确提到知识库、资料或文档时才会查询；后台影子判断不会改变回答。";
 }
 
@@ -1062,9 +1071,9 @@ function documentStatusClass(document: api.KnowledgeDocument): string {
 
 function transmissionPolicyLabel(policy: api.KnowledgeDocument["transmission_policy"]): string {
   return ({
-    remote_allowed: "允许按最小预算发送命中片段",
-    ask_each_time: "发送前每次询问",
-    local_only: "仅限本机，不发送给在线模型",
+    remote_allowed: "可以分享给遐蝶",
+    ask_each_time: "用之前问我",
+    local_only: "只在本机用",
   })[policy];
 }
 

@@ -212,7 +212,7 @@ def test_auto_memory_creates_traceable_candidate_then_accepts():
 
 
 def test_sensitive_memory_never_enters_chat_digest():
-    from app import db, memory
+    from app import memory
 
     item = memory.create_memory(
         "L1",
@@ -549,7 +549,8 @@ def test_companion_state_changes_after_successful_chat_and_resets():
     assert changed["affect"]["contact_need"] < initial["affect"]["contact_need"]
     assert changed["affect"]["guardedness"] < initial["affect"]["guardedness"]
     assert changed["affect"]["immersion"] > initial["affect"]["immersion"]
-    assert changed["relationship"]["bond"] > initial["relationship"]["bond"]
+    # R2: fallback never changes relationship; only grounded cognition may do so later.
+    assert changed["relationship"]["bond"] == initial["relationship"]["bond"]
     assert changed["relationship"]["interaction_count"] == 1
     for key in ("contact_need", "guardedness", "immersion"):
         assert 0 <= changed["affect"][key] <= 1
@@ -566,7 +567,7 @@ def test_companion_state_changes_after_successful_chat_and_resets():
 
 
 def test_affect_timeline_is_deterministic_and_handles_one_night_and_seven_days():
-    from app.affect import engine
+    from app.affect import engine, repository
 
     initial = {
         "affect": dict(engine.DEFAULT_AFFECT),
@@ -580,7 +581,7 @@ def test_affect_timeline_is_deterministic_and_handles_one_night_and_seven_days()
     assert first["affect"]["immersion"] < initial["affect"]["immersion"]
     replied = engine.apply_fallback_interaction(first, "早上好，我回来了")
     assert replied["affect"]["contact_need"] == 0.03
-    assert replied["relationship"]["bond"] > first["relationship"]["bond"]
+    assert replied["relationship"]["bond"] == first["relationship"]["bond"]
 
     day = engine.advance(initial, 24 * 60)
     assert 0.22 < day["affect"]["contact_need"] < 0.25
@@ -596,6 +597,7 @@ def test_affect_timeline_is_deterministic_and_handles_one_night_and_seven_days()
     assert -1 <= week["affect"]["arousal"] <= 1
     assert -0.25 <= week["affect"]["guardedness_transient"] <= 0.25
 
+    repository.reset()
     ticked = client.post("/api/companion-state/tick", json={"minutes": 480}).json()
     assert ticked["affect"]["contact_need"] > 0.05
     assert client.post("/api/companion-state/tick", json={"minutes": 0}).status_code == 422
@@ -650,10 +652,8 @@ def test_reply_reduces_contact_need_proportionally_and_rebases_latest_state():
     high_reply = engine.apply_fallback_interaction(high, "我回来了")
     assert low_reply["affect"]["contact_need"] == pytest.approx(0.03)
     assert high_reply["affect"]["contact_need"] == pytest.approx(0.16)
-    assert (
-        high_reply["relationship"]["bond"] - high["relationship"]["bond"]
-        > low_reply["relationship"]["bond"] - low["relationship"]["bond"]
-    )
+    assert high_reply["relationship"]["bond"] == high["relationship"]["bond"]
+    assert low_reply["relationship"]["bond"] == low["relationship"]["bond"]
 
     companion_state.reset_state()
     stale_preview = companion_state.preview_interaction("较早生成的预览")
@@ -703,7 +703,7 @@ def test_generation_preview_advances_time_without_writing_state_or_event():
 def test_observer_failure_does_not_break_chat_done_event(monkeypatch):
     from app import db, llm
     from app import main as main_module
-    from app.affect import observer_service
+    from app.proactive import cognition_service
 
     provider = {
         "id": "test-observer-provider",
@@ -742,15 +742,56 @@ def test_observer_failure_does_not_break_chat_done_event(monkeypatch):
 
     # 聊天热路径只入队；模型观察尚未执行，因此不会延迟 done。
     queued_run = next(
-        item for item in client.get("/api/companion-state/observer-runs").json()
+        item for item in client.get("/api/companion-state/cognition-runs").json()
         if item["source_session_id"] == session["id"]
     )
     assert queued_run["attempt_count"] == 0
-    asyncio.run(observer_service.process_due())
-    runs = client.get("/api/companion-state/observer-runs").json()
+    for _ in range(20):
+        asyncio.run(cognition_service.process_due(limit=20))
+        if get_run := next(
+            (item for item in cognition_service.list_runs(200) if item["id"] == queued_run["id"]),
+            None,
+        ):
+            if get_run["status"] != "queued":
+                break
+    runs = client.get("/api/companion-state/cognition-runs").json()
     run = next(item for item in runs if item["source_session_id"] == session["id"])
     assert run["status"] == "recovery_pending"
-    assert run["candidate"] is None
+    assert run["result"] is None
+
+
+def test_proactive_runtime_hook_failures_do_not_break_chat_done_event(monkeypatch):
+    from app import llm
+    from app.proactive import orchestrator as proactive_orchestrator
+
+    async def fake_stream(*_args, **_kwargs):
+        yield "主聊天仍然正常完成"
+
+    def fail_hook(*_args, **_kwargs):
+        raise RuntimeError("proactive worker unavailable")
+
+    monkeypatch.setattr(llm, "stream_chat", fake_stream)
+    monkeypatch.setattr(proactive_orchestrator, "handle_user_message", fail_hook)
+    monkeypatch.setattr(proactive_orchestrator, "enqueue_after_chat", fail_hook)
+    session = client.post("/api/sessions", json={}).json()
+    with client.stream(
+        "POST", "/api/chat",
+        json={"session_id": session["id"], "content": "继续聊天"},
+    ) as response:
+        body = "".join(response.iter_text())
+    assert response.status_code == 200
+    assert "event: done" in body and "主聊天仍然正常完成" in body
+
+
+def test_system_resume_api_enables_a_fail_closed_guard():
+    from app.proactive import settings as proactive_settings
+
+    response = client.post("/api/proactive/runtime/system-resume")
+    assert response.status_code == 200
+    guard_until = response.json()["guard_until"]
+    assert guard_until > db.now()
+    assert "system_resume_guard" in proactive_settings.effective_policy().blocked_reasons
+    db.set_setting("proactive_resume_guard_until", "0")
 
 
 def test_observer_model_config_api_validates_dedicated_model():
@@ -914,7 +955,7 @@ def test_schema_migration_is_idempotent():
         version = conn.execute(
             "SELECT value FROM schema_meta WHERE key = 'schema_version'"
         ).fetchone()["value"]
-        assert version == "46"
+        assert version == "60"
         assert conn.execute("SELECT COUNT(*) c FROM companion_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM affect_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM relationship_state").fetchone()["c"] <= 1

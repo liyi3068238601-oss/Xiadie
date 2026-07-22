@@ -154,10 +154,16 @@ def import_file(
         _atomic_write(final_path, data)
         now = db.now()
         document_id, run_id = db.new_id(), db.new_id()
-        transmission_policy = (
-            "local_only" if sensitivity == "sensitive"
-            else str(collection["default_transmission_policy"])
-        )
+        # 全局默认策略优先于 collection 默认（用户在设置页配置），敏感文档强制 local_only
+        if sensitivity == "sensitive":
+            transmission_policy = "local_only"
+        else:
+            global_default = db.get_setting("knowledge_default_policy", "")
+            collection_default = str(collection["default_transmission_policy"])
+            transmission_policy = (
+                global_default if global_default in {"remote_allowed", "ask_each_time", "local_only"}
+                else collection_default
+            )
         assert_document_transition("staged", "queued")
         conn.execute(
             "INSERT INTO knowledge_documents("
@@ -265,6 +271,11 @@ def public_document(document: dict) -> dict:
         if key not in {"storage_key", "tags_json"}
     }
     result["tags"] = json.loads(document.get("tags_json") or "[]")
+    # 陪伴化展示文案：附加 policy_label / policy_description
+    from . import knowledge_policy
+    policy = result.get("transmission_policy")
+    result["policy_label"] = knowledge_policy.policy_label(policy)
+    result["policy_description"] = knowledge_policy.policy_description(policy)
     return result
 
 

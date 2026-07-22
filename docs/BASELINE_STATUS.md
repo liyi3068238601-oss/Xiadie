@@ -1,8 +1,8 @@
 # 遐蝶项目基线状态
 
-> 最近复核日期：2026-07-20
+> 最近复核日期：2026-07-22
 >
-> 基线提交：对话上下文 CTX.6 用户控制与隐私诊断（以本文件所在提交为准）
+> 基线提交：EAP.R6 strict review 收口与协议冻结（以本文件所在提交为准）
 >
 > 当前版本：`v0.1.0` MVP 骨架（知识库系统 K 系列已完成）
 >
@@ -31,13 +31,13 @@
 
 ## 3. 自动验证结果
 
-以下命令最近于 2026-07-20 执行：
+以下命令最近于 2026-07-22 执行：
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests` | 通过：492 passed，1 warning；schema 45 |
-| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：36 项；TypeScript 检查及 Vite 生产构建 185 modules 成功 |
-| Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误 |
+| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest -q` | 通过：937 passed，1 warning；当前 Schema 60 |
+| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：41 项；TypeScript 检查及 Vite 生产构建 188 modules 成功 |
+| Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误；桌宠、主窗口及 R6 主动陪伴设置页完成 Windows 实机 smoke |
 
 已知但不阻断当前开发的警告：
 
@@ -269,11 +269,13 @@ npm.cmd start
 | 重新生成 | 已改为新回复成功持久化时再替换旧回复，并有失败回归测试 | 后续版本化回复时再扩展历史保留策略 |
 | 上下文 | CTX.0～CTX.7 已完成总验收并通过独立 strict review；5/20/100/500 轮满足硬预算，当前用户消息受保护，摘要、跨会话历史、长期记忆、知识和 Lore 保持独立来源与优先级 | schema 45 与上下文 v1 已冻结；普通自动历史召回继续 shadow |
 | 情绪与关系 | `affect_state`、`relationship_state`、确定性积温、旁观观察器、9×5 语调网格、统一前端/Live2D 状态源已经可运行 | 进入情感意义、经历协同与受控主动陪伴专项；不重建现有内核 |
+| EAP 主动陪伴 | Schema 48～60、六个 EAP 协议、DecisionRun、生产 Orchestrator、grounded Feedback、Level 0～4 Delivery 与 Electron 通道已落地；长期生产模拟覆盖 15 分钟至 30 天及完整失败矩阵 | R0～R6 已通过独立 strict review（0 P0/P1）并正式冻结；真实本机投递仍为显式实验开关且默认关闭，Level 5 硬禁用。不兼容变更必须升协议版本 |
+| 下一专项 | CDS/LIFE/KIG v0.3 计划与共享所有权契约已纳入 `docs/` | 顺序固定为 CDS → LIFE → KIG；PR #1 未合并前只准备不施工，CDS.0 必须先锁定 `main` 合并 SHA 与 Schema 60 基线 |
 | 会话摘要/历史 | schema 45 与 v1 协议已冻结；摘要六类样本 6/6、显式历史召回固定集 4/4，重复手动重建已幂等合并；普通自动召回仍为 shadow | 只有取得明确授权的校准样本并另立 ADR 才考虑解除 shadow |
 | 模型设置 | provider/model 选择的服务端校验较弱 | v0.1.2 增加校验与错误恢复 |
-| 数据演进 | SQLite 已有顺序 schema 迁移并到达 45，但尚无独立迁移 CLI、降级和备份恢复工具 | 正式发布前补齐备份、恢复与迁移演练 |
+| 数据演进 | SQLite 已有顺序 schema 迁移并到达 60，但尚无独立迁移 CLI、降级和备份恢复工具 | Schema 48～60 均保持不可变；后续按 CDS → LIFE → KIG 串行占用前序专项结束后的下一个版本，当前首个可用号为 61；正式发布前补齐备份、恢复与迁移演练 |
 | Live2D 授权 | 当前模型只允许个人使用，禁止上传、再分发、商用和二改 | 仓库继续忽略资源；发布前更换为可发布模型 |
-| 发布 | 未签名 NSIS 已可构建；尚无证书、授权素材和稳定升级链路 | v1.0 前重新启用签名并完成安装/卸载/升级验收 |
+| 发布 | 2026-07-22 重新构建未签名 NSIS（564,038,879 bytes），frontend/backend/Lore/BGE-M3 资源与哈希验收通过；真实 Electron UI 通过。现有 8756 健康监听者阻止了同轮安装目录启动 | v1.0 前重新启用签名，并在释放端口后补安装/卸载/升级验收 |
 | 知识模型体积 | 本地 BGE-M3 使安装资源增加约 543 MiB | 发布前评估可选下载；缺失时继续使用 FTS |
 | 外部 Provider | 授权协议用 mock/受控流完成矩阵，未把测试正文发送给真实在线供应商 | 各供应商接入时单独做不含私密正文的网络兼容回归 |
 | Token 估算 | CTX.7 未读取真实聊天；当前没有经用户明确提供的 Provider usage 样本，误差百分比未实测 | 保留保守估算与已验证窗口；以后仅用用户显式样本输出无正文聚合误差 |

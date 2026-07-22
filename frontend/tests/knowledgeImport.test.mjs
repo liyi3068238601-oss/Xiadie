@@ -112,7 +112,7 @@ test("knowledge transmission policy and provider location stay explicit", async 
     readFile(new URL("../src/components/SettingsPage.tsx", import.meta.url), "utf8"),
     readFile(new URL("../src/api.ts", import.meta.url), "utf8"),
   ]);
-  assert.match(files, /发送前每次询问|仅限本机，不发送给在线模型|允许按最小预算发送命中片段/);
+  assert.match(files, /用之前问我|只在本机用|可以分享给遐蝶/);
   assert.match(files, /sensitivity !== "sensitive"/);
   assert.match(settings, /模型运行位置|未知（按远程处理）|只有本机回环地址/);
   assert.match(api, /transmission_policy|policy_revision|execution_location|location_revision/);

@@ -73,8 +73,7 @@
   自然召回、远传策略、一次性授权、记忆隔离和生命周期均以 ADR-0036～ADR-0044 为准。
 - 对话上下文 CTX.0～CTX.7：`docs/CONVERSATION_CONTEXT_AND_SUMMARY_PLAN.md`。该计划已完成总验收并通过独立 strict review；
   schema 45 与上下文 v1 已冻结，普通自动历史召回继续 shadow。
-- 当前下一专项：`docs/EMOTION_RELATIONSHIP_AND_PROACTIVE_COMPANION_PLAN.md`。它继承现有 affect/relationship 内核，
-  补齐情感意义、共同经历协同和默认关闭的本机主动陪伴；不得另建重复情绪状态源。
+- 已关闭专项：`docs/EMOTION_RELATIONSHIP_AND_PROACTIVE_COMPANION_PLAN.md` 第 9.B 节 EAP.R0～EAP.R6。Schema 48～60 与六个 EAP 协议已通过独立 strict review 并正式冻结；不得另建重复情绪、关系或主动投递源。
 
 ---
 
@@ -200,7 +199,7 @@ Xiadie/
 - API Key 已经由 SecretStore 抽象隔离，但开发期实现仍是未加密的本地 SQLite，正式版还需 safeStorage。
 - 重新生成已改为新回复成功后原子替换，并有失败保留旧回复回归测试。
 - CTX.0～CTX.7 已完成实现、内部总验收与独立 strict review；审查确认 0 个未解决 P0/P1，schema 45 与上下文 v1 已正式冻结。
-- 下一专项为情绪、关系积温与主动陪伴：沿用现有 `affect_state`、`relationship_state`、旁观观察器和统一 Live2D 状态源，不另建重复情绪内核；主动消息默认关闭，先限于本机桌面渠道。
+- EAP v0.2 已落地 Schema 48～55 和独立领域模块，但完成度审计确认只有 Presence hook 接入聊天主链；当前按 EAP.R0～R6 收口。主动陪伴产品方向为本机默认开启，但 R0～R3 不允许真实非静默投递，R4/R5 完成投递安全和用户控制前不得正式发布。
 - Provider 和模型选择校验不足。
 - 前端及 Electron 自动化测试不足。
 
@@ -373,9 +372,10 @@ node --check preload.js
 
 ## 14. 当前专项入口
 
-知识库 F.1～F.8、优化 K.0～K.9 与上下文 CTX.0～CTX.7 均已完成并冻结。下一专项施工入口为：
+知识库 F.1～F.8、优化 K.0～K.9、上下文 CTX.0～CTX.7 与 EAP.R0～R6 均已完成并技术冻结。下一专项施工入口为：
 
-`docs/EMOTION_RELATIONSHIP_AND_PROACTIVE_COMPANION_PLAN.md`
+`docs/LLM_COGNITIVE_DECISION_REFACTOR_PLAN.md`
 
-该专项先执行 EAP.0 真实基线，不得直接跳到主动发送。主动陪伴默认关闭，首版只允许用户明确开启的本机桌面渠道；
-外部消息仍须等待 ToolRegistry、权限、审批、审计和去重锁闭环。
+EAP Schema 48～60 不回写；真实输出继续受后端最终授权复核、系统恢复保护窗与 at-most-once 状态机约束，Level 5 外部渠道保持硬禁用。三份 v0.3 权威计划与 `docs/SPECIALTY_OWNERSHIP_AND_CONTRACT_MATRIX.md` 已纳入仓库，固定顺序为 `CDS → LIFE → KIG`。
+
+当前 EAP PR #1 仍为 open/draft，因此 CDS 处于“准备施工、尚未正式开工”。默认必须先把 PR #1 合并到 `main`，再在 CDS.0 锁定不可变合并 SHA、Schema 60、冻结协议和 `937 passed` 测试基线；不得从旧 `main` 开工后再合入 EAP。下一可用 Schema 为 61，但只有出现真实字段缺口时才占用。

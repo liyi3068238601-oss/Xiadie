@@ -237,6 +237,12 @@ async def _process_claimed(row: dict) -> None:
 
 
 def _apply_candidate(row: dict, context: dict, candidate: dict, completion: dict, input_chars: int) -> None:
+    # EAP.R2: affect-observer-v1 remains readable for compatibility, but it no longer
+    # owns formal relationship changes. Only grounded relationship-meaning-v1 may do that.
+    candidate = json.loads(json.dumps(candidate, ensure_ascii=False))
+    if any(abs(float(value)) > 1e-12 for value in candidate["relationship_delta"].values()):
+        candidate["relationship_delta"] = {"bond": 0.0, "trust": 0.0}
+        candidate.setdefault("warnings", []).append("legacy_relationship_delta_suppressed")
     conn = db.connect()
     try:
         conn.execute("BEGIN IMMEDIATE")
