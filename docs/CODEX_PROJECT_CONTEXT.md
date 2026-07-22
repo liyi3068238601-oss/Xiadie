@@ -377,5 +377,5 @@ node --check preload.js
 
 `docs/EMOTION_RELATIONSHIP_AND_PROACTIVE_COMPANION_PLAN.md`
 
-该专项只执行第 9.B 节 EAP.R0～EAP.R6；EAP.A～EAP.J 是历史计划，不再代表当前完成度。Schema 48～55 不回写，收口从 Schema 56 开始。
+该专项只执行第 9.B 节 EAP.R0～EAP.R6；EAP.A～EAP.J 是历史计划，不再代表当前完成度。Schema 48～55 不回写，收口从 Schema 56 开始；当前已完成 R0～R2，Schema 到 57，下一阶段为 R3。
 R0～R3 不得真实非静默投递；R4 只接本机渠道；Level 5 外部渠道保持硬禁用。LIFE 在 EAP.R6 正式冻结后使用下一个可用 schema 版本。

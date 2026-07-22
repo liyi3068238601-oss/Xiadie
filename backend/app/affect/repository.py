@@ -181,6 +181,52 @@ def apply_observation_in_transaction(
     return after, event_id
 
 
+def apply_relationship_delta_in_transaction(
+    conn,
+    *,
+    bond_delta: float,
+    trust_delta: float,
+    source: str,
+    reason: str,
+    source_session_id: str,
+    source_message_id: str | None,
+) -> tuple[dict, str]:
+    """Apply only formal bond/trust fields and emit one traceable affect event."""
+    before = _load(conn)
+    after = {
+        "affect": dict(before["affect"]),
+        "relationship": dict(before["relationship"]),
+    }
+    after["relationship"]["bond"] = engine.clamp(
+        after["relationship"]["bond"] + bond_delta, 0, 1,
+    )
+    after["relationship"]["trust"] = engine.clamp(
+        after["relationship"]["trust"] + trust_delta, 0, 1,
+    )
+    after["relationship"]["updated_at"] = db.now()
+    _save(conn, after)
+    event_id = _event(
+        conn, "relationship_meaning", source, before, after, reason=reason,
+        source_session_id=source_session_id, source_message_id=source_message_id,
+    )
+    return after, event_id
+
+
+def record_relationship_audit_in_transaction(
+    conn,
+    *,
+    source: str,
+    reason: str,
+    source_session_id: str,
+    source_message_id: str | None,
+) -> str:
+    snapshot = _load(conn)
+    return _event(
+        conn, "relationship_meaning", source, snapshot, snapshot, reason=reason,
+        source_session_id=source_session_id, source_message_id=source_message_id,
+    )
+
+
 def advance_by(minutes: float) -> dict:
     conn = db.connect()
     try:

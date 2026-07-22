@@ -2,7 +2,7 @@
 
 - 版本：v0.3（完成度审计与收口补完版）
 - 日期：2026-07-22
-- 状态：EAP.R0～EAP.R1 已完成并提交；真实产品闭环仍未完成，下一阶段为 EAP.R2
+- 状态：EAP.R0～EAP.R2 已完成并提交；真实产品闭环仍未完成，下一阶段为 EAP.R3
 - 专项代号：`EAP`（Emotion, Attachment and Proactivity）
 - 前置条件：CTX.0～CTX.7 已冻结；现有 Affect/Relationship 阶段 0～4.1 已完成
 - 执行规则：每个阶段均须完成代码、测试、文档、阶段 Review 和本地 Git 提交；未解决 P0/P1 时不得进入下一阶段
@@ -1646,7 +1646,7 @@ R0 施工记录（2026-07-22）：`[x]` 已完成并通过独立 Review。Review
 
 完成门：设置页不存在“能保存但不生效”的控制；协议状态和真实实现一致。
 
-R1 施工记录（2026-07-22）：`[x]` 已完成，等待独立 Review。新增 Schema 56 `decision_runs`，保留历史 run 表并提供只读 adapter；协议注册表只把已有完整实现标为 `IMPLEMENTED`，只有 Schema 的协议继续标为 `DRAFT`。设置 API、决策硬门、强度授权和设置页统一执行后端注册表语义；Level 5 外部渠道在 API、运行时与 UI 三层硬禁用。Presence hook 异常改为结构化 warning，不再静默吞掉。R0 Review 的 N+1 建议明确延后到 R3，与唯一 orchestrator 和批量查询一并处理。验证结果：后端 `841 passed, 2 warnings`，前端 `36 passed`，TypeScript/Vite build 通过（188 modules），Electron `main.js`/`preload.js` 语法检查通过。
+R1 施工记录（2026-07-22）：`[x]` 已完成并通过独立 Review，0 个未解决 P0/P1。新增 Schema 56 `decision_runs`，保留历史 run 表并提供只读 adapter；协议注册表只把已有完整实现标为 `IMPLEMENTED`，只有 Schema 的协议继续标为 `DRAFT`。设置 API、决策硬门、强度授权和设置页统一执行后端注册表语义；Level 5 外部渠道在 API、运行时与 UI 三层硬禁用。Presence hook 异常改为结构化 warning，不再静默吞掉。Review 的 N+1 建议继续归入 R3；所谓 `silence` 频率模式与当前有效计划及产品三模式契约不符，不采纳。验证结果：后端 `841 passed, 2 warnings`，前端 `36 passed`、TypeScript/Vite build 通过（188 modules）、Electron `main.js`/`preload.js` 语法检查通过。
 
 建议提交：`feat(eap): enforce protocol registry settings and presence contracts`
 
@@ -1654,15 +1654,15 @@ R1 施工记录（2026-07-22）：`[x]` 已完成，等待独立 Review。新增
 
 目标：关闭“普通聊天仍机械涨 bond”和“关系建议永远停在 proposed”的核心缺口。
 
-- [ ] 新增本轮 Companion Cognition 后台任务，优先复用现有 Affect Observer 的队列、Provider 配置和失败降级模式。
-- [ ] 产出有逐字用户证据的 User Affect Observation；不得做医学诊断，不得把知识库、助手文本或摘要作为用户状态唯一证据。
-- [ ] 产出 9 类 Relationship Meaning 建议；普通寒暄、一次性问答和无证据结果使用 `ordinary_exchange`。
-- [ ] 修改 fallback interaction：保留 `interaction_count` 和必要的短期 affect 响应，但普通消息不再无条件增加 bond/trust。
-- [ ] 为 `episode_relationship_delta_suggestions` 实现 `proposed → applied/revoked` 原子状态机、revision/hash 复核和审计事件。
-- [ ] 应用关系 delta 时使用现有 `relationship_state` repository，禁止建立第二套正式关系状态。
-- [ ] 同一 source revision 只应用一次；来源被删除、纠正或失效时支持撤销/重算，但不得自动重写用户手动修正。
-- [ ] 用户沉默、离线、未回复和关闭主动陪伴不得降低 bond/trust。
-- [ ] 不对历史普通聊天自动追溯扣回 bond；是否迁移旧数据必须另立显式数据修正方案。
+- [x] 新增本轮 Companion Cognition 后台任务，优先复用现有 Affect Observer 的队列、Provider 配置和失败降级模式。
+- [x] 产出有逐字用户证据的 User Affect Observation；不得做医学诊断，不得把知识库、助手文本或摘要作为用户状态唯一证据。
+- [x] 产出 9 类 Relationship Meaning 建议；普通寒暄、一次性问答和无证据结果使用 `ordinary_exchange`。
+- [x] 修改 fallback interaction：保留 `interaction_count` 和必要的短期 affect 响应，但普通消息不再无条件增加 bond/trust。
+- [x] 为 `episode_relationship_delta_suggestions` 实现 `proposed → applied/revoked` 原子状态机、revision/hash 复核和审计事件。
+- [x] 应用关系 delta 时使用现有 `relationship_state` repository，禁止建立第二套正式关系状态。
+- [x] 同一 source revision 只应用一次；来源被删除、纠正或失效时支持撤销/重算，但不得自动重写用户手动修正。
+- [x] 用户沉默、离线、未回复和关闭主动陪伴不得降低 bond/trust。
+- [x] 不对历史普通聊天自动追溯扣回 bond；是否迁移旧数据必须另立显式数据修正方案。
 
 专项测试：
 
@@ -1672,6 +1672,8 @@ R1 施工记录（2026-07-22）：`[x]` 已完成，等待独立 Review。新增
 - 现有 affect/relationship 全量回归和真实聊天 API 集成测试。
 
 完成门：真实聊天路径中的普通问答 bond 增量为 0；所有非零关系变化均可回溯到有效来源和协议版本。
+
+R2 施工记录（2026-07-22）：`[x]` 已完成，等待独立 Review。Schema 57 为关系建议增加 source revision/hash、逐字证据、应用/撤销事件引用，并新增 `companion_cognition_results`；后台任务复用现有观察模型配置与有限重试，但运行账本统一使用 R1 `DecisionRun`。真实聊天和重新生成均入队 Companion Cognition；无模型、超时、解析失败使用 `unknown + ordinary_exchange` 保守结果。Fallback 只更新短期 affect 与 `interaction_count`，不再修改 bond/trust；遗留 Affect Observer 即使恢复旧任务也会抑制其 relationship delta。关系应用只写现有 `relationship_state`，并按实际限幅增量补偿撤销；来源删除/改写会撤销，重新生成会创建新 revision，晚于应用的用户手动关系修正不会被自动覆盖。未追溯改写任何历史关系数据。验收门禁：后端 `867 passed, 1 warning`，前端 `36 passed`，前端生产构建及 Electron `main.js`/`preload.js` 语法检查通过。
 
 建议提交：`feat(eap): connect grounded user affect and relationship meaning`
 

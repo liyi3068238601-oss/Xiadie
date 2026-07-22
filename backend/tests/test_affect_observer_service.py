@@ -55,12 +55,13 @@ def test_background_candidate_applies_atomically_once(monkeypatch):
     applied = get_run(queued["id"])
     after = companion_state.get_state(persist_advance=False)
     assert applied["status"] == "applied" and applied["applied_event_id"]
-    assert after["relationship"]["bond"] == pytest.approx(before["relationship"]["bond"] + 0.002)
-    assert after["relationship"]["trust"] == pytest.approx(before["relationship"]["trust"] + 0.001)
+    assert after["relationship"]["bond"] == pytest.approx(before["relationship"]["bond"])
+    assert after["relationship"]["trust"] == pytest.approx(before["relationship"]["trust"])
     assert calls == [1]
     assert process() == 0
     event = next(e for e in companion_state.list_events(200) if e["id"] == applied["applied_event_id"])
     assert event["event_type"] == "observation" and event["source"] == "observer"
+    assert "legacy_relationship_delta_suppressed" in applied["warnings"]
 
 
 def test_apply_failure_rolls_back_state_and_event(monkeypatch):

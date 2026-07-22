@@ -9,8 +9,10 @@
 6. schema：migration 50 后 schema_version = "53"，表存在，9 种标签 CHECK 约束
 """
 import pytest
+from concurrent.futures import ThreadPoolExecutor
 
 from app import db
+from app.affect import repository
 from app.proactive import relationship
 from app.proactive.relationship import RelationshipLabel
 
@@ -38,6 +40,20 @@ def _insert_message(session_id: str, content: str = "测试消息") -> str:
         conn.execute(
             "INSERT INTO messages(id,session_id,role,content,created_at) VALUES(?,?,?,?,?)",
             (msg_id, session_id, "user", content, now),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return msg_id
+
+
+def _insert_assistant_message(session_id: str, content: str = "测试回复") -> str:
+    msg_id = db.new_id()
+    conn = db.connect()
+    try:
+        conn.execute(
+            "INSERT INTO messages(id,session_id,role,content,created_at) VALUES(?,?,?,?,?)",
+            (msg_id, session_id, "assistant", content, db.now()),
         )
         conn.commit()
     finally:
@@ -283,7 +299,7 @@ def test_schema_version_is_52():
         row = conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
         ).fetchone()
-        assert row[0] == "56"
+        assert row[0] == "57"
     finally:
         conn.close()
 
@@ -421,5 +437,166 @@ def test_protocol_version_is_relationship_meaning_v1():
             conn.close()
         from app.proactive.protocols import RELATIONSHIP_MEANING_V1
         assert row["protocol_version"] == RELATIONSHIP_MEANING_V1
+    finally:
+        _cleanup(session_id)
+
+
+def test_apply_and_revoke_are_atomic_idempotent_and_traceable():
+    db.init_db()
+    repository.reset()
+    session_id = db.new_id()
+    _setup_session(session_id)
+    user_id = _insert_message(session_id, "谢谢你的帮助")
+    assistant_id = _insert_assistant_message(session_id, "不用客气")
+    try:
+        before = repository.get_snapshot(advance_time=False)
+        proposed = relationship.process_relationship_delta(
+            session_id, user_id, RelationshipLabel.SHARED_APPRECIATION,
+            source_assistant_message_id=assistant_id,
+            evidence=[{"speaker": "user", "quote": "谢谢你的帮助"}],
+            reason="explicit appreciation", confidence=0.95,
+        )
+        applied = relationship.apply_suggestion(proposed.id)
+        repeated = relationship.apply_suggestion(proposed.id)
+        after = repository.get_snapshot(advance_time=False)
+        assert applied.status == repeated.status == "applied"
+        assert after["relationship"]["bond"] == pytest.approx(
+            before["relationship"]["bond"] + proposed.bond_delta
+        )
+        revoked = relationship.revoke_suggestion(proposed.id, "source_corrected")
+        restored = repository.get_snapshot(advance_time=False)
+        assert revoked.status == "revoked"
+        assert restored["relationship"]["bond"] == pytest.approx(
+            before["relationship"]["bond"]
+        )
+        assert revoked.revocation_reason.startswith("relationship-meaning-v1:revoke")
+    finally:
+        _cleanup(session_id)
+
+
+def test_source_change_revokes_then_allows_new_revision():
+    db.init_db()
+    repository.reset()
+    session_id = db.new_id()
+    _setup_session(session_id)
+    user_id = _insert_message(session_id, "谢谢你")
+    assistant_id = _insert_assistant_message(session_id, "不用客气")
+    try:
+        first = relationship.process_relationship_delta(
+            session_id, user_id, RelationshipLabel.SHARED_APPRECIATION,
+            source_assistant_message_id=assistant_id,
+            evidence=[{"speaker": "user", "quote": "谢谢你"}],
+            reason="explicit appreciation", confidence=0.9,
+        )
+        relationship.apply_suggestion(first.id)
+        conn = db.connect()
+        try:
+            conn.execute("UPDATE messages SET content='普通问题' WHERE id=?", (user_id,))
+            conn.commit()
+        finally:
+            conn.close()
+        assert relationship.revoke_invalidated_suggestions() == 1
+        assert relationship.get_suggestion(first.id).status == "revoked"
+        second = relationship.process_relationship_delta(
+            session_id, user_id, RelationshipLabel.ORDINARY_EXCHANGE,
+            source_assistant_message_id=assistant_id,
+            reason="corrected ordinary exchange", confidence=0.9,
+        )
+        assert second is not None and second.source_revision != first.source_revision
+        assert relationship.apply_suggestion(second.id).status == "applied"
+    finally:
+        _cleanup(session_id)
+
+
+def test_revoke_preserves_later_manual_relationship_reset():
+    db.init_db()
+    repository.reset()
+    session_id = db.new_id()
+    _setup_session(session_id)
+    user_id = _insert_message(session_id, "谢谢你")
+    try:
+        proposed = relationship.process_relationship_delta(
+            session_id, user_id, RelationshipLabel.SHARED_APPRECIATION,
+            evidence=[{"speaker": "user", "quote": "谢谢你"}],
+            reason="explicit appreciation", confidence=0.9,
+        )
+        relationship.apply_suggestion(proposed.id)
+        repository.reset()  # source=user audit after apply
+        manual = repository.get_snapshot(advance_time=False)["relationship"]["bond"]
+        revoked = relationship.revoke_suggestion(proposed.id, "source_deleted")
+        assert repository.get_snapshot(advance_time=False)["relationship"]["bond"] == manual
+        assert "manual_change_preserved" in revoked.revocation_reason
+    finally:
+        _cleanup(session_id)
+
+
+def test_concurrent_apply_changes_relationship_only_once():
+    db.init_db()
+    repository.reset()
+    session_id = db.new_id()
+    _setup_session(session_id)
+    user_id = _insert_message(session_id, "谢谢你")
+    try:
+        proposed = relationship.process_relationship_delta(
+            session_id, user_id, RelationshipLabel.SHARED_APPRECIATION,
+            evidence=[{"speaker": "user", "quote": "谢谢你"}],
+            reason="explicit appreciation", confidence=1.0,
+        )
+        before = repository.get_snapshot(advance_time=False)["relationship"]["bond"]
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(lambda _: relationship.apply_suggestion(proposed.id), range(2)))
+        after = repository.get_snapshot(advance_time=False)["relationship"]["bond"]
+        assert all(item.status == "applied" for item in results)
+        assert after == pytest.approx(before + proposed.bond_delta)
+    finally:
+        _cleanup(session_id)
+
+
+def test_deleted_source_is_revoked_with_compensation():
+    db.init_db()
+    repository.reset()
+    session_id = db.new_id()
+    _setup_session(session_id)
+    user_id = _insert_message(session_id, "谢谢你")
+    try:
+        before = repository.get_snapshot(advance_time=False)["relationship"]["bond"]
+        proposed = relationship.process_relationship_delta(
+            session_id, user_id, RelationshipLabel.SHARED_APPRECIATION,
+            evidence=[{"speaker": "user", "quote": "谢谢你"}],
+            reason="explicit appreciation", confidence=1.0,
+        )
+        relationship.apply_suggestion(proposed.id)
+        conn = db.connect()
+        try:
+            conn.execute("DELETE FROM messages WHERE id=?", (user_id,))
+            conn.commit()
+        finally:
+            conn.close()
+        assert relationship.revoke_invalidated_suggestions() == 1
+        revoked = relationship.get_suggestion(proposed.id)
+        assert revoked.status == "revoked" and revoked.source_message_id is None
+        assert repository.get_snapshot(advance_time=False)["relationship"]["bond"] == pytest.approx(before)
+    finally:
+        _cleanup(session_id)
+
+
+def test_revoke_uses_actual_clamped_delta_at_relationship_boundary():
+    db.init_db()
+    state = repository.reset()
+    state["relationship"]["bond"] = 0.9995
+    repository.save_snapshot(state, event_type="manual", source="user", reason="manual boundary")
+    session_id = db.new_id()
+    _setup_session(session_id)
+    user_id = _insert_message(session_id, "我们成功了")
+    try:
+        proposed = relationship.process_relationship_delta(
+            session_id, user_id, RelationshipLabel.SHARED_SUCCESS,
+            evidence=[{"speaker": "user", "quote": "我们成功了"}],
+            reason="shared success", confidence=1.0,
+        )
+        applied = relationship.apply_suggestion(proposed.id)
+        assert applied.cap_bond_applied == pytest.approx(0.0005)
+        relationship.revoke_suggestion(proposed.id, "source_changed")
+        assert repository.get_snapshot(advance_time=False)["relationship"]["bond"] == pytest.approx(0.9995)
     finally:
         _cleanup(session_id)

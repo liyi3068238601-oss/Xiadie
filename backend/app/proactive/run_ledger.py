@@ -35,7 +35,9 @@ ALL_RUN_STATUSES = {
 
 _TRANSITIONS = {
     RunStatus.QUEUED: {RunStatus.RUNNING, RunStatus.SKIPPED},
-    RunStatus.RUNNING: {RunStatus.APPLIED, RunStatus.RECOVERY_PENDING, RunStatus.EXHAUSTED},
+    RunStatus.RUNNING: {
+        RunStatus.APPLIED, RunStatus.RECOVERY_PENDING, RunStatus.EXHAUSTED, RunStatus.SKIPPED,
+    },
     RunStatus.RECOVERY_PENDING: {RunStatus.RUNNING, RunStatus.EXHAUSTED, RunStatus.SKIPPED},
     RunStatus.APPLIED: set(),
     RunStatus.EXHAUSTED: set(),
@@ -142,7 +144,8 @@ def _from_row(row) -> DecisionRun:
 def create_or_get_run(
     *, task_kind: str, protocol_version: str, source_type: str, source_id: str,
     source_revision: str, source_hash: str, idempotency_key: str,
-    max_attempts: int = 3, now: float | None = None,
+    max_attempts: int = 3, provider_id: str | None = None,
+    model_id: str | None = None, now: float | None = None,
 ) -> tuple[DecisionRun, bool]:
     if not all((task_kind, protocol_version, source_type, source_id, source_hash, idempotency_key)):
         raise ValueError("DecisionRun identity fields must not be empty")
@@ -161,9 +164,11 @@ def create_or_get_run(
             conn.execute(
                 "INSERT INTO decision_runs (id,task_kind,protocol_version,source_type,source_id,"
                 "source_revision,source_hash,idempotency_key,status,attempt_count,max_attempts,"
-                "warnings_json,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                "provider_id,model_id,warnings_json,created_at,updated_at) "
+                "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (run_id, task_kind, protocol_version, source_type, source_id, source_revision,
-                 source_hash, idempotency_key, RunStatus.QUEUED, 0, max_attempts, "[]", now, now),
+                 source_hash, idempotency_key, RunStatus.QUEUED, 0, max_attempts,
+                 provider_id, model_id, "[]", now, now),
             )
         except sqlite3.IntegrityError:
             conn.rollback()

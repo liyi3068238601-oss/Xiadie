@@ -10,10 +10,13 @@
 但新机制对 ordinary_exchange 不产生额外 bond delta。
 """
 
+import json
+import sqlite3
 from dataclasses import dataclass
 from typing import Optional
 
 from .. import db
+from ..affect import repository
 from .protocols import RELATIONSHIP_MEANING_V1
 from .run_ledger import make_idempotency_key
 
@@ -98,7 +101,8 @@ class RelationshipDeltaSuggestion:
     """episode_relationship_delta_suggestions 表的记录。"""
     id: str
     session_id: str
-    source_message_id: str
+    source_message_id: Optional[str]
+    source_assistant_message_id: Optional[str]
     episode_id: Optional[str]
     relationship_label: str
     bond_delta: float
@@ -108,9 +112,16 @@ class RelationshipDeltaSuggestion:
     rapport_delta: float
     cap_bond_applied: float
     cap_trust_applied: float
+    source_revision: str
+    source_hash: str
+    evidence: list[dict]
+    reason: str
+    confidence: float
     idempotency_key: str
     status: str
     applied_at: Optional[float]
+    revoked_at: Optional[float]
+    revocation_reason: Optional[str]
     created_at: float
 
 
@@ -125,6 +136,10 @@ def process_relationship_delta(
     label: str,
     *,
     episode_id: Optional[str] = None,
+    source_assistant_message_id: Optional[str] = None,
+    evidence: Optional[list[dict]] = None,
+    reason: str = "",
+    confidence: float = 0.0,
 ) -> Optional[RelationshipDeltaSuggestion]:
     """处理关系意义标签，产生受限 delta 建议并落库。
 
@@ -137,9 +152,12 @@ def process_relationship_delta(
     if label not in LABEL_DELTAS:
         return None
 
+    source_revision, source_hash = source_identity(
+        session_id, source_message_id, source_assistant_message_id,
+    )
     deltas = LABEL_DELTAS[label]
     idempotency_key = make_idempotency_key(
-        RELATIONSHIP_MEANING_V1, session_id, source_message_id,
+        RELATIONSHIP_MEANING_V1, session_id, source_message_id, source_revision,
     )
 
     # 单轮限幅
@@ -154,54 +172,286 @@ def process_relationship_delta(
 
     conn = db.connect()
     try:
-        # 幂等检查：同一 source_message_id 已有建议则跳过
+        # Same source revision is idempotent; a corrected source creates a new revision.
         existing = conn.execute(
             "SELECT id FROM episode_relationship_delta_suggestions "
-            "WHERE source_message_id=?",
-            (source_message_id,),
+            "WHERE source_message_id=? AND source_revision=?",
+            (source_message_id, source_revision),
         ).fetchone()
         if existing:
             return None
 
         conn.execute(
             "INSERT INTO episode_relationship_delta_suggestions"
-            " (id, session_id, source_message_id, episode_id, relationship_label,"
+            " (id, session_id, source_message_id, source_assistant_message_id, episode_id, relationship_label,"
             "  bond_delta, familiarity_delta, trust_delta, attachment_delta, rapport_delta,"
-            "  cap_bond_applied, cap_trust_applied, idempotency_key, status,"
+            "  cap_bond_applied, cap_trust_applied, source_revision, source_hash,"
+            "  evidence_json, reason, confidence, idempotency_key, status,"
             "  protocol_version, created_at, updated_at)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'proposed', ?, ?, ?)",
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,"
+            " 'proposed', ?, ?, ?)",
             (
-                record_id, session_id, source_message_id, episode_id, label,
+                record_id, session_id, source_message_id, source_assistant_message_id,
+                episode_id, label,
                 bond_clamped, familiarity_clamped, trust_clamped, attachment_clamped, rapport_clamped,
-                bond_clamped, trust_clamped, idempotency_key,
+                bond_clamped, trust_clamped, source_revision, source_hash,
+                json.dumps(evidence or [], ensure_ascii=False), reason[:240],
+                _clamp(float(confidence), 0.0, 1.0), idempotency_key,
                 RELATIONSHIP_MEANING_V1, now, now,
             ),
         )
         conn.commit()
+    except sqlite3.IntegrityError:
+        conn.rollback()
+        existing = conn.execute(
+            "SELECT * FROM episode_relationship_delta_suggestions "
+            "WHERE idempotency_key=?", (idempotency_key,),
+        ).fetchone()
+        if existing:
+            return None
+        raise
     finally:
         conn.close()
 
     return RelationshipDeltaSuggestion(
         id=record_id, session_id=session_id, source_message_id=source_message_id,
+        source_assistant_message_id=source_assistant_message_id,
         episode_id=episode_id, relationship_label=label,
         bond_delta=bond_clamped, familiarity_delta=familiarity_clamped,
         trust_delta=trust_clamped, attachment_delta=attachment_clamped,
         rapport_delta=rapport_clamped,
         cap_bond_applied=bond_clamped, cap_trust_applied=trust_clamped,
+        source_revision=source_revision, source_hash=source_hash,
+        evidence=evidence or [], reason=reason[:240], confidence=_clamp(float(confidence), 0, 1),
         idempotency_key=idempotency_key, status="proposed",
-        applied_at=None, created_at=now,
+        applied_at=None, revoked_at=None, revocation_reason=None, created_at=now,
     )
 
 
-def get_suggestion_by_source_message(source_message_id: str) -> Optional[RelationshipDeltaSuggestion]:
-    """按 source_message_id 查询建议（幂等检查用）。"""
+def source_identity(
+    session_id: str, source_message_id: str,
+    source_assistant_message_id: Optional[str] = None,
+) -> tuple[str, str]:
+    _, _, messages = _source_messages(
+        session_id, source_message_id, source_assistant_message_id,
+    )
+    from .run_ledger import compute_source_hash
+    source_hash = compute_source_hash(messages)
+    return source_hash, source_hash
+
+
+def _source_messages(
+    session_id: str, source_message_id: str,
+    source_assistant_message_id: Optional[str] = None,
+) -> tuple[str, str, list[dict]]:
+    conn = db.connect()
+    try:
+        user = conn.execute(
+            "SELECT id,role,content FROM messages WHERE id=? AND session_id=?",
+            (source_message_id, session_id),
+        ).fetchone()
+        if not user or user["role"] != "user":
+            raise ValueError("relationship source user message is unavailable")
+        messages = [{"id": user["id"], "role": user["role"], "content": user["content"]}]
+        if source_assistant_message_id:
+            assistant = conn.execute(
+                "SELECT id,role,content FROM messages WHERE id=? AND session_id=?",
+                (source_assistant_message_id, session_id),
+            ).fetchone()
+            if not assistant or assistant["role"] != "assistant":
+                raise ValueError("relationship source assistant message is unavailable")
+            messages.append({
+                "id": assistant["id"], "role": assistant["role"],
+                "content": assistant["content"],
+            })
+    finally:
+        conn.close()
+    return user["content"], assistant["content"] if source_assistant_message_id else "", messages
+
+
+def apply_suggestion(suggestion_id: str) -> RelationshipDeltaSuggestion:
+    """Atomically verify the source, apply bond/trust, audit, and mark applied."""
+    repository.get_snapshot(advance_time=False)
+    conn = db.connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT * FROM episode_relationship_delta_suggestions WHERE id=?", (suggestion_id,)
+        ).fetchone()
+        if not row:
+            raise ValueError("relationship suggestion not found")
+        if row["status"] == "applied":
+            conn.rollback()
+            return _row_to_suggestion(row)
+        if row["status"] != "proposed":
+            raise ValueError("only proposed relationship suggestions can be applied")
+        try:
+            revision, current_hash = source_identity(
+                row["session_id"], row["source_message_id"],
+                row["source_assistant_message_id"],
+            )
+        except ValueError:
+            conn.rollback()
+            revoke_suggestion(suggestion_id, "source_unavailable")
+            return get_suggestion(suggestion_id)
+        if revision != row["source_revision"] or current_hash != row["source_hash"]:
+            conn.rollback()
+            revoke_suggestion(suggestion_id, "source_changed")
+            return get_suggestion(suggestion_id)
+        user_text, assistant_text, _ = _source_messages(
+            row["session_id"], row["source_message_id"], row["source_assistant_message_id"],
+        )
+        from .schemas import validate_relationship_meaning
+        validate_relationship_meaning({
+            "protocol_version": RELATIONSHIP_MEANING_V1,
+            "label": row["relationship_label"],
+            "evidence": json.loads(row["evidence_json"]),
+            "confidence": row["confidence"],
+            "reason": row["reason"] or "grounded relationship meaning",
+        }, user_text=user_text, assistant_text=assistant_text)
+        before_relation = conn.execute(
+            "SELECT bond,trust FROM relationship_state WHERE id=1"
+        ).fetchone()
+        after, event_id = repository.apply_relationship_delta_in_transaction(
+            conn, bond_delta=row["bond_delta"], trust_delta=row["trust_delta"],
+            source="relationship_meaning", reason=(
+                f"{RELATIONSHIP_MEANING_V1}:{row['relationship_label']}:{row['reason']}"
+            ), source_session_id=row["session_id"],
+            source_message_id=row["source_message_id"],
+        )
+        now = db.now()
+        applied_bond = after["relationship"]["bond"] - before_relation["bond"]
+        applied_trust = after["relationship"]["trust"] - before_relation["trust"]
+        cursor = conn.execute(
+            "UPDATE episode_relationship_delta_suggestions SET status='applied',"
+            "cap_bond_applied=?,cap_trust_applied=?,applied_event_id=?,applied_at=?,updated_at=? "
+            "WHERE id=? AND status='proposed'",
+            (applied_bond, applied_trust, event_id, now, now, suggestion_id),
+        )
+        if cursor.rowcount != 1:
+            raise ValueError("relationship suggestion changed concurrently")
+        conn.commit()
+        return get_suggestion(suggestion_id)
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def revoke_suggestion(suggestion_id: str, reason: str) -> RelationshipDeltaSuggestion:
+    """Revoke with a compensating event; preserve later manual relationship corrections."""
+    repository.get_snapshot(advance_time=False)
+    conn = db.connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT * FROM episode_relationship_delta_suggestions WHERE id=?", (suggestion_id,)
+        ).fetchone()
+        if not row:
+            raise ValueError("relationship suggestion not found")
+        if row["status"] == "revoked":
+            conn.rollback()
+            return _row_to_suggestion(row)
+        preserve_manual = False
+        if row["status"] == "applied":
+            manual_rows = conn.execute(
+                "SELECT delta_json FROM affect_events WHERE created_at>? "
+                "AND source IN ('user','developer')", (row["applied_at"],),
+            ).fetchall()
+            preserve_manual = any(
+                abs(float(json.loads(item["delta_json"])["relationship"].get("bond", 0))) > 1e-12
+                or abs(float(json.loads(item["delta_json"])["relationship"].get("trust", 0))) > 1e-12
+                for item in manual_rows
+            )
+        audit_reason = f"{RELATIONSHIP_MEANING_V1}:revoke:{reason}"
+        if row["status"] == "applied" and not preserve_manual:
+            _, event_id = repository.apply_relationship_delta_in_transaction(
+                conn, bond_delta=-row["cap_bond_applied"],
+                trust_delta=-row["cap_trust_applied"],
+                source="relationship_meaning_revoke", reason=audit_reason,
+                source_session_id=row["session_id"], source_message_id=row["source_message_id"],
+            )
+        else:
+            if preserve_manual:
+                audit_reason += ":manual_change_preserved"
+            event_id = repository.record_relationship_audit_in_transaction(
+                conn, source="relationship_meaning_revoke", reason=audit_reason,
+                source_session_id=row["session_id"], source_message_id=row["source_message_id"],
+            )
+        now = db.now()
+        cursor = conn.execute(
+            "UPDATE episode_relationship_delta_suggestions SET status='revoked',"
+            "revocation_event_id=?,revoked_at=?,revocation_reason=?,updated_at=? "
+            "WHERE id=? AND status=?",
+            (event_id, now, audit_reason, now, suggestion_id, row["status"]),
+        )
+        if cursor.rowcount != 1:
+            raise ValueError("relationship suggestion changed concurrently")
+        conn.commit()
+        return get_suggestion(suggestion_id)
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def get_suggestion(suggestion_id: str) -> RelationshipDeltaSuggestion:
     conn = db.connect()
     try:
         row = conn.execute(
-            "SELECT * FROM episode_relationship_delta_suggestions "
-            "WHERE source_message_id=? ORDER BY created_at DESC LIMIT 1",
-            (source_message_id,),
+            "SELECT * FROM episode_relationship_delta_suggestions WHERE id=?", (suggestion_id,)
         ).fetchone()
+        if not row:
+            raise ValueError("relationship suggestion not found")
+        return _row_to_suggestion(row)
+    finally:
+        conn.close()
+
+
+def revoke_invalidated_suggestions() -> int:
+    conn = db.connect()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM episode_relationship_delta_suggestions "
+            "WHERE status IN ('proposed','applied') AND source_revision!=''"
+        ).fetchall()
+    finally:
+        conn.close()
+    count = 0
+    for row in rows:
+        try:
+            revision, current_hash = source_identity(
+                row["session_id"], row["source_message_id"], row["source_assistant_message_id"],
+            )
+            valid = revision == row["source_revision"] and current_hash == row["source_hash"]
+        except (TypeError, ValueError):
+            valid = False
+        if not valid:
+            revoke_suggestion(row["id"], "source_invalidated")
+            count += 1
+    return count
+
+
+def get_suggestion_by_source_message(
+    source_message_id: str, source_revision: Optional[str] = None,
+) -> Optional[RelationshipDeltaSuggestion]:
+    """按 source_message_id 查询建议（幂等检查用）。"""
+    conn = db.connect()
+    try:
+        if source_revision is None:
+            row = conn.execute(
+                "SELECT * FROM episode_relationship_delta_suggestions "
+                "WHERE source_message_id=? ORDER BY created_at DESC,id DESC LIMIT 1",
+                (source_message_id,),
+            ).fetchone()
+        else:
+            row = conn.execute(
+                "SELECT * FROM episode_relationship_delta_suggestions "
+                "WHERE source_message_id=? AND source_revision=? LIMIT 1",
+                (source_message_id, source_revision),
+            ).fetchone()
         if not row:
             return None
         return _row_to_suggestion(row)
@@ -213,6 +463,7 @@ def _row_to_suggestion(row) -> RelationshipDeltaSuggestion:
     return RelationshipDeltaSuggestion(
         id=row["id"], session_id=row["session_id"],
         source_message_id=row["source_message_id"],
+        source_assistant_message_id=row["source_assistant_message_id"],
         episode_id=row["episode_id"],
         relationship_label=row["relationship_label"],
         bond_delta=row["bond_delta"],
@@ -222,8 +473,12 @@ def _row_to_suggestion(row) -> RelationshipDeltaSuggestion:
         rapport_delta=row["rapport_delta"],
         cap_bond_applied=row["cap_bond_applied"],
         cap_trust_applied=row["cap_trust_applied"],
+        source_revision=row["source_revision"], source_hash=row["source_hash"],
+        evidence=json.loads(row["evidence_json"]), reason=row["reason"],
+        confidence=row["confidence"],
         idempotency_key=row["idempotency_key"],
         status=row["status"],
         applied_at=row["applied_at"],
+        revoked_at=row["revoked_at"], revocation_reason=row["revocation_reason"],
         created_at=row["created_at"],
     )

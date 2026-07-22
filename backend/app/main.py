@@ -30,6 +30,7 @@ from . import memory_observer_service
 from .affect import observer_service as affect_observer_service
 from .proactive import presence as proactive_presence
 from .proactive import settings as proactive_settings
+from .proactive import cognition_service as companion_cognition_service
 from .security import ALLOWED_ORIGINS, TOKEN_HEADER, local_api_guard
 
 logger = logging.getLogger(__name__)
@@ -66,6 +67,7 @@ async def lifespan(app: FastAPI):
     conversation_summaries.recover_stale_runs()
     await conversation_summary_service.start_worker()
     await affect_observer_service.start_worker()
+    await companion_cognition_service.start_worker()
     await memory_observer_service.start_worker()
     await episode_consolidator.start_worker()
     await saga_consolidator.start_worker()
@@ -81,6 +83,7 @@ async def lifespan(app: FastAPI):
         await saga_consolidator.stop_worker()
         await episode_consolidator.stop_worker()
         await memory_observer_service.stop_worker()
+        await companion_cognition_service.stop_worker()
         await affect_observer_service.stop_worker()
         await conversation_summary_service.stop_worker()
 
@@ -817,13 +820,6 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 source_session_id=body.session_id,
                 source_message_id=uid,
             )
-            affect_observation = affect_observer_service.enqueue_turn(
-                chat_provider=provider,
-                chat_model=model,
-                session_id=body.session_id,
-                user_message_id=uid,
-                assistant_message_id=aid,
-            )
             try:
                 memory_observation = memory_observer_service.enqueue_turn(
                     chat_provider=provider,
@@ -837,6 +833,16 @@ async def chat(body: ChatIn) -> StreamingResponse:
                     "status": "unlogged_failure",
                     "error_code": "observer_enqueue_failed",
                 }
+        if uid:
+            # Regeneration creates a new source revision: the worker revokes the old
+            # suggestion and evaluates the replacement without incrementing interaction_count.
+            affect_observation = companion_cognition_service.enqueue_turn(
+                chat_provider=provider,
+                chat_model=model,
+                session_id=body.session_id,
+                user_message_id=uid,
+                assistant_message_id=aid,
+            )
         try:
             conversation_summary_service.enqueue_after_chat(
                 session_id=body.session_id, chat_provider=provider, chat_model=model,
@@ -863,6 +869,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 "memory_candidate": candidate,
                 "companion_state": saved_companion_state,
                 "affect_observation": affect_observation,
+                "companion_cognition": affect_observation,
                 "memory_observation": memory_observation,
                 "content": full,
                 "knowledge_citations": [
@@ -878,6 +885,11 @@ async def chat(body: ChatIn) -> StreamingResponse:
 @app.get("/api/companion-state")
 def read_companion_state() -> dict:
     return companion_state.get_state()
+
+
+@app.get("/api/companion-state/cognition-runs")
+def read_companion_cognition_runs() -> list[dict]:
+    return companion_cognition_service.list_runs()
 
 
 @app.post("/api/companion-state/reset")

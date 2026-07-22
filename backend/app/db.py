@@ -2410,6 +2410,86 @@ MIGRATIONS = [
             ON decision_runs(source_type, source_id, source_revision);
         """,
     ),
+    (
+        57,
+        """
+        -- EAP.R2: revision-aware relationship suggestions and cognition result audit.
+        ALTER TABLE episode_relationship_delta_suggestions
+            RENAME TO episode_relationship_delta_suggestions_v56;
+        DROP INDEX IF EXISTS idx_episode_rel_delta_session;
+        DROP INDEX IF EXISTS idx_episode_rel_delta_source;
+
+        CREATE TABLE episode_relationship_delta_suggestions (
+            id TEXT PRIMARY KEY,
+            session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            source_message_id TEXT REFERENCES messages(id) ON DELETE SET NULL,
+            source_assistant_message_id TEXT REFERENCES messages(id) ON DELETE SET NULL,
+            episode_id TEXT REFERENCES memory_episodes(id) ON DELETE SET NULL,
+            relationship_label TEXT NOT NULL CHECK(relationship_label IN (
+                'ordinary_exchange', 'shared_appreciation', 'reliable_help',
+                'shared_success', 'vulnerable_disclosure', 'boundary_respected',
+                'boundary_repair', 'reunion', 'conflict'
+            )),
+            bond_delta REAL NOT NULL CHECK(bond_delta BETWEEN -0.01 AND 0.005),
+            familiarity_delta REAL NOT NULL CHECK(familiarity_delta BETWEEN 0 AND 0.003),
+            trust_delta REAL NOT NULL CHECK(trust_delta BETWEEN -0.01 AND 0.005),
+            attachment_delta REAL NOT NULL CHECK(attachment_delta BETWEEN 0 AND 0.003),
+            rapport_delta REAL NOT NULL CHECK(rapport_delta BETWEEN -0.005 AND 0.003),
+            cap_bond_applied REAL NOT NULL DEFAULT 0,
+            cap_trust_applied REAL NOT NULL DEFAULT 0,
+            source_revision TEXT NOT NULL DEFAULT '',
+            source_hash TEXT NOT NULL DEFAULT '',
+            evidence_json TEXT NOT NULL DEFAULT '[]',
+            reason TEXT NOT NULL DEFAULT '',
+            confidence REAL NOT NULL DEFAULT 0 CHECK(confidence BETWEEN 0 AND 1),
+            idempotency_key TEXT NOT NULL UNIQUE,
+            status TEXT NOT NULL DEFAULT 'proposed'
+                CHECK(status IN ('proposed','applied','revoked')),
+            applied_event_id TEXT REFERENCES affect_events(id) ON DELETE SET NULL,
+            revocation_event_id TEXT REFERENCES affect_events(id) ON DELETE SET NULL,
+            applied_at REAL,
+            revoked_at REAL,
+            revocation_reason TEXT,
+            protocol_version TEXT NOT NULL,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            UNIQUE(source_message_id, source_revision)
+        );
+        INSERT INTO episode_relationship_delta_suggestions(
+            id,session_id,source_message_id,episode_id,relationship_label,
+            bond_delta,familiarity_delta,trust_delta,attachment_delta,rapport_delta,
+            cap_bond_applied,cap_trust_applied,idempotency_key,status,applied_at,
+            revoked_at,revocation_reason,protocol_version,created_at,updated_at
+        ) SELECT
+            id,session_id,source_message_id,episode_id,relationship_label,
+            bond_delta,familiarity_delta,trust_delta,attachment_delta,rapport_delta,
+            cap_bond_applied,cap_trust_applied,idempotency_key,status,applied_at,
+            revoked_at,revocation_reason,protocol_version,created_at,updated_at
+        FROM episode_relationship_delta_suggestions_v56;
+        DROP TABLE episode_relationship_delta_suggestions_v56;
+        CREATE INDEX idx_episode_rel_delta_session
+            ON episode_relationship_delta_suggestions(session_id, created_at);
+        CREATE INDEX idx_episode_rel_delta_source
+            ON episode_relationship_delta_suggestions(source_message_id, source_revision);
+
+        CREATE TABLE companion_cognition_results (
+            run_id TEXT PRIMARY KEY REFERENCES decision_runs(id) ON DELETE CASCADE,
+            session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            source_user_message_id TEXT REFERENCES messages(id) ON DELETE SET NULL,
+            source_assistant_message_id TEXT REFERENCES messages(id) ON DELETE SET NULL,
+            source_revision TEXT NOT NULL,
+            source_hash TEXT NOT NULL,
+            user_affect_json TEXT NOT NULL,
+            relationship_label TEXT NOT NULL,
+            relationship_suggestion_id TEXT
+                REFERENCES episode_relationship_delta_suggestions(id) ON DELETE SET NULL,
+            protocol_version TEXT NOT NULL,
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_companion_cognition_results_source
+            ON companion_cognition_results(session_id, source_assistant_message_id);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

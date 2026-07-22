@@ -154,11 +154,8 @@ def apply_fallback_interaction(snapshot: dict, user_text: str) -> dict:
         affect["valence"] += 0.04
 
     relation["interaction_count"] += 1
-    # 等待越久后重新相见，关系增量可以稍高，但仍保持单轮变化很小。
-    waiting_bond = min(0.002, contact_need_before_reply * 0.0025)
-    relation["bond"] += 0.001 + waiting_bond + (0.001 if appreciated else 0)
-    if appreciated:
-        relation["trust"] += 0.001
+    # R2: fallback only records interaction count and short-lived affect response.
+    # Relationship changes require a grounded relationship-meaning-v1 suggestion.
     return normalize(result)
 
 

@@ -791,15 +791,15 @@ def test_boundary_no_direct_send_path():
 
 # ---------- 6. schema 测试 ----------
 
-def test_schema_version_is_56():
-    """EAP.R1 DecisionRun migration advances schema_version to 56."""
+def test_schema_version_is_57():
+    """EAP.R2 cognition migration advances schema_version to 57."""
     db.init_db()
     conn = db.connect()
     try:
         row = conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
         ).fetchone()
-        assert row[0] == "56"
+        assert row[0] == "57"
     finally:
         conn.close()
 

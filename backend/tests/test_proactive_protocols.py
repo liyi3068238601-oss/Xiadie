@@ -40,12 +40,15 @@ def test_registry_covers_all_protocols_and_exposes_lifecycle_metadata():
         assert definition.compatibility
 
 
-def test_registry_does_not_overstate_schema_only_protocols():
+def test_registry_tracks_r2_runtime_protocols_and_schema_only_feedback():
     affect = protocols.get_protocol(protocols.USER_AFFECT_OBSERVATION_V1)
+    relationship = protocols.get_protocol(protocols.RELATIONSHIP_MEANING_V1)
     feedback = protocols.get_protocol(protocols.PROACTIVE_FEEDBACK_V1)
-    assert affect.status is protocols.ProtocolStatus.DRAFT
+    assert affect.status is protocols.ProtocolStatus.IMPLEMENTED
+    assert relationship.status is protocols.ProtocolStatus.IMPLEMENTED
     assert feedback.status is protocols.ProtocolStatus.DRAFT
     assert callable(affect.validator)
+    assert callable(relationship.validator)
     assert callable(feedback.validator)
 
 

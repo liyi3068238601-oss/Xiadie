@@ -549,7 +549,8 @@ def test_companion_state_changes_after_successful_chat_and_resets():
     assert changed["affect"]["contact_need"] < initial["affect"]["contact_need"]
     assert changed["affect"]["guardedness"] < initial["affect"]["guardedness"]
     assert changed["affect"]["immersion"] > initial["affect"]["immersion"]
-    assert changed["relationship"]["bond"] > initial["relationship"]["bond"]
+    # R2: fallback never changes relationship; only grounded cognition may do so later.
+    assert changed["relationship"]["bond"] == initial["relationship"]["bond"]
     assert changed["relationship"]["interaction_count"] == 1
     for key in ("contact_need", "guardedness", "immersion"):
         assert 0 <= changed["affect"][key] <= 1
@@ -580,7 +581,7 @@ def test_affect_timeline_is_deterministic_and_handles_one_night_and_seven_days()
     assert first["affect"]["immersion"] < initial["affect"]["immersion"]
     replied = engine.apply_fallback_interaction(first, "早上好，我回来了")
     assert replied["affect"]["contact_need"] == 0.03
-    assert replied["relationship"]["bond"] > first["relationship"]["bond"]
+    assert replied["relationship"]["bond"] == first["relationship"]["bond"]
 
     day = engine.advance(initial, 24 * 60)
     assert 0.22 < day["affect"]["contact_need"] < 0.25
@@ -650,10 +651,8 @@ def test_reply_reduces_contact_need_proportionally_and_rebases_latest_state():
     high_reply = engine.apply_fallback_interaction(high, "我回来了")
     assert low_reply["affect"]["contact_need"] == pytest.approx(0.03)
     assert high_reply["affect"]["contact_need"] == pytest.approx(0.16)
-    assert (
-        high_reply["relationship"]["bond"] - high["relationship"]["bond"]
-        > low_reply["relationship"]["bond"] - low["relationship"]["bond"]
-    )
+    assert high_reply["relationship"]["bond"] == high["relationship"]["bond"]
+    assert low_reply["relationship"]["bond"] == low["relationship"]["bond"]
 
     companion_state.reset_state()
     stale_preview = companion_state.preview_interaction("较早生成的预览")
@@ -703,7 +702,7 @@ def test_generation_preview_advances_time_without_writing_state_or_event():
 def test_observer_failure_does_not_break_chat_done_event(monkeypatch):
     from app import db, llm
     from app import main as main_module
-    from app.affect import observer_service
+    from app.proactive import cognition_service
 
     provider = {
         "id": "test-observer-provider",
@@ -742,15 +741,22 @@ def test_observer_failure_does_not_break_chat_done_event(monkeypatch):
 
     # 聊天热路径只入队；模型观察尚未执行，因此不会延迟 done。
     queued_run = next(
-        item for item in client.get("/api/companion-state/observer-runs").json()
+        item for item in client.get("/api/companion-state/cognition-runs").json()
         if item["source_session_id"] == session["id"]
     )
     assert queued_run["attempt_count"] == 0
-    asyncio.run(observer_service.process_due())
-    runs = client.get("/api/companion-state/observer-runs").json()
+    for _ in range(20):
+        asyncio.run(cognition_service.process_due(limit=20))
+        if get_run := next(
+            (item for item in cognition_service.list_runs(200) if item["id"] == queued_run["id"]),
+            None,
+        ):
+            if get_run["status"] != "queued":
+                break
+    runs = client.get("/api/companion-state/cognition-runs").json()
     run = next(item for item in runs if item["source_session_id"] == session["id"])
     assert run["status"] == "recovery_pending"
-    assert run["candidate"] is None
+    assert run["result"] is None
 
 
 def test_observer_model_config_api_validates_dedicated_model():
@@ -914,7 +920,7 @@ def test_schema_migration_is_idempotent():
         version = conn.execute(
             "SELECT value FROM schema_meta WHERE key = 'schema_version'"
         ).fetchone()["value"]
-        assert version == "56"
+        assert version == "57"
         assert conn.execute("SELECT COUNT(*) c FROM companion_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM affect_state").fetchone()["c"] <= 1
         assert conn.execute("SELECT COUNT(*) c FROM relationship_state").fetchone()["c"] <= 1
