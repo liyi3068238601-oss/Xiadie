@@ -135,26 +135,44 @@ def _prepare_results(
     source_mode: str,
 ) -> dict:
     selected: list[dict] = []
-    used = estimate_tokens(_PROMPT_PREAMBLE)
-    for item in results:
-        key = f"K{len(selected) + 1}"
-        record = _prompt_record(key, item)
-        cost = estimate_tokens(json.dumps(record, ensure_ascii=False, separators=(",", ":")))
-        if used + cost > token_budget:
+    selected_windows: list[dict] = []
+    framing_tokens = estimate_tokens("\n```json\n[]\n```")
+    used = estimate_tokens(_PROMPT_PREAMBLE) + framing_tokens
+    for window in _evidence_windows(results):
+        key = f"K{len(selected_windows) + 1}"
+        fitted = _fit_prompt_window(key, window, token_budget - used)
+        if fitted is None:
             continue
-        selected.append({**item, "citation_key": key})
+        prompt_window, cost = fitted
+        admitted = [{**item, "citation_key": key} for item in window]
+        selected.extend(sorted(
+            admitted, key=lambda item: (item.get("match_type") == "context", item["ordinal"]),
+        ))
+        primary = next(
+            (item for item in admitted if item.get("match_type") != "context"), admitted[0],
+        )
+        selected_windows.append({
+            "citation_key": key,
+            "primary_chunk_id": primary["chunk_id"],
+            "member_chunk_ids": [item["chunk_id"] for item in admitted],
+            "results": admitted,
+            "prompt_results": prompt_window,
+        })
         used += cost
         if len(selected) >= max_results:
             break
-    return {
+    prepared = {
         "id": db.new_id(), "query": query, "reason": reason,
         "query_sha256": hashlib.sha256(query.encode("utf-8")).hexdigest(),
         "candidate_count": candidate_count, "results": selected,
-        "knowledge_tokens": used, "knowledge_token_budget": token_budget,
+        "evidence_windows": selected_windows,
+        "knowledge_token_budget": token_budget,
         "lore_tokens": estimate_tokens(lore_text), "memory_tokens": estimate_tokens(memory_text),
         "status": "injected" if selected else "no_results",
         "source_mode": source_mode, "confirmed": False,
     }
+    prepared["knowledge_tokens"] = estimate_tokens(prompt_block(prepared))
+    return prepared
 
 
 def _explicit_decision(user_text: str, prepared: dict | None, provider: dict | None) -> dict:
@@ -189,7 +207,16 @@ def _explicit_decision(user_text: str, prepared: dict | None, provider: dict | N
 def prompt_block(prepared: dict | None) -> str:
     if not prepared or not prepared["results"]:
         return ""
-    records = [_prompt_record(item["citation_key"], item) for item in prepared["results"]]
+    windows = prepared.get("evidence_windows") or [
+        {"citation_key": item["citation_key"], "results": [item]}
+        for item in prepared["results"]
+    ]
+    records = [
+        _prompt_window_record(
+            window["citation_key"], window.get("prompt_results") or window["results"],
+        )
+        for window in windows
+    ]
     payload = json.dumps(records, ensure_ascii=False, separators=(",", ":"))
     return _PROMPT_PREAMBLE + "\n```json\n" + payload + "\n```"
 
@@ -200,22 +227,36 @@ def filter_prepared(prepared: dict | None, allowed_chunk_ids: set[str]) -> dict 
         return None
     original_ids = {item["chunk_id"] for item in prepared["results"]}
     allowed = original_ids & set(allowed_chunk_ids)
-    selected = [item for item in prepared["results"] if item["chunk_id"] in allowed]
-    used = estimate_tokens(_PROMPT_PREAMBLE)
-    for item in selected:
-        used += estimate_tokens(json.dumps(
-            _prompt_record(item["citation_key"], item), ensure_ascii=False, separators=(",", ":"),
-        ))
-    return {
+    source_windows = prepared.get("evidence_windows") or [
+        {"citation_key": item["citation_key"], "results": [item]}
+        for item in prepared["results"]
+    ]
+    windows = [
+        window for window in source_windows
+        if {item["chunk_id"] for item in window["results"]}.issubset(allowed)
+    ]
+    selected = [item for window in windows for item in window["results"]]
+    filtered = {
         **prepared,
         "results": selected,
-        "knowledge_tokens": used,
+        "evidence_windows": windows,
         "status": "injected" if selected else "no_results",
     }
+    filtered["knowledge_tokens"] = estimate_tokens(prompt_block(filtered))
+    return filtered
 
 
 def validate_citations(text: str, prepared: dict | None) -> tuple[str, list[dict]]:
-    allowed = {item["citation_key"]: item for item in (prepared or {}).get("results", [])}
+    prepared = prepared or {}
+    by_chunk_id = {item["chunk_id"]: item for item in prepared.get("results", [])}
+    allowed = {}
+    for window in prepared.get("evidence_windows", []):
+        primary = by_chunk_id.get(window.get("primary_chunk_id"))
+        if primary:
+            allowed[window["citation_key"]] = primary
+    for item in prepared.get("results", []):
+        if item.get("match_type") != "context":
+            allowed.setdefault(item["citation_key"], item)
     used: list[dict] = []
     seen: set[str] = set()
 
@@ -231,19 +272,124 @@ def validate_citations(text: str, prepared: dict | None) -> tuple[str, list[dict
     return _CITATION.sub(replace, text), used
 
 
-def _prompt_record(key: str, item: dict) -> dict:
+def _evidence_windows(results: list[dict]) -> list[list[dict]]:
+    primary = [item for item in results if item.get("match_type") != "context"]
+    contexts: dict[str, list[dict]] = {}
+    for item in results:
+        if item.get("match_type") == "context":
+            contexts.setdefault(str(item.get("context_of") or ""), []).append(item)
+    windows: list[list[dict]] = []
+    consumed: set[str] = set()
+    for item in primary:
+        members = [item, *contexts.get(str(item.get("chunk_id") or ""), [])]
+        members.sort(key=lambda member: (int(member.get("ordinal") or 0), member["chunk_id"]))
+        windows.append(members)
+        consumed.update(member["chunk_id"] for member in members)
+    windows.extend([[item] for item in results if item["chunk_id"] not in consumed])
+    return windows
+
+
+def _fit_prompt_window(
+    key: str, window: list[dict], token_budget: int,
+) -> tuple[list[dict], int] | None:
+    if token_budget <= 0:
+        return None
+    prompt_window = [dict(item) for item in window]
+    record = _prompt_window_record(key, prompt_window)
+    cost = estimate_tokens(json.dumps(record, ensure_ascii=False, separators=(",", ":")))
+    if cost <= token_budget:
+        return prompt_window, cost
+    low, high = 1, max(len(str(item.get("content") or "")) for item in prompt_window)
+    best: tuple[list[dict], int] | None = None
+    while low <= high:
+        limit = (low + high) // 2
+        shortened = [
+            {**item, "content": _shorten_content(str(item.get("content") or ""), limit)}
+            for item in prompt_window
+        ]
+        candidate = _prompt_window_record(key, shortened)
+        candidate_cost = estimate_tokens(json.dumps(
+            candidate, ensure_ascii=False, separators=(",", ":"),
+        ))
+        if candidate_cost <= token_budget:
+            best = shortened, candidate_cost
+            low = limit + 1
+        else:
+            high = limit - 1
+    return best
+
+
+def _shorten_content(content: str, limit: int) -> str:
+    if len(content) <= limit:
+        return content
+    return content[:max(1, limit - 1)].rstrip() + "…"
+
+
+def _prompt_window_record(key: str, window: list[dict]) -> dict:
+    first = window[0]
     return {
-        "citation_key": key, "document_id": item["document_id"],
-        "chunk_id": item["chunk_id"], "file_name": item["original_name"],
-        "heading_path": item["heading_path"],
+        "citation_key": key,
+        "file_name": first["original_name"],
+        "heading_path": first["heading_path"],
+        "parts": [_prompt_part(item) for item in window],
+    }
+
+
+def _prompt_part(item: dict) -> dict:
+    return {
         "location": {
             "paragraphs": [item["paragraph_start"], item["paragraph_end"]],
             "lines": [item["line_start"], item["line_end"]],
-            "chars": [item["char_start"], item["char_end"]],
             "pages": [item["page_start"], item["page_end"]],
         },
-        "content_fingerprint": item["content_sha256"][:12],
         "quoted_content": item["content"],
+    }
+
+
+def _prompt_record(key: str, item: dict) -> dict:
+    return _prompt_window_record(key, [item])
+
+
+def build_evidence_window_evaluation(outcomes: list[dict]) -> dict:
+    oversized = [item for item in outcomes if item.get("correct_chunk_oversized")]
+    json_checked = [item for item in outcomes if item.get("json_checked", True)]
+    private_checked = [
+        item for item in outcomes if item.get("private_authorization_checked", True)
+    ]
+    skipped = [item for item in oversized if not item.get("correct_chunk_injected")]
+    incomplete = [item for item in json_checked if not item.get("json_complete")]
+    private = [item for item in private_checked if item.get("private_remote_attempted")]
+    denominators = {
+        "correct_chunk_oversized": len(oversized),
+        "knowledge_json_checked": len(json_checked),
+        "private_authorization_checked": len(private_checked),
+    }
+    gate_failures = [
+        f"empty_{name}_denominator" for name, count in denominators.items() if count == 0
+    ]
+    metrics = {
+        "correct_chunk_skipped_oversize_rate": (
+            len(skipped) / len(oversized) if oversized else None
+        ),
+        "knowledge_json_incomplete_rate": (
+            len(incomplete) / len(json_checked) if json_checked else None
+        ),
+        "unauthorized_private_remote_rate": (
+            len(private) / len(private_checked) if private_checked else None
+        ),
+    }
+    if any(value not in {0, 0.0} for value in metrics.values() if value is not None):
+        gate_failures.append("nonzero_metric")
+    return {
+        "protocol_version": "knowledge-evidence-window-eval-v1",
+        "synthetic_only": True,
+        "contains_user_data": False,
+        "case_count": len(outcomes),
+        "denominators": denominators,
+        "metrics": metrics,
+        "gate_failures": gate_failures,
+        "completion_gate": "pass" if not gate_failures else "fail",
+        "outcomes": outcomes,
     }
 
 

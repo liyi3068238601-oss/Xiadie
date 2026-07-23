@@ -900,6 +900,14 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 candidate = memory.maybe_create_candidate(body.content, body.session_id, uid)
             except Exception:  # noqa: BLE001 - 记忆兜底不能吞掉成功的聊天回复
                 candidate = None
+        final_payload = {
+            "message_id": aid,
+            "content": full,
+            "knowledge_citations": [
+                knowledge_context.citation_public(row) for row in _message_knowledge_citations(aid)
+            ],
+        }
+        yield _sse("final", final_payload)
         yield _sse(
             "done",
             {
@@ -910,10 +918,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 "affect_observation": affect_observation,
                 "companion_cognition": affect_observation,
                 "memory_observation": memory_observation,
-                "content": full,
-                "knowledge_citations": [
-                    knowledge_context.citation_public(row) for row in _message_knowledge_citations(aid)
-                ],
+                **final_payload,
             },
         )
 

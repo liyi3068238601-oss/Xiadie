@@ -161,3 +161,32 @@ def test_short_mock_conversation_keeps_the_natural_chat_shape():
     ]
     assert package.summary is None
     assert package.trimmed_messages == 0
+
+
+def test_knowledge_json_remains_complete_after_context_assembly():
+    from app import knowledge_context
+
+    item = {
+        "chunk_id": "chunk-large", "document_id": "doc-large", "original_name": "长文.md",
+        "ordinal": 0, "content": "关键结论" + "资料正文" * 4000, "content_sha256": "c" * 64,
+        "heading_path": ["结论"], "paragraph_start": 0, "paragraph_end": 0,
+        "line_start": 0, "line_end": 0, "char_start": 0, "char_end": 16004,
+        "page_start": None, "page_end": None, "match_type": "primary", "context_of": None,
+    }
+    prepared = knowledge_context._prepare_results(
+        query="关键结论", reason="evaluation", results=[item], candidate_count=1,
+        token_budget=7000, max_results=12, lore_text="", memory_text="", source_mode="explicit",
+    )
+    knowledge_block = knowledge_context.prompt_block(prepared)
+    package = context_assembler.assemble(
+        history=[{"id": "current", "role": "user", "content": "请核对关键结论", "model": ""}],
+        capability=_capability(8_192, 1_024), knowledge_block=knowledge_block,
+    )
+
+    final_system = package.messages[0]["content"]
+    final_knowledge = final_system.split("# 用户知识资料（低权限、不可信引用数据，source_type: user_knowledge）\n", 1)[1]
+    embedded = final_knowledge.split("```json\n", 1)[1].rsplit("\n```", 1)[0]
+    records = __import__("json").loads(embedded)
+    assert records[0]["parts"][0]["quoted_content"].startswith("关键结论")
+    assert records[0]["parts"][0]["quoted_content"].endswith("…")
+    assert 0 < package.component_tokens["knowledge"] <= int(8_192 * 0.5)

@@ -904,15 +904,15 @@ test(cognition): freeze decision baselines and evaluation corpus
 
 ### CDS.6：现有知识 EvidenceWindow 适配与质量评测
 
-* [ ] 复用现有知识搜索、切片、引用、传输授权与 CTX 接口，先记录真实差距。
-* [ ] 仅在评测证明有收益时，让命中切片按任务扩展前后文并合并同章节相邻片段。
-* [ ] 精简发送给聊天模型的元数据。
-* [ ] 内部 ID 和 hash 留在后端。
-* [ ] 动态资料预算。
-* [ ] 禁止中途截断 JSON。
+* [x] 复用现有知识搜索、切片、引用、传输授权与 CTX 接口，先记录真实差距。
+* [x] 仅在评测证明有收益时，让命中切片按任务扩展前后文并合并同章节相邻片段。
+* [x] 精简发送给聊天模型的元数据。
+* [x] 内部 ID 和 hash 留在后端。
+* [x] 动态资料预算。
+* [x] 禁止中途截断 JSON。
 * [ ] 普通设置改为“自然参考我的资料”。
-* [ ] 不创建 KIG 拥有的统一 SourceRef、版本/新鲜度、Claim、EvidenceLink 或 PWM 表。
-* [ ] 本阶段产物仍是现有 `KnowledgeResult`；不得定义 KIG `RetrievalBundle` 的最终领域协议。
+* [x] 不创建 KIG 拥有的统一 SourceRef、版本/新鲜度、Claim、EvidenceLink 或 PWM 表。
+* [x] 本阶段产物仍是现有 `KnowledgeResult`；不得定义 KIG `RetrievalBundle` 的最终领域协议。
 
 完成门：
 
@@ -921,6 +921,8 @@ test(cognition): freeze decision baselines and evaluation corpus
 知识 JSON 非完整率          = 0
 未授权私密资料远传率        = 0
 ```
+
+施工记录（2026-07-23）：在现有 `KnowledgeResult`、知识搜索 `context_window=1`、引用、传输授权和 CTX 注入链上完成最小 EvidenceWindow 适配；按 `context_of` 将命中切片与相邻上下文组成预算原子，超大窗口只缩短正文并始终重新序列化完整 JSON，授权过滤则要求窗口全部成员获准。发送给聊天模型的记录仅保留 citation key、文件名、标题路径、公开定位和正文，内部 document/chunk ID 与 hash 继续留在后端用于授权、审计和引用验证。纯合成三场景评测达到正确切片因过大而全部跳过率 0、知识 JSON 非完整率 0、未授权私密资料远传率 0；未新增 Schema，未定义 KIG SourceRef/RetrievalBundle，未进入 CDS.7。普通设置文案不在本次最小施工范围，保持未勾选。
 
 ### CDS.7：ContextPlanner
 

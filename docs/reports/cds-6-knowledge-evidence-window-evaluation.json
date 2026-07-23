@@ -1,0 +1,81 @@
+{
+  "protocol_version": "knowledge-evidence-window-eval-v1",
+  "synthetic_only": true,
+  "contains_user_data": false,
+  "case_count": 3,
+  "denominators": {
+    "correct_chunk_oversized": 1,
+    "knowledge_json_checked": 2,
+    "private_authorization_checked": 1
+  },
+  "metrics": {
+    "correct_chunk_skipped_oversize_rate": 0.0,
+    "knowledge_json_incomplete_rate": 0.0,
+    "unauthorized_private_remote_rate": 0.0
+  },
+  "gate_failures": [],
+  "completion_gate": "pass",
+  "outcomes": [
+    {
+      "case_id": "oversized_correct_window",
+      "correct_chunk_oversized": true,
+      "correct_chunk_injected": true,
+      "json_checked": true,
+      "json_complete": true,
+      "private_authorization_checked": false,
+      "private_remote_attempted": false,
+      "final_knowledge_tokens": 4096
+    },
+    {
+      "case_id": "atomic_private_authorization",
+      "correct_chunk_oversized": false,
+      "correct_chunk_injected": false,
+      "json_checked": true,
+      "json_complete": true,
+      "private_authorization_checked": false,
+      "private_remote_attempted": false,
+      "final_knowledge_tokens": 0
+    },
+    {
+      "case_id": "real_api_chat_without_grant",
+      "correct_chunk_oversized": false,
+      "correct_chunk_injected": false,
+      "json_checked": false,
+      "json_complete": true,
+      "private_authorization_checked": true,
+      "private_remote_attempted": false,
+      "provider_boundary_call_count": 0
+    }
+  ],
+  "authorization_evidence": {
+    "preflight_status": "pending",
+    "grant_status": "consumed",
+    "grant_event_types": [
+      "preflight_created",
+      "grant_issued",
+      "grant_consumed"
+    ]
+  },
+  "llm_message_capture": {
+    "captured": true,
+    "message_count": 2,
+    "knowledge_payload_json_complete": true,
+    "contains_authorized_private_content": true,
+    "contains_plaintext_grant_token": false,
+    "provider_boundary_call_count": 1
+  },
+  "unauthorized_api_evidence": {
+    "request_path": "/api/chat",
+    "grant_supplied": false,
+    "status_code": 409,
+    "error_code": "knowledge_grant_required",
+    "provider_boundary_call_count": 0,
+    "private_content_at_provider_boundary": 0,
+    "response_contains_private_content": false
+  },
+  "critical_samples": [
+    "oversized_correct_window",
+    "atomic_private_authorization",
+    "real_api_chat_without_grant"
+  ]
+}

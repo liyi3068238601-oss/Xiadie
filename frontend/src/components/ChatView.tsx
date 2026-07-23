@@ -286,6 +286,9 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
         onDelta: (t) => {
           setStreaming((s) => (s ? { text: s.text + t } : { text: t }));
         },
+        onFinal: (final) => {
+          setStreaming({ text: final.content });
+        },
         onError: (msg, hint) => {
           setStreaming(null);
           const finalHint = options.regenerate

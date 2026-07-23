@@ -1,3 +1,5 @@
+import { dispatchChatSseEvent } from "./chatSseProtocol";
+
 // 后端 API 客户端。dev 期指向本地 FastAPI，可被 Electron 注入的全局覆盖。
 export const API_BASE: string =
   (window as any).__XIADIE_API__ || "http://127.0.0.1:8756";
@@ -1181,6 +1183,11 @@ export interface ChatCallbacks {
     knowledge_recall_mode: "off" | "explicit" | "smart";
   }) => void;
   onDelta?: (text: string) => void;
+  onFinal?: (d: {
+    message_id: string;
+    content: string;
+    knowledge_citations: KnowledgeCitation[];
+  }) => void;
   onError?: (message: string, hint: string) => void;
   onDone?: (d: {
     message_id: string;
@@ -1313,10 +1320,7 @@ export async function streamChat(
         if (!evLine || !dataLine) continue;
         const ev = evLine.slice(6).trim();
         const data = JSON.parse(dataLine.slice(5).trim());
-        if (ev === "meta") cb.onMeta?.(data);
-        else if (ev === "delta") cb.onDelta?.(data.text);
-        else if (ev === "error") cb.onError?.(data.message, data.hint);
-        else if (ev === "done") cb.onDone?.(data);
+        dispatchChatSseEvent(ev, data, cb);
       }
     }
   } catch {
