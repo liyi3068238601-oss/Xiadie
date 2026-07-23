@@ -891,14 +891,16 @@ test(cognition): freeze decision baselines and evaluation corpus
 
 ### CDS.5：统一 CandidateReranker
 
-* [ ] 接入记忆候选。
-* [ ] 接入历史完整轮次。
-* [ ] 接入知识 EvidenceWindow。
-* [ ] 接入 Lore 小节。
-* [ ] 保留各自用途枚举。
-* [ ] 保留旧排序 fallback。
-* [ ] 来源失效后禁止注入。
-* [ ] 统一的是候选信封、用途枚举、校验和运行模式，不统一覆盖各领域的权威排序、权限和生命周期规则。
+* [x] 接入记忆候选。
+* [x] 接入历史完整轮次。
+* [x] 接入知识 EvidenceWindow。
+* [x] 接入 Lore 小节。
+* [x] 保留各自用途枚举。
+* [x] 保留旧排序 fallback。
+* [x] 来源失效后禁止注入。
+* [x] 统一的是候选信封、用途枚举、校验和运行模式，不统一覆盖各领域的权威排序、权限和生命周期规则。
+
+施工记录（2026-07-23）：新增最高仅 Shadow 的 `candidate_reranker` 专属协议，以无正文 `RerankCandidate` 信封适配 memory fragment、history complete turn、knowledge EvidenceWindow 与 Lore section；四个只读 adapter 直接消费各领域现有结果，保留领域返回顺序、用途、revision/hash 和可用性，不查询额外正文、不写库。Lore 增加与旧字符串渲染同源的兼容候选入口，稳定提供 section identity、revision/hash、原排序和字符预算。fallback 按领域输入顺序分组、只在各领域内部使用其 `legacy_rank`，并排除失效来源，不建立跨领域权威排序。validator 禁止非候选 ID、候选信封与共享快照不一致、重复候选选择、跨领域改写用途、选择失效来源和超预算选择；共享 source snapshot 在输出评估前复核 revision/hash，变化时 fail closed。主聊天与四个领域检索/排序/权限/生命周期路径均未接入或改写，不调用 Provider，不新增 Schema，不授权 Advisory/Active。实现按 TDD 完成，专项与 Lore 兼容测试 13 项通过；后端全量 `1603 passed, 1 warning`，前端 `41 passed`，TypeScript 与 Vite production build 188 modules，Python 编译、Electron 语法及 `git diff --check` 通过。当前环境未安装 Ruff，因此未把 Ruff 声称为本轮通过项。等待独立 review，未进入 CDS.6。
 
 ### CDS.6：现有知识 EvidenceWindow 适配与质量评测
 

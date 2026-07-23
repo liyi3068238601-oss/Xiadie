@@ -343,6 +343,9 @@ def create_run(
     payload_candidate_ids = tuple(getattr(payload, "candidate_ids", ()))
     if payload_candidate_ids and payload_candidate_ids != tuple(item.id for item in candidates):
         raise DecisionProtocolError("candidate_snapshot_mismatch", "input and candidate snapshot differ")
+    payload_candidate_refs = tuple(getattr(payload, "candidate_refs", ()))
+    if payload_candidate_refs and payload_candidate_refs != candidates:
+        raise DecisionProtocolError("candidate_snapshot_mismatch", "domain envelopes and candidate snapshot differ")
     now = db.now() if now is None else now
     candidates_hash = candidate_snapshot_hash(candidates)
     return run_ledger.create_or_get_run(
