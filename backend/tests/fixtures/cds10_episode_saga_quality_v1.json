@@ -1,0 +1,107 @@
+{
+  "protocol_version": "cds10-episode-saga-raw-narrative-regression-v1",
+  "corpus_role": "labeled_raw_narrative_regression",
+  "candidate_path": "real_database_candidates",
+  "synthetic_only": true,
+  "contains_user_data": false,
+  "label_authorship": "human_authored_synthetic_not_reviewed",
+  "sample_count": 8,
+  "cases": [
+    {
+      "id": "episode-release",
+      "decision_kind": "episode_boundary_proposal",
+      "label": "form_episode",
+      "raw_narrative": {
+        "members": [
+          "团队确认发布目标并开始整理清单",
+          "修复阻塞问题后完成发布并记录结果"
+        ],
+        "shared_active_entity": true
+      }
+    },
+    {
+      "id": "episode-study",
+      "decision_kind": "episode_boundary_proposal",
+      "label": "form_episode",
+      "raw_narrative": {
+        "members": [
+          "开始准备资格考试并制定复习安排",
+          "按安排完成模拟练习并调整复习重点"
+        ],
+        "shared_active_entity": true
+      }
+    },
+    {
+      "id": "episode-generic-project",
+      "decision_kind": "episode_boundary_proposal",
+      "label": "skip",
+      "raw_narrative": {
+        "members": [
+          "项目甲开始整理旅行照片",
+          "项目乙完成数据库迁移结果复盘"
+        ],
+        "shared_active_entity": true
+      }
+    },
+    {
+      "id": "episode-unrelated",
+      "decision_kind": "episode_boundary_proposal",
+      "label": "skip",
+      "raw_narrative": {
+        "members": [
+          "早餐后决定更换咖啡豆",
+          "晚上完成客户端崩溃修复"
+        ],
+        "shared_active_entity": false
+      }
+    },
+    {
+      "id": "saga-product",
+      "decision_kind": "saga_transition_proposal",
+      "label": "create_new",
+      "raw_narrative": {
+        "members": [
+          "产品原型完成并邀请首批体验",
+          "根据反馈完成第二轮改版"
+        ],
+        "shared_active_entity": true
+      }
+    },
+    {
+      "id": "saga-health",
+      "decision_kind": "saga_transition_proposal",
+      "label": "create_new",
+      "raw_narrative": {
+        "members": [
+          "开始恢复跑步并完成三公里",
+          "持续训练后完成第一次十公里"
+        ],
+        "shared_active_entity": true
+      }
+    },
+    {
+      "id": "saga-generic-theme",
+      "decision_kind": "saga_transition_proposal",
+      "label": "skip",
+      "raw_narrative": {
+        "members": [
+          "年度计划中开始学习绘画",
+          "年度计划中完成家庭搬迁"
+        ],
+        "shared_active_entity": true
+      }
+    },
+    {
+      "id": "saga-unrelated",
+      "decision_kind": "saga_transition_proposal",
+      "label": "skip",
+      "raw_narrative": {
+        "members": [
+          "完成旧电脑资料备份",
+          "开始筹备朋友生日聚会"
+        ],
+        "shared_active_entity": false
+      }
+    }
+  ]
+}

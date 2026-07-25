@@ -961,17 +961,19 @@ test(cognition): freeze decision baselines and evaluation corpus
 * [x] 首版只影响候选标记和有限参数。
 * [x] 正式应用只允许现有 MEM Validator/Reducer；CDS 不 tombstone、不写 Fragment/Episode/Saga 正式状态。
 
-返工记录（2026-07-25）：CDS.9 review 的 5 BLOCK 与 3 WARN 已按 TDD 修复，当前等待复审，未进入 CDS.10。冲突生产预筛与 CDS fallback 共用 `memory_conflicts.classify_projection`，Archivist 生产转换与 CDS fallback 共用 `archivist.project_lifecycle`；只读 adapter 从真实 Fragment 绑定 lifecycle revision、正文与状态聚合 hash、状态、启用、敏感性和来源。validator 使用完整动作矩阵，280 个场景由独立 `cds9-memory-safety-oracle-v3` 检查安全不变量，并实际执行共享 DecisionRun Shadow。报告明确区分共享账本预期写入与 MEM 领域零写入；Schema 保持 62，MEM 仍是唯一 application owner。详见 ADR-0055 与 `docs/reports/cds-9-memory-shadow.md`。
+返工记录（2026-07-25）：CDS.9 review 的 5 BLOCK 与 3 WARN 已按 TDD 修复，独立复审 67/67 通过，0 个 P0/P1，允许进入 CDS.10。冲突生产预筛与 CDS fallback 共用 `memory_conflicts.classify_projection`，Archivist 生产转换与 CDS fallback 共用 `archivist.project_lifecycle`；只读 adapter 从真实 Fragment 绑定 lifecycle revision、正文与状态聚合 hash、状态、启用、敏感性和来源。validator 使用完整动作矩阵，280 个场景由独立 `cds9-memory-safety-oracle-v3` 检查安全不变量，并实际执行共享 DecisionRun Shadow。报告明确区分共享账本预期写入与 MEM 领域零写入；Schema 保持 62，MEM 仍是唯一 application owner。详见 ADR-0055 与 `docs/reports/cds-9-memory-shadow.md`。
 
 ### CDS.10：Episode/Saga 叙事判断
 
-* [ ] 规则继续生成有限候选。
-* [ ] LLM 只生成 `EpisodeBoundaryProposal`，判断因果、目标、转折和边界。
-* [ ] LLM 只生成 `SagaTransitionProposal`，建议阶段、分支、暂停和恢复。
-* [ ] 高影响合并不自动执行。
-* [ ] 所有成员必须来自候选集合。
-* [ ] 低置信度使用旧算法或跳过。
-* [ ] 正式应用者始终是 MEM Validator/Reducer；CDS 不成为第二个 Memory 写入器。
+* [x] 规则继续生成有限候选。
+* [x] LLM 只生成 `EpisodeBoundaryProposal`，判断因果、目标、转折和边界。
+* [x] LLM 只生成 `SagaTransitionProposal`，建议阶段、分支、暂停和恢复。
+* [x] 高影响合并不自动执行。
+* [x] 所有成员必须来自候选集合。
+* [x] 低置信度使用旧算法或跳过。
+* [x] 正式应用者始终是 MEM Validator/Reducer；CDS 不成为第二个 Memory 写入器。
+
+施工记录（2026-07-25）：新增 `episode_boundary_proposal` 与 `saga_transition_proposal` 两个最高仅 Shadow 的专属协议。Episode adapter 在单个只读事务中绑定候选 Fragment 的 lifecycle revision/hash、active Entity 完整状态、Fragment→Episode 反向归属并复用 `episodes.score_group`；Saga adapter 绑定候选 Episode、active Entity 完整状态、Episode→Saga 反向归属与目标 Saga 的 revision/hash 并复用 `sagas.assess_group`。资格门显式检查 Fragment 未归属任何正式 Episode、Episode 未归属除目标 Saga 之外的任何正式 Saga；任何归属变化使来源 hash 失效。严格 validator 重算完整动作矩阵，限制所有成员来自候选集合，低置信度跳过，revive 仅接受 user_confirmed 来源，`merge_suggestion` 始终 high impact 且不可执行。240 个纯合成规则场景经独立 `cds10-narrative-safety-oracle-v2` 和真实共享 DecisionRun Shadow 验证；oracle 独立检查 provenance、来源/目标绑定、Episode 连续成员和 Saga 最小成员。另以 8 个带人工标签的原始叙事样本走真实数据库候选路径，诚实结果为 accuracy 50.00%、macro precision/recall/F1 38.89%/50.00%/43.33%，不再宣称独立 holdout。规则集精确匹配与候选集合保持率均为 100%，低置信度选中、高影响 merge 自动执行、application_allowed、安全违规和 MEM 领域写入均为 0。Schema 保持 62，未修改 Episode/Saga 候选生成、正式应用、生命周期或聊天路径。详见 ADR-0056 与 `docs/reports/cds-10-episode-saga-shadow.md`。
 
 ### CDS.11：冻结 EAP 适配与 LIFE/KIG 接口契约
 

@@ -1,0 +1,4768 @@
+{
+  "protocol_version": "cds10-episode-saga-shadow-evaluation-v1",
+  "synthetic_only": true,
+  "contains_user_data": false,
+  "scenario_count": 240,
+  "cases": [
+    {
+      "id": "episode_complete_narrative-01",
+      "group": "episode_complete_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_complete_narrative-01-0",
+          "fragment-episode_complete_narrative-01-1",
+          "fragment-episode_complete_narrative-01-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_complete_narrative-01-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_complete_narrative-02",
+      "group": "episode_complete_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_complete_narrative-02-0",
+          "fragment-episode_complete_narrative-02-1",
+          "fragment-episode_complete_narrative-02-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_complete_narrative-03",
+      "group": "episode_complete_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_complete_narrative-03-0",
+          "fragment-episode_complete_narrative-03-1",
+          "fragment-episode_complete_narrative-03-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_complete_narrative-03-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_complete_narrative-04",
+      "group": "episode_complete_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_complete_narrative-04-0",
+          "fragment-episode_complete_narrative-04-1",
+          "fragment-episode_complete_narrative-04-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_complete_narrative-05",
+      "group": "episode_complete_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_complete_narrative-05-0",
+          "fragment-episode_complete_narrative-05-1",
+          "fragment-episode_complete_narrative-05-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_complete_narrative-05-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_complete_narrative-06",
+      "group": "episode_complete_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_complete_narrative-06-0",
+          "fragment-episode_complete_narrative-06-1",
+          "fragment-episode_complete_narrative-06-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_complete_narrative-07",
+      "group": "episode_complete_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_complete_narrative-07-0",
+          "fragment-episode_complete_narrative-07-1",
+          "fragment-episode_complete_narrative-07-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_complete_narrative-07-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_complete_narrative-08",
+      "group": "episode_complete_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_complete_narrative-08-0",
+          "fragment-episode_complete_narrative-08-1",
+          "fragment-episode_complete_narrative-08-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_complete_narrative-09",
+      "group": "episode_complete_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_complete_narrative-09-0",
+          "fragment-episode_complete_narrative-09-1",
+          "fragment-episode_complete_narrative-09-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_complete_narrative-09-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_complete_narrative-10",
+      "group": "episode_complete_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_complete_narrative-10-0",
+          "fragment-episode_complete_narrative-10-1",
+          "fragment-episode_complete_narrative-10-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_complete_narrative-11",
+      "group": "episode_complete_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_complete_narrative-11-0",
+          "fragment-episode_complete_narrative-11-1",
+          "fragment-episode_complete_narrative-11-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_complete_narrative-11-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_complete_narrative-12",
+      "group": "episode_complete_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_complete_narrative-12-0",
+          "fragment-episode_complete_narrative-12-1",
+          "fragment-episode_complete_narrative-12-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_complete_narrative-13",
+      "group": "episode_complete_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_complete_narrative-13-0",
+          "fragment-episode_complete_narrative-13-1",
+          "fragment-episode_complete_narrative-13-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_complete_narrative-13-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_complete_narrative-14",
+      "group": "episode_complete_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_complete_narrative-14-0",
+          "fragment-episode_complete_narrative-14-1",
+          "fragment-episode_complete_narrative-14-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_complete_narrative-15",
+      "group": "episode_complete_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_complete_narrative-15-0",
+          "fragment-episode_complete_narrative-15-1",
+          "fragment-episode_complete_narrative-15-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_complete_narrative-15-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_complete_narrative-16",
+      "group": "episode_complete_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_complete_narrative-16-0",
+          "fragment-episode_complete_narrative-16-1",
+          "fragment-episode_complete_narrative-16-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_complete_narrative-17",
+      "group": "episode_complete_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_complete_narrative-17-0",
+          "fragment-episode_complete_narrative-17-1",
+          "fragment-episode_complete_narrative-17-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_complete_narrative-17-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_complete_narrative-18",
+      "group": "episode_complete_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_complete_narrative-18-0",
+          "fragment-episode_complete_narrative-18-1",
+          "fragment-episode_complete_narrative-18-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_complete_narrative-19",
+      "group": "episode_complete_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_complete_narrative-19-0",
+          "fragment-episode_complete_narrative-19-1",
+          "fragment-episode_complete_narrative-19-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_complete_narrative-19-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_complete_narrative-20",
+      "group": "episode_complete_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_complete_narrative-20-0",
+          "fragment-episode_complete_narrative-20-1",
+          "fragment-episode_complete_narrative-20-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_open_narrative-01",
+      "group": "episode_open_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_open_narrative-01-0",
+          "fragment-episode_open_narrative-01-1",
+          "fragment-episode_open_narrative-01-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_open_narrative-01-1"
+        ],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_open_narrative-02",
+      "group": "episode_open_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_open_narrative-02-0",
+          "fragment-episode_open_narrative-02-1",
+          "fragment-episode_open_narrative-02-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_open_narrative-03",
+      "group": "episode_open_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_open_narrative-03-0",
+          "fragment-episode_open_narrative-03-1",
+          "fragment-episode_open_narrative-03-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_open_narrative-03-1"
+        ],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_open_narrative-04",
+      "group": "episode_open_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_open_narrative-04-0",
+          "fragment-episode_open_narrative-04-1",
+          "fragment-episode_open_narrative-04-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_open_narrative-05",
+      "group": "episode_open_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_open_narrative-05-0",
+          "fragment-episode_open_narrative-05-1",
+          "fragment-episode_open_narrative-05-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_open_narrative-05-1"
+        ],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_open_narrative-06",
+      "group": "episode_open_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_open_narrative-06-0",
+          "fragment-episode_open_narrative-06-1",
+          "fragment-episode_open_narrative-06-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_open_narrative-07",
+      "group": "episode_open_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_open_narrative-07-0",
+          "fragment-episode_open_narrative-07-1",
+          "fragment-episode_open_narrative-07-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_open_narrative-07-1"
+        ],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_open_narrative-08",
+      "group": "episode_open_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_open_narrative-08-0",
+          "fragment-episode_open_narrative-08-1",
+          "fragment-episode_open_narrative-08-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_open_narrative-09",
+      "group": "episode_open_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_open_narrative-09-0",
+          "fragment-episode_open_narrative-09-1",
+          "fragment-episode_open_narrative-09-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_open_narrative-09-1"
+        ],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_open_narrative-10",
+      "group": "episode_open_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_open_narrative-10-0",
+          "fragment-episode_open_narrative-10-1",
+          "fragment-episode_open_narrative-10-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_open_narrative-11",
+      "group": "episode_open_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_open_narrative-11-0",
+          "fragment-episode_open_narrative-11-1",
+          "fragment-episode_open_narrative-11-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_open_narrative-11-1"
+        ],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_open_narrative-12",
+      "group": "episode_open_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_open_narrative-12-0",
+          "fragment-episode_open_narrative-12-1",
+          "fragment-episode_open_narrative-12-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_open_narrative-13",
+      "group": "episode_open_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_open_narrative-13-0",
+          "fragment-episode_open_narrative-13-1",
+          "fragment-episode_open_narrative-13-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_open_narrative-13-1"
+        ],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_open_narrative-14",
+      "group": "episode_open_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_open_narrative-14-0",
+          "fragment-episode_open_narrative-14-1",
+          "fragment-episode_open_narrative-14-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_open_narrative-15",
+      "group": "episode_open_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_open_narrative-15-0",
+          "fragment-episode_open_narrative-15-1",
+          "fragment-episode_open_narrative-15-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_open_narrative-15-1"
+        ],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_open_narrative-16",
+      "group": "episode_open_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_open_narrative-16-0",
+          "fragment-episode_open_narrative-16-1",
+          "fragment-episode_open_narrative-16-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_open_narrative-17",
+      "group": "episode_open_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_open_narrative-17-0",
+          "fragment-episode_open_narrative-17-1",
+          "fragment-episode_open_narrative-17-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_open_narrative-17-1"
+        ],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_open_narrative-18",
+      "group": "episode_open_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_open_narrative-18-0",
+          "fragment-episode_open_narrative-18-1",
+          "fragment-episode_open_narrative-18-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_open_narrative-19",
+      "group": "episode_open_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_open_narrative-19-0",
+          "fragment-episode_open_narrative-19-1",
+          "fragment-episode_open_narrative-19-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_open_narrative-19-1"
+        ],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_open_narrative-20",
+      "group": "episode_open_narrative",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_open_narrative-20-0",
+          "fragment-episode_open_narrative-20-1",
+          "fragment-episode_open_narrative-20-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "form_episode"
+      }
+    },
+    {
+      "id": "episode_goal_mismatch-01",
+      "group": "episode_goal_mismatch",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_goal_mismatch-01-0",
+          "fragment-episode_goal_mismatch-01-1",
+          "fragment-episode_goal_mismatch-01-2"
+        ],
+        "same_goal": false,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_goal_mismatch-01-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_goal_mismatch-02",
+      "group": "episode_goal_mismatch",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_goal_mismatch-02-0",
+          "fragment-episode_goal_mismatch-02-1",
+          "fragment-episode_goal_mismatch-02-2"
+        ],
+        "same_goal": false,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_goal_mismatch-03",
+      "group": "episode_goal_mismatch",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_goal_mismatch-03-0",
+          "fragment-episode_goal_mismatch-03-1",
+          "fragment-episode_goal_mismatch-03-2"
+        ],
+        "same_goal": false,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_goal_mismatch-03-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_goal_mismatch-04",
+      "group": "episode_goal_mismatch",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_goal_mismatch-04-0",
+          "fragment-episode_goal_mismatch-04-1",
+          "fragment-episode_goal_mismatch-04-2"
+        ],
+        "same_goal": false,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_goal_mismatch-05",
+      "group": "episode_goal_mismatch",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_goal_mismatch-05-0",
+          "fragment-episode_goal_mismatch-05-1",
+          "fragment-episode_goal_mismatch-05-2"
+        ],
+        "same_goal": false,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_goal_mismatch-05-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_goal_mismatch-06",
+      "group": "episode_goal_mismatch",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_goal_mismatch-06-0",
+          "fragment-episode_goal_mismatch-06-1",
+          "fragment-episode_goal_mismatch-06-2"
+        ],
+        "same_goal": false,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_goal_mismatch-07",
+      "group": "episode_goal_mismatch",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_goal_mismatch-07-0",
+          "fragment-episode_goal_mismatch-07-1",
+          "fragment-episode_goal_mismatch-07-2"
+        ],
+        "same_goal": false,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_goal_mismatch-07-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_goal_mismatch-08",
+      "group": "episode_goal_mismatch",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_goal_mismatch-08-0",
+          "fragment-episode_goal_mismatch-08-1",
+          "fragment-episode_goal_mismatch-08-2"
+        ],
+        "same_goal": false,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_goal_mismatch-09",
+      "group": "episode_goal_mismatch",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_goal_mismatch-09-0",
+          "fragment-episode_goal_mismatch-09-1",
+          "fragment-episode_goal_mismatch-09-2"
+        ],
+        "same_goal": false,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_goal_mismatch-09-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_goal_mismatch-10",
+      "group": "episode_goal_mismatch",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_goal_mismatch-10-0",
+          "fragment-episode_goal_mismatch-10-1",
+          "fragment-episode_goal_mismatch-10-2"
+        ],
+        "same_goal": false,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_goal_mismatch-11",
+      "group": "episode_goal_mismatch",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_goal_mismatch-11-0",
+          "fragment-episode_goal_mismatch-11-1",
+          "fragment-episode_goal_mismatch-11-2"
+        ],
+        "same_goal": false,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_goal_mismatch-11-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_goal_mismatch-12",
+      "group": "episode_goal_mismatch",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_goal_mismatch-12-0",
+          "fragment-episode_goal_mismatch-12-1",
+          "fragment-episode_goal_mismatch-12-2"
+        ],
+        "same_goal": false,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_goal_mismatch-13",
+      "group": "episode_goal_mismatch",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_goal_mismatch-13-0",
+          "fragment-episode_goal_mismatch-13-1",
+          "fragment-episode_goal_mismatch-13-2"
+        ],
+        "same_goal": false,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_goal_mismatch-13-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_goal_mismatch-14",
+      "group": "episode_goal_mismatch",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_goal_mismatch-14-0",
+          "fragment-episode_goal_mismatch-14-1",
+          "fragment-episode_goal_mismatch-14-2"
+        ],
+        "same_goal": false,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_goal_mismatch-15",
+      "group": "episode_goal_mismatch",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_goal_mismatch-15-0",
+          "fragment-episode_goal_mismatch-15-1",
+          "fragment-episode_goal_mismatch-15-2"
+        ],
+        "same_goal": false,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_goal_mismatch-15-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_goal_mismatch-16",
+      "group": "episode_goal_mismatch",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_goal_mismatch-16-0",
+          "fragment-episode_goal_mismatch-16-1",
+          "fragment-episode_goal_mismatch-16-2"
+        ],
+        "same_goal": false,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_goal_mismatch-17",
+      "group": "episode_goal_mismatch",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_goal_mismatch-17-0",
+          "fragment-episode_goal_mismatch-17-1",
+          "fragment-episode_goal_mismatch-17-2"
+        ],
+        "same_goal": false,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_goal_mismatch-17-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_goal_mismatch-18",
+      "group": "episode_goal_mismatch",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_goal_mismatch-18-0",
+          "fragment-episode_goal_mismatch-18-1",
+          "fragment-episode_goal_mismatch-18-2"
+        ],
+        "same_goal": false,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_goal_mismatch-19",
+      "group": "episode_goal_mismatch",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_goal_mismatch-19-0",
+          "fragment-episode_goal_mismatch-19-1",
+          "fragment-episode_goal_mismatch-19-2"
+        ],
+        "same_goal": false,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_goal_mismatch-19-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_goal_mismatch-20",
+      "group": "episode_goal_mismatch",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_goal_mismatch-20-0",
+          "fragment-episode_goal_mismatch-20-1",
+          "fragment-episode_goal_mismatch-20-2"
+        ],
+        "same_goal": false,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_causal_gap-01",
+      "group": "episode_causal_gap",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_causal_gap-01-0",
+          "fragment-episode_causal_gap-01-1",
+          "fragment-episode_causal_gap-01-2"
+        ],
+        "same_goal": true,
+        "causal_chain": false,
+        "turning_point_ids": [
+          "fragment-episode_causal_gap-01-1"
+        ],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_causal_gap-02",
+      "group": "episode_causal_gap",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_causal_gap-02-0",
+          "fragment-episode_causal_gap-02-1",
+          "fragment-episode_causal_gap-02-2"
+        ],
+        "same_goal": true,
+        "causal_chain": false,
+        "turning_point_ids": [],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_causal_gap-03",
+      "group": "episode_causal_gap",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_causal_gap-03-0",
+          "fragment-episode_causal_gap-03-1",
+          "fragment-episode_causal_gap-03-2"
+        ],
+        "same_goal": true,
+        "causal_chain": false,
+        "turning_point_ids": [
+          "fragment-episode_causal_gap-03-1"
+        ],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_causal_gap-04",
+      "group": "episode_causal_gap",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_causal_gap-04-0",
+          "fragment-episode_causal_gap-04-1",
+          "fragment-episode_causal_gap-04-2"
+        ],
+        "same_goal": true,
+        "causal_chain": false,
+        "turning_point_ids": [],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_causal_gap-05",
+      "group": "episode_causal_gap",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_causal_gap-05-0",
+          "fragment-episode_causal_gap-05-1",
+          "fragment-episode_causal_gap-05-2"
+        ],
+        "same_goal": true,
+        "causal_chain": false,
+        "turning_point_ids": [
+          "fragment-episode_causal_gap-05-1"
+        ],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_causal_gap-06",
+      "group": "episode_causal_gap",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_causal_gap-06-0",
+          "fragment-episode_causal_gap-06-1",
+          "fragment-episode_causal_gap-06-2"
+        ],
+        "same_goal": true,
+        "causal_chain": false,
+        "turning_point_ids": [],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_causal_gap-07",
+      "group": "episode_causal_gap",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_causal_gap-07-0",
+          "fragment-episode_causal_gap-07-1",
+          "fragment-episode_causal_gap-07-2"
+        ],
+        "same_goal": true,
+        "causal_chain": false,
+        "turning_point_ids": [
+          "fragment-episode_causal_gap-07-1"
+        ],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_causal_gap-08",
+      "group": "episode_causal_gap",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_causal_gap-08-0",
+          "fragment-episode_causal_gap-08-1",
+          "fragment-episode_causal_gap-08-2"
+        ],
+        "same_goal": true,
+        "causal_chain": false,
+        "turning_point_ids": [],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_causal_gap-09",
+      "group": "episode_causal_gap",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_causal_gap-09-0",
+          "fragment-episode_causal_gap-09-1",
+          "fragment-episode_causal_gap-09-2"
+        ],
+        "same_goal": true,
+        "causal_chain": false,
+        "turning_point_ids": [
+          "fragment-episode_causal_gap-09-1"
+        ],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_causal_gap-10",
+      "group": "episode_causal_gap",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_causal_gap-10-0",
+          "fragment-episode_causal_gap-10-1",
+          "fragment-episode_causal_gap-10-2"
+        ],
+        "same_goal": true,
+        "causal_chain": false,
+        "turning_point_ids": [],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_causal_gap-11",
+      "group": "episode_causal_gap",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_causal_gap-11-0",
+          "fragment-episode_causal_gap-11-1",
+          "fragment-episode_causal_gap-11-2"
+        ],
+        "same_goal": true,
+        "causal_chain": false,
+        "turning_point_ids": [
+          "fragment-episode_causal_gap-11-1"
+        ],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_causal_gap-12",
+      "group": "episode_causal_gap",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_causal_gap-12-0",
+          "fragment-episode_causal_gap-12-1",
+          "fragment-episode_causal_gap-12-2"
+        ],
+        "same_goal": true,
+        "causal_chain": false,
+        "turning_point_ids": [],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_causal_gap-13",
+      "group": "episode_causal_gap",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_causal_gap-13-0",
+          "fragment-episode_causal_gap-13-1",
+          "fragment-episode_causal_gap-13-2"
+        ],
+        "same_goal": true,
+        "causal_chain": false,
+        "turning_point_ids": [
+          "fragment-episode_causal_gap-13-1"
+        ],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_causal_gap-14",
+      "group": "episode_causal_gap",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_causal_gap-14-0",
+          "fragment-episode_causal_gap-14-1",
+          "fragment-episode_causal_gap-14-2"
+        ],
+        "same_goal": true,
+        "causal_chain": false,
+        "turning_point_ids": [],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_causal_gap-15",
+      "group": "episode_causal_gap",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_causal_gap-15-0",
+          "fragment-episode_causal_gap-15-1",
+          "fragment-episode_causal_gap-15-2"
+        ],
+        "same_goal": true,
+        "causal_chain": false,
+        "turning_point_ids": [
+          "fragment-episode_causal_gap-15-1"
+        ],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_causal_gap-16",
+      "group": "episode_causal_gap",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_causal_gap-16-0",
+          "fragment-episode_causal_gap-16-1",
+          "fragment-episode_causal_gap-16-2"
+        ],
+        "same_goal": true,
+        "causal_chain": false,
+        "turning_point_ids": [],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_causal_gap-17",
+      "group": "episode_causal_gap",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_causal_gap-17-0",
+          "fragment-episode_causal_gap-17-1",
+          "fragment-episode_causal_gap-17-2"
+        ],
+        "same_goal": true,
+        "causal_chain": false,
+        "turning_point_ids": [
+          "fragment-episode_causal_gap-17-1"
+        ],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_causal_gap-18",
+      "group": "episode_causal_gap",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_causal_gap-18-0",
+          "fragment-episode_causal_gap-18-1",
+          "fragment-episode_causal_gap-18-2"
+        ],
+        "same_goal": true,
+        "causal_chain": false,
+        "turning_point_ids": [],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_causal_gap-19",
+      "group": "episode_causal_gap",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_causal_gap-19-0",
+          "fragment-episode_causal_gap-19-1",
+          "fragment-episode_causal_gap-19-2"
+        ],
+        "same_goal": true,
+        "causal_chain": false,
+        "turning_point_ids": [
+          "fragment-episode_causal_gap-19-1"
+        ],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_causal_gap-20",
+      "group": "episode_causal_gap",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_causal_gap-20-0",
+          "fragment-episode_causal_gap-20-1",
+          "fragment-episode_causal_gap-20-2"
+        ],
+        "same_goal": true,
+        "causal_chain": false,
+        "turning_point_ids": [],
+        "outcome_present": false,
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_low_confidence-01",
+      "group": "episode_low_confidence",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_low_confidence-01-0",
+          "fragment-episode_low_confidence-01-1",
+          "fragment-episode_low_confidence-01-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_low_confidence-01-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "low"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_low_confidence-02",
+      "group": "episode_low_confidence",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_low_confidence-02-0",
+          "fragment-episode_low_confidence-02-1",
+          "fragment-episode_low_confidence-02-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "low"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_low_confidence-03",
+      "group": "episode_low_confidence",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_low_confidence-03-0",
+          "fragment-episode_low_confidence-03-1",
+          "fragment-episode_low_confidence-03-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_low_confidence-03-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "low"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_low_confidence-04",
+      "group": "episode_low_confidence",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_low_confidence-04-0",
+          "fragment-episode_low_confidence-04-1",
+          "fragment-episode_low_confidence-04-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "low"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_low_confidence-05",
+      "group": "episode_low_confidence",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_low_confidence-05-0",
+          "fragment-episode_low_confidence-05-1",
+          "fragment-episode_low_confidence-05-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_low_confidence-05-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "low"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_low_confidence-06",
+      "group": "episode_low_confidence",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_low_confidence-06-0",
+          "fragment-episode_low_confidence-06-1",
+          "fragment-episode_low_confidence-06-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "low"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_low_confidence-07",
+      "group": "episode_low_confidence",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_low_confidence-07-0",
+          "fragment-episode_low_confidence-07-1",
+          "fragment-episode_low_confidence-07-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_low_confidence-07-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "low"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_low_confidence-08",
+      "group": "episode_low_confidence",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_low_confidence-08-0",
+          "fragment-episode_low_confidence-08-1",
+          "fragment-episode_low_confidence-08-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "low"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_low_confidence-09",
+      "group": "episode_low_confidence",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_low_confidence-09-0",
+          "fragment-episode_low_confidence-09-1",
+          "fragment-episode_low_confidence-09-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_low_confidence-09-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "low"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_low_confidence-10",
+      "group": "episode_low_confidence",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_low_confidence-10-0",
+          "fragment-episode_low_confidence-10-1",
+          "fragment-episode_low_confidence-10-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "low"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_low_confidence-11",
+      "group": "episode_low_confidence",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_low_confidence-11-0",
+          "fragment-episode_low_confidence-11-1",
+          "fragment-episode_low_confidence-11-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_low_confidence-11-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "low"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_low_confidence-12",
+      "group": "episode_low_confidence",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_low_confidence-12-0",
+          "fragment-episode_low_confidence-12-1",
+          "fragment-episode_low_confidence-12-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "low"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_low_confidence-13",
+      "group": "episode_low_confidence",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_low_confidence-13-0",
+          "fragment-episode_low_confidence-13-1",
+          "fragment-episode_low_confidence-13-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_low_confidence-13-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "low"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_low_confidence-14",
+      "group": "episode_low_confidence",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_low_confidence-14-0",
+          "fragment-episode_low_confidence-14-1",
+          "fragment-episode_low_confidence-14-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "low"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_low_confidence-15",
+      "group": "episode_low_confidence",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_low_confidence-15-0",
+          "fragment-episode_low_confidence-15-1",
+          "fragment-episode_low_confidence-15-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_low_confidence-15-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "low"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_low_confidence-16",
+      "group": "episode_low_confidence",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_low_confidence-16-0",
+          "fragment-episode_low_confidence-16-1",
+          "fragment-episode_low_confidence-16-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "low"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_low_confidence-17",
+      "group": "episode_low_confidence",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_low_confidence-17-0",
+          "fragment-episode_low_confidence-17-1",
+          "fragment-episode_low_confidence-17-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_low_confidence-17-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "low"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_low_confidence-18",
+      "group": "episode_low_confidence",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_low_confidence-18-0",
+          "fragment-episode_low_confidence-18-1",
+          "fragment-episode_low_confidence-18-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "low"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_low_confidence-19",
+      "group": "episode_low_confidence",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_low_confidence-19-0",
+          "fragment-episode_low_confidence-19-1",
+          "fragment-episode_low_confidence-19-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [
+          "fragment-episode_low_confidence-19-1"
+        ],
+        "outcome_present": true,
+        "projected_confidence": "low"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "episode_low_confidence-20",
+      "group": "episode_low_confidence",
+      "decision_kind": "episode_boundary_proposal",
+      "input": {
+        "candidate_ids": [
+          "fragment-episode_low_confidence-20-0",
+          "fragment-episode_low_confidence-20-1",
+          "fragment-episode_low_confidence-20-2"
+        ],
+        "same_goal": true,
+        "causal_chain": true,
+        "turning_point_ids": [],
+        "outcome_present": true,
+        "projected_confidence": "low"
+      },
+      "expected": {
+        "proposal": "skip"
+      }
+    },
+    {
+      "id": "saga_create-01",
+      "group": "saga_create",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_create-01-0",
+          "episode-saga_create-01-1"
+        ],
+        "target_saga_id": null,
+        "target_status": null,
+        "transition_hint": "create_new",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "create_new"
+      }
+    },
+    {
+      "id": "saga_create-02",
+      "group": "saga_create",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_create-02-0",
+          "episode-saga_create-02-1"
+        ],
+        "target_saga_id": null,
+        "target_status": null,
+        "transition_hint": "create_new",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "create_new"
+      }
+    },
+    {
+      "id": "saga_create-03",
+      "group": "saga_create",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_create-03-0",
+          "episode-saga_create-03-1"
+        ],
+        "target_saga_id": null,
+        "target_status": null,
+        "transition_hint": "create_new",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "create_new"
+      }
+    },
+    {
+      "id": "saga_create-04",
+      "group": "saga_create",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_create-04-0",
+          "episode-saga_create-04-1"
+        ],
+        "target_saga_id": null,
+        "target_status": null,
+        "transition_hint": "create_new",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "create_new"
+      }
+    },
+    {
+      "id": "saga_create-05",
+      "group": "saga_create",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_create-05-0",
+          "episode-saga_create-05-1"
+        ],
+        "target_saga_id": null,
+        "target_status": null,
+        "transition_hint": "create_new",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "create_new"
+      }
+    },
+    {
+      "id": "saga_create-06",
+      "group": "saga_create",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_create-06-0",
+          "episode-saga_create-06-1"
+        ],
+        "target_saga_id": null,
+        "target_status": null,
+        "transition_hint": "create_new",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "create_new"
+      }
+    },
+    {
+      "id": "saga_create-07",
+      "group": "saga_create",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_create-07-0",
+          "episode-saga_create-07-1"
+        ],
+        "target_saga_id": null,
+        "target_status": null,
+        "transition_hint": "create_new",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "create_new"
+      }
+    },
+    {
+      "id": "saga_create-08",
+      "group": "saga_create",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_create-08-0",
+          "episode-saga_create-08-1"
+        ],
+        "target_saga_id": null,
+        "target_status": null,
+        "transition_hint": "create_new",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "create_new"
+      }
+    },
+    {
+      "id": "saga_create-09",
+      "group": "saga_create",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_create-09-0",
+          "episode-saga_create-09-1"
+        ],
+        "target_saga_id": null,
+        "target_status": null,
+        "transition_hint": "create_new",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "create_new"
+      }
+    },
+    {
+      "id": "saga_create-10",
+      "group": "saga_create",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_create-10-0",
+          "episode-saga_create-10-1"
+        ],
+        "target_saga_id": null,
+        "target_status": null,
+        "transition_hint": "create_new",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "create_new"
+      }
+    },
+    {
+      "id": "saga_create-11",
+      "group": "saga_create",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_create-11-0",
+          "episode-saga_create-11-1"
+        ],
+        "target_saga_id": null,
+        "target_status": null,
+        "transition_hint": "create_new",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "create_new"
+      }
+    },
+    {
+      "id": "saga_create-12",
+      "group": "saga_create",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_create-12-0",
+          "episode-saga_create-12-1"
+        ],
+        "target_saga_id": null,
+        "target_status": null,
+        "transition_hint": "create_new",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "create_new"
+      }
+    },
+    {
+      "id": "saga_create-13",
+      "group": "saga_create",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_create-13-0",
+          "episode-saga_create-13-1"
+        ],
+        "target_saga_id": null,
+        "target_status": null,
+        "transition_hint": "create_new",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "create_new"
+      }
+    },
+    {
+      "id": "saga_create-14",
+      "group": "saga_create",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_create-14-0",
+          "episode-saga_create-14-1"
+        ],
+        "target_saga_id": null,
+        "target_status": null,
+        "transition_hint": "create_new",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "create_new"
+      }
+    },
+    {
+      "id": "saga_create-15",
+      "group": "saga_create",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_create-15-0",
+          "episode-saga_create-15-1"
+        ],
+        "target_saga_id": null,
+        "target_status": null,
+        "transition_hint": "create_new",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "create_new"
+      }
+    },
+    {
+      "id": "saga_create-16",
+      "group": "saga_create",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_create-16-0",
+          "episode-saga_create-16-1"
+        ],
+        "target_saga_id": null,
+        "target_status": null,
+        "transition_hint": "create_new",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "create_new"
+      }
+    },
+    {
+      "id": "saga_create-17",
+      "group": "saga_create",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_create-17-0",
+          "episode-saga_create-17-1"
+        ],
+        "target_saga_id": null,
+        "target_status": null,
+        "transition_hint": "create_new",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "create_new"
+      }
+    },
+    {
+      "id": "saga_create-18",
+      "group": "saga_create",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_create-18-0",
+          "episode-saga_create-18-1"
+        ],
+        "target_saga_id": null,
+        "target_status": null,
+        "transition_hint": "create_new",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "create_new"
+      }
+    },
+    {
+      "id": "saga_create-19",
+      "group": "saga_create",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_create-19-0",
+          "episode-saga_create-19-1"
+        ],
+        "target_saga_id": null,
+        "target_status": null,
+        "transition_hint": "create_new",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "create_new"
+      }
+    },
+    {
+      "id": "saga_create-20",
+      "group": "saga_create",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_create-20-0",
+          "episode-saga_create-20-1"
+        ],
+        "target_saga_id": null,
+        "target_status": null,
+        "transition_hint": "create_new",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "create_new"
+      }
+    },
+    {
+      "id": "saga_append-01",
+      "group": "saga_append",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_append-01-0",
+          "episode-saga_append-01-1"
+        ],
+        "target_saga_id": "saga-saga_append-01",
+        "target_status": "active",
+        "transition_hint": "append_existing",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "append_existing"
+      }
+    },
+    {
+      "id": "saga_append-02",
+      "group": "saga_append",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_append-02-0",
+          "episode-saga_append-02-1"
+        ],
+        "target_saga_id": "saga-saga_append-02",
+        "target_status": "active",
+        "transition_hint": "append_existing",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "append_existing"
+      }
+    },
+    {
+      "id": "saga_append-03",
+      "group": "saga_append",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_append-03-0",
+          "episode-saga_append-03-1"
+        ],
+        "target_saga_id": "saga-saga_append-03",
+        "target_status": "active",
+        "transition_hint": "append_existing",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "append_existing"
+      }
+    },
+    {
+      "id": "saga_append-04",
+      "group": "saga_append",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_append-04-0",
+          "episode-saga_append-04-1"
+        ],
+        "target_saga_id": "saga-saga_append-04",
+        "target_status": "active",
+        "transition_hint": "append_existing",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "append_existing"
+      }
+    },
+    {
+      "id": "saga_append-05",
+      "group": "saga_append",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_append-05-0",
+          "episode-saga_append-05-1"
+        ],
+        "target_saga_id": "saga-saga_append-05",
+        "target_status": "active",
+        "transition_hint": "append_existing",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "append_existing"
+      }
+    },
+    {
+      "id": "saga_append-06",
+      "group": "saga_append",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_append-06-0",
+          "episode-saga_append-06-1"
+        ],
+        "target_saga_id": "saga-saga_append-06",
+        "target_status": "active",
+        "transition_hint": "append_existing",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "append_existing"
+      }
+    },
+    {
+      "id": "saga_append-07",
+      "group": "saga_append",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_append-07-0",
+          "episode-saga_append-07-1"
+        ],
+        "target_saga_id": "saga-saga_append-07",
+        "target_status": "active",
+        "transition_hint": "append_existing",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "append_existing"
+      }
+    },
+    {
+      "id": "saga_append-08",
+      "group": "saga_append",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_append-08-0",
+          "episode-saga_append-08-1"
+        ],
+        "target_saga_id": "saga-saga_append-08",
+        "target_status": "active",
+        "transition_hint": "append_existing",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "append_existing"
+      }
+    },
+    {
+      "id": "saga_append-09",
+      "group": "saga_append",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_append-09-0",
+          "episode-saga_append-09-1"
+        ],
+        "target_saga_id": "saga-saga_append-09",
+        "target_status": "active",
+        "transition_hint": "append_existing",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "append_existing"
+      }
+    },
+    {
+      "id": "saga_append-10",
+      "group": "saga_append",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_append-10-0",
+          "episode-saga_append-10-1"
+        ],
+        "target_saga_id": "saga-saga_append-10",
+        "target_status": "active",
+        "transition_hint": "append_existing",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "append_existing"
+      }
+    },
+    {
+      "id": "saga_append-11",
+      "group": "saga_append",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_append-11-0",
+          "episode-saga_append-11-1"
+        ],
+        "target_saga_id": "saga-saga_append-11",
+        "target_status": "active",
+        "transition_hint": "append_existing",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "append_existing"
+      }
+    },
+    {
+      "id": "saga_append-12",
+      "group": "saga_append",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_append-12-0",
+          "episode-saga_append-12-1"
+        ],
+        "target_saga_id": "saga-saga_append-12",
+        "target_status": "active",
+        "transition_hint": "append_existing",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "append_existing"
+      }
+    },
+    {
+      "id": "saga_append-13",
+      "group": "saga_append",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_append-13-0",
+          "episode-saga_append-13-1"
+        ],
+        "target_saga_id": "saga-saga_append-13",
+        "target_status": "active",
+        "transition_hint": "append_existing",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "append_existing"
+      }
+    },
+    {
+      "id": "saga_append-14",
+      "group": "saga_append",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_append-14-0",
+          "episode-saga_append-14-1"
+        ],
+        "target_saga_id": "saga-saga_append-14",
+        "target_status": "active",
+        "transition_hint": "append_existing",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "append_existing"
+      }
+    },
+    {
+      "id": "saga_append-15",
+      "group": "saga_append",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_append-15-0",
+          "episode-saga_append-15-1"
+        ],
+        "target_saga_id": "saga-saga_append-15",
+        "target_status": "active",
+        "transition_hint": "append_existing",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "append_existing"
+      }
+    },
+    {
+      "id": "saga_append-16",
+      "group": "saga_append",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_append-16-0",
+          "episode-saga_append-16-1"
+        ],
+        "target_saga_id": "saga-saga_append-16",
+        "target_status": "active",
+        "transition_hint": "append_existing",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "append_existing"
+      }
+    },
+    {
+      "id": "saga_append-17",
+      "group": "saga_append",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_append-17-0",
+          "episode-saga_append-17-1"
+        ],
+        "target_saga_id": "saga-saga_append-17",
+        "target_status": "active",
+        "transition_hint": "append_existing",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "append_existing"
+      }
+    },
+    {
+      "id": "saga_append-18",
+      "group": "saga_append",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_append-18-0",
+          "episode-saga_append-18-1"
+        ],
+        "target_saga_id": "saga-saga_append-18",
+        "target_status": "active",
+        "transition_hint": "append_existing",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "append_existing"
+      }
+    },
+    {
+      "id": "saga_append-19",
+      "group": "saga_append",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_append-19-0",
+          "episode-saga_append-19-1"
+        ],
+        "target_saga_id": "saga-saga_append-19",
+        "target_status": "active",
+        "transition_hint": "append_existing",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "append_existing"
+      }
+    },
+    {
+      "id": "saga_append-20",
+      "group": "saga_append",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_append-20-0",
+          "episode-saga_append-20-1"
+        ],
+        "target_saga_id": "saga-saga_append-20",
+        "target_status": "active",
+        "transition_hint": "append_existing",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "append_existing"
+      }
+    },
+    {
+      "id": "saga_branch-01",
+      "group": "saga_branch",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_branch-01-0",
+          "episode-saga_branch-01-1"
+        ],
+        "target_saga_id": "saga-saga_branch-01",
+        "target_status": "active",
+        "transition_hint": "branch",
+        "evidence_origin": "observed",
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "branch"
+      }
+    },
+    {
+      "id": "saga_branch-02",
+      "group": "saga_branch",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_branch-02-0",
+          "episode-saga_branch-02-1"
+        ],
+        "target_saga_id": "saga-saga_branch-02",
+        "target_status": "active",
+        "transition_hint": "branch",
+        "evidence_origin": "observed",
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "branch"
+      }
+    },
+    {
+      "id": "saga_branch-03",
+      "group": "saga_branch",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_branch-03-0",
+          "episode-saga_branch-03-1"
+        ],
+        "target_saga_id": "saga-saga_branch-03",
+        "target_status": "active",
+        "transition_hint": "branch",
+        "evidence_origin": "observed",
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "branch"
+      }
+    },
+    {
+      "id": "saga_branch-04",
+      "group": "saga_branch",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_branch-04-0",
+          "episode-saga_branch-04-1"
+        ],
+        "target_saga_id": "saga-saga_branch-04",
+        "target_status": "active",
+        "transition_hint": "branch",
+        "evidence_origin": "observed",
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "branch"
+      }
+    },
+    {
+      "id": "saga_branch-05",
+      "group": "saga_branch",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_branch-05-0",
+          "episode-saga_branch-05-1"
+        ],
+        "target_saga_id": "saga-saga_branch-05",
+        "target_status": "active",
+        "transition_hint": "branch",
+        "evidence_origin": "observed",
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "branch"
+      }
+    },
+    {
+      "id": "saga_branch-06",
+      "group": "saga_branch",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_branch-06-0",
+          "episode-saga_branch-06-1"
+        ],
+        "target_saga_id": "saga-saga_branch-06",
+        "target_status": "active",
+        "transition_hint": "branch",
+        "evidence_origin": "observed",
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "branch"
+      }
+    },
+    {
+      "id": "saga_branch-07",
+      "group": "saga_branch",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_branch-07-0",
+          "episode-saga_branch-07-1"
+        ],
+        "target_saga_id": "saga-saga_branch-07",
+        "target_status": "active",
+        "transition_hint": "branch",
+        "evidence_origin": "observed",
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "branch"
+      }
+    },
+    {
+      "id": "saga_branch-08",
+      "group": "saga_branch",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_branch-08-0",
+          "episode-saga_branch-08-1"
+        ],
+        "target_saga_id": "saga-saga_branch-08",
+        "target_status": "active",
+        "transition_hint": "branch",
+        "evidence_origin": "observed",
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "branch"
+      }
+    },
+    {
+      "id": "saga_branch-09",
+      "group": "saga_branch",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_branch-09-0",
+          "episode-saga_branch-09-1"
+        ],
+        "target_saga_id": "saga-saga_branch-09",
+        "target_status": "active",
+        "transition_hint": "branch",
+        "evidence_origin": "observed",
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "branch"
+      }
+    },
+    {
+      "id": "saga_branch-10",
+      "group": "saga_branch",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_branch-10-0",
+          "episode-saga_branch-10-1"
+        ],
+        "target_saga_id": "saga-saga_branch-10",
+        "target_status": "active",
+        "transition_hint": "branch",
+        "evidence_origin": "observed",
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "branch"
+      }
+    },
+    {
+      "id": "saga_branch-11",
+      "group": "saga_branch",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_branch-11-0",
+          "episode-saga_branch-11-1"
+        ],
+        "target_saga_id": "saga-saga_branch-11",
+        "target_status": "active",
+        "transition_hint": "branch",
+        "evidence_origin": "observed",
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "branch"
+      }
+    },
+    {
+      "id": "saga_branch-12",
+      "group": "saga_branch",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_branch-12-0",
+          "episode-saga_branch-12-1"
+        ],
+        "target_saga_id": "saga-saga_branch-12",
+        "target_status": "active",
+        "transition_hint": "branch",
+        "evidence_origin": "observed",
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "branch"
+      }
+    },
+    {
+      "id": "saga_branch-13",
+      "group": "saga_branch",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_branch-13-0",
+          "episode-saga_branch-13-1"
+        ],
+        "target_saga_id": "saga-saga_branch-13",
+        "target_status": "active",
+        "transition_hint": "branch",
+        "evidence_origin": "observed",
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "branch"
+      }
+    },
+    {
+      "id": "saga_branch-14",
+      "group": "saga_branch",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_branch-14-0",
+          "episode-saga_branch-14-1"
+        ],
+        "target_saga_id": "saga-saga_branch-14",
+        "target_status": "active",
+        "transition_hint": "branch",
+        "evidence_origin": "observed",
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "branch"
+      }
+    },
+    {
+      "id": "saga_branch-15",
+      "group": "saga_branch",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_branch-15-0",
+          "episode-saga_branch-15-1"
+        ],
+        "target_saga_id": "saga-saga_branch-15",
+        "target_status": "active",
+        "transition_hint": "branch",
+        "evidence_origin": "observed",
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "branch"
+      }
+    },
+    {
+      "id": "saga_branch-16",
+      "group": "saga_branch",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_branch-16-0",
+          "episode-saga_branch-16-1"
+        ],
+        "target_saga_id": "saga-saga_branch-16",
+        "target_status": "active",
+        "transition_hint": "branch",
+        "evidence_origin": "observed",
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "branch"
+      }
+    },
+    {
+      "id": "saga_branch-17",
+      "group": "saga_branch",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_branch-17-0",
+          "episode-saga_branch-17-1"
+        ],
+        "target_saga_id": "saga-saga_branch-17",
+        "target_status": "active",
+        "transition_hint": "branch",
+        "evidence_origin": "observed",
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "branch"
+      }
+    },
+    {
+      "id": "saga_branch-18",
+      "group": "saga_branch",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_branch-18-0",
+          "episode-saga_branch-18-1"
+        ],
+        "target_saga_id": "saga-saga_branch-18",
+        "target_status": "active",
+        "transition_hint": "branch",
+        "evidence_origin": "observed",
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "branch"
+      }
+    },
+    {
+      "id": "saga_branch-19",
+      "group": "saga_branch",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_branch-19-0",
+          "episode-saga_branch-19-1"
+        ],
+        "target_saga_id": "saga-saga_branch-19",
+        "target_status": "active",
+        "transition_hint": "branch",
+        "evidence_origin": "observed",
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "branch"
+      }
+    },
+    {
+      "id": "saga_branch-20",
+      "group": "saga_branch",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_branch-20-0",
+          "episode-saga_branch-20-1"
+        ],
+        "target_saga_id": "saga-saga_branch-20",
+        "target_status": "active",
+        "transition_hint": "branch",
+        "evidence_origin": "observed",
+        "projected_confidence": "medium"
+      },
+      "expected": {
+        "proposal": "branch"
+      }
+    },
+    {
+      "id": "saga_pause-01",
+      "group": "saga_pause",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_pause-01-0",
+          "episode-saga_pause-01-1"
+        ],
+        "target_saga_id": "saga-saga_pause-01",
+        "target_status": "active",
+        "transition_hint": "pause",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "pause"
+      }
+    },
+    {
+      "id": "saga_pause-02",
+      "group": "saga_pause",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_pause-02-0",
+          "episode-saga_pause-02-1"
+        ],
+        "target_saga_id": "saga-saga_pause-02",
+        "target_status": "active",
+        "transition_hint": "pause",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "pause"
+      }
+    },
+    {
+      "id": "saga_pause-03",
+      "group": "saga_pause",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_pause-03-0",
+          "episode-saga_pause-03-1"
+        ],
+        "target_saga_id": "saga-saga_pause-03",
+        "target_status": "active",
+        "transition_hint": "pause",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "pause"
+      }
+    },
+    {
+      "id": "saga_pause-04",
+      "group": "saga_pause",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_pause-04-0",
+          "episode-saga_pause-04-1"
+        ],
+        "target_saga_id": "saga-saga_pause-04",
+        "target_status": "active",
+        "transition_hint": "pause",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "pause"
+      }
+    },
+    {
+      "id": "saga_pause-05",
+      "group": "saga_pause",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_pause-05-0",
+          "episode-saga_pause-05-1"
+        ],
+        "target_saga_id": "saga-saga_pause-05",
+        "target_status": "active",
+        "transition_hint": "pause",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "pause"
+      }
+    },
+    {
+      "id": "saga_pause-06",
+      "group": "saga_pause",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_pause-06-0",
+          "episode-saga_pause-06-1"
+        ],
+        "target_saga_id": "saga-saga_pause-06",
+        "target_status": "active",
+        "transition_hint": "pause",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "pause"
+      }
+    },
+    {
+      "id": "saga_pause-07",
+      "group": "saga_pause",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_pause-07-0",
+          "episode-saga_pause-07-1"
+        ],
+        "target_saga_id": "saga-saga_pause-07",
+        "target_status": "active",
+        "transition_hint": "pause",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "pause"
+      }
+    },
+    {
+      "id": "saga_pause-08",
+      "group": "saga_pause",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_pause-08-0",
+          "episode-saga_pause-08-1"
+        ],
+        "target_saga_id": "saga-saga_pause-08",
+        "target_status": "active",
+        "transition_hint": "pause",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "pause"
+      }
+    },
+    {
+      "id": "saga_pause-09",
+      "group": "saga_pause",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_pause-09-0",
+          "episode-saga_pause-09-1"
+        ],
+        "target_saga_id": "saga-saga_pause-09",
+        "target_status": "active",
+        "transition_hint": "pause",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "pause"
+      }
+    },
+    {
+      "id": "saga_pause-10",
+      "group": "saga_pause",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_pause-10-0",
+          "episode-saga_pause-10-1"
+        ],
+        "target_saga_id": "saga-saga_pause-10",
+        "target_status": "active",
+        "transition_hint": "pause",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "pause"
+      }
+    },
+    {
+      "id": "saga_pause-11",
+      "group": "saga_pause",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_pause-11-0",
+          "episode-saga_pause-11-1"
+        ],
+        "target_saga_id": "saga-saga_pause-11",
+        "target_status": "active",
+        "transition_hint": "pause",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "pause"
+      }
+    },
+    {
+      "id": "saga_pause-12",
+      "group": "saga_pause",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_pause-12-0",
+          "episode-saga_pause-12-1"
+        ],
+        "target_saga_id": "saga-saga_pause-12",
+        "target_status": "active",
+        "transition_hint": "pause",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "pause"
+      }
+    },
+    {
+      "id": "saga_pause-13",
+      "group": "saga_pause",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_pause-13-0",
+          "episode-saga_pause-13-1"
+        ],
+        "target_saga_id": "saga-saga_pause-13",
+        "target_status": "active",
+        "transition_hint": "pause",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "pause"
+      }
+    },
+    {
+      "id": "saga_pause-14",
+      "group": "saga_pause",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_pause-14-0",
+          "episode-saga_pause-14-1"
+        ],
+        "target_saga_id": "saga-saga_pause-14",
+        "target_status": "active",
+        "transition_hint": "pause",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "pause"
+      }
+    },
+    {
+      "id": "saga_pause-15",
+      "group": "saga_pause",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_pause-15-0",
+          "episode-saga_pause-15-1"
+        ],
+        "target_saga_id": "saga-saga_pause-15",
+        "target_status": "active",
+        "transition_hint": "pause",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "pause"
+      }
+    },
+    {
+      "id": "saga_pause-16",
+      "group": "saga_pause",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_pause-16-0",
+          "episode-saga_pause-16-1"
+        ],
+        "target_saga_id": "saga-saga_pause-16",
+        "target_status": "active",
+        "transition_hint": "pause",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "pause"
+      }
+    },
+    {
+      "id": "saga_pause-17",
+      "group": "saga_pause",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_pause-17-0",
+          "episode-saga_pause-17-1"
+        ],
+        "target_saga_id": "saga-saga_pause-17",
+        "target_status": "active",
+        "transition_hint": "pause",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "pause"
+      }
+    },
+    {
+      "id": "saga_pause-18",
+      "group": "saga_pause",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_pause-18-0",
+          "episode-saga_pause-18-1"
+        ],
+        "target_saga_id": "saga-saga_pause-18",
+        "target_status": "active",
+        "transition_hint": "pause",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "pause"
+      }
+    },
+    {
+      "id": "saga_pause-19",
+      "group": "saga_pause",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_pause-19-0",
+          "episode-saga_pause-19-1"
+        ],
+        "target_saga_id": "saga-saga_pause-19",
+        "target_status": "active",
+        "transition_hint": "pause",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "pause"
+      }
+    },
+    {
+      "id": "saga_pause-20",
+      "group": "saga_pause",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_pause-20-0",
+          "episode-saga_pause-20-1"
+        ],
+        "target_saga_id": "saga-saga_pause-20",
+        "target_status": "active",
+        "transition_hint": "pause",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "pause"
+      }
+    },
+    {
+      "id": "saga_complete-01",
+      "group": "saga_complete",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_complete-01-0",
+          "episode-saga_complete-01-1"
+        ],
+        "target_saga_id": "saga-saga_complete-01",
+        "target_status": "active",
+        "transition_hint": "complete",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "complete"
+      }
+    },
+    {
+      "id": "saga_complete-02",
+      "group": "saga_complete",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_complete-02-0",
+          "episode-saga_complete-02-1"
+        ],
+        "target_saga_id": "saga-saga_complete-02",
+        "target_status": "active",
+        "transition_hint": "complete",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "complete"
+      }
+    },
+    {
+      "id": "saga_complete-03",
+      "group": "saga_complete",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_complete-03-0",
+          "episode-saga_complete-03-1"
+        ],
+        "target_saga_id": "saga-saga_complete-03",
+        "target_status": "active",
+        "transition_hint": "complete",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "complete"
+      }
+    },
+    {
+      "id": "saga_complete-04",
+      "group": "saga_complete",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_complete-04-0",
+          "episode-saga_complete-04-1"
+        ],
+        "target_saga_id": "saga-saga_complete-04",
+        "target_status": "active",
+        "transition_hint": "complete",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "complete"
+      }
+    },
+    {
+      "id": "saga_complete-05",
+      "group": "saga_complete",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_complete-05-0",
+          "episode-saga_complete-05-1"
+        ],
+        "target_saga_id": "saga-saga_complete-05",
+        "target_status": "active",
+        "transition_hint": "complete",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "complete"
+      }
+    },
+    {
+      "id": "saga_complete-06",
+      "group": "saga_complete",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_complete-06-0",
+          "episode-saga_complete-06-1"
+        ],
+        "target_saga_id": "saga-saga_complete-06",
+        "target_status": "active",
+        "transition_hint": "complete",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "complete"
+      }
+    },
+    {
+      "id": "saga_complete-07",
+      "group": "saga_complete",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_complete-07-0",
+          "episode-saga_complete-07-1"
+        ],
+        "target_saga_id": "saga-saga_complete-07",
+        "target_status": "active",
+        "transition_hint": "complete",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "complete"
+      }
+    },
+    {
+      "id": "saga_complete-08",
+      "group": "saga_complete",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_complete-08-0",
+          "episode-saga_complete-08-1"
+        ],
+        "target_saga_id": "saga-saga_complete-08",
+        "target_status": "active",
+        "transition_hint": "complete",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "complete"
+      }
+    },
+    {
+      "id": "saga_complete-09",
+      "group": "saga_complete",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_complete-09-0",
+          "episode-saga_complete-09-1"
+        ],
+        "target_saga_id": "saga-saga_complete-09",
+        "target_status": "active",
+        "transition_hint": "complete",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "complete"
+      }
+    },
+    {
+      "id": "saga_complete-10",
+      "group": "saga_complete",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_complete-10-0",
+          "episode-saga_complete-10-1"
+        ],
+        "target_saga_id": "saga-saga_complete-10",
+        "target_status": "active",
+        "transition_hint": "complete",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "complete"
+      }
+    },
+    {
+      "id": "saga_complete-11",
+      "group": "saga_complete",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_complete-11-0",
+          "episode-saga_complete-11-1"
+        ],
+        "target_saga_id": "saga-saga_complete-11",
+        "target_status": "active",
+        "transition_hint": "complete",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "complete"
+      }
+    },
+    {
+      "id": "saga_complete-12",
+      "group": "saga_complete",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_complete-12-0",
+          "episode-saga_complete-12-1"
+        ],
+        "target_saga_id": "saga-saga_complete-12",
+        "target_status": "active",
+        "transition_hint": "complete",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "complete"
+      }
+    },
+    {
+      "id": "saga_complete-13",
+      "group": "saga_complete",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_complete-13-0",
+          "episode-saga_complete-13-1"
+        ],
+        "target_saga_id": "saga-saga_complete-13",
+        "target_status": "active",
+        "transition_hint": "complete",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "complete"
+      }
+    },
+    {
+      "id": "saga_complete-14",
+      "group": "saga_complete",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_complete-14-0",
+          "episode-saga_complete-14-1"
+        ],
+        "target_saga_id": "saga-saga_complete-14",
+        "target_status": "active",
+        "transition_hint": "complete",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "complete"
+      }
+    },
+    {
+      "id": "saga_complete-15",
+      "group": "saga_complete",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_complete-15-0",
+          "episode-saga_complete-15-1"
+        ],
+        "target_saga_id": "saga-saga_complete-15",
+        "target_status": "active",
+        "transition_hint": "complete",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "complete"
+      }
+    },
+    {
+      "id": "saga_complete-16",
+      "group": "saga_complete",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_complete-16-0",
+          "episode-saga_complete-16-1"
+        ],
+        "target_saga_id": "saga-saga_complete-16",
+        "target_status": "active",
+        "transition_hint": "complete",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "complete"
+      }
+    },
+    {
+      "id": "saga_complete-17",
+      "group": "saga_complete",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_complete-17-0",
+          "episode-saga_complete-17-1"
+        ],
+        "target_saga_id": "saga-saga_complete-17",
+        "target_status": "active",
+        "transition_hint": "complete",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "complete"
+      }
+    },
+    {
+      "id": "saga_complete-18",
+      "group": "saga_complete",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_complete-18-0",
+          "episode-saga_complete-18-1"
+        ],
+        "target_saga_id": "saga-saga_complete-18",
+        "target_status": "active",
+        "transition_hint": "complete",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "complete"
+      }
+    },
+    {
+      "id": "saga_complete-19",
+      "group": "saga_complete",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_complete-19-0",
+          "episode-saga_complete-19-1"
+        ],
+        "target_saga_id": "saga-saga_complete-19",
+        "target_status": "active",
+        "transition_hint": "complete",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "complete"
+      }
+    },
+    {
+      "id": "saga_complete-20",
+      "group": "saga_complete",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_complete-20-0",
+          "episode-saga_complete-20-1"
+        ],
+        "target_saga_id": "saga-saga_complete-20",
+        "target_status": "active",
+        "transition_hint": "complete",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "complete"
+      }
+    },
+    {
+      "id": "saga_confirmed_revive-01",
+      "group": "saga_confirmed_revive",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_confirmed_revive-01-0",
+          "episode-saga_confirmed_revive-01-1"
+        ],
+        "target_saga_id": "saga-saga_confirmed_revive-01",
+        "target_status": "completed",
+        "transition_hint": "revive",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "revive"
+      }
+    },
+    {
+      "id": "saga_confirmed_revive-02",
+      "group": "saga_confirmed_revive",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_confirmed_revive-02-0",
+          "episode-saga_confirmed_revive-02-1"
+        ],
+        "target_saga_id": "saga-saga_confirmed_revive-02",
+        "target_status": "completed",
+        "transition_hint": "revive",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "revive"
+      }
+    },
+    {
+      "id": "saga_confirmed_revive-03",
+      "group": "saga_confirmed_revive",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_confirmed_revive-03-0",
+          "episode-saga_confirmed_revive-03-1"
+        ],
+        "target_saga_id": "saga-saga_confirmed_revive-03",
+        "target_status": "completed",
+        "transition_hint": "revive",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "revive"
+      }
+    },
+    {
+      "id": "saga_confirmed_revive-04",
+      "group": "saga_confirmed_revive",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_confirmed_revive-04-0",
+          "episode-saga_confirmed_revive-04-1"
+        ],
+        "target_saga_id": "saga-saga_confirmed_revive-04",
+        "target_status": "completed",
+        "transition_hint": "revive",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "revive"
+      }
+    },
+    {
+      "id": "saga_confirmed_revive-05",
+      "group": "saga_confirmed_revive",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_confirmed_revive-05-0",
+          "episode-saga_confirmed_revive-05-1"
+        ],
+        "target_saga_id": "saga-saga_confirmed_revive-05",
+        "target_status": "completed",
+        "transition_hint": "revive",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "revive"
+      }
+    },
+    {
+      "id": "saga_confirmed_revive-06",
+      "group": "saga_confirmed_revive",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_confirmed_revive-06-0",
+          "episode-saga_confirmed_revive-06-1"
+        ],
+        "target_saga_id": "saga-saga_confirmed_revive-06",
+        "target_status": "completed",
+        "transition_hint": "revive",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "revive"
+      }
+    },
+    {
+      "id": "saga_confirmed_revive-07",
+      "group": "saga_confirmed_revive",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_confirmed_revive-07-0",
+          "episode-saga_confirmed_revive-07-1"
+        ],
+        "target_saga_id": "saga-saga_confirmed_revive-07",
+        "target_status": "completed",
+        "transition_hint": "revive",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "revive"
+      }
+    },
+    {
+      "id": "saga_confirmed_revive-08",
+      "group": "saga_confirmed_revive",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_confirmed_revive-08-0",
+          "episode-saga_confirmed_revive-08-1"
+        ],
+        "target_saga_id": "saga-saga_confirmed_revive-08",
+        "target_status": "completed",
+        "transition_hint": "revive",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "revive"
+      }
+    },
+    {
+      "id": "saga_confirmed_revive-09",
+      "group": "saga_confirmed_revive",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_confirmed_revive-09-0",
+          "episode-saga_confirmed_revive-09-1"
+        ],
+        "target_saga_id": "saga-saga_confirmed_revive-09",
+        "target_status": "completed",
+        "transition_hint": "revive",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "revive"
+      }
+    },
+    {
+      "id": "saga_confirmed_revive-10",
+      "group": "saga_confirmed_revive",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_confirmed_revive-10-0",
+          "episode-saga_confirmed_revive-10-1"
+        ],
+        "target_saga_id": "saga-saga_confirmed_revive-10",
+        "target_status": "completed",
+        "transition_hint": "revive",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "revive"
+      }
+    },
+    {
+      "id": "saga_confirmed_revive-11",
+      "group": "saga_confirmed_revive",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_confirmed_revive-11-0",
+          "episode-saga_confirmed_revive-11-1"
+        ],
+        "target_saga_id": "saga-saga_confirmed_revive-11",
+        "target_status": "completed",
+        "transition_hint": "revive",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "revive"
+      }
+    },
+    {
+      "id": "saga_confirmed_revive-12",
+      "group": "saga_confirmed_revive",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_confirmed_revive-12-0",
+          "episode-saga_confirmed_revive-12-1"
+        ],
+        "target_saga_id": "saga-saga_confirmed_revive-12",
+        "target_status": "completed",
+        "transition_hint": "revive",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "revive"
+      }
+    },
+    {
+      "id": "saga_confirmed_revive-13",
+      "group": "saga_confirmed_revive",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_confirmed_revive-13-0",
+          "episode-saga_confirmed_revive-13-1"
+        ],
+        "target_saga_id": "saga-saga_confirmed_revive-13",
+        "target_status": "completed",
+        "transition_hint": "revive",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "revive"
+      }
+    },
+    {
+      "id": "saga_confirmed_revive-14",
+      "group": "saga_confirmed_revive",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_confirmed_revive-14-0",
+          "episode-saga_confirmed_revive-14-1"
+        ],
+        "target_saga_id": "saga-saga_confirmed_revive-14",
+        "target_status": "completed",
+        "transition_hint": "revive",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "revive"
+      }
+    },
+    {
+      "id": "saga_confirmed_revive-15",
+      "group": "saga_confirmed_revive",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_confirmed_revive-15-0",
+          "episode-saga_confirmed_revive-15-1"
+        ],
+        "target_saga_id": "saga-saga_confirmed_revive-15",
+        "target_status": "completed",
+        "transition_hint": "revive",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "revive"
+      }
+    },
+    {
+      "id": "saga_confirmed_revive-16",
+      "group": "saga_confirmed_revive",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_confirmed_revive-16-0",
+          "episode-saga_confirmed_revive-16-1"
+        ],
+        "target_saga_id": "saga-saga_confirmed_revive-16",
+        "target_status": "completed",
+        "transition_hint": "revive",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "revive"
+      }
+    },
+    {
+      "id": "saga_confirmed_revive-17",
+      "group": "saga_confirmed_revive",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_confirmed_revive-17-0",
+          "episode-saga_confirmed_revive-17-1"
+        ],
+        "target_saga_id": "saga-saga_confirmed_revive-17",
+        "target_status": "completed",
+        "transition_hint": "revive",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "revive"
+      }
+    },
+    {
+      "id": "saga_confirmed_revive-18",
+      "group": "saga_confirmed_revive",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_confirmed_revive-18-0",
+          "episode-saga_confirmed_revive-18-1"
+        ],
+        "target_saga_id": "saga-saga_confirmed_revive-18",
+        "target_status": "completed",
+        "transition_hint": "revive",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "revive"
+      }
+    },
+    {
+      "id": "saga_confirmed_revive-19",
+      "group": "saga_confirmed_revive",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_confirmed_revive-19-0",
+          "episode-saga_confirmed_revive-19-1"
+        ],
+        "target_saga_id": "saga-saga_confirmed_revive-19",
+        "target_status": "completed",
+        "transition_hint": "revive",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "revive"
+      }
+    },
+    {
+      "id": "saga_confirmed_revive-20",
+      "group": "saga_confirmed_revive",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_confirmed_revive-20-0",
+          "episode-saga_confirmed_revive-20-1"
+        ],
+        "target_saga_id": "saga-saga_confirmed_revive-20",
+        "target_status": "completed",
+        "transition_hint": "revive",
+        "evidence_origin": "user_confirmed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "revive"
+      }
+    },
+    {
+      "id": "saga_merge_review-01",
+      "group": "saga_merge_review",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_merge_review-01-0",
+          "episode-saga_merge_review-01-1"
+        ],
+        "target_saga_id": "saga-saga_merge_review-01",
+        "target_status": "active",
+        "transition_hint": "merge_suggestion",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "merge_suggestion"
+      }
+    },
+    {
+      "id": "saga_merge_review-02",
+      "group": "saga_merge_review",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_merge_review-02-0",
+          "episode-saga_merge_review-02-1"
+        ],
+        "target_saga_id": "saga-saga_merge_review-02",
+        "target_status": "active",
+        "transition_hint": "merge_suggestion",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "merge_suggestion"
+      }
+    },
+    {
+      "id": "saga_merge_review-03",
+      "group": "saga_merge_review",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_merge_review-03-0",
+          "episode-saga_merge_review-03-1"
+        ],
+        "target_saga_id": "saga-saga_merge_review-03",
+        "target_status": "active",
+        "transition_hint": "merge_suggestion",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "merge_suggestion"
+      }
+    },
+    {
+      "id": "saga_merge_review-04",
+      "group": "saga_merge_review",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_merge_review-04-0",
+          "episode-saga_merge_review-04-1"
+        ],
+        "target_saga_id": "saga-saga_merge_review-04",
+        "target_status": "active",
+        "transition_hint": "merge_suggestion",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "merge_suggestion"
+      }
+    },
+    {
+      "id": "saga_merge_review-05",
+      "group": "saga_merge_review",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_merge_review-05-0",
+          "episode-saga_merge_review-05-1"
+        ],
+        "target_saga_id": "saga-saga_merge_review-05",
+        "target_status": "active",
+        "transition_hint": "merge_suggestion",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "merge_suggestion"
+      }
+    },
+    {
+      "id": "saga_merge_review-06",
+      "group": "saga_merge_review",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_merge_review-06-0",
+          "episode-saga_merge_review-06-1"
+        ],
+        "target_saga_id": "saga-saga_merge_review-06",
+        "target_status": "active",
+        "transition_hint": "merge_suggestion",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "merge_suggestion"
+      }
+    },
+    {
+      "id": "saga_merge_review-07",
+      "group": "saga_merge_review",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_merge_review-07-0",
+          "episode-saga_merge_review-07-1"
+        ],
+        "target_saga_id": "saga-saga_merge_review-07",
+        "target_status": "active",
+        "transition_hint": "merge_suggestion",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "merge_suggestion"
+      }
+    },
+    {
+      "id": "saga_merge_review-08",
+      "group": "saga_merge_review",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_merge_review-08-0",
+          "episode-saga_merge_review-08-1"
+        ],
+        "target_saga_id": "saga-saga_merge_review-08",
+        "target_status": "active",
+        "transition_hint": "merge_suggestion",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "merge_suggestion"
+      }
+    },
+    {
+      "id": "saga_merge_review-09",
+      "group": "saga_merge_review",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_merge_review-09-0",
+          "episode-saga_merge_review-09-1"
+        ],
+        "target_saga_id": "saga-saga_merge_review-09",
+        "target_status": "active",
+        "transition_hint": "merge_suggestion",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "merge_suggestion"
+      }
+    },
+    {
+      "id": "saga_merge_review-10",
+      "group": "saga_merge_review",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_merge_review-10-0",
+          "episode-saga_merge_review-10-1"
+        ],
+        "target_saga_id": "saga-saga_merge_review-10",
+        "target_status": "active",
+        "transition_hint": "merge_suggestion",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "merge_suggestion"
+      }
+    },
+    {
+      "id": "saga_merge_review-11",
+      "group": "saga_merge_review",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_merge_review-11-0",
+          "episode-saga_merge_review-11-1"
+        ],
+        "target_saga_id": "saga-saga_merge_review-11",
+        "target_status": "active",
+        "transition_hint": "merge_suggestion",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "merge_suggestion"
+      }
+    },
+    {
+      "id": "saga_merge_review-12",
+      "group": "saga_merge_review",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_merge_review-12-0",
+          "episode-saga_merge_review-12-1"
+        ],
+        "target_saga_id": "saga-saga_merge_review-12",
+        "target_status": "active",
+        "transition_hint": "merge_suggestion",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "merge_suggestion"
+      }
+    },
+    {
+      "id": "saga_merge_review-13",
+      "group": "saga_merge_review",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_merge_review-13-0",
+          "episode-saga_merge_review-13-1"
+        ],
+        "target_saga_id": "saga-saga_merge_review-13",
+        "target_status": "active",
+        "transition_hint": "merge_suggestion",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "merge_suggestion"
+      }
+    },
+    {
+      "id": "saga_merge_review-14",
+      "group": "saga_merge_review",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_merge_review-14-0",
+          "episode-saga_merge_review-14-1"
+        ],
+        "target_saga_id": "saga-saga_merge_review-14",
+        "target_status": "active",
+        "transition_hint": "merge_suggestion",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "merge_suggestion"
+      }
+    },
+    {
+      "id": "saga_merge_review-15",
+      "group": "saga_merge_review",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_merge_review-15-0",
+          "episode-saga_merge_review-15-1"
+        ],
+        "target_saga_id": "saga-saga_merge_review-15",
+        "target_status": "active",
+        "transition_hint": "merge_suggestion",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "merge_suggestion"
+      }
+    },
+    {
+      "id": "saga_merge_review-16",
+      "group": "saga_merge_review",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_merge_review-16-0",
+          "episode-saga_merge_review-16-1"
+        ],
+        "target_saga_id": "saga-saga_merge_review-16",
+        "target_status": "active",
+        "transition_hint": "merge_suggestion",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "merge_suggestion"
+      }
+    },
+    {
+      "id": "saga_merge_review-17",
+      "group": "saga_merge_review",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_merge_review-17-0",
+          "episode-saga_merge_review-17-1"
+        ],
+        "target_saga_id": "saga-saga_merge_review-17",
+        "target_status": "active",
+        "transition_hint": "merge_suggestion",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "merge_suggestion"
+      }
+    },
+    {
+      "id": "saga_merge_review-18",
+      "group": "saga_merge_review",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_merge_review-18-0",
+          "episode-saga_merge_review-18-1"
+        ],
+        "target_saga_id": "saga-saga_merge_review-18",
+        "target_status": "active",
+        "transition_hint": "merge_suggestion",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "merge_suggestion"
+      }
+    },
+    {
+      "id": "saga_merge_review-19",
+      "group": "saga_merge_review",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_merge_review-19-0",
+          "episode-saga_merge_review-19-1"
+        ],
+        "target_saga_id": "saga-saga_merge_review-19",
+        "target_status": "active",
+        "transition_hint": "merge_suggestion",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "merge_suggestion"
+      }
+    },
+    {
+      "id": "saga_merge_review-20",
+      "group": "saga_merge_review",
+      "decision_kind": "saga_transition_proposal",
+      "input": {
+        "candidate_ids": [
+          "episode-saga_merge_review-20-0",
+          "episode-saga_merge_review-20-1"
+        ],
+        "target_saga_id": "saga-saga_merge_review-20",
+        "target_status": "active",
+        "transition_hint": "merge_suggestion",
+        "evidence_origin": "observed",
+        "projected_confidence": "high"
+      },
+      "expected": {
+        "proposal": "merge_suggestion"
+      }
+    }
+  ]
+}

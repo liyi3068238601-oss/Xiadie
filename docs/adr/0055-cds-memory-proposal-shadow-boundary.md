@@ -1,6 +1,6 @@
 # ADR-0055：CDS 记忆冲突与保留纯 Shadow 边界
 
-- 状态：Proposed；CDS.9 review 返工完成，等待复审
+- 状态：Accepted；CDS.9 独立复审通过
 - 日期：2026-07-25
 - 关联：CDS.9、ADR-0051/0052、`fragment-conflict-v1`、`fragment-retention-v1`
 
@@ -19,7 +19,7 @@
 
 - 280 个纯合成场景由 14 组组成，覆盖两个 DecisionKind；提案精确匹配率 100%。
 - 弱来源覆盖、仅注入恢复、tombstone 提案和 MEM 领域表写入均为 0；共享 Shadow 账本有预期写入。
-- 评测使用真实 Fragment adapter 和独立 `cds9-memory-oracle-v1`，oracle 不读取 fixture 的 expected 字段。
+- 评测使用真实 Fragment adapter 和独立 `cds9-memory-safety-oracle-v3`，oracle 不读取 fixture 的 expected 字段。
 - 评测报告不保存输入正文、Prompt 或原始模型输出，只保存 case ID、枚举、计数和 fixture hash。
 
 ## 晋级条件
