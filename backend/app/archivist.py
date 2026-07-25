@@ -219,6 +219,60 @@ def evaluate_fragments(
     return results
 
 
+def load_fragment_snapshots_from_connection(conn, fragment_ids: Iterable[str]) -> dict[str, dict]:
+    ordered = list(dict.fromkeys(str(value) for value in fragment_ids if value))
+    return _load_snapshots(conn, ordered)
+
+
+def load_fragment_snapshots(fragment_ids: Iterable[str]) -> dict[str, dict]:
+    conn = db.connect()
+    try:
+        return load_fragment_snapshots_from_connection(conn, fragment_ids)
+    finally:
+        conn.close()
+
+
+def project_lifecycle(snapshot: dict, *, now: float) -> dict:
+    scored = _score_snapshot(snapshot, now=float(now))
+    blocked = protection_reasons(snapshot)
+    target = None
+    reason = "no_transition"
+    reference = float(snapshot.get("last_recalled_at") or snapshot["created_at"])
+    if snapshot["status"] == "active":
+        if not snapshot["enabled"]:
+            reason = "disabled_fragment"
+        elif now - reference < ACTIVE_TO_COOLING_DAYS * 86_400:
+            reason = "cooling_minimum_age"
+        elif scored["score"] >= COOLING_SCORE_THRESHOLD:
+            reason = "retention_above_cooling"
+        elif blocked:
+            reason = "protected_fragment"
+        elif snapshot["in_active_episode"]:
+            reason = "active_episode_source"
+        else:
+            target, reason = "cooling", "retention_below_cooling"
+    elif snapshot["status"] == "cooling":
+        cooling_since = float(snapshot.get("cooling_since") or snapshot["updated_at"])
+        if now - cooling_since < COOLING_TO_FROZEN_DAYS * 86_400:
+            reason = "frozen_minimum_age"
+        elif scored["score"] >= FROZEN_SCORE_THRESHOLD:
+            reason = "retention_above_frozen"
+        elif blocked:
+            reason = "protected_fragment"
+        elif snapshot["in_active_episode"]:
+            reason = "active_episode_source"
+        elif float(snapshot["updated_at"]) > cooling_since:
+            reason = "modified_during_cooling"
+        else:
+            target, reason = "frozen", "retention_below_frozen"
+    return {
+        "target_status": target,
+        "reason_code": reason,
+        "evaluation": scored,
+        "protection_reasons": blocked,
+    }
+
+
 def assess_and_transition(fragment_id: str, *, now: float | None = None) -> dict:
     """对一个 Fragment 最多执行一步自动降温；绝不产生 tombstone。"""
     at = float(now if now is not None else db.now())
@@ -228,38 +282,11 @@ def assess_and_transition(fragment_id: str, *, now: float | None = None) -> dict
         snapshot = _load_snapshots(conn, [fragment_id]).get(fragment_id)
         if not snapshot:
             raise ArchivistLifecycleError("fragment_missing", "记忆不存在")
-        scored = _score_snapshot(snapshot, now=at)
-        blocked = protection_reasons(snapshot)
-        target = None
-        reason = "no_transition"
-        reference = float(snapshot.get("last_recalled_at") or snapshot["created_at"])
-        if snapshot["status"] == "active":
-            if not snapshot["enabled"]:
-                reason = "disabled_fragment"
-            elif at - reference < ACTIVE_TO_COOLING_DAYS * 86_400:
-                reason = "cooling_minimum_age"
-            elif scored["score"] >= COOLING_SCORE_THRESHOLD:
-                reason = "retention_above_cooling"
-            elif blocked:
-                reason = "protected_fragment"
-            elif snapshot["in_active_episode"]:
-                reason = "active_episode_source"
-            else:
-                target, reason = "cooling", "retention_below_cooling"
-        elif snapshot["status"] == "cooling":
-            cooling_since = float(snapshot.get("cooling_since") or snapshot["updated_at"])
-            if at - cooling_since < COOLING_TO_FROZEN_DAYS * 86_400:
-                reason = "frozen_minimum_age"
-            elif scored["score"] >= FROZEN_SCORE_THRESHOLD:
-                reason = "retention_above_frozen"
-            elif blocked:
-                reason = "protected_fragment"
-            elif snapshot["in_active_episode"]:
-                reason = "active_episode_source"
-            elif float(snapshot["updated_at"]) > cooling_since:
-                reason = "modified_during_cooling"
-            else:
-                target, reason = "frozen", "retention_below_frozen"
+        projection = project_lifecycle(snapshot, now=at)
+        scored = projection["evaluation"]
+        blocked = projection["protection_reasons"]
+        target = projection["target_status"]
+        reason = projection["reason_code"]
         if target:
             changed = _transition_locked(
                 conn, snapshot, target, scored=scored, reason_code=reason,

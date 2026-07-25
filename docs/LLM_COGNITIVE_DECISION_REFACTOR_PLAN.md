@@ -954,12 +954,14 @@ test(cognition): freeze decision baselines and evaluation corpus
 
 ### CDS.9：记忆冲突、保留与再巩固
 
-* [ ] 只生成 `MemoryConflictProposal` 与 retention proposal，表达 supersedes 和条件差异。
-* [ ] 区分用户真实确认和系统自动注入。
-* [ ] 模型不能直接 tombstone。
-* [ ] 旧 Archivist 继续作为 fallback。
-* [ ] 首版只影响候选标记和有限参数。
-* [ ] 正式应用只允许现有 MEM Validator/Reducer；CDS 不 tombstone、不写 Fragment/Episode/Saga 正式状态。
+* [x] 只生成 `MemoryConflictProposal` 与 retention proposal，表达 supersedes 和条件差异。
+* [x] 区分用户真实确认和系统自动注入。
+* [x] 模型不能直接 tombstone。
+* [x] 旧 Archivist 继续作为 fallback。
+* [x] 首版只影响候选标记和有限参数。
+* [x] 正式应用只允许现有 MEM Validator/Reducer；CDS 不 tombstone、不写 Fragment/Episode/Saga 正式状态。
+
+返工记录（2026-07-25）：CDS.9 review 的 5 BLOCK 与 3 WARN 已按 TDD 修复，当前等待复审，未进入 CDS.10。冲突生产预筛与 CDS fallback 共用 `memory_conflicts.classify_projection`，Archivist 生产转换与 CDS fallback 共用 `archivist.project_lifecycle`；只读 adapter 从真实 Fragment 绑定 lifecycle revision、正文与状态聚合 hash、状态、启用、敏感性和来源。validator 使用完整动作矩阵，280 个场景由独立 `cds9-memory-safety-oracle-v3` 检查安全不变量，并实际执行共享 DecisionRun Shadow。报告明确区分共享账本预期写入与 MEM 领域零写入；Schema 保持 62，MEM 仍是唯一 application owner。详见 ADR-0055 与 `docs/reports/cds-9-memory-shadow.md`。
 
 ### CDS.10：Episode/Saga 叙事判断
 

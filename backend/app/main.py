@@ -23,7 +23,7 @@ from . import (
     episode_summary_service, episodes, knowledge, knowledge_cleanup, knowledge_context,
     knowledge_embeddings, knowledge_grants,
     knowledge_management, knowledge_parser, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search,
-    knowledge_worker, llm, lore, memory, memory_conflicts,
+    knowledge_worker, llm, lore, memory, memory_conflicts, memory_shadow_proposals,
     saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, secret_store, slow_lifecycle,
 )
