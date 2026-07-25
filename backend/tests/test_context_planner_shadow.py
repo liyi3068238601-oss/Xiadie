@@ -69,6 +69,16 @@ def test_contract_is_shadow_only_and_keeps_fixed_ratio_fallback():
     assert fallback.reason_codes == ("fixed_ratio_fallback",)
 
 
+def test_plan_shadow_rejects_unknown_task_type_before_fallback():
+    payload = _payload(_fixture()["cases"][0])
+    unknown = planner.ContextPlannerInput(**{
+        **payload.__dict__, "task_type": "unknown",
+    })
+    with pytest.raises(cds.DecisionProtocolError) as exc:
+        planner.plan_shadow(unknown)
+    assert exc.value.code == "task_type_invalid"
+
+
 def test_main_import_registers_context_planner_in_a_fresh_runtime():
     completed = subprocess.run(
         [sys.executable, "-c", "from app import main, cognitive_decision as c; print(c.REGISTRY.get('context_planner').decision_kind)"],

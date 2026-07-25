@@ -926,13 +926,15 @@ test(cognition): freeze decision baselines and evaluation corpus
 
 ### CDS.7：ContextPlanner
 
-* [ ] 定义 `context-priority-proposal-v1`，LLM 只在 Shadow 中输出语义优先级。
-* [ ] 记录 proposal 与 CTX v1 实际固定预算结果的对照，不改变生产装配。
-* [ ] 保留固定比例 fallback。
-* [ ] 当前问题、最近轮次和输出预算始终受保护。
-* [ ] 文档、历史、关系、Lore 场景分别评测。
-* [ ] 记录计划和实际注入差异。
+* [x] 定义 `context-priority-proposal-v1`，LLM 只在 Shadow 中输出语义优先级。
+* [x] 记录 proposal 与 CTX v1 实际固定预算结果的对照，不改变生产装配。
+* [x] 保留固定比例 fallback。
+* [x] 当前问题、最近轮次和输出预算始终受保护。
+* [x] 文档、历史、关系、Lore 场景分别评测。
+* [x] 记录计划和实际注入差异。
 * [ ] 若评测支持真实改变 ContextAssembler，提交 `context-package-v2` ADR 并交由 CTX 所有者另行 Review；CDS 不直接切换。
+
+施工记录（2026-07-25）：完成 `context-priority-proposal-v1` Shadow-only 协议、CTX v1 固定比例 fallback、80 个纯合成场景及真实 `ContextAssembler.assemble()` 配对评测；当前问题、最近完整轮次和输出预算保护率均为 100%，生产装配未改变。评测仅证明协议、安全边界和差异记录管线有效，不足以证明 LLM 优先级优于冻结基线，因此不提交 `context-package-v2` ADR。未知 `task_type` 作为协议输入错误在 proposal 生成阶段 fail-closed，不使用 fallback 掩盖调用方错误。
 
 ### CDS.8：RelationshipMeaning 兼容评测
 

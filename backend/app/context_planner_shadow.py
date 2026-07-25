@@ -96,7 +96,9 @@ def _proposal(
 def plan_shadow(payload: ContextPlannerInput) -> ContextPriorityProposal:
     profile = TASK_PROFILES.get(payload.task_type)
     if profile is None:
-        return fixed_ratio_fallback(payload)
+        raise cds.DecisionProtocolError(
+            "task_type_invalid", "context task type is unsupported",
+        )
     importance = {
         name: profile[name] if name in payload.available_components else "none"
         for name in COMPONENTS
