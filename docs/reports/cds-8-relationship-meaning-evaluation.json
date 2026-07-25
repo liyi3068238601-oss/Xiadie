@@ -27,7 +27,7 @@
   "terminal_invariant_rate": 1.0,
   "idempotency_reuse_rate": 1.0,
   "duplicate_application_change_rate": 0.0,
-  "trust_evidence_validation_rate": 1.0,
+  "evidence_validation_rate": 1.0,
   "completion_gates": {
     "ordinary_question_bond_growth_rate": 0.0,
     "silence_relationship_decline_rate": 0.0,
@@ -65,7 +65,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -89,7 +89,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -113,7 +113,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -137,7 +137,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -161,7 +161,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -185,7 +185,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -209,7 +209,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -233,7 +233,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -257,7 +257,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -281,7 +281,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -305,7 +305,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -329,7 +329,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -353,7 +353,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -377,7 +377,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -401,7 +401,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -425,7 +425,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -449,7 +449,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -473,7 +473,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -497,7 +497,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -521,7 +521,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -545,7 +545,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -569,7 +569,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -593,7 +593,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -617,7 +617,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -641,7 +641,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -665,7 +665,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -689,7 +689,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -713,7 +713,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -737,7 +737,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -761,7 +761,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -785,7 +785,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -809,7 +809,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -833,7 +833,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -857,7 +857,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -881,7 +881,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -905,7 +905,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -929,7 +929,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0020000000000000018,
@@ -953,7 +953,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0020000000000000018,
@@ -977,7 +977,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0020000000000000018,
@@ -1001,7 +1001,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0020000000000000018,
@@ -1025,7 +1025,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0020000000000000018,
@@ -1049,7 +1049,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0020000000000000018,
@@ -1073,7 +1073,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0020000000000000018,
@@ -1097,7 +1097,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0020000000000000018,
@@ -1121,7 +1121,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0020000000000000018,
@@ -1145,7 +1145,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0020000000000000018,
@@ -1169,7 +1169,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0020000000000000018,
@@ -1193,7 +1193,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0020000000000000018,
@@ -1217,7 +1217,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -1241,7 +1241,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -1265,7 +1265,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -1289,7 +1289,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -1313,7 +1313,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -1337,7 +1337,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -1361,7 +1361,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -1385,7 +1385,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -1409,7 +1409,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -1433,7 +1433,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -1457,7 +1457,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -1481,7 +1481,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0010000000000000009,
@@ -1505,7 +1505,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -1529,7 +1529,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -1553,7 +1553,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -1577,7 +1577,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -1601,7 +1601,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -1625,7 +1625,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -1649,7 +1649,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -1673,7 +1673,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -1697,7 +1697,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -1721,7 +1721,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -1745,7 +1745,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -1769,7 +1769,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -1793,7 +1793,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -1817,7 +1817,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -1841,7 +1841,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -1865,7 +1865,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -1889,7 +1889,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -1913,7 +1913,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -1937,7 +1937,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -1961,7 +1961,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -1985,7 +1985,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -2009,7 +2009,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -2033,7 +2033,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -2057,7 +2057,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -2081,7 +2081,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0020000000000000018,
@@ -2105,7 +2105,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0020000000000000018,
@@ -2129,7 +2129,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0020000000000000018,
@@ -2153,7 +2153,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0020000000000000018,
@@ -2177,7 +2177,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0020000000000000018,
@@ -2201,7 +2201,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0020000000000000018,
@@ -2225,7 +2225,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0020000000000000018,
@@ -2249,7 +2249,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0020000000000000018,
@@ -2273,7 +2273,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0020000000000000018,
@@ -2297,7 +2297,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0020000000000000018,
@@ -2321,7 +2321,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0020000000000000018,
@@ -2345,7 +2345,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0020000000000000018,
@@ -2369,7 +2369,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -2393,7 +2393,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -2417,7 +2417,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -2441,7 +2441,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -2465,7 +2465,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -2489,7 +2489,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -2513,7 +2513,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -2537,7 +2537,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -2561,7 +2561,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -2585,7 +2585,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -2609,7 +2609,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -2633,7 +2633,7 @@
       "terminal_invariant": true,
       "idempotency_reused": true,
       "duplicate_application_unchanged": true,
-      "trust_evidence_enforced": true,
+      "evidence_enforced": true,
       "within_single_turn_caps": true,
       "actual_applied": {
         "bond": 0.0,
@@ -2657,7 +2657,7 @@
       "terminal_invariant": null,
       "idempotency_reused": null,
       "duplicate_application_unchanged": null,
-      "trust_evidence_enforced": null,
+      "evidence_enforced": null,
       "within_single_turn_caps": null,
       "actual_applied": null,
       "actual_applied_within_caps": null,
@@ -2678,7 +2678,7 @@
       "terminal_invariant": null,
       "idempotency_reused": null,
       "duplicate_application_unchanged": null,
-      "trust_evidence_enforced": null,
+      "evidence_enforced": null,
       "within_single_turn_caps": null,
       "actual_applied": null,
       "actual_applied_within_caps": null,
@@ -2699,7 +2699,7 @@
       "terminal_invariant": null,
       "idempotency_reused": null,
       "duplicate_application_unchanged": null,
-      "trust_evidence_enforced": null,
+      "evidence_enforced": null,
       "within_single_turn_caps": null,
       "actual_applied": null,
       "actual_applied_within_caps": null,
@@ -2720,7 +2720,7 @@
       "terminal_invariant": null,
       "idempotency_reused": null,
       "duplicate_application_unchanged": null,
-      "trust_evidence_enforced": null,
+      "evidence_enforced": null,
       "within_single_turn_caps": null,
       "actual_applied": null,
       "actual_applied_within_caps": null,
@@ -2741,7 +2741,7 @@
       "terminal_invariant": null,
       "idempotency_reused": null,
       "duplicate_application_unchanged": null,
-      "trust_evidence_enforced": null,
+      "evidence_enforced": null,
       "within_single_turn_caps": null,
       "actual_applied": null,
       "actual_applied_within_caps": null,
@@ -2762,7 +2762,7 @@
       "terminal_invariant": null,
       "idempotency_reused": null,
       "duplicate_application_unchanged": null,
-      "trust_evidence_enforced": null,
+      "evidence_enforced": null,
       "within_single_turn_caps": null,
       "actual_applied": null,
       "actual_applied_within_caps": null,
@@ -2783,7 +2783,7 @@
       "terminal_invariant": null,
       "idempotency_reused": null,
       "duplicate_application_unchanged": null,
-      "trust_evidence_enforced": null,
+      "evidence_enforced": null,
       "within_single_turn_caps": null,
       "actual_applied": null,
       "actual_applied_within_caps": null,
@@ -2804,7 +2804,7 @@
       "terminal_invariant": null,
       "idempotency_reused": null,
       "duplicate_application_unchanged": null,
-      "trust_evidence_enforced": null,
+      "evidence_enforced": null,
       "within_single_turn_caps": null,
       "actual_applied": null,
       "actual_applied_within_caps": null,
@@ -2825,7 +2825,7 @@
       "terminal_invariant": null,
       "idempotency_reused": null,
       "duplicate_application_unchanged": null,
-      "trust_evidence_enforced": null,
+      "evidence_enforced": null,
       "within_single_turn_caps": null,
       "actual_applied": null,
       "actual_applied_within_caps": null,
@@ -2846,7 +2846,7 @@
       "terminal_invariant": null,
       "idempotency_reused": null,
       "duplicate_application_unchanged": null,
-      "trust_evidence_enforced": null,
+      "evidence_enforced": null,
       "within_single_turn_caps": null,
       "actual_applied": null,
       "actual_applied_within_caps": null,
@@ -2867,7 +2867,7 @@
       "terminal_invariant": null,
       "idempotency_reused": null,
       "duplicate_application_unchanged": null,
-      "trust_evidence_enforced": null,
+      "evidence_enforced": null,
       "within_single_turn_caps": null,
       "actual_applied": null,
       "actual_applied_within_caps": null,
@@ -2888,7 +2888,7 @@
       "terminal_invariant": null,
       "idempotency_reused": null,
       "duplicate_application_unchanged": null,
-      "trust_evidence_enforced": null,
+      "evidence_enforced": null,
       "within_single_turn_caps": null,
       "actual_applied": null,
       "actual_applied_within_caps": null,

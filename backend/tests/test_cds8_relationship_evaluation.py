@@ -52,6 +52,12 @@ def test_deterministic_structured_substitute_passes_frozen_schema(case):
     assert parsed["relationship_meaning"]["protocol_version"] == protocols.RELATIONSHIP_MEANING_V1
 
 
+@pytest.mark.parametrize("case", [case for case in _fixture()["cases"] if case["group"] != "silence"])
+def test_all_relationship_labels_reject_tampered_evidence(case):
+    runner = runpy.run_path(str(RUNNER_PATH))
+    assert runner["_evidence_is_enforced"](case) is True
+
+
 def test_report_runs_existing_schema_decision_run_and_eap_application_chain():
     runner = runpy.run_path(str(RUNNER_PATH))
     report = runner["build_report"](_fixture())
@@ -88,7 +94,7 @@ def test_report_passes_idempotency_clamp_silence_and_completion_gates():
     }
     assert report["idempotency_reuse_rate"] == 1.0
     assert report["duplicate_application_change_rate"] == 0.0
-    assert report["trust_evidence_validation_rate"] == 1.0
+    assert report["evidence_validation_rate"] == 1.0
     assert report["label_exact_rate"] == 1.0
     assert len(report["outcomes"]) == 120
     message_outcomes = [row for row in report["outcomes"] if row["group"] != "silence"]
@@ -103,7 +109,7 @@ def test_report_passes_idempotency_clamp_silence_and_completion_gates():
         for key in (
             "label_exact", "schema_valid", "decision_run_terminal", "eap_suggestion_applied",
             "enqueue_worker_applied", "provider_boundary_called", "terminal_invariant",
-            "idempotency_reused", "duplicate_application_unchanged", "trust_evidence_enforced",
+            "idempotency_reused", "duplicate_application_unchanged", "evidence_enforced",
             "within_single_turn_caps", "actual_applied_within_caps", "bond_grew",
         )
     )

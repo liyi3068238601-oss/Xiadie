@@ -78,9 +78,7 @@ def _insert_provider() -> dict:
     return provider
 
 
-def _trust_evidence_is_enforced(case: dict) -> bool:
-    if relationship.LABEL_DELTAS[case["expected_label"]]["trust_delta"] <= 0:
-        return True
+def _evidence_is_enforced(case: dict) -> bool:
     tampered = json.loads(json.dumps(case["structured_output"], ensure_ascii=False))
     tampered["relationship_meaning"]["evidence"] = [
         {"speaker": "user", "quote": "不存在的合成证据"},
@@ -163,7 +161,7 @@ def build_report(fixture: dict) -> dict:
                     "eap_suggestion_applied": None, "enqueue_worker_applied": None,
                     "provider_boundary_called": None, "terminal_invariant": None,
                     "idempotency_reused": None, "duplicate_application_unchanged": None,
-                    "trust_evidence_enforced": None, "within_single_turn_caps": None,
+                    "evidence_enforced": None, "within_single_turn_caps": None,
                     "actual_applied": None, "actual_applied_within_caps": None,
                     "bond_grew": None,
                     "silence_declined": after["bond"] < before["bond"] - 1e-12
@@ -226,7 +224,7 @@ def build_report(fixture: dict) -> dict:
                 ),
                 "idempotency_reused": duplicate is None and reused is not None and reused.id == suggestion.id,
                 "duplicate_application_unchanged": after_duplicate == after,
-                "trust_evidence_enforced": _trust_evidence_is_enforced(case),
+                "evidence_enforced": _evidence_is_enforced(case),
                 "within_single_turn_caps": _within_caps(_suggestion_values(suggestion)),
                 "actual_applied": actual_values,
                 "actual_applied_within_caps": _within_caps(actual_values)
@@ -279,7 +277,7 @@ def build_report(fixture: dict) -> dict:
         "terminal_invariant_rate": sum(row["terminal_invariant"] for row in message_outcomes) / len(message_outcomes),
         "idempotency_reuse_rate": sum(row["idempotency_reused"] for row in message_outcomes) / len(message_outcomes),
         "duplicate_application_change_rate": 1 - sum(row["duplicate_application_unchanged"] for row in message_outcomes) / len(message_outcomes),
-        "trust_evidence_validation_rate": sum(row["trust_evidence_enforced"] for row in message_outcomes) / len(message_outcomes),
+        "evidence_validation_rate": sum(row["evidence_enforced"] for row in message_outcomes) / len(message_outcomes),
         "completion_gates": completion_gates,
         "completion_gate_counts": completion_gate_counts,
         "all_completion_gates_passed": completion_gates == {
@@ -314,7 +312,7 @@ def render_markdown(report: dict) -> str:
         "## 兼容性", "",
         f"- 标签精确匹配：{report['label_exact_rate']:.2%}。",
         f"- 幂等复用：{report['idempotency_reuse_rate']:.2%}；重复应用变化率：{report['duplicate_application_change_rate']:.2%}。",
-        f"- trust 证据约束验证：{report['trust_evidence_validation_rate']:.2%}。", "",
+        f"- 全标签证据约束验证：{report['evidence_validation_rate']:.2%}。", "",
         "## 边界", "",
         "- 确定性结构化替身先经过现有 Companion Cognition 与 relationship-meaning-v1 Schema，再进入共享 DecisionRun 和 EAP 应用链。",
         "- EAP 保持唯一关系写入者；Affect 与 Relationship 所有权未合并。",
