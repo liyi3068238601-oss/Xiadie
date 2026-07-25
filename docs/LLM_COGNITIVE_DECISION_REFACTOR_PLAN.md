@@ -938,9 +938,9 @@ test(cognition): freeze decision baselines and evaluation corpus
 
 ### CDS.8：RelationshipMeaning 兼容评测
 
-* [ ] 以已冻结 `relationship-meaning-v1` 为事实源，复核普通问答、里程碑、感谢、修复、trust 证据、幂等和限幅结果。
-* [ ] CDS 只提供共享运行时与对照评测，不重建关系写入器，不把 Affect 与 Relationship 的所有权合并。
-* [ ] 如评测发现不兼容缺口，形成 `relationship-meaning-v2` 提案；未经独立 Review 不切换生产协议。
+* [x] 以已冻结 `relationship-meaning-v1` 为事实源，复核普通问答、里程碑、感谢、修复、trust 证据、幂等和限幅结果。
+* [x] CDS 只提供共享运行时与对照评测，不重建关系写入器，不把 Affect 与 Relationship 的所有权合并。
+* [x] 如评测发现不兼容缺口，形成 `relationship-meaning-v2` 提案；未经独立 Review 不切换生产协议。
 
 完成门：
 
@@ -949,6 +949,8 @@ test(cognition): freeze decision baselines and evaluation corpus
 沉默导致 bond/trust 下降率    = 0
 单轮超限关系变化率            = 0
 ```
+
+施工记录（2026-07-25）：以 120 个纯合成场景和确定性结构化替身复核普通问答、里程碑、感谢、可靠帮助、边界修复与沉默；替身输出完整经过现有 Companion Cognition Schema、共享 DecisionRun、冻结 `relationship-meaning-v1` 校验、EAP 建议写入与原子应用链。标签、Schema、共享运行终态、EAP 应用、幂等复用及 trust 证据约束均为 100%；普通问答 bond 增长率、沉默 bond/trust 下降率、单轮超限率和重复应用变化率均为 0。未修改冻结生产协议、Schema、迁移、关系写入器或聊天模型路径，未发现需要 `relationship-meaning-v2` 的兼容缺口。
 
 ### CDS.9：记忆冲突、保留与再巩固
 
