@@ -30,6 +30,7 @@ from . import (
 from . import candidate_reranker_shadow  # noqa: F401
 from . import presence_thread_shadow  # noqa: F401 - registers CDS.3 Shadow contract
 from . import recall_planner_shadow  # noqa: F401 - registers CDS.4 Shadow contract
+from . import context_planner_shadow  # noqa: F401 - registers CDS.7 Shadow contract
 from . import memory_observer_service
 from .affect import observer_service as affect_observer_service
 from .proactive import presence as proactive_presence

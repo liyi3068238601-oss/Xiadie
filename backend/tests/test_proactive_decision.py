@@ -575,9 +575,14 @@ def test_layer3_with_recent_decisions():
     _setup_session(session_id)
     _set_proactive_enabled("1")
     try:
+        local_now = time.localtime(db.now())
+        ts_2pm = time.mktime((
+            local_now.tm_year, local_now.tm_mon, local_now.tm_mday,
+            14, 0, 0, local_now.tm_wday, local_now.tm_yday, local_now.tm_isdst,
+        ))
         candidate = _make_candidate(session_id)
         # 先做一次 send 决策
-        decision = decide_candidate(candidate.id)
+        decision = decide_candidate(candidate.id, now=ts_2pm)
         # 强制设为 send 通过 LLM advice
         # 重置：创建第二个候选并明确给 LLM advice=send，关闭 proactive_enabled=1 不阻断
         candidate2 = _make_candidate(session_id, topic="t2")
@@ -587,8 +592,8 @@ def test_layer3_with_recent_decisions():
             topic="t2", confidence=0.8,
             reason_codes=["open_thread"], source_refs=["m1"],
         )
-        decide_candidate(candidate2.id, llm_advice=advice)
-        result = decision_mod.compute_layer3_factors(candidate2)
+        decide_candidate(candidate2.id, llm_advice=advice, now=ts_2pm)
+        result = decision_mod.compute_layer3_factors(candidate2, now=ts_2pm)
         assert result.factors[Layer3Factor.LAST_24H_COUNT] >= 1
         assert result.factors[Layer3Factor.TIME_SINCE_LAST_PROACTIVE] >= 0
     finally:

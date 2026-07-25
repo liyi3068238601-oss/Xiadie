@@ -1,0 +1,3464 @@
+{
+  "protocol_version": "context-priority-proposal-eval-v1",
+  "synthetic_only": true,
+  "contains_user_data": false,
+  "scenario_count": 80,
+  "cases": [
+    {
+      "id": "document-01-01",
+      "group": "document",
+      "input": {
+        "message_id": "msg-document-01-01",
+        "task_type": "document",
+        "available_components": [
+          "attachment",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 512,
+        "component_units": 500
+      },
+      "expected": {
+        "task_type": "document",
+        "allocation_rank": [
+          "knowledge",
+          "attachment",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "high",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "critical",
+          "lore": "low"
+        },
+        "must_include": [
+          "knowledge"
+        ],
+        "may_drop": [
+          "lore",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "document-01-02",
+      "group": "document",
+      "input": {
+        "message_id": "msg-document-01-02",
+        "task_type": "document",
+        "available_components": [
+          "attachment",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 768,
+        "component_units": 600
+      },
+      "expected": {
+        "task_type": "document",
+        "allocation_rank": [
+          "knowledge",
+          "attachment",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "high",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "critical",
+          "lore": "low"
+        },
+        "must_include": [
+          "knowledge"
+        ],
+        "may_drop": [
+          "lore",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "document-01-03",
+      "group": "document",
+      "input": {
+        "message_id": "msg-document-01-03",
+        "task_type": "document",
+        "available_components": [
+          "attachment",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1024,
+        "component_units": 700
+      },
+      "expected": {
+        "task_type": "document",
+        "allocation_rank": [
+          "knowledge",
+          "attachment",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "high",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "critical",
+          "lore": "low"
+        },
+        "must_include": [
+          "knowledge"
+        ],
+        "may_drop": [
+          "lore",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "document-01-04",
+      "group": "document",
+      "input": {
+        "message_id": "msg-document-01-04",
+        "task_type": "document",
+        "available_components": [
+          "attachment",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1280,
+        "component_units": 800
+      },
+      "expected": {
+        "task_type": "document",
+        "allocation_rank": [
+          "knowledge",
+          "attachment",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "high",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "critical",
+          "lore": "low"
+        },
+        "must_include": [
+          "knowledge"
+        ],
+        "may_drop": [
+          "lore",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "document-02-01",
+      "group": "document",
+      "input": {
+        "message_id": "msg-document-02-01",
+        "task_type": "document",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 768,
+        "component_units": 500
+      },
+      "expected": {
+        "task_type": "document",
+        "allocation_rank": [
+          "knowledge",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "critical",
+          "lore": "low"
+        },
+        "must_include": [
+          "knowledge"
+        ],
+        "may_drop": [
+          "lore",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "document-02-02",
+      "group": "document",
+      "input": {
+        "message_id": "msg-document-02-02",
+        "task_type": "document",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1024,
+        "component_units": 600
+      },
+      "expected": {
+        "task_type": "document",
+        "allocation_rank": [
+          "knowledge",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "critical",
+          "lore": "low"
+        },
+        "must_include": [
+          "knowledge"
+        ],
+        "may_drop": [
+          "lore",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "document-02-03",
+      "group": "document",
+      "input": {
+        "message_id": "msg-document-02-03",
+        "task_type": "document",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1280,
+        "component_units": 700
+      },
+      "expected": {
+        "task_type": "document",
+        "allocation_rank": [
+          "knowledge",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "critical",
+          "lore": "low"
+        },
+        "must_include": [
+          "knowledge"
+        ],
+        "may_drop": [
+          "lore",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "document-02-04",
+      "group": "document",
+      "input": {
+        "message_id": "msg-document-02-04",
+        "task_type": "document",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1536,
+        "component_units": 800
+      },
+      "expected": {
+        "task_type": "document",
+        "allocation_rank": [
+          "knowledge",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "critical",
+          "lore": "low"
+        },
+        "must_include": [
+          "knowledge"
+        ],
+        "may_drop": [
+          "lore",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "document-03-01",
+      "group": "document",
+      "input": {
+        "message_id": "msg-document-03-01",
+        "task_type": "document",
+        "available_components": [
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1024,
+        "component_units": 500
+      },
+      "expected": {
+        "task_type": "document",
+        "allocation_rank": [
+          "knowledge",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "none",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "critical",
+          "lore": "low"
+        },
+        "must_include": [
+          "knowledge"
+        ],
+        "may_drop": [
+          "lore",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "document-03-02",
+      "group": "document",
+      "input": {
+        "message_id": "msg-document-03-02",
+        "task_type": "document",
+        "available_components": [
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1280,
+        "component_units": 600
+      },
+      "expected": {
+        "task_type": "document",
+        "allocation_rank": [
+          "knowledge",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "none",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "critical",
+          "lore": "low"
+        },
+        "must_include": [
+          "knowledge"
+        ],
+        "may_drop": [
+          "lore",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "document-03-03",
+      "group": "document",
+      "input": {
+        "message_id": "msg-document-03-03",
+        "task_type": "document",
+        "available_components": [
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1536,
+        "component_units": 700
+      },
+      "expected": {
+        "task_type": "document",
+        "allocation_rank": [
+          "knowledge",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "none",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "critical",
+          "lore": "low"
+        },
+        "must_include": [
+          "knowledge"
+        ],
+        "may_drop": [
+          "lore",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "document-03-04",
+      "group": "document",
+      "input": {
+        "message_id": "msg-document-03-04",
+        "task_type": "document",
+        "available_components": [
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1792,
+        "component_units": 800
+      },
+      "expected": {
+        "task_type": "document",
+        "allocation_rank": [
+          "knowledge",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "none",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "critical",
+          "lore": "low"
+        },
+        "must_include": [
+          "knowledge"
+        ],
+        "may_drop": [
+          "lore",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "document-04-01",
+      "group": "document",
+      "input": {
+        "message_id": "msg-document-04-01",
+        "task_type": "document",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1280,
+        "component_units": 500
+      },
+      "expected": {
+        "task_type": "document",
+        "allocation_rank": [
+          "knowledge",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "critical",
+          "lore": "low"
+        },
+        "must_include": [
+          "knowledge"
+        ],
+        "may_drop": [
+          "lore",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "document-04-02",
+      "group": "document",
+      "input": {
+        "message_id": "msg-document-04-02",
+        "task_type": "document",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1536,
+        "component_units": 600
+      },
+      "expected": {
+        "task_type": "document",
+        "allocation_rank": [
+          "knowledge",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "critical",
+          "lore": "low"
+        },
+        "must_include": [
+          "knowledge"
+        ],
+        "may_drop": [
+          "lore",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "document-04-03",
+      "group": "document",
+      "input": {
+        "message_id": "msg-document-04-03",
+        "task_type": "document",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1792,
+        "component_units": 700
+      },
+      "expected": {
+        "task_type": "document",
+        "allocation_rank": [
+          "knowledge",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "critical",
+          "lore": "low"
+        },
+        "must_include": [
+          "knowledge"
+        ],
+        "may_drop": [
+          "lore",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "document-04-04",
+      "group": "document",
+      "input": {
+        "message_id": "msg-document-04-04",
+        "task_type": "document",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 2048,
+        "component_units": 800
+      },
+      "expected": {
+        "task_type": "document",
+        "allocation_rank": [
+          "knowledge",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "critical",
+          "lore": "low"
+        },
+        "must_include": [
+          "knowledge"
+        ],
+        "may_drop": [
+          "lore",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "document-05-01",
+      "group": "document",
+      "input": {
+        "message_id": "msg-document-05-01",
+        "task_type": "document",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore",
+          "attachment"
+        ],
+        "total_budget": 1536,
+        "component_units": 500
+      },
+      "expected": {
+        "task_type": "document",
+        "allocation_rank": [
+          "knowledge",
+          "attachment",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "high",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "critical",
+          "lore": "low"
+        },
+        "must_include": [
+          "knowledge"
+        ],
+        "may_drop": [
+          "lore",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "document-05-02",
+      "group": "document",
+      "input": {
+        "message_id": "msg-document-05-02",
+        "task_type": "document",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore",
+          "attachment"
+        ],
+        "total_budget": 1792,
+        "component_units": 600
+      },
+      "expected": {
+        "task_type": "document",
+        "allocation_rank": [
+          "knowledge",
+          "attachment",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "high",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "critical",
+          "lore": "low"
+        },
+        "must_include": [
+          "knowledge"
+        ],
+        "may_drop": [
+          "lore",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "document-05-03",
+      "group": "document",
+      "input": {
+        "message_id": "msg-document-05-03",
+        "task_type": "document",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore",
+          "attachment"
+        ],
+        "total_budget": 2048,
+        "component_units": 700
+      },
+      "expected": {
+        "task_type": "document",
+        "allocation_rank": [
+          "knowledge",
+          "attachment",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "high",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "critical",
+          "lore": "low"
+        },
+        "must_include": [
+          "knowledge"
+        ],
+        "may_drop": [
+          "lore",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "document-05-04",
+      "group": "document",
+      "input": {
+        "message_id": "msg-document-05-04",
+        "task_type": "document",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore",
+          "attachment"
+        ],
+        "total_budget": 2304,
+        "component_units": 800
+      },
+      "expected": {
+        "task_type": "document",
+        "allocation_rank": [
+          "knowledge",
+          "attachment",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "high",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "critical",
+          "lore": "low"
+        },
+        "must_include": [
+          "knowledge"
+        ],
+        "may_drop": [
+          "lore",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "history-01-01",
+      "group": "history",
+      "input": {
+        "message_id": "msg-history-01-01",
+        "task_type": "history",
+        "available_components": [
+          "attachment",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 512,
+        "component_units": 500
+      },
+      "expected": {
+        "task_type": "history",
+        "allocation_rank": [
+          "cross_session_recall",
+          "rolling_summary",
+          "existing_memory_digest",
+          "attachment",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "low",
+          "rolling_summary": "high",
+          "cross_session_recall": "critical",
+          "existing_memory_digest": "medium",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "cross_session_recall"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge",
+          "attachment"
+        ]
+      }
+    },
+    {
+      "id": "history-01-02",
+      "group": "history",
+      "input": {
+        "message_id": "msg-history-01-02",
+        "task_type": "history",
+        "available_components": [
+          "attachment",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 768,
+        "component_units": 600
+      },
+      "expected": {
+        "task_type": "history",
+        "allocation_rank": [
+          "cross_session_recall",
+          "rolling_summary",
+          "existing_memory_digest",
+          "attachment",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "low",
+          "rolling_summary": "high",
+          "cross_session_recall": "critical",
+          "existing_memory_digest": "medium",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "cross_session_recall"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge",
+          "attachment"
+        ]
+      }
+    },
+    {
+      "id": "history-01-03",
+      "group": "history",
+      "input": {
+        "message_id": "msg-history-01-03",
+        "task_type": "history",
+        "available_components": [
+          "attachment",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1024,
+        "component_units": 700
+      },
+      "expected": {
+        "task_type": "history",
+        "allocation_rank": [
+          "cross_session_recall",
+          "rolling_summary",
+          "existing_memory_digest",
+          "attachment",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "low",
+          "rolling_summary": "high",
+          "cross_session_recall": "critical",
+          "existing_memory_digest": "medium",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "cross_session_recall"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge",
+          "attachment"
+        ]
+      }
+    },
+    {
+      "id": "history-01-04",
+      "group": "history",
+      "input": {
+        "message_id": "msg-history-01-04",
+        "task_type": "history",
+        "available_components": [
+          "attachment",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1280,
+        "component_units": 800
+      },
+      "expected": {
+        "task_type": "history",
+        "allocation_rank": [
+          "cross_session_recall",
+          "rolling_summary",
+          "existing_memory_digest",
+          "attachment",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "low",
+          "rolling_summary": "high",
+          "cross_session_recall": "critical",
+          "existing_memory_digest": "medium",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "cross_session_recall"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge",
+          "attachment"
+        ]
+      }
+    },
+    {
+      "id": "history-02-01",
+      "group": "history",
+      "input": {
+        "message_id": "msg-history-02-01",
+        "task_type": "history",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 768,
+        "component_units": 500
+      },
+      "expected": {
+        "task_type": "history",
+        "allocation_rank": [
+          "cross_session_recall",
+          "rolling_summary",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "high",
+          "cross_session_recall": "critical",
+          "existing_memory_digest": "medium",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "cross_session_recall"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge"
+        ]
+      }
+    },
+    {
+      "id": "history-02-02",
+      "group": "history",
+      "input": {
+        "message_id": "msg-history-02-02",
+        "task_type": "history",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1024,
+        "component_units": 600
+      },
+      "expected": {
+        "task_type": "history",
+        "allocation_rank": [
+          "cross_session_recall",
+          "rolling_summary",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "high",
+          "cross_session_recall": "critical",
+          "existing_memory_digest": "medium",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "cross_session_recall"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge"
+        ]
+      }
+    },
+    {
+      "id": "history-02-03",
+      "group": "history",
+      "input": {
+        "message_id": "msg-history-02-03",
+        "task_type": "history",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1280,
+        "component_units": 700
+      },
+      "expected": {
+        "task_type": "history",
+        "allocation_rank": [
+          "cross_session_recall",
+          "rolling_summary",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "high",
+          "cross_session_recall": "critical",
+          "existing_memory_digest": "medium",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "cross_session_recall"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge"
+        ]
+      }
+    },
+    {
+      "id": "history-02-04",
+      "group": "history",
+      "input": {
+        "message_id": "msg-history-02-04",
+        "task_type": "history",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1536,
+        "component_units": 800
+      },
+      "expected": {
+        "task_type": "history",
+        "allocation_rank": [
+          "cross_session_recall",
+          "rolling_summary",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "high",
+          "cross_session_recall": "critical",
+          "existing_memory_digest": "medium",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "cross_session_recall"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge"
+        ]
+      }
+    },
+    {
+      "id": "history-03-01",
+      "group": "history",
+      "input": {
+        "message_id": "msg-history-03-01",
+        "task_type": "history",
+        "available_components": [
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1024,
+        "component_units": 500
+      },
+      "expected": {
+        "task_type": "history",
+        "allocation_rank": [
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "none",
+          "cross_session_recall": "critical",
+          "existing_memory_digest": "medium",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "cross_session_recall"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge"
+        ]
+      }
+    },
+    {
+      "id": "history-03-02",
+      "group": "history",
+      "input": {
+        "message_id": "msg-history-03-02",
+        "task_type": "history",
+        "available_components": [
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1280,
+        "component_units": 600
+      },
+      "expected": {
+        "task_type": "history",
+        "allocation_rank": [
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "none",
+          "cross_session_recall": "critical",
+          "existing_memory_digest": "medium",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "cross_session_recall"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge"
+        ]
+      }
+    },
+    {
+      "id": "history-03-03",
+      "group": "history",
+      "input": {
+        "message_id": "msg-history-03-03",
+        "task_type": "history",
+        "available_components": [
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1536,
+        "component_units": 700
+      },
+      "expected": {
+        "task_type": "history",
+        "allocation_rank": [
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "none",
+          "cross_session_recall": "critical",
+          "existing_memory_digest": "medium",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "cross_session_recall"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge"
+        ]
+      }
+    },
+    {
+      "id": "history-03-04",
+      "group": "history",
+      "input": {
+        "message_id": "msg-history-03-04",
+        "task_type": "history",
+        "available_components": [
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1792,
+        "component_units": 800
+      },
+      "expected": {
+        "task_type": "history",
+        "allocation_rank": [
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "none",
+          "cross_session_recall": "critical",
+          "existing_memory_digest": "medium",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "cross_session_recall"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge"
+        ]
+      }
+    },
+    {
+      "id": "history-04-01",
+      "group": "history",
+      "input": {
+        "message_id": "msg-history-04-01",
+        "task_type": "history",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1280,
+        "component_units": 500
+      },
+      "expected": {
+        "task_type": "history",
+        "allocation_rank": [
+          "cross_session_recall",
+          "rolling_summary",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "high",
+          "cross_session_recall": "critical",
+          "existing_memory_digest": "medium",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "cross_session_recall"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge"
+        ]
+      }
+    },
+    {
+      "id": "history-04-02",
+      "group": "history",
+      "input": {
+        "message_id": "msg-history-04-02",
+        "task_type": "history",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1536,
+        "component_units": 600
+      },
+      "expected": {
+        "task_type": "history",
+        "allocation_rank": [
+          "cross_session_recall",
+          "rolling_summary",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "high",
+          "cross_session_recall": "critical",
+          "existing_memory_digest": "medium",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "cross_session_recall"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge"
+        ]
+      }
+    },
+    {
+      "id": "history-04-03",
+      "group": "history",
+      "input": {
+        "message_id": "msg-history-04-03",
+        "task_type": "history",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1792,
+        "component_units": 700
+      },
+      "expected": {
+        "task_type": "history",
+        "allocation_rank": [
+          "cross_session_recall",
+          "rolling_summary",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "high",
+          "cross_session_recall": "critical",
+          "existing_memory_digest": "medium",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "cross_session_recall"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge"
+        ]
+      }
+    },
+    {
+      "id": "history-04-04",
+      "group": "history",
+      "input": {
+        "message_id": "msg-history-04-04",
+        "task_type": "history",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 2048,
+        "component_units": 800
+      },
+      "expected": {
+        "task_type": "history",
+        "allocation_rank": [
+          "cross_session_recall",
+          "rolling_summary",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "high",
+          "cross_session_recall": "critical",
+          "existing_memory_digest": "medium",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "cross_session_recall"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge"
+        ]
+      }
+    },
+    {
+      "id": "history-05-01",
+      "group": "history",
+      "input": {
+        "message_id": "msg-history-05-01",
+        "task_type": "history",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore",
+          "attachment"
+        ],
+        "total_budget": 1536,
+        "component_units": 500
+      },
+      "expected": {
+        "task_type": "history",
+        "allocation_rank": [
+          "cross_session_recall",
+          "rolling_summary",
+          "existing_memory_digest",
+          "attachment",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "low",
+          "rolling_summary": "high",
+          "cross_session_recall": "critical",
+          "existing_memory_digest": "medium",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "cross_session_recall"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge",
+          "attachment"
+        ]
+      }
+    },
+    {
+      "id": "history-05-02",
+      "group": "history",
+      "input": {
+        "message_id": "msg-history-05-02",
+        "task_type": "history",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore",
+          "attachment"
+        ],
+        "total_budget": 1792,
+        "component_units": 600
+      },
+      "expected": {
+        "task_type": "history",
+        "allocation_rank": [
+          "cross_session_recall",
+          "rolling_summary",
+          "existing_memory_digest",
+          "attachment",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "low",
+          "rolling_summary": "high",
+          "cross_session_recall": "critical",
+          "existing_memory_digest": "medium",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "cross_session_recall"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge",
+          "attachment"
+        ]
+      }
+    },
+    {
+      "id": "history-05-03",
+      "group": "history",
+      "input": {
+        "message_id": "msg-history-05-03",
+        "task_type": "history",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore",
+          "attachment"
+        ],
+        "total_budget": 2048,
+        "component_units": 700
+      },
+      "expected": {
+        "task_type": "history",
+        "allocation_rank": [
+          "cross_session_recall",
+          "rolling_summary",
+          "existing_memory_digest",
+          "attachment",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "low",
+          "rolling_summary": "high",
+          "cross_session_recall": "critical",
+          "existing_memory_digest": "medium",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "cross_session_recall"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge",
+          "attachment"
+        ]
+      }
+    },
+    {
+      "id": "history-05-04",
+      "group": "history",
+      "input": {
+        "message_id": "msg-history-05-04",
+        "task_type": "history",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore",
+          "attachment"
+        ],
+        "total_budget": 2304,
+        "component_units": 800
+      },
+      "expected": {
+        "task_type": "history",
+        "allocation_rank": [
+          "cross_session_recall",
+          "rolling_summary",
+          "existing_memory_digest",
+          "attachment",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "low",
+          "rolling_summary": "high",
+          "cross_session_recall": "critical",
+          "existing_memory_digest": "medium",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "cross_session_recall"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge",
+          "attachment"
+        ]
+      }
+    },
+    {
+      "id": "relationship-01-01",
+      "group": "relationship",
+      "input": {
+        "message_id": "msg-relationship-01-01",
+        "task_type": "relationship",
+        "available_components": [
+          "attachment",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 512,
+        "component_units": 500
+      },
+      "expected": {
+        "task_type": "relationship",
+        "allocation_rank": [
+          "existing_memory_digest",
+          "rolling_summary",
+          "cross_session_recall",
+          "attachment",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "low",
+          "rolling_summary": "high",
+          "cross_session_recall": "high",
+          "existing_memory_digest": "critical",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "existing_memory_digest"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge",
+          "attachment"
+        ]
+      }
+    },
+    {
+      "id": "relationship-01-02",
+      "group": "relationship",
+      "input": {
+        "message_id": "msg-relationship-01-02",
+        "task_type": "relationship",
+        "available_components": [
+          "attachment",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 768,
+        "component_units": 600
+      },
+      "expected": {
+        "task_type": "relationship",
+        "allocation_rank": [
+          "existing_memory_digest",
+          "rolling_summary",
+          "cross_session_recall",
+          "attachment",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "low",
+          "rolling_summary": "high",
+          "cross_session_recall": "high",
+          "existing_memory_digest": "critical",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "existing_memory_digest"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge",
+          "attachment"
+        ]
+      }
+    },
+    {
+      "id": "relationship-01-03",
+      "group": "relationship",
+      "input": {
+        "message_id": "msg-relationship-01-03",
+        "task_type": "relationship",
+        "available_components": [
+          "attachment",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1024,
+        "component_units": 700
+      },
+      "expected": {
+        "task_type": "relationship",
+        "allocation_rank": [
+          "existing_memory_digest",
+          "rolling_summary",
+          "cross_session_recall",
+          "attachment",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "low",
+          "rolling_summary": "high",
+          "cross_session_recall": "high",
+          "existing_memory_digest": "critical",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "existing_memory_digest"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge",
+          "attachment"
+        ]
+      }
+    },
+    {
+      "id": "relationship-01-04",
+      "group": "relationship",
+      "input": {
+        "message_id": "msg-relationship-01-04",
+        "task_type": "relationship",
+        "available_components": [
+          "attachment",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1280,
+        "component_units": 800
+      },
+      "expected": {
+        "task_type": "relationship",
+        "allocation_rank": [
+          "existing_memory_digest",
+          "rolling_summary",
+          "cross_session_recall",
+          "attachment",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "low",
+          "rolling_summary": "high",
+          "cross_session_recall": "high",
+          "existing_memory_digest": "critical",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "existing_memory_digest"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge",
+          "attachment"
+        ]
+      }
+    },
+    {
+      "id": "relationship-02-01",
+      "group": "relationship",
+      "input": {
+        "message_id": "msg-relationship-02-01",
+        "task_type": "relationship",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 768,
+        "component_units": 500
+      },
+      "expected": {
+        "task_type": "relationship",
+        "allocation_rank": [
+          "existing_memory_digest",
+          "rolling_summary",
+          "cross_session_recall",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "high",
+          "cross_session_recall": "high",
+          "existing_memory_digest": "critical",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "existing_memory_digest"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge"
+        ]
+      }
+    },
+    {
+      "id": "relationship-02-02",
+      "group": "relationship",
+      "input": {
+        "message_id": "msg-relationship-02-02",
+        "task_type": "relationship",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1024,
+        "component_units": 600
+      },
+      "expected": {
+        "task_type": "relationship",
+        "allocation_rank": [
+          "existing_memory_digest",
+          "rolling_summary",
+          "cross_session_recall",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "high",
+          "cross_session_recall": "high",
+          "existing_memory_digest": "critical",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "existing_memory_digest"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge"
+        ]
+      }
+    },
+    {
+      "id": "relationship-02-03",
+      "group": "relationship",
+      "input": {
+        "message_id": "msg-relationship-02-03",
+        "task_type": "relationship",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1280,
+        "component_units": 700
+      },
+      "expected": {
+        "task_type": "relationship",
+        "allocation_rank": [
+          "existing_memory_digest",
+          "rolling_summary",
+          "cross_session_recall",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "high",
+          "cross_session_recall": "high",
+          "existing_memory_digest": "critical",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "existing_memory_digest"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge"
+        ]
+      }
+    },
+    {
+      "id": "relationship-02-04",
+      "group": "relationship",
+      "input": {
+        "message_id": "msg-relationship-02-04",
+        "task_type": "relationship",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1536,
+        "component_units": 800
+      },
+      "expected": {
+        "task_type": "relationship",
+        "allocation_rank": [
+          "existing_memory_digest",
+          "rolling_summary",
+          "cross_session_recall",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "high",
+          "cross_session_recall": "high",
+          "existing_memory_digest": "critical",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "existing_memory_digest"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge"
+        ]
+      }
+    },
+    {
+      "id": "relationship-03-01",
+      "group": "relationship",
+      "input": {
+        "message_id": "msg-relationship-03-01",
+        "task_type": "relationship",
+        "available_components": [
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1024,
+        "component_units": 500
+      },
+      "expected": {
+        "task_type": "relationship",
+        "allocation_rank": [
+          "existing_memory_digest",
+          "cross_session_recall",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "none",
+          "cross_session_recall": "high",
+          "existing_memory_digest": "critical",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "existing_memory_digest"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge"
+        ]
+      }
+    },
+    {
+      "id": "relationship-03-02",
+      "group": "relationship",
+      "input": {
+        "message_id": "msg-relationship-03-02",
+        "task_type": "relationship",
+        "available_components": [
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1280,
+        "component_units": 600
+      },
+      "expected": {
+        "task_type": "relationship",
+        "allocation_rank": [
+          "existing_memory_digest",
+          "cross_session_recall",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "none",
+          "cross_session_recall": "high",
+          "existing_memory_digest": "critical",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "existing_memory_digest"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge"
+        ]
+      }
+    },
+    {
+      "id": "relationship-03-03",
+      "group": "relationship",
+      "input": {
+        "message_id": "msg-relationship-03-03",
+        "task_type": "relationship",
+        "available_components": [
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1536,
+        "component_units": 700
+      },
+      "expected": {
+        "task_type": "relationship",
+        "allocation_rank": [
+          "existing_memory_digest",
+          "cross_session_recall",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "none",
+          "cross_session_recall": "high",
+          "existing_memory_digest": "critical",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "existing_memory_digest"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge"
+        ]
+      }
+    },
+    {
+      "id": "relationship-03-04",
+      "group": "relationship",
+      "input": {
+        "message_id": "msg-relationship-03-04",
+        "task_type": "relationship",
+        "available_components": [
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1792,
+        "component_units": 800
+      },
+      "expected": {
+        "task_type": "relationship",
+        "allocation_rank": [
+          "existing_memory_digest",
+          "cross_session_recall",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "none",
+          "cross_session_recall": "high",
+          "existing_memory_digest": "critical",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "existing_memory_digest"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge"
+        ]
+      }
+    },
+    {
+      "id": "relationship-04-01",
+      "group": "relationship",
+      "input": {
+        "message_id": "msg-relationship-04-01",
+        "task_type": "relationship",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1280,
+        "component_units": 500
+      },
+      "expected": {
+        "task_type": "relationship",
+        "allocation_rank": [
+          "existing_memory_digest",
+          "rolling_summary",
+          "cross_session_recall",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "high",
+          "cross_session_recall": "high",
+          "existing_memory_digest": "critical",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "existing_memory_digest"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge"
+        ]
+      }
+    },
+    {
+      "id": "relationship-04-02",
+      "group": "relationship",
+      "input": {
+        "message_id": "msg-relationship-04-02",
+        "task_type": "relationship",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1536,
+        "component_units": 600
+      },
+      "expected": {
+        "task_type": "relationship",
+        "allocation_rank": [
+          "existing_memory_digest",
+          "rolling_summary",
+          "cross_session_recall",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "high",
+          "cross_session_recall": "high",
+          "existing_memory_digest": "critical",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "existing_memory_digest"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge"
+        ]
+      }
+    },
+    {
+      "id": "relationship-04-03",
+      "group": "relationship",
+      "input": {
+        "message_id": "msg-relationship-04-03",
+        "task_type": "relationship",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1792,
+        "component_units": 700
+      },
+      "expected": {
+        "task_type": "relationship",
+        "allocation_rank": [
+          "existing_memory_digest",
+          "rolling_summary",
+          "cross_session_recall",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "high",
+          "cross_session_recall": "high",
+          "existing_memory_digest": "critical",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "existing_memory_digest"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge"
+        ]
+      }
+    },
+    {
+      "id": "relationship-04-04",
+      "group": "relationship",
+      "input": {
+        "message_id": "msg-relationship-04-04",
+        "task_type": "relationship",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 2048,
+        "component_units": 800
+      },
+      "expected": {
+        "task_type": "relationship",
+        "allocation_rank": [
+          "existing_memory_digest",
+          "rolling_summary",
+          "cross_session_recall",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "high",
+          "cross_session_recall": "high",
+          "existing_memory_digest": "critical",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "existing_memory_digest"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge"
+        ]
+      }
+    },
+    {
+      "id": "relationship-05-01",
+      "group": "relationship",
+      "input": {
+        "message_id": "msg-relationship-05-01",
+        "task_type": "relationship",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore",
+          "attachment"
+        ],
+        "total_budget": 1536,
+        "component_units": 500
+      },
+      "expected": {
+        "task_type": "relationship",
+        "allocation_rank": [
+          "existing_memory_digest",
+          "rolling_summary",
+          "cross_session_recall",
+          "attachment",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "low",
+          "rolling_summary": "high",
+          "cross_session_recall": "high",
+          "existing_memory_digest": "critical",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "existing_memory_digest"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge",
+          "attachment"
+        ]
+      }
+    },
+    {
+      "id": "relationship-05-02",
+      "group": "relationship",
+      "input": {
+        "message_id": "msg-relationship-05-02",
+        "task_type": "relationship",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore",
+          "attachment"
+        ],
+        "total_budget": 1792,
+        "component_units": 600
+      },
+      "expected": {
+        "task_type": "relationship",
+        "allocation_rank": [
+          "existing_memory_digest",
+          "rolling_summary",
+          "cross_session_recall",
+          "attachment",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "low",
+          "rolling_summary": "high",
+          "cross_session_recall": "high",
+          "existing_memory_digest": "critical",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "existing_memory_digest"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge",
+          "attachment"
+        ]
+      }
+    },
+    {
+      "id": "relationship-05-03",
+      "group": "relationship",
+      "input": {
+        "message_id": "msg-relationship-05-03",
+        "task_type": "relationship",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore",
+          "attachment"
+        ],
+        "total_budget": 2048,
+        "component_units": 700
+      },
+      "expected": {
+        "task_type": "relationship",
+        "allocation_rank": [
+          "existing_memory_digest",
+          "rolling_summary",
+          "cross_session_recall",
+          "attachment",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "low",
+          "rolling_summary": "high",
+          "cross_session_recall": "high",
+          "existing_memory_digest": "critical",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "existing_memory_digest"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge",
+          "attachment"
+        ]
+      }
+    },
+    {
+      "id": "relationship-05-04",
+      "group": "relationship",
+      "input": {
+        "message_id": "msg-relationship-05-04",
+        "task_type": "relationship",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore",
+          "attachment"
+        ],
+        "total_budget": 2304,
+        "component_units": 800
+      },
+      "expected": {
+        "task_type": "relationship",
+        "allocation_rank": [
+          "existing_memory_digest",
+          "rolling_summary",
+          "cross_session_recall",
+          "attachment",
+          "knowledge",
+          "lore"
+        ],
+        "importance_by_component": {
+          "attachment": "low",
+          "rolling_summary": "high",
+          "cross_session_recall": "high",
+          "existing_memory_digest": "critical",
+          "knowledge": "low",
+          "lore": "low"
+        },
+        "must_include": [
+          "existing_memory_digest"
+        ],
+        "may_drop": [
+          "lore",
+          "knowledge",
+          "attachment"
+        ]
+      }
+    },
+    {
+      "id": "lore-01-01",
+      "group": "lore",
+      "input": {
+        "message_id": "msg-lore-01-01",
+        "task_type": "lore",
+        "available_components": [
+          "attachment",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 512,
+        "component_units": 500
+      },
+      "expected": {
+        "task_type": "lore",
+        "allocation_rank": [
+          "lore",
+          "rolling_summary",
+          "attachment",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge"
+        ],
+        "importance_by_component": {
+          "attachment": "low",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "low",
+          "lore": "critical"
+        },
+        "must_include": [
+          "lore"
+        ],
+        "may_drop": [
+          "knowledge",
+          "existing_memory_digest",
+          "cross_session_recall",
+          "attachment"
+        ]
+      }
+    },
+    {
+      "id": "lore-01-02",
+      "group": "lore",
+      "input": {
+        "message_id": "msg-lore-01-02",
+        "task_type": "lore",
+        "available_components": [
+          "attachment",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 768,
+        "component_units": 600
+      },
+      "expected": {
+        "task_type": "lore",
+        "allocation_rank": [
+          "lore",
+          "rolling_summary",
+          "attachment",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge"
+        ],
+        "importance_by_component": {
+          "attachment": "low",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "low",
+          "lore": "critical"
+        },
+        "must_include": [
+          "lore"
+        ],
+        "may_drop": [
+          "knowledge",
+          "existing_memory_digest",
+          "cross_session_recall",
+          "attachment"
+        ]
+      }
+    },
+    {
+      "id": "lore-01-03",
+      "group": "lore",
+      "input": {
+        "message_id": "msg-lore-01-03",
+        "task_type": "lore",
+        "available_components": [
+          "attachment",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1024,
+        "component_units": 700
+      },
+      "expected": {
+        "task_type": "lore",
+        "allocation_rank": [
+          "lore",
+          "rolling_summary",
+          "attachment",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge"
+        ],
+        "importance_by_component": {
+          "attachment": "low",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "low",
+          "lore": "critical"
+        },
+        "must_include": [
+          "lore"
+        ],
+        "may_drop": [
+          "knowledge",
+          "existing_memory_digest",
+          "cross_session_recall",
+          "attachment"
+        ]
+      }
+    },
+    {
+      "id": "lore-01-04",
+      "group": "lore",
+      "input": {
+        "message_id": "msg-lore-01-04",
+        "task_type": "lore",
+        "available_components": [
+          "attachment",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1280,
+        "component_units": 800
+      },
+      "expected": {
+        "task_type": "lore",
+        "allocation_rank": [
+          "lore",
+          "rolling_summary",
+          "attachment",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge"
+        ],
+        "importance_by_component": {
+          "attachment": "low",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "low",
+          "lore": "critical"
+        },
+        "must_include": [
+          "lore"
+        ],
+        "may_drop": [
+          "knowledge",
+          "existing_memory_digest",
+          "cross_session_recall",
+          "attachment"
+        ]
+      }
+    },
+    {
+      "id": "lore-02-01",
+      "group": "lore",
+      "input": {
+        "message_id": "msg-lore-02-01",
+        "task_type": "lore",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 768,
+        "component_units": 500
+      },
+      "expected": {
+        "task_type": "lore",
+        "allocation_rank": [
+          "lore",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "low",
+          "lore": "critical"
+        },
+        "must_include": [
+          "lore"
+        ],
+        "may_drop": [
+          "knowledge",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "lore-02-02",
+      "group": "lore",
+      "input": {
+        "message_id": "msg-lore-02-02",
+        "task_type": "lore",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1024,
+        "component_units": 600
+      },
+      "expected": {
+        "task_type": "lore",
+        "allocation_rank": [
+          "lore",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "low",
+          "lore": "critical"
+        },
+        "must_include": [
+          "lore"
+        ],
+        "may_drop": [
+          "knowledge",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "lore-02-03",
+      "group": "lore",
+      "input": {
+        "message_id": "msg-lore-02-03",
+        "task_type": "lore",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1280,
+        "component_units": 700
+      },
+      "expected": {
+        "task_type": "lore",
+        "allocation_rank": [
+          "lore",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "low",
+          "lore": "critical"
+        },
+        "must_include": [
+          "lore"
+        ],
+        "may_drop": [
+          "knowledge",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "lore-02-04",
+      "group": "lore",
+      "input": {
+        "message_id": "msg-lore-02-04",
+        "task_type": "lore",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1536,
+        "component_units": 800
+      },
+      "expected": {
+        "task_type": "lore",
+        "allocation_rank": [
+          "lore",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "low",
+          "lore": "critical"
+        },
+        "must_include": [
+          "lore"
+        ],
+        "may_drop": [
+          "knowledge",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "lore-03-01",
+      "group": "lore",
+      "input": {
+        "message_id": "msg-lore-03-01",
+        "task_type": "lore",
+        "available_components": [
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1024,
+        "component_units": 500
+      },
+      "expected": {
+        "task_type": "lore",
+        "allocation_rank": [
+          "lore",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "none",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "low",
+          "lore": "critical"
+        },
+        "must_include": [
+          "lore"
+        ],
+        "may_drop": [
+          "knowledge",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "lore-03-02",
+      "group": "lore",
+      "input": {
+        "message_id": "msg-lore-03-02",
+        "task_type": "lore",
+        "available_components": [
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1280,
+        "component_units": 600
+      },
+      "expected": {
+        "task_type": "lore",
+        "allocation_rank": [
+          "lore",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "none",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "low",
+          "lore": "critical"
+        },
+        "must_include": [
+          "lore"
+        ],
+        "may_drop": [
+          "knowledge",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "lore-03-03",
+      "group": "lore",
+      "input": {
+        "message_id": "msg-lore-03-03",
+        "task_type": "lore",
+        "available_components": [
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1536,
+        "component_units": 700
+      },
+      "expected": {
+        "task_type": "lore",
+        "allocation_rank": [
+          "lore",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "none",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "low",
+          "lore": "critical"
+        },
+        "must_include": [
+          "lore"
+        ],
+        "may_drop": [
+          "knowledge",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "lore-03-04",
+      "group": "lore",
+      "input": {
+        "message_id": "msg-lore-03-04",
+        "task_type": "lore",
+        "available_components": [
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1792,
+        "component_units": 800
+      },
+      "expected": {
+        "task_type": "lore",
+        "allocation_rank": [
+          "lore",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "none",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "low",
+          "lore": "critical"
+        },
+        "must_include": [
+          "lore"
+        ],
+        "may_drop": [
+          "knowledge",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "lore-04-01",
+      "group": "lore",
+      "input": {
+        "message_id": "msg-lore-04-01",
+        "task_type": "lore",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1280,
+        "component_units": 500
+      },
+      "expected": {
+        "task_type": "lore",
+        "allocation_rank": [
+          "lore",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "low",
+          "lore": "critical"
+        },
+        "must_include": [
+          "lore"
+        ],
+        "may_drop": [
+          "knowledge",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "lore-04-02",
+      "group": "lore",
+      "input": {
+        "message_id": "msg-lore-04-02",
+        "task_type": "lore",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1536,
+        "component_units": 600
+      },
+      "expected": {
+        "task_type": "lore",
+        "allocation_rank": [
+          "lore",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "low",
+          "lore": "critical"
+        },
+        "must_include": [
+          "lore"
+        ],
+        "may_drop": [
+          "knowledge",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "lore-04-03",
+      "group": "lore",
+      "input": {
+        "message_id": "msg-lore-04-03",
+        "task_type": "lore",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 1792,
+        "component_units": 700
+      },
+      "expected": {
+        "task_type": "lore",
+        "allocation_rank": [
+          "lore",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "low",
+          "lore": "critical"
+        },
+        "must_include": [
+          "lore"
+        ],
+        "may_drop": [
+          "knowledge",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "lore-04-04",
+      "group": "lore",
+      "input": {
+        "message_id": "msg-lore-04-04",
+        "task_type": "lore",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore"
+        ],
+        "total_budget": 2048,
+        "component_units": 800
+      },
+      "expected": {
+        "task_type": "lore",
+        "allocation_rank": [
+          "lore",
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge"
+        ],
+        "importance_by_component": {
+          "attachment": "none",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "low",
+          "lore": "critical"
+        },
+        "must_include": [
+          "lore"
+        ],
+        "may_drop": [
+          "knowledge",
+          "existing_memory_digest",
+          "cross_session_recall"
+        ]
+      }
+    },
+    {
+      "id": "lore-05-01",
+      "group": "lore",
+      "input": {
+        "message_id": "msg-lore-05-01",
+        "task_type": "lore",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore",
+          "attachment"
+        ],
+        "total_budget": 1536,
+        "component_units": 500
+      },
+      "expected": {
+        "task_type": "lore",
+        "allocation_rank": [
+          "lore",
+          "rolling_summary",
+          "attachment",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge"
+        ],
+        "importance_by_component": {
+          "attachment": "low",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "low",
+          "lore": "critical"
+        },
+        "must_include": [
+          "lore"
+        ],
+        "may_drop": [
+          "knowledge",
+          "existing_memory_digest",
+          "cross_session_recall",
+          "attachment"
+        ]
+      }
+    },
+    {
+      "id": "lore-05-02",
+      "group": "lore",
+      "input": {
+        "message_id": "msg-lore-05-02",
+        "task_type": "lore",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore",
+          "attachment"
+        ],
+        "total_budget": 1792,
+        "component_units": 600
+      },
+      "expected": {
+        "task_type": "lore",
+        "allocation_rank": [
+          "lore",
+          "rolling_summary",
+          "attachment",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge"
+        ],
+        "importance_by_component": {
+          "attachment": "low",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "low",
+          "lore": "critical"
+        },
+        "must_include": [
+          "lore"
+        ],
+        "may_drop": [
+          "knowledge",
+          "existing_memory_digest",
+          "cross_session_recall",
+          "attachment"
+        ]
+      }
+    },
+    {
+      "id": "lore-05-03",
+      "group": "lore",
+      "input": {
+        "message_id": "msg-lore-05-03",
+        "task_type": "lore",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore",
+          "attachment"
+        ],
+        "total_budget": 2048,
+        "component_units": 700
+      },
+      "expected": {
+        "task_type": "lore",
+        "allocation_rank": [
+          "lore",
+          "rolling_summary",
+          "attachment",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge"
+        ],
+        "importance_by_component": {
+          "attachment": "low",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "low",
+          "lore": "critical"
+        },
+        "must_include": [
+          "lore"
+        ],
+        "may_drop": [
+          "knowledge",
+          "existing_memory_digest",
+          "cross_session_recall",
+          "attachment"
+        ]
+      }
+    },
+    {
+      "id": "lore-05-04",
+      "group": "lore",
+      "input": {
+        "message_id": "msg-lore-05-04",
+        "task_type": "lore",
+        "available_components": [
+          "rolling_summary",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge",
+          "lore",
+          "attachment"
+        ],
+        "total_budget": 2304,
+        "component_units": 800
+      },
+      "expected": {
+        "task_type": "lore",
+        "allocation_rank": [
+          "lore",
+          "rolling_summary",
+          "attachment",
+          "cross_session_recall",
+          "existing_memory_digest",
+          "knowledge"
+        ],
+        "importance_by_component": {
+          "attachment": "low",
+          "rolling_summary": "medium",
+          "cross_session_recall": "low",
+          "existing_memory_digest": "low",
+          "knowledge": "low",
+          "lore": "critical"
+        },
+        "must_include": [
+          "lore"
+        ],
+        "may_drop": [
+          "knowledge",
+          "existing_memory_digest",
+          "cross_session_recall",
+          "attachment"
+        ]
+      }
+    }
+  ]
+}
