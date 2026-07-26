@@ -13,6 +13,10 @@ from urllib.parse import urlsplit
 import httpx
 
 JSON_COMPLETION_MAX_TOKENS = 500
+# The default remains intentionally small for background observers.  A caller
+# performing an explicit reasoning-model certification may request more, but
+# can never exceed this process-wide hard ceiling.
+JSON_COMPLETION_HARD_MAX_TOKENS = 2_048
 JSON_COMPLETION_TIMEOUT_SECONDS = 20
 JSON_COMPLETION_MAX_CHARS = 12000
 
@@ -119,7 +123,7 @@ async def complete_json(
     """执行受限的非流式 JSON 观察调用；不负责解析或信任模型输出。"""
     if provider is None or provider.get("id") == "mock" or not provider.get("base_url"):
         raise LLMError("观察模型不可用", "演示模型不执行旁观观察。")
-    safe_max_tokens = max(1, min(int(max_tokens), JSON_COMPLETION_MAX_TOKENS))
+    safe_max_tokens = max(1, min(int(max_tokens), JSON_COMPLETION_HARD_MAX_TOKENS))
     url = provider["base_url"].rstrip("/") + "/chat/completions"
     headers = {"Content-Type": "application/json"}
     if provider.get("api_key"):

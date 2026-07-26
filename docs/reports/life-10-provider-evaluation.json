@@ -1,0 +1,1499 @@
+{
+  "evaluation_version": "life-decision-eval-v1",
+  "synthetic_only": true,
+  "case_count": 60,
+  "max_output_tokens": 2048,
+  "runs": [
+    {
+      "provider_id": "deepseek",
+      "model": "deepseek-chat",
+      "shadow_only": true,
+      "raw_outputs_persisted": false,
+      "predictions": [
+        {
+          "case_id": "life10-01-01",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_coarse-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-01-02",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_coarse-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-01-03",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "insufficient_evidence"
+          ],
+          "confidence_band": "low",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-01-04",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_coarse-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-01-05",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_coarse-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-01-06",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_coarse-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-01-07",
+          "action": "ask",
+          "selected_ids": [],
+          "reason_codes": [
+            "source_ambiguous"
+          ],
+          "confidence_band": "low",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-01-08",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_coarse-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-01-09",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_coarse-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-01-10",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "no_safe_candidate"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-02-01",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_detail-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-02-02",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_detail-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-02-03",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "no_safe_candidate"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-02-04",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_detail-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-02-05",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_detail-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-02-06",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_detail-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-02-07",
+          "action": "ask",
+          "selected_ids": [],
+          "reason_codes": [
+            "source_ambiguous",
+            "user_confirmation_required"
+          ],
+          "confidence_band": "low",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-02-08",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_detail-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-02-09",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_detail-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-02-10",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "no_safe_candidate"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-03-01",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_replan-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-03-02",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_replan-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-03-03",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "no_safe_candidate"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-03-04",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_replan-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-03-05",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_replan-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-03-06",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_replan-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-03-07",
+          "action": "ask",
+          "selected_ids": [],
+          "reason_codes": [
+            "source_ambiguous",
+            "user_confirmation_required"
+          ],
+          "confidence_band": "low",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-03-08",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_replan-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-03-09",
+          "action": "ask",
+          "selected_ids": [],
+          "reason_codes": [
+            "source_ambiguous",
+            "user_confirmation_required"
+          ],
+          "confidence_band": "medium",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-03-10",
+          "action": "ask",
+          "selected_ids": [],
+          "reason_codes": [
+            "source_ambiguous",
+            "user_confirmation_required"
+          ],
+          "confidence_band": "low",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-04-01",
+          "action": "select",
+          "selected_ids": [
+            "life_important_date_interpretation-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-04-02",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "insufficient_evidence"
+          ],
+          "confidence_band": "low",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-04-03",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "no_safe_candidate"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-04-04",
+          "action": "select",
+          "selected_ids": [
+            "life_important_date_interpretation-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-04-05",
+          "action": "select",
+          "selected_ids": [
+            "life_important_date_interpretation-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-04-06",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "no_safe_candidate"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-04-07",
+          "action": "ask",
+          "selected_ids": [],
+          "reason_codes": [
+            "source_ambiguous",
+            "user_confirmation_required"
+          ],
+          "confidence_band": "low",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-04-08",
+          "action": "select",
+          "selected_ids": [
+            "life_important_date_interpretation-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-04-09",
+          "action": "select",
+          "selected_ids": [
+            "life_important_date_interpretation-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-04-10",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "insufficient_evidence"
+          ],
+          "confidence_band": "low",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-05-01",
+          "action": "select",
+          "selected_ids": [
+            "life_diary_reflection-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-05-02",
+          "action": "select",
+          "selected_ids": [
+            "life_diary_reflection-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-05-03",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "no_safe_candidate"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-05-04",
+          "action": "select",
+          "selected_ids": [
+            "life_diary_reflection-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-05-05",
+          "action": "select",
+          "selected_ids": [
+            "life_diary_reflection-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-05-06",
+          "action": "select",
+          "selected_ids": [
+            "life_diary_reflection-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-05-07",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "source_ambiguous",
+            "no_safe_candidate"
+          ],
+          "confidence_band": "medium",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-05-08",
+          "action": "select",
+          "selected_ids": [
+            "life_diary_reflection-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-05-09",
+          "action": "select",
+          "selected_ids": [
+            "life_diary_reflection-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-05-10",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "no_safe_candidate"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-06-01",
+          "action": "select",
+          "selected_ids": [
+            "life_event_meaning-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-06-02",
+          "action": "select",
+          "selected_ids": [
+            "life_event_meaning-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-06-03",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "no_safe_candidate"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-06-04",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "no_safe_candidate"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-06-05",
+          "action": "select",
+          "selected_ids": [
+            "life_event_meaning-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-06-06",
+          "action": "select",
+          "selected_ids": [
+            "life_event_meaning-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-06-07",
+          "action": "select",
+          "selected_ids": [
+            "life_event_meaning-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-06-08",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "no_safe_candidate"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-06-09",
+          "action": "select",
+          "selected_ids": [
+            "life_event_meaning-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-06-10",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "no_safe_candidate"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        }
+      ],
+      "failures": [],
+      "usage": {
+        "prompt_tokens": 11729,
+        "completion_tokens": 2622,
+        "latency_ms": 59326
+      },
+      "quality": {
+        "evaluation_version": "life-decision-eval-v1",
+        "case_count": 60,
+        "per_kind": {
+          "life_schedule_coarse": {
+            "cases": 10,
+            "correct": 10,
+            "invalid": 0,
+            "accuracy": 1.0
+          },
+          "life_schedule_detail": {
+            "cases": 10,
+            "correct": 10,
+            "invalid": 0,
+            "accuracy": 1.0
+          },
+          "life_schedule_replan": {
+            "cases": 10,
+            "correct": 7,
+            "invalid": 0,
+            "accuracy": 0.7
+          },
+          "life_important_date_interpretation": {
+            "cases": 10,
+            "correct": 7,
+            "invalid": 0,
+            "accuracy": 0.7
+          },
+          "life_diary_reflection": {
+            "cases": 10,
+            "correct": 10,
+            "invalid": 0,
+            "accuracy": 1.0
+          },
+          "life_event_meaning": {
+            "cases": 10,
+            "correct": 9,
+            "invalid": 0,
+            "accuracy": 0.9
+          }
+        },
+        "invalid_total": 0,
+        "low_confidence_application_total": 0
+      }
+    },
+    {
+      "provider_id": "deepseek",
+      "model": "deepseek-reasoner",
+      "shadow_only": true,
+      "raw_outputs_persisted": false,
+      "predictions": [
+        {
+          "case_id": "life10-01-01",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_coarse-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-01-02",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_coarse-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-01-03",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "insufficient_evidence"
+          ],
+          "confidence_band": "medium",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-01-04",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_coarse-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-01-05",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_coarse-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-01-06",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_coarse-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-01-07",
+          "action": "ask",
+          "selected_ids": [],
+          "reason_codes": [
+            "source_ambiguous",
+            "user_confirmation_required"
+          ],
+          "confidence_band": "low",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-01-08",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_coarse-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-01-09",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_coarse-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-01-10",
+          "action": "ask",
+          "selected_ids": [],
+          "reason_codes": [
+            "source_ambiguous"
+          ],
+          "confidence_band": "low",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-02-01",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_detail-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-02-02",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_detail-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-02-03",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "no_safe_candidate"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-02-04",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_detail-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-02-05",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_detail-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-02-06",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_detail-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-02-07",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "insufficient_evidence",
+            "source_ambiguous"
+          ],
+          "confidence_band": "low",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-02-08",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_detail-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-02-09",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_detail-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "medium",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-02-10",
+          "action": "ask",
+          "selected_ids": [],
+          "reason_codes": [
+            "user_confirmation_required"
+          ],
+          "confidence_band": "medium",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-03-01",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_replan-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-03-02",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_replan-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-03-03",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "no_safe_candidate"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-03-04",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_replan-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-03-05",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_replan-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-03-06",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_replan-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "medium",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-03-07",
+          "action": "ask",
+          "selected_ids": [],
+          "reason_codes": [
+            "source_ambiguous",
+            "user_confirmation_required"
+          ],
+          "confidence_band": "low",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-03-08",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_replan-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-03-09",
+          "action": "select",
+          "selected_ids": [
+            "life_schedule_replan-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-03-10",
+          "action": "ask",
+          "selected_ids": [],
+          "reason_codes": [
+            "source_ambiguous",
+            "user_confirmation_required"
+          ],
+          "confidence_band": "low",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-04-01",
+          "action": "select",
+          "selected_ids": [
+            "life_important_date_interpretation-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-04-02",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "no_safe_candidate"
+          ],
+          "confidence_band": "low",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-04-03",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "no_safe_candidate"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-04-04",
+          "action": "select",
+          "selected_ids": [
+            "life_important_date_interpretation-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-04-05",
+          "action": "select",
+          "selected_ids": [
+            "life_important_date_interpretation-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-04-06",
+          "action": "select",
+          "selected_ids": [
+            "life_important_date_interpretation-candidate-b"
+          ],
+          "reason_codes": [
+            "insufficient_evidence"
+          ],
+          "confidence_band": "medium",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-04-07",
+          "action": "ask",
+          "selected_ids": [],
+          "reason_codes": [
+            "source_ambiguous"
+          ],
+          "confidence_band": "low",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-04-08",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "no_safe_candidate"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-04-09",
+          "action": "select",
+          "selected_ids": [
+            "life_important_date_interpretation-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-04-10",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "insufficient_evidence",
+            "no_safe_candidate"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-05-01",
+          "action": "select",
+          "selected_ids": [
+            "life_diary_reflection-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-05-02",
+          "action": "select",
+          "selected_ids": [
+            "life_diary_reflection-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-05-03",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "no_safe_candidate"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-05-04",
+          "action": "select",
+          "selected_ids": [
+            "life_diary_reflection-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-05-05",
+          "action": "select",
+          "selected_ids": [
+            "life_diary_reflection-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-05-06",
+          "action": "select",
+          "selected_ids": [
+            "life_diary_reflection-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-05-07",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "no_safe_candidate"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-05-08",
+          "action": "select",
+          "selected_ids": [
+            "life_diary_reflection-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-05-09",
+          "action": "select",
+          "selected_ids": [
+            "life_diary_reflection-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-05-10",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "no_safe_candidate"
+          ],
+          "confidence_band": "medium",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-06-01",
+          "action": "select",
+          "selected_ids": [
+            "life_event_meaning-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-06-02",
+          "action": "select",
+          "selected_ids": [
+            "life_event_meaning-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-06-03",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "no_safe_candidate"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-06-04",
+          "action": "select",
+          "selected_ids": [
+            "life_event_meaning-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-06-05",
+          "action": "select",
+          "selected_ids": [
+            "life_event_meaning-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-06-06",
+          "action": "select",
+          "selected_ids": [
+            "life_event_meaning-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected",
+            "insufficient_evidence"
+          ],
+          "confidence_band": "medium",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-06-07",
+          "action": "select",
+          "selected_ids": [
+            "life_event_meaning-candidate-b"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-06-08",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "no_safe_candidate"
+          ],
+          "confidence_band": "medium",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-06-09",
+          "action": "select",
+          "selected_ids": [
+            "life_event_meaning-candidate-a"
+          ],
+          "reason_codes": [
+            "bounded_candidate_selected"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        },
+        {
+          "case_id": "life10-06-10",
+          "action": "skip",
+          "selected_ids": [],
+          "reason_codes": [
+            "no_safe_candidate"
+          ],
+          "confidence_band": "high",
+          "application_allowed": false
+        }
+      ],
+      "failures": [],
+      "usage": {
+        "prompt_tokens": 11729,
+        "completion_tokens": 16753,
+        "latency_ms": 187823
+      },
+      "quality": {
+        "evaluation_version": "life-decision-eval-v1",
+        "case_count": 60,
+        "per_kind": {
+          "life_schedule_coarse": {
+            "cases": 10,
+            "correct": 9,
+            "invalid": 0,
+            "accuracy": 0.9
+          },
+          "life_schedule_detail": {
+            "cases": 10,
+            "correct": 8,
+            "invalid": 0,
+            "accuracy": 0.8
+          },
+          "life_schedule_replan": {
+            "cases": 10,
+            "correct": 8,
+            "invalid": 0,
+            "accuracy": 0.8
+          },
+          "life_important_date_interpretation": {
+            "cases": 10,
+            "correct": 9,
+            "invalid": 0,
+            "accuracy": 0.9
+          },
+          "life_diary_reflection": {
+            "cases": 10,
+            "correct": 10,
+            "invalid": 0,
+            "accuracy": 1.0
+          },
+          "life_event_meaning": {
+            "cases": 10,
+            "correct": 10,
+            "invalid": 0,
+            "accuracy": 1.0
+          }
+        },
+        "invalid_total": 0,
+        "low_confidence_application_total": 0
+      }
+    }
+  ],
+  "provider_count": 1,
+  "promotion_note": "Multiple models from one Provider do not satisfy the two-Provider promotion gate.",
+  "model_consistency": {
+    "paired_cases": 60,
+    "agreements": 53,
+    "agreement_rate": 0.8833333333333333
+  }
+}
