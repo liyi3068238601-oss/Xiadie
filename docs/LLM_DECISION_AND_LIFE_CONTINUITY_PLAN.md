@@ -1237,17 +1237,19 @@ LIFE.7 施工记录（2026-07-26）：Schema 69 新增 ImportantDate、逐来源
 
 目标：形成有来源、不重复、可分享但有角色边界的自我叙事。
 
-- [ ] 新增 DiaryEntry、ContinuityThread、source links 和版本。
-- [ ] 日记输入只包含有效 LifeEvent、状态摘要、允许的共同经历和近期连续线索。
-- [ ] 建立日记 structured output 与本地敏感过滤。
-- [ ] 建立重复检测、意象疲劳和模板广播检测。
-- [ ] 区分 private/may_share/shared。
-- [ ] 日记生成失败不阻塞次日生活；允许稍后重建。
-- [ ] 用户删除来源时相关日记失效或重建。
-- [ ] 日记不能直接创建用户长期事实。
-- [ ] 明确 v1 静态存储威胁模型、磁盘明文提示、备份暴露风险和未来加密迁移；远端生成按 Provider 单独授权并受模型认证约束。
+- [x] 新增 DiaryEntry、ContinuityThread、source links 和版本。
+- [x] 日记输入只包含有效 LifeEvent、状态摘要、允许的共同经历和近期连续线索。
+- [x] 建立日记 structured output 与本地敏感过滤。
+- [x] 建立重复检测、意象疲劳和模板广播检测。
+- [x] 区分 private/may_share/shared。
+- [x] 日记生成失败不阻塞次日生活；允许稍后重建。
+- [x] 用户删除来源时相关日记失效或重建。
+- [x] 日记不能直接创建用户长期事实。
+- [x] 明确 v1 静态存储威胁模型、磁盘明文提示、备份暴露风险和未来加密迁移；远端生成按 Provider 单独授权并受模型认证约束。
 
 验收：连续 30 天模拟日记不出现高比例复刻；所有用户事实可回溯；禁记内容不进入日记。
+
+LIFE.8 施工记录（2026-07-26）：Schema 70 新增 DiaryEntry、append-only revisions、ContinuityThread 与逐来源 revision/hash。仅接受 active 且 revision 匹配的 LifeEvent（拒绝 planned）、已细化 schedule segment、active ImportantDate、active/completed goal；无效来源不生成，重建扫描会撤销最后来源失效的日记。日记 structured contract 沿用 `life_diary_reflection`；本地过滤把密码/密钥/身份/住址/病历/创伤/银行卡等标记 sensitive。存储策略 private/ask/natural/never 映射产品语义 private/may_share/shared/never：private/never 永不分享，ask 需逐次授权，sensitive 仅允许逐次授权或 local + `local_sensitive_verified`。同 motif 第四次被 fatigue guard 拒绝；30 天确定性 fallback 无完全重复条目。日记写入不触碰 `memory_fragments` 或 delivery。v1 正文仍为 SQLite 明文，备份会复制内容；未来加密必须做显式迁移，不能以当前实现暗示静态加密。专项 9 项通过。阶段独立 Review 留待 LIFE 总体 Review。
 
 建议 PR：`feat(life): add grounded diary and continuity threads`
 

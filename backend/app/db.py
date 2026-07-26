@@ -3192,6 +3192,62 @@ MIGRATIONS = [
         );
         """,
     ),
+    (
+        70,
+        """
+        -- LIFE.8: sourced diary entries and continuity threads.
+        CREATE TABLE continuity_threads (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            motif_code TEXT NOT NULL,
+            status TEXT NOT NULL CHECK(status IN ('active','closed','revoked')),
+            revision INTEGER NOT NULL DEFAULT 1 CHECK(revision >= 1),
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+
+        CREATE TABLE diary_entries (
+            id TEXT PRIMARY KEY,
+            thread_id TEXT REFERENCES continuity_threads(id) ON DELETE SET NULL,
+            entry_date TEXT NOT NULL,
+            status TEXT NOT NULL CHECK(status IN ('active','revoked','rebuilding')),
+            sensitivity TEXT NOT NULL CHECK(sensitivity IN ('normal','sensitive')),
+            share_policy TEXT NOT NULL CHECK(share_policy IN ('private','ask','natural','never')),
+            revision INTEGER NOT NULL DEFAULT 1 CHECK(revision >= 1),
+            title TEXT NOT NULL,
+            body TEXT NOT NULL,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_diary_entries_date ON diary_entries(entry_date,status);
+
+        CREATE TABLE diary_entry_revisions (
+            id TEXT PRIMARY KEY,
+            diary_entry_id TEXT NOT NULL REFERENCES diary_entries(id) ON DELETE CASCADE,
+            revision INTEGER NOT NULL CHECK(revision >= 1),
+            title TEXT NOT NULL,
+            body TEXT NOT NULL,
+            reason_code TEXT NOT NULL,
+            created_at REAL NOT NULL,
+            UNIQUE(diary_entry_id,revision)
+        );
+
+        CREATE TABLE diary_entry_sources (
+            id TEXT PRIMARY KEY,
+            diary_entry_id TEXT NOT NULL REFERENCES diary_entries(id) ON DELETE CASCADE,
+            source_kind TEXT NOT NULL CHECK(source_kind IN (
+                'life_event','schedule_segment','important_date','personal_goal'
+            )),
+            source_id TEXT NOT NULL,
+            source_revision TEXT NOT NULL,
+            source_hash TEXT NOT NULL,
+            active INTEGER NOT NULL DEFAULT 1 CHECK(active IN (0,1)),
+            created_at REAL NOT NULL,
+            removed_at REAL,
+            UNIQUE(diary_entry_id,source_kind,source_id,source_revision)
+        );
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
