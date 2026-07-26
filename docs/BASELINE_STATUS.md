@@ -2,7 +2,7 @@
 
 > 最近复核日期：2026-07-26
 >
-> 当前施工状态：CDS PR #2 已合并；LIFE.0～LIFE.13 技术施工完成，等待真实安装/休眠人工验收与 LIFE 总体 Review；Schema 71 为当前版本，KIG 尚未解锁
+> 当前施工状态：CDS PR #2 已合并；LIFE.0～LIFE.13 技术施工与 Windows 安装版验收完成，等待 LIFE 总体 Review；Schema 71 为当前版本，KIG 尚未解锁
 >
 > 当前版本：`v0.1.0` MVP 骨架（知识库系统 K 系列已完成）
 >
@@ -37,7 +37,7 @@
 |---|---|---|
 | 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests -q -p no:cacheprovider` | 通过：2416 passed，1 warning；当前 Schema 71 |
 | 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：50 项；TypeScript 检查及 Vite 生产构建 190 modules 成功 |
-| Electron / Windows | Electron contract/语法；`scripts\test-frozen-backend.ps1 -Port 18756`；win-unpacked 生命周期 smoke | 3 项 contract 及语法通过；冻结后端、BGE-M3、首启、托盘保活、崩溃清理与重启通过；实际安装和整机休眠/唤醒待人工验收 |
+| Electron / Windows | Electron contract/语法；`scripts\test-frozen-backend.ps1 -Port 18756`；win-unpacked 与 NSIS 临时安装生命周期 smoke | 3 项 contract 及语法通过；冻结后端、IANA 时区、BGE-M3、真实安装、首启、托盘保活、崩溃清理、重启及卸载清理通过；休眠/唤醒由 contract、重启推进和 resume guard 场景验证 |
 
 CDS.12 以 Schema 63 新增三张无正文反馈/校准审计表；CDS.13 未再新增迁移。`eap-decision-run-adapter-v1` 保持兼容。LIFE.0～13 已完成技术施工：Schema 64～71 分别建立来源事件、运行时、CatchUp、日程、目标、日期、日记和 SelfTimeline；6 类模型决策因样本/Provider 门不足继续 Shadow。LIFE 产品页、EAP adapter、IANA 时区与保守派生数据压缩已接线。KIG 仍只有预留契约，必须等待 LIFE 总 Review 与正式冻结。
 
