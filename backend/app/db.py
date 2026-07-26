@@ -2820,6 +2820,56 @@ MIGRATIONS = [
             ON cognition_budget_events(created_at,provider_location,status);
         """,
     ),
+    (
+        63,
+        """
+        -- CDS.12: body-free feedback and per-decision calibration audit.
+        CREATE TABLE cognition_calibration_profiles (
+            decision_kind TEXT PRIMARY KEY,
+            feedback_domain TEXT NOT NULL CHECK(feedback_domain IN (
+                'recall','proactive','relationship','memory'
+            )),
+            profile_version TEXT NOT NULL,
+            revision INTEGER NOT NULL CHECK(revision >= 0),
+            parameters_json TEXT NOT NULL DEFAULT '{}',
+            feedback_count INTEGER NOT NULL DEFAULT 0 CHECK(feedback_count >= 0),
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+
+        CREATE TABLE cognition_feedback_signals (
+            id TEXT PRIMARY KEY,
+            decision_kind TEXT NOT NULL,
+            feedback_domain TEXT NOT NULL CHECK(feedback_domain IN (
+                'recall','proactive','relationship','memory'
+            )),
+            feedback_kind TEXT NOT NULL CHECK(feedback_kind IN (
+                'helpful','not_helpful','missing','wrong_source','quick_reply','later_reply',
+                'unanswered','rejected','corrected'
+            )),
+            source_run_id TEXT REFERENCES decision_runs(id) ON DELETE SET NULL,
+            idempotency_key TEXT NOT NULL UNIQUE,
+            parameter_delta_json TEXT NOT NULL DEFAULT '{}',
+            profile_revision INTEGER NOT NULL CHECK(profile_revision >= 1),
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_cognition_feedback_decision
+            ON cognition_feedback_signals(decision_kind,created_at);
+
+        CREATE TABLE cognition_calibration_events (
+            id TEXT PRIMARY KEY,
+            decision_kind TEXT NOT NULL,
+            event_type TEXT NOT NULL CHECK(event_type IN ('feedback_applied','profile_rolled_back')),
+            from_revision INTEGER NOT NULL CHECK(from_revision >= 0),
+            to_revision INTEGER NOT NULL CHECK(to_revision > from_revision),
+            changes_json TEXT NOT NULL DEFAULT '{}',
+            idempotency_key TEXT NOT NULL UNIQUE,
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_cognition_calibration_events_decision
+            ON cognition_calibration_events(decision_kind,created_at);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

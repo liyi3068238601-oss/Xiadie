@@ -994,14 +994,16 @@ test(cognition): freeze decision baselines and evaluation corpus
 
 ### CDS.12：反馈与个体化校准
 
-* [ ] 建立召回、主动、关系和记忆反馈枚举。
-* [ ] 区分快速回复、稍后回复、未回复、拒绝和纠正。
-* [ ] 反馈只调整偏好和策略，不改变硬边界。
-* [ ] 支持按决策器回滚。
-* [ ] 完成跨 Provider 一致性测试。
-* [ ] 输出 Shadow 与真实行为对比报告。
+* [x] 建立召回、主动、关系和记忆反馈枚举。
+* [x] 区分快速回复、稍后回复、未回复、拒绝和纠正。
+* [x] 反馈只调整偏好和策略，不改变硬边界。
+* [x] 支持按决策器回滚。
+* [x] 完成可用 Provider/模型一致性审计；若不足两个真实 Provider，记录限制并保持 Shadow。
+* [x] 输出 Shadow 与真实行为对比报告。
 
 施工授权（2026-07-26）：凡本阶段验收确需真实模型，可直接使用项目已配置的 DeepSeek，不以 token 成本缩减必要样本；仍须经过结构化探测、来源授权、超时、隐私、预算记账与安全回退门禁，且真实模型结果不能绕过 Shadow/Advisory/Active 晋级规则。
+
+施工记录（2026-07-26）：Schema 63 新增三张无正文反馈/校准/事件表，以四域枚举绑定具体 DecisionKind；同一反馈并发幂等，五类回复状态保持独立，回滚只作用于单一决策器。可调参数仅 `selection_bias` 与 `caution_bias` 且严格限幅，ownership、privacy、模式上限、来源 revision、候选白名单、validator 和协议版本列为不可调硬边界。Profile 当前只保存 Shadow 建议，未接入生产行为。采纳 CDS.11 OBS-1，补齐 selected ID 逐项非空字符串校验。真实 DeepSeek 纯合成测试中，v4-pro 为 6/6 精确合规，v4-flash 为 3/6；两模型一致率 50%，且只有一个真实 Provider，故所有决策器继续 Shadow，不授予 decision-level 认证。详见 ADR-0058、`docs/reports/cds-12-calibration-shadow.md` 与 JSON 证据。CDS.12 施工完成并按用户指令连续进入 CDS.13。
 
 ### CDS.13：设置、诊断与冻结
 

@@ -16,7 +16,8 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from . import (
-    archivist, archivist_worker, cognitive_decision, cognition_runtime, companion_state, context_assembler, context_budget,
+    archivist, archivist_worker, cognitive_decision, cognition_calibration,
+    cognition_runtime, companion_state, context_assembler, context_budget,
     context_controls, context_diagnostics, conversation_summaries,
     conversation_summary_service, db,
     entities, episode_consolidator, history_recall,
@@ -1035,6 +1036,43 @@ def proactive_diagnostics(limit: int = 100) -> dict:
 def cognition_diagnostics(decision_kind: str | None = None, limit: int = 50) -> dict:
     """Read-only CDS diagnostics with a strict body-free field allowlist."""
     return cognitive_decision.diagnostics(decision_kind=decision_kind, limit=limit)
+
+
+class CognitionFeedbackIn(BaseModel):
+    decision_kind: str = Field(min_length=1, max_length=80)
+    feedback_kind: str = Field(min_length=1, max_length=40)
+    source_run_id: str | None = Field(default=None, max_length=80)
+    request_nonce: str = Field(min_length=1, max_length=128)
+
+
+class CognitionRollbackIn(BaseModel):
+    request_nonce: str = Field(min_length=1, max_length=128)
+
+
+@app.get("/api/cognition/calibration")
+def cognition_calibration_diagnostics(limit: int = 100) -> dict:
+    return cognition_calibration.diagnostics(limit)
+
+
+@app.post("/api/cognition/feedback")
+def submit_cognition_feedback(body: CognitionFeedbackIn) -> dict:
+    try:
+        return cognition_calibration.submit_feedback(
+            decision_kind=body.decision_kind, feedback_kind=body.feedback_kind,
+            source_run_id=body.source_run_id, request_nonce=body.request_nonce,
+        )
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+
+@app.post("/api/cognition/calibration/{decision_kind}/rollback")
+def rollback_cognition_profile(decision_kind: str, body: CognitionRollbackIn) -> dict:
+    try:
+        return cognition_calibration.rollback_profile(
+            decision_kind=decision_kind, request_nonce=body.request_nonce,
+        )
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
 
 
 @app.delete("/api/proactive/data")

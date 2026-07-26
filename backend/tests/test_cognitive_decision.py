@@ -52,7 +52,7 @@ def _valid_output(candidate_id: str = "c1") -> str:
     })
 
 
-def test_schema_62_extends_shared_ledger_without_parallel_run_table():
+def test_schema_63_keeps_shared_ledger_without_parallel_run_table():
     conn = db.connect()
     try:
         version = conn.execute(
@@ -64,7 +64,7 @@ def test_schema_62_extends_shared_ledger_without_parallel_run_table():
         )}
     finally:
         conn.close()
-    assert version == "62"
+    assert version == "63"
     assert {
         "policy_version", "mode", "source_snapshot_json", "snapshot_hash",
         "candidate_snapshot_hash", "candidate_count", "selected_count", "action",

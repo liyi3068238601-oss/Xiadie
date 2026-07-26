@@ -124,6 +124,7 @@ def validate_decision_result(
     if (
         not isinstance(value["selected_ids"], tuple)
         or not isinstance(value["reason_codes"], tuple)
+        or any(not isinstance(item, str) or not item for item in value["selected_ids"])
         or any(not isinstance(item, str) or not item for item in value["reason_codes"])
     ):
         raise ValueError("decision collections are invalid")

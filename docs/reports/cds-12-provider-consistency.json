@@ -1,0 +1,55 @@
+{
+  "evaluation_version": "cds12-provider-consistency-v1",
+  "synthetic_only": true,
+  "contains_user_data": false,
+  "raw_output_persisted": false,
+  "configured_real_provider_ids": [
+    "deepseek"
+  ],
+  "configured_real_provider_count": 1,
+  "model_results": [
+    {
+      "provider_id": "deepseek",
+      "model_id": "deepseek-v4-flash",
+      "structured_probe_passed": true,
+      "samples": 6,
+      "valid": 3,
+      "exact": 3,
+      "valid_rate": 0.5,
+      "exact_rate": 0.5,
+      "latency_ms_median": 1157,
+      "latency_ms_max": 1526,
+      "prompt_tokens": 159,
+      "completion_tokens": 250,
+      "error_codes": {
+        "LLMError": 1,
+        "json_repair_failed": 2
+      }
+    },
+    {
+      "provider_id": "deepseek",
+      "model_id": "deepseek-v4-pro",
+      "structured_probe_passed": true,
+      "samples": 6,
+      "valid": 6,
+      "exact": 6,
+      "valid_rate": 1.0,
+      "exact_rate": 1.0,
+      "latency_ms_median": 1881,
+      "latency_ms_max": 2042,
+      "prompt_tokens": 318,
+      "completion_tokens": 679,
+      "error_codes": {}
+    }
+  ],
+  "paired_results": [
+    {
+      "left": "deepseek/deepseek-v4-flash",
+      "right": "deepseek/deepseek-v4-pro",
+      "samples": 6,
+      "agreement_rate": 0.5
+    }
+  ],
+  "promotion_provider_gate_met": false,
+  "mode_decision": "remain_shadow"
+}
