@@ -1099,17 +1099,19 @@ LIFE.0 施工记录（2026-07-26）：CDS PR #2 已合并，锁定 predecessor `
 
 目标：复用 CDS 冻结的共享协议、审计和降级底座，只增加 LIFE 领域契约。
 
-- [ ] 审计并复用现有 `decision_runs`、repository 和事件，不新增平行通用表。
-- [ ] 在 CDS protocol registry 中注册 LIFE 任务白名单、领域输入/结果 Schema 与算法版本。
-- [ ] 复用 CDS structured output、一次修复、超时、熔断和幂等框架；LIFE 不复制运行时。
-- [ ] 输入只使用来源 ID、必要摘要和不可信 JSON 数据。
-- [ ] 应用前重新读取来源并核对 revision/hash。
-- [ ] 原始模型输出不落库。
-- [ ] 记录 token、延迟、模型、错误码和警告，不记录不必要正文。
-- [ ] 支持 mock Provider 和固定回放样本。
-- [ ] 决策失败不得阻塞聊天和应用启动。
+- [x] 审计并复用现有 `decision_runs`、repository 和事件，不新增平行通用表。
+- [x] 在 CDS protocol registry 中注册 LIFE 任务白名单、领域输入/结果 Schema 与算法版本。
+- [x] 复用 CDS structured output、一次修复、超时、熔断和幂等框架；LIFE 不复制运行时。
+- [x] 输入只使用来源 ID、必要摘要和不可信 JSON 数据。
+- [x] 应用前重新读取来源并核对 revision/hash。
+- [x] 原始模型输出不落库。
+- [x] 记录 token、延迟、模型、错误码和警告，不记录不必要正文。
+- [x] 支持 mock Provider 和固定回放样本。
+- [x] 决策失败不得阻塞聊天和应用启动。
 
 验收：同一来源 revision 不重复应用；来源变化时旧建议 100% 拒绝；提示注入不能改协议。
+
+LIFE.1 施工记录（2026-07-26）：新增 `life_decisions.py`，在 CDS 唯一 `DecisionKindRegistry` 中注册 6 类 LIFE Shadow 任务；共享 `decision_runs`、事件、结构化输出、一次修复、token/延迟/模型/错误码诊断及幂等键均保持 CDS 所有权。输入仅在内存中携带有界必要摘要与不可信 JSON，运行账本不存正文；领域 wrapper 在裁决前从 LIFE owner 重读每个来源的 revision/hash，变更或删除时确定性 skip。新增 6 类纯合成固定回放样本与 9 项专项测试，相关 CDS 回归合计 `26 passed, 1 warning`；同 revision 幂等、来源变化拒绝、提示形输出降级和 Provider 失败不阻塞均已覆盖。阶段独立 Review 仍按用户约定留待 LIFE 总体 Review。
 
 建议 PR：`feat(life): register life decisions on cognitive runtime`
 

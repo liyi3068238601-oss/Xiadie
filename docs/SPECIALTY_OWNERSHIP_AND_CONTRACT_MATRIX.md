@@ -110,6 +110,17 @@ candidate_snapshot_hash
 
 原始模型输出默认不落库。
 
+LIFE.1 已在同一 Registry 注册以下 Shadow 白名单，统一使用 `life-decision-input-v1`、`life-decision-result-v1`、`life-decision-validator-v1` 与 `life-decision-skip-v1`：
+
+- `life_schedule_coarse`
+- `life_schedule_detail`
+- `life_schedule_replan`
+- `life_important_date_interpretation`
+- `life_diary_reflection`
+- `life_event_meaning`
+
+这些任务只生成 LIFE 候选建议。`application_owner` 与 `fallback_owner` 均为 LIFE，但当前 Registry 上限为 Shadow；CDS 仍拥有 `decision_runs`、结构化解析、一次修复、诊断与幂等运行时，LIFE 不拥有第二套通用运行账本。
+
 ## 5. Decision Promotion Policy
 
 ### 5.1 Shadow → Advisory
