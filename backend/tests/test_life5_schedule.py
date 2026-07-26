@@ -30,7 +30,7 @@ def test_schema_67_adds_versioned_schedule_and_candidate_tables():
         tables = {row["name"] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     finally:
         conn.close()
-    assert version == "67"
+    assert version == "71"
     assert {"life_schedules", "life_schedule_segments", "life_schedule_replacements", "life_event_candidates"} <= tables
 
 
@@ -75,6 +75,12 @@ def test_create_is_idempotent_for_active_day_and_api_is_read_only():
 
 
 def test_detail_only_creates_planned_candidate_not_diary_or_delivery():
+    conn = db.connect()
+    try:
+        deliveries_before = conn.execute("SELECT COUNT(*) FROM proactive_deliveries").fetchone()[0]
+        diary_before = conn.execute("SELECT COUNT(*) FROM diary_entries").fetchone()[0]
+    finally:
+        conn.close()
     schedule, _ = life_schedule.create_schedule(local_date="2026-07-26", timezone_id="Asia/Shanghai")
     segment = schedule["segments"][1]
     candidate, created = life_schedule.detail_segment(
@@ -84,10 +90,8 @@ def test_detail_only_creates_planned_candidate_not_diary_or_delivery():
     assert candidate["status"] == "proposed" and candidate["source_kind"] == "schedule_segment"
     conn = db.connect()
     try:
-        assert conn.execute("SELECT COUNT(*) FROM proactive_deliveries").fetchone()[0] == 0
-        assert "diary_entries" not in {
-            row["name"] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
-        }
+        assert conn.execute("SELECT COUNT(*) FROM proactive_deliveries").fetchone()[0] == deliveries_before
+        assert conn.execute("SELECT COUNT(*) FROM diary_entries").fetchone()[0] == diary_before
     finally:
         conn.close()
 

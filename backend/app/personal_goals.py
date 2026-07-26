@@ -77,6 +77,52 @@ def get_goal(goal_id: str, *, conn=None) -> dict[str, Any] | None:
             conn.close()
 
 
+def list_goals(*, include_revoked: bool = False, limit: int = 100) -> list[dict[str, Any]]:
+    limit = max(1, min(int(limit), 500))
+    conn = db.connect()
+    try:
+        rows = conn.execute(
+            "SELECT id FROM personal_goals "
+            + ("" if include_revoked else "WHERE status!='revoked' ")
+            + "ORDER BY status='active' DESC,priority DESC,updated_at DESC,id LIMIT ?",
+            (limit,),
+        ).fetchall()
+        return [get_goal(row["id"], conn=conn) for row in rows]
+    finally:
+        conn.close()
+
+
+def rename(goal_id: str, *, expected_revision: int, title: str,
+           now: float | None = None) -> dict[str, Any]:
+    if not title or len(title) > 160:
+        raise GoalError("goal_invalid", "goal title is invalid")
+    now = db.now() if now is None else now
+    conn = db.connect()
+    try:
+        row = conn.execute("SELECT status FROM personal_goals WHERE id=? AND revision=?",
+                           (goal_id, expected_revision)).fetchone()
+        if not row or row["status"] == "revoked":
+            raise GoalError("revision_conflict", "goal changed or is unavailable")
+        revision = expected_revision + 1
+        cursor = conn.execute(
+            "UPDATE personal_goals SET title=?,revision=?,updated_at=? WHERE id=? AND revision=?",
+            (title, revision, now, goal_id, expected_revision),
+        )
+        if cursor.rowcount != 1:
+            conn.rollback()
+            raise GoalError("revision_conflict", "goal changed concurrently")
+        conn.execute(
+            "INSERT INTO personal_goal_events(id,goal_id,event_type,from_status,to_status,revision,reason_code,created_at) "
+            "VALUES(?,?,?,?,?,?,?,?)",
+            (db.new_id(), goal_id, "renamed", row["status"], row["status"], revision,
+             "user_renamed", now),
+        )
+        conn.commit()
+        return get_goal(goal_id, conn=conn)
+    finally:
+        conn.close()
+
+
 def transition(goal_id: str, *, expected_revision: int, to_status: str,
                reason_code: str, now: float | None = None) -> dict[str, Any]:
     if not reason_code:

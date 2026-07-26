@@ -137,6 +137,47 @@ def get_entry(item_id: str, *, conn=None) -> dict[str, Any] | None:
             conn.close()
 
 
+def list_entries(*, include_revoked: bool = False, limit: int = 100) -> list[dict[str, Any]]:
+    limit = max(1, min(int(limit), 500))
+    conn = db.connect()
+    try:
+        rows = conn.execute(
+            "SELECT id FROM diary_entries "
+            + ("" if include_revoked else "WHERE status!='revoked' ")
+            + "ORDER BY entry_date DESC,updated_at DESC,id LIMIT ?", (limit,),
+        ).fetchall()
+        return [get_entry(row["id"], conn=conn) for row in rows]
+    finally:
+        conn.close()
+
+
+def revoke_entry(item_id: str, *, expected_revision: int,
+                 now: float | None = None) -> dict[str, Any]:
+    now = db.now() if now is None else now
+    conn = db.connect()
+    try:
+        row = conn.execute("SELECT * FROM diary_entries WHERE id=?", (item_id,)).fetchone()
+        if not row or row["revision"] != expected_revision or row["status"] == "revoked":
+            raise DiaryError("revision_conflict", "diary entry changed or is unavailable")
+        revision = expected_revision + 1
+        conn.execute(
+            "INSERT INTO diary_entry_revisions(id,diary_entry_id,revision,title,body,reason_code,created_at) "
+            "VALUES(?,?,?,?,?,?,?)",
+            (db.new_id(), item_id, revision, row["title"], row["body"], "user_deleted", now),
+        )
+        cursor = conn.execute(
+            "UPDATE diary_entries SET status='revoked',revision=?,updated_at=? WHERE id=? AND revision=?",
+            (revision, now, item_id, expected_revision),
+        )
+        if cursor.rowcount != 1:
+            conn.rollback()
+            raise DiaryError("revision_conflict", "diary entry changed concurrently")
+        conn.commit()
+        return get_entry(item_id, conn=conn)
+    finally:
+        conn.close()
+
+
 def revise_entry(item_id: str, *, expected_revision: int, title: str, body: str,
                  reason_code: str, now: float | None = None) -> dict[str, Any]:
     if not title or len(title) > 160 or not body or len(body) > 8_000 or not reason_code:

@@ -82,6 +82,78 @@ def get(item_id: str, *, conn=None) -> dict[str, Any] | None:
             conn.close()
 
 
+def list_dates(*, include_revoked: bool = False, limit: int = 100) -> list[dict[str, Any]]:
+    limit = max(1, min(int(limit), 500))
+    conn = db.connect()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM important_dates "
+            + ("" if include_revoked else "WHERE status!='revoked' ")
+            + "ORDER BY date_month,date_day,label,id LIMIT ?", (limit,),
+        ).fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        conn.close()
+
+
+def revise(item_id: str, *, expected_revision: int, label: str,
+           celebration_policy: str, now: float | None = None) -> dict[str, Any]:
+    if not label or len(label) > 160 or celebration_policy not in {"natural", "day_only", "none"}:
+        raise ImportantDateError("date_invalid", "important date update is invalid")
+    now = db.now() if now is None else now
+    conn = db.connect()
+    try:
+        row = conn.execute("SELECT * FROM important_dates WHERE id=?", (item_id,)).fetchone()
+        if not row or row["revision"] != expected_revision or row["status"] == "revoked":
+            raise ImportantDateError("revision_conflict", "important date changed or is unavailable")
+        revision = expected_revision + 1
+        cursor = conn.execute(
+            "UPDATE important_dates SET label=?,celebration_policy=?,revision=?,updated_at=? "
+            "WHERE id=? AND revision=?",
+            (label, celebration_policy, revision, now, item_id, expected_revision),
+        )
+        if cursor.rowcount != 1:
+            conn.rollback()
+            raise ImportantDateError("revision_conflict", "important date changed concurrently")
+        conn.execute(
+            "INSERT INTO important_date_events(id,important_date_id,event_type,from_status,to_status,revision,"
+            "reason_code,created_at) VALUES(?,?,?,?,?,?,?,?)",
+            (db.new_id(), item_id, "revised", row["status"], row["status"], revision,
+             "user_revised", now),
+        )
+        conn.commit()
+        return get(item_id, conn=conn)
+    finally:
+        conn.close()
+
+
+def revoke(item_id: str, *, expected_revision: int, now: float | None = None) -> dict[str, Any]:
+    now = db.now() if now is None else now
+    conn = db.connect()
+    try:
+        row = conn.execute("SELECT * FROM important_dates WHERE id=?", (item_id,)).fetchone()
+        if not row or row["revision"] != expected_revision or row["status"] == "revoked":
+            raise ImportantDateError("revision_conflict", "important date changed or is unavailable")
+        revision = expected_revision + 1
+        cursor = conn.execute(
+            "UPDATE important_dates SET status='revoked',revision=?,updated_at=? WHERE id=? AND revision=?",
+            (revision, now, item_id, expected_revision),
+        )
+        if cursor.rowcount != 1:
+            conn.rollback()
+            raise ImportantDateError("revision_conflict", "important date changed concurrently")
+        conn.execute(
+            "INSERT INTO important_date_events(id,important_date_id,event_type,from_status,to_status,revision,"
+            "reason_code,created_at) VALUES(?,?,?,?,?,?,?,?)",
+            (db.new_id(), item_id, "revoked", row["status"], "revoked", revision,
+             "user_deleted", now),
+        )
+        conn.commit()
+        return get(item_id, conn=conn)
+    finally:
+        conn.close()
+
+
 def confirm(item_id: str, *, expected_revision: int, date_year: int | None,
             date_month: int, date_day: int, now: float | None = None) -> dict[str, Any]:
     now = db.now() if now is None else now

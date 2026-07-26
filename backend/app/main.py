@@ -21,11 +21,12 @@ from . import (
     cognition_settings, companion_state, context_assembler, context_budget,
     context_controls, context_diagnostics, conversation_summaries,
     conversation_summary_service, db,
-    entities, episode_consolidator, history_recall,
+    diary, entities, episode_consolidator, history_recall, important_dates,
     episode_summary_service, episodes, knowledge, knowledge_cleanup, knowledge_context,
     knowledge_embeddings, knowledge_grants,
     knowledge_management, knowledge_parser, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search,
-    knowledge_worker, life_catchup_service, life_events, life_runtime, life_schedule, llm, lore, memory, memory_conflicts, memory_shadow_proposals,
+    knowledge_worker, life_catchup, life_catchup_service, life_events, life_runtime, life_schedule, llm, lore, memory, memory_conflicts, memory_shadow_proposals,
+    personal_goals,
     saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, secret_store, self_timeline, slow_lifecycle,
 )
@@ -1075,6 +1076,226 @@ def get_life_state() -> dict:
 def get_life_schedule(local_date: str, timezone_id: str = "Asia/Shanghai") -> dict:
     schedule = life_schedule.get_active_schedule(local_date=local_date, timezone_id=timezone_id)
     return {"item": schedule}
+
+
+class LifeSettingsIn(BaseModel):
+    mode: str
+
+
+class LifeDiaryUpdateIn(BaseModel):
+    expected_revision: int = Field(ge=1)
+    title: str = Field(min_length=1, max_length=160)
+    body: str = Field(min_length=1, max_length=8_000)
+
+
+class LifeDateCreateIn(BaseModel):
+    label: str = Field(min_length=1, max_length=160)
+    recurrence: str = "yearly_solar"
+    date_year: int | None = None
+    date_month: int = Field(ge=1, le=12)
+    date_day: int = Field(ge=1, le=31)
+    timezone_id: str = Field(default="Asia/Shanghai", min_length=1, max_length=100)
+    celebration_policy: str = "natural"
+
+
+class LifeDateUpdateIn(BaseModel):
+    expected_revision: int = Field(ge=1)
+    label: str = Field(min_length=1, max_length=160)
+    celebration_policy: str
+
+
+class LifeGoalCreateIn(BaseModel):
+    title: str = Field(min_length=1, max_length=160)
+    priority: int = Field(default=3, ge=1, le=5)
+
+
+class LifeGoalUpdateIn(BaseModel):
+    expected_revision: int = Field(ge=1)
+    title: str | None = Field(default=None, min_length=1, max_length=160)
+    status: str | None = None
+
+
+@app.get("/api/life/settings")
+def get_life_settings() -> dict:
+    mode = life_catchup.get_mode()
+    return {"mode": mode, "offline_continuity_default": life_catchup.MODE_CONTINUOUS}
+
+
+@app.patch("/api/life/settings")
+def update_life_settings(body: LifeSettingsIn) -> dict:
+    try:
+        return {"mode": life_catchup.set_mode(body.mode)}
+    except life_catchup.CatchUpError as exc:
+        raise HTTPException(400, detail=exc.code) from exc
+
+
+@app.get("/api/life/diary")
+def list_life_diary(include_revoked: bool = False, limit: int = 100) -> dict:
+    return {"items": diary.list_entries(include_revoked=include_revoked, limit=limit)}
+
+
+@app.patch("/api/life/diary/{item_id}")
+def update_life_diary(item_id: str, body: LifeDiaryUpdateIn) -> dict:
+    try:
+        return diary.revise_entry(
+            item_id, expected_revision=body.expected_revision, title=body.title,
+            body=body.body, reason_code="user_edited",
+        )
+    except diary.DiaryError as exc:
+        raise HTTPException(409, detail=exc.code) from exc
+
+
+@app.delete("/api/life/diary/{item_id}")
+def delete_life_diary(item_id: str, expected_revision: int) -> dict:
+    try:
+        return diary.revoke_entry(item_id, expected_revision=expected_revision)
+    except diary.DiaryError as exc:
+        raise HTTPException(409, detail=exc.code) from exc
+
+
+@app.get("/api/life/dates")
+def list_life_dates(include_revoked: bool = False, limit: int = 100) -> dict:
+    return {"items": important_dates.list_dates(include_revoked=include_revoked, limit=limit)}
+
+
+@app.post("/api/life/dates")
+def create_life_date(body: LifeDateCreateIn) -> dict:
+    source_id = db.new_id()
+    source_hash = hashlib.sha256(
+        json.dumps(body.model_dump(), ensure_ascii=False, sort_keys=True).encode()
+    ).hexdigest()
+    try:
+        item = important_dates.create_candidate(
+            label=body.label, recurrence=body.recurrence, date_year=body.date_year,
+            date_month=body.date_month, date_day=body.date_day, timezone_id=body.timezone_id,
+            confidence=1, source_kind="manual", source_id=source_id, source_revision="1",
+            source_hash=source_hash, celebration_policy=body.celebration_policy,
+        )
+        return important_dates.confirm(
+            item["id"], expected_revision=item["revision"], date_year=body.date_year,
+            date_month=body.date_month, date_day=body.date_day,
+        )
+    except important_dates.ImportantDateError as exc:
+        raise HTTPException(400, detail=exc.code) from exc
+
+
+@app.patch("/api/life/dates/{item_id}")
+def update_life_date(item_id: str, body: LifeDateUpdateIn) -> dict:
+    try:
+        return important_dates.revise(
+            item_id, expected_revision=body.expected_revision, label=body.label,
+            celebration_policy=body.celebration_policy,
+        )
+    except important_dates.ImportantDateError as exc:
+        raise HTTPException(409, detail=exc.code) from exc
+
+
+@app.delete("/api/life/dates/{item_id}")
+def delete_life_date(item_id: str, expected_revision: int) -> dict:
+    try:
+        return important_dates.revoke(item_id, expected_revision=expected_revision)
+    except important_dates.ImportantDateError as exc:
+        raise HTTPException(409, detail=exc.code) from exc
+
+
+@app.get("/api/life/goals")
+def list_life_goals(include_revoked: bool = False, limit: int = 100) -> dict:
+    return {"items": personal_goals.list_goals(include_revoked=include_revoked, limit=limit)}
+
+
+@app.post("/api/life/goals")
+def create_life_goal(body: LifeGoalCreateIn) -> dict:
+    source_id = db.new_id()
+    source_hash = hashlib.sha256(body.title.encode()).hexdigest()
+    try:
+        item = personal_goals.create_candidate(
+            title=body.title, priority=body.priority, confidence=1,
+            source_kind="user_explicit", source_id=source_id, source_revision="1",
+            source_hash=source_hash, explicit_confirmation=True,
+        )
+        return personal_goals.transition(
+            item["id"], expected_revision=item["revision"], to_status="active",
+            reason_code="user_created",
+        )
+    except personal_goals.GoalError as exc:
+        raise HTTPException(400, detail=exc.code) from exc
+
+
+@app.patch("/api/life/goals/{item_id}")
+def update_life_goal(item_id: str, body: LifeGoalUpdateIn) -> dict:
+    revision = body.expected_revision
+    try:
+        item = personal_goals.get_goal(item_id)
+        if not item or item["revision"] != revision:
+            raise personal_goals.GoalError("revision_conflict", "goal changed")
+        if body.title is not None and body.title != item["title"]:
+            item = personal_goals.rename(item_id, expected_revision=revision, title=body.title)
+            revision = item["revision"]
+        if body.status is not None and body.status != item["status"]:
+            item = personal_goals.transition(
+                item_id, expected_revision=revision, to_status=body.status,
+                reason_code="user_changed_status",
+            )
+        return item
+    except personal_goals.GoalError as exc:
+        raise HTTPException(409, detail=exc.code) from exc
+
+
+@app.delete("/api/life/goals/{item_id}")
+def delete_life_goal(item_id: str, expected_revision: int) -> dict:
+    try:
+        return personal_goals.transition(
+            item_id, expected_revision=expected_revision, to_status="revoked",
+            reason_code="user_deleted",
+        )
+    except personal_goals.GoalError as exc:
+        raise HTTPException(409, detail=exc.code) from exc
+
+
+@app.post("/api/life/rebuild")
+def rebuild_life_views() -> dict:
+    affected_diaries = diary.rebuild_invalid_sources()
+    indexed = self_timeline.refresh()
+    return {"affected_diaries": affected_diaries, "timeline_entries": indexed}
+
+
+@app.get("/api/life/export")
+def export_life_data() -> dict:
+    return {
+        "export_version": "life-export-v1", "exported_at": db.now(),
+        "settings": get_life_settings(), "state": get_life_state(),
+        "events": life_events.list_events(include_revoked=True, limit=500),
+        "diary": diary.list_entries(include_revoked=True, limit=500),
+        "important_dates": important_dates.list_dates(include_revoked=True, limit=500),
+        "personal_goals": personal_goals.list_goals(include_revoked=True, limit=500),
+    }
+
+
+@app.get("/api/life/diagnostics")
+def get_life_diagnostics() -> dict:
+    state = life_runtime.get_state()
+    conn = db.connect()
+    try:
+        schema_row = conn.execute(
+            "SELECT value FROM schema_meta WHERE key='schema_version'"
+        ).fetchone()
+        counts = {
+            table: conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+            for table in ("life_events", "diary_entries", "important_dates", "personal_goals")
+        }
+        sources = [dict(row) for row in conn.execute(
+            "SELECT source_type,source_id,source_revision,source_status FROM self_timeline_entries "
+            "ORDER BY indexed_at DESC,id DESC LIMIT 20"
+        ).fetchall()]
+    finally:
+        conn.close()
+    return {
+        "schema_version": schema_row["value"] if schema_row else "unknown",
+        "state_revision": state.revision if state else None,
+        "state_algorithm": state.algorithm_version if state else life_runtime.ALGORITHM_VERSION,
+        "anomaly_code": state.anomaly_code if state else None,
+        "counts": counts, "sources": sources,
+    }
 
 
 class CognitionFeedbackIn(BaseModel):

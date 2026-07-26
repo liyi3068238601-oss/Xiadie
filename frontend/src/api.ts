@@ -76,6 +76,112 @@ export function getLifeSchedule(localDate: string, timezoneId = "Asia/Shanghai")
     `/api/life/schedules/${encodeURIComponent(localDate)}?timezone_id=${encodeURIComponent(timezoneId)}`,
   );
 }
+export type LifeContinuityMode = "continuous_simulated" | "paused" | "disabled";
+export interface LifeSettings {
+  mode: LifeContinuityMode;
+  offline_continuity_default: LifeContinuityMode;
+}
+export interface LifeState {
+  initialized: boolean;
+  algorithm_version: string;
+  revision?: number;
+  timezone_id?: string;
+  current_activity?: string;
+  energy?: number;
+  focus?: number;
+  rest_need?: number;
+  social_openness?: number;
+  conservative_mode?: boolean;
+  anomaly_code?: string | null;
+}
+export interface LifeDiaryEntry {
+  id: string;
+  entry_date: string;
+  status: "active" | "revoked" | "rebuilding";
+  sensitivity: "normal" | "sensitive";
+  share_policy: "private" | "ask" | "natural" | "never";
+  revision: number;
+  title: string;
+  body: string;
+}
+export interface LifeImportantDate {
+  id: string;
+  label: string;
+  status: "candidate" | "active" | "revoked";
+  recurrence: "once" | "yearly_solar";
+  date_year: number | null;
+  date_month: number | null;
+  date_day: number | null;
+  timezone_id: string;
+  celebration_policy: "natural" | "day_only" | "none";
+  revision: number;
+}
+export interface LifeGoal {
+  id: string;
+  title: string;
+  status: "candidate" | "active" | "paused" | "completed" | "revoked";
+  priority: number;
+  revision: number;
+}
+export interface LifeDiagnostics {
+  schema_version: string;
+  state_revision: number | null;
+  state_algorithm: string;
+  anomaly_code: string | null;
+  counts: Record<string, number>;
+  sources: Array<{
+    source_type: string;
+    source_id: string;
+    source_revision: string;
+    source_status: string;
+  }>;
+}
+export const getLifeSettings = () => j<LifeSettings>("/api/life/settings");
+export const updateLifeSettings = (mode: LifeContinuityMode) =>
+  j<{ mode: LifeContinuityMode }>("/api/life/settings", {
+    method: "PATCH", body: JSON.stringify({ mode }),
+  });
+export const getLifeState = () => j<LifeState>("/api/life/state");
+export const listLifeDiary = () => j<{ items: LifeDiaryEntry[] }>("/api/life/diary");
+export const updateLifeDiary = (id: string, body: { expected_revision: number; title: string; body: string }) =>
+  j<LifeDiaryEntry>(`/api/life/diary/${encodeURIComponent(id)}`, {
+    method: "PATCH", body: JSON.stringify(body),
+  });
+export const deleteLifeDiary = (id: string, revision: number) =>
+  j<LifeDiaryEntry>(`/api/life/diary/${encodeURIComponent(id)}?expected_revision=${revision}`, {
+    method: "DELETE",
+  });
+export const listLifeDates = () => j<{ items: LifeImportantDate[] }>("/api/life/dates");
+export const createLifeDate = (body: {
+  label: string; recurrence: "once" | "yearly_solar"; date_year?: number | null;
+  date_month: number; date_day: number; timezone_id?: string;
+  celebration_policy?: LifeImportantDate["celebration_policy"];
+}) => j<LifeImportantDate>("/api/life/dates", { method: "POST", body: JSON.stringify(body) });
+export const updateLifeDate = (id: string, body: {
+  expected_revision: number; label: string; celebration_policy: LifeImportantDate["celebration_policy"];
+}) => j<LifeImportantDate>(`/api/life/dates/${encodeURIComponent(id)}`, {
+  method: "PATCH", body: JSON.stringify(body),
+});
+export const deleteLifeDate = (id: string, revision: number) =>
+  j<LifeImportantDate>(`/api/life/dates/${encodeURIComponent(id)}?expected_revision=${revision}`, {
+    method: "DELETE",
+  });
+export const listLifeGoals = () => j<{ items: LifeGoal[] }>("/api/life/goals");
+export const createLifeGoal = (title: string, priority = 3) =>
+  j<LifeGoal>("/api/life/goals", { method: "POST", body: JSON.stringify({ title, priority }) });
+export const updateLifeGoal = (id: string, body: {
+  expected_revision: number; title?: string; status?: LifeGoal["status"];
+}) => j<LifeGoal>(`/api/life/goals/${encodeURIComponent(id)}`, {
+  method: "PATCH", body: JSON.stringify(body),
+});
+export const deleteLifeGoal = (id: string, revision: number) =>
+  j<LifeGoal>(`/api/life/goals/${encodeURIComponent(id)}?expected_revision=${revision}`, {
+    method: "DELETE",
+  });
+export const rebuildLifeViews = () =>
+  j<{ affected_diaries: number; timeline_entries: number }>("/api/life/rebuild", { method: "POST" });
+export const exportLifeData = () => j<Record<string, unknown>>("/api/life/export");
+export const getLifeDiagnostics = () => j<LifeDiagnostics>("/api/life/diagnostics");
 export interface Message {
   id: string;
   session_id: string;
