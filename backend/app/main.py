@@ -25,7 +25,7 @@ from . import (
     episode_summary_service, episodes, knowledge, knowledge_cleanup, knowledge_context,
     knowledge_embeddings, knowledge_grants,
     knowledge_management, knowledge_parser, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search,
-    knowledge_worker, llm, lore, memory, memory_conflicts, memory_shadow_proposals,
+    knowledge_worker, life_events, llm, lore, memory, memory_conflicts, memory_shadow_proposals,
     saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, secret_store, slow_lifecycle,
 )
@@ -1038,6 +1038,17 @@ def proactive_diagnostics(limit: int = 100) -> dict:
 def cognition_diagnostics(decision_kind: str | None = None, limit: int = 50) -> dict:
     """Read-only CDS diagnostics with a strict body-free field allowlist."""
     return cognitive_decision.diagnostics(decision_kind=decision_kind, limit=limit)
+
+
+@app.get("/api/life/events")
+def get_life_events(include_revoked: bool = False, limit: int = 100) -> dict:
+    """Read-only LIFE.2 fact-layer projection; mutation remains domain-owned."""
+    return {"items": life_events.list_events(include_revoked=include_revoked, limit=limit)}
+
+
+@app.get("/api/life/events/diagnostics")
+def get_life_event_diagnostics(event_id: str | None = None, limit: int = 200) -> dict:
+    return {"items": life_events.diagnostics(event_id=event_id, limit=limit)}
 
 
 class CognitionFeedbackIn(BaseModel):

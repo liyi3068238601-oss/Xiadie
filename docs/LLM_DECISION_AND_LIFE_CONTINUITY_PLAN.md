@@ -1119,15 +1119,17 @@ LIFE.1 施工记录（2026-07-26）：新增 `life_decisions.py`，在 CDS 唯�
 
 目标：先建立计划、模拟、观察和真实执行的唯一账本。
 
-- [ ] 新增 `life_events`、source links、event revisions 和审计事件。
-- [ ] 实现 world layer 与 lifecycle status 状态机。
-- [ ] `agent_action/performed` 强制要求真实 ToolRun 来源。
-- [ ] planned/inferred 事件不得作为真实执行证据。
-- [ ] 实现撤销、纠正、来源删除和幂等。
-- [ ] 提供只读 API 和开发者诊断，不先接日记和聊天。
-- [ ] 建立非法状态转换、重复物化和来源错配测试。
+- [x] 新增 `life_events`、source links、event revisions 和审计事件。
+- [x] 实现 world layer 与 lifecycle status 状态机。
+- [x] `agent_action/performed` 强制要求真实 ToolRun 来源。
+- [x] planned/inferred 事件不得作为真实执行证据。
+- [x] 实现撤销、纠正、来源删除和幂等。
+- [x] 提供只读 API 和开发者诊断，不先接日记和聊天。
+- [x] 建立非法状态转换、重复物化和来源错配测试。
 
 验收：任何“她做过什么”的记录都能区分计划、模拟与真实执行；无来源真实动作写入率为 0。
+
+LIFE.2 施工记录（2026-07-26）：Schema 64 新增唯一 `life_events` 账本及 append-only revisions、source links、无正文 audit events；事实层严格区分 `planned/simulated/observed/performed`，生命周期为 `active/superseded/revoked`。既有 `tool_logs` 被明确复用为本地 ToolRun 证据源，不新增工具执行账本；`agent_action/performed` 必须外键绑定 `status=done` 的真实记录，其他 performed 组合拒绝。实现幂等冲突、乐观 revision 纠正、撤销和来源删除级联语义，仅暴露 GET API 与开发者诊断，未接日记或聊天。专项 8 项、迁移/API/CDS/邻接回归 113 项通过；无来源真实动作写入率为 0。阶段独立 Review 留待 LIFE 总体 Review。
 
 建议 PR：`feat(life): add provenance-aware life event ledger`
 

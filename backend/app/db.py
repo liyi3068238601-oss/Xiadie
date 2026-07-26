@@ -2870,6 +2870,78 @@ MIGRATIONS = [
             ON cognition_calibration_events(decision_kind,created_at);
         """,
     ),
+    (
+        64,
+        """
+        -- LIFE.2: provenance-aware LifeEvent ledger. Existing tool_logs rows are the
+        -- canonical local ToolRun evidence; LIFE does not create another tool ledger.
+        CREATE TABLE life_events (
+            id TEXT PRIMARY KEY,
+            event_kind TEXT NOT NULL CHECK(event_kind IN (
+                'state_transition','activity','agent_action','observation','date_marker'
+            )),
+            world_layer TEXT NOT NULL CHECK(world_layer IN (
+                'planned','simulated','observed','performed'
+            )),
+            lifecycle_status TEXT NOT NULL CHECK(lifecycle_status IN (
+                'active','superseded','revoked'
+            )),
+            current_revision INTEGER NOT NULL DEFAULT 1 CHECK(current_revision >= 1),
+            tool_run_id TEXT REFERENCES tool_logs(id) ON DELETE RESTRICT,
+            idempotency_key TEXT NOT NULL UNIQUE,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_life_events_timeline
+            ON life_events(world_layer,lifecycle_status,created_at,id);
+
+        CREATE TABLE life_event_revisions (
+            id TEXT PRIMARY KEY,
+            event_id TEXT NOT NULL REFERENCES life_events(id) ON DELETE CASCADE,
+            revision INTEGER NOT NULL CHECK(revision >= 1),
+            event_kind TEXT NOT NULL,
+            world_layer TEXT NOT NULL,
+            summary TEXT NOT NULL DEFAULT '',
+            attributes_json TEXT NOT NULL DEFAULT '{}',
+            change_reason_code TEXT NOT NULL,
+            created_at REAL NOT NULL,
+            UNIQUE(event_id,revision)
+        );
+
+        CREATE TABLE life_event_sources (
+            id TEXT PRIMARY KEY,
+            event_id TEXT NOT NULL REFERENCES life_events(id) ON DELETE CASCADE,
+            source_kind TEXT NOT NULL CHECK(source_kind IN (
+                'life_event','diary_entry','important_date','personal_goal','self_timeline',
+                'tool_run','user_statement','system_observation'
+            )),
+            source_id TEXT NOT NULL,
+            source_revision TEXT NOT NULL,
+            source_hash TEXT NOT NULL,
+            active INTEGER NOT NULL DEFAULT 1 CHECK(active IN (0,1)),
+            created_at REAL NOT NULL,
+            removed_at REAL,
+            UNIQUE(event_id,source_kind,source_id,source_revision)
+        );
+        CREATE INDEX idx_life_event_sources_lookup
+            ON life_event_sources(source_kind,source_id,active);
+
+        CREATE TABLE life_event_audit_events (
+            id TEXT PRIMARY KEY,
+            event_id TEXT NOT NULL REFERENCES life_events(id) ON DELETE CASCADE,
+            event_type TEXT NOT NULL CHECK(event_type IN (
+                'created','corrected','revoked','source_removed'
+            )),
+            from_status TEXT,
+            to_status TEXT NOT NULL,
+            revision INTEGER NOT NULL CHECK(revision >= 1),
+            reason_code TEXT NOT NULL,
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_life_event_audit_event
+            ON life_event_audit_events(event_id,created_at,id);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
