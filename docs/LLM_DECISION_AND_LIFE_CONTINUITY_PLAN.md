@@ -2,7 +2,7 @@
 
 - 版本：v0.3（施工基线、单写者、真实性与长期治理补强）
 - 日期：2026-07-22
-- 状态：CDS 已通过最终 Review 并正式冻结；等待 CDS 合入目标基线并在 LIFE.0 锁定 predecessor commit 后施工
+- 状态：CDS PR #2 已合并，LIFE.0 从 `main@0d7a2d08dc07f123d016da26da117fa58f9a48a1` 开工
 - 专项代号：`LIFE`（Life, Inference, Feedback and Existence）
 - 适用范围：连续自我状态、每日生活日程、离线世界续演、重要日期、日记、自我时间线及其与记忆、情绪、关系和主动陪伴的编排；共享 LLM 决策治理由前置 `CDS` 提供
 - 关联专项：`CTX` 对话上下文、会话摘要与跨会话回忆；`EAP` 完整情感、关系积温与主动陪伴；`CDS` 共享认知决策协议与运行时
@@ -1074,22 +1074,24 @@ Emotional Meaning / Episode Candidate
 
 目标：确认现有实现和关联计划，不重复造轮子。
 
-- [ ] 阅读 `CODEX_PROJECT_CONTEXT.md`、CTX 计划、EAP 计划、现有 Affect/Memory/Lore/Task/Live2D 代码。
-- [ ] 输出“已实现/部分实现/未实现”矩阵。
-- [ ] 审计现有设置、schema 迁移号、worker、模型路由和后台任务。
-- [ ] 填写共享规范的 ConstructionBaseline，锁定已合并 CDS 的不可变提交、最终 Schema、协议/adapter 与测试基线。
-- [ ] 记录现有 affect/relationship 在 1/8/24/72/168 小时的状态基线。
-- [ ] 记录当前所有 LLM 决策点和固定算法清单。
-- [ ] 新增 ADR：LLM 提议、程序裁决；模拟生活、真实执行和观察事实分层。
-- [ ] 新增 ADR：离线世界默认继续运转，但应用完全退出时不执行实际后台动作。
-- [ ] 建立 60 个离线生活、日期、日记和决策场景基线。
-- [ ] 参考项目只做理念分析，不复制代码。
+- [x] 阅读 `CODEX_PROJECT_CONTEXT.md`、CTX 计划、EAP 计划、现有 Affect/Memory/Lore/Task/Live2D 代码。
+- [x] 输出“已实现/部分实现/未实现”矩阵。
+- [x] 审计现有设置、schema 迁移号、worker、模型路由和后台任务。
+- [x] 填写共享规范的 ConstructionBaseline，锁定已合并 CDS 的不可变提交、最终 Schema、协议/adapter 与测试基线。
+- [x] 记录现有 affect/relationship 在 1/8/24/72/168 小时的状态基线。
+- [x] 记录当前所有 LLM 决策点和固定算法清单。
+- [x] 新增 ADR：LLM 提议、程序裁决；模拟生活、真实执行和观察事实分层。
+- [x] 新增 ADR：离线世界默认继续运转，但应用完全退出时不执行实际后台动作。
+- [x] 建立 60 个离线生活、日期、日记和决策场景基线。
+- [x] 参考项目只做理念分析，不复制代码。
 
 完成门：
 
-- [ ] 后端、前端、构建和 Electron 基线通过。
+- [x] 后端、前端、构建和 Electron 基线通过。
 - [ ] 独立 Review 确认没有第二套情绪、记忆或主动发送器。
-- [ ] 文档明确离线续演不等于后台真实执行。
+- [x] 文档明确离线续演不等于后台真实执行。
+
+LIFE.0 施工记录（2026-07-26）：CDS PR #2 已合并，锁定 predecessor `main@0d7a2d08dc07f123d016da26da117fa58f9a48a1`、Schema 63、冻结 CDS/EAP/CTX 协议及后端 2304/前端 47/Vite 189 基线。新增 ADR-0060/0061、60 条纯合成固定场景、无正文 JSON/Markdown 报告和 LIFE.0 专项测试；现有实现矩阵诚实记录为 LIFE 领域 45 条缺失、15 条仅具 CDS 邻接门禁，`life_proactive_seeds` 仍只是 EAP 入口。验证结果为后端 `2310 passed, 1 warning`（含 6 条 LIFE.0 专项测试）、前端 `47 passed`、Vite 189 modules、Electron 语法与 Windows frozen-backend/local embedding smoke 通过。用户已明确本专项完成后再给总体 Review，因此阶段独立 Review 门保留未勾选，期间只形成分阶段审查材料，不冒充外部 Review。
 
 建议 PR：`docs(life): freeze LLM decision and life continuity boundaries`
 

@@ -2,7 +2,7 @@
 
 > 最近复核日期：2026-07-26
 >
-> 当前施工状态：CDS.0～13 已通过最终独立 Review 并正式冻结（0 P0/P1/P2）；Schema 63 为 CDS 最终版本，LIFE 协议门已解除，施工前须锁定已合并 predecessor commit 与 LIFE.0 ConstructionBaseline
+> 当前施工状态：CDS PR #2 已合并；LIFE.0 已从 `main@0d7a2d08dc07f123d016da26da117fa58f9a48a1` 锁定 ConstructionBaseline 并完成内部验证，阶段独立 Review 按用户要求留待 LIFE 总体 Review；Schema 63 仍为当前版本
 >
 > 当前版本：`v0.1.0` MVP 骨架（知识库系统 K 系列已完成）
 >
@@ -35,11 +35,11 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider` | 通过：2304 passed，1 warning；其中施工前 ConstructionBaseline 为 937 passed，当前 Schema 63 |
+| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider` | 通过：2310 passed，1 warning；其中 CDS 合并基线为 2304 passed，新增 6 项 LIFE.0 基线测试，当前 Schema 63 |
 | 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：47 项；TypeScript 检查及 Vite 生产构建 189 modules 成功 |
 | Electron / Windows | `node --check main.js; node --check preload.js`；`scripts\test-frozen-backend.ps1 -Port 18756` | 通过：无语法错误；冻结后端 health 与本地 embedding smoke 通过；沿用既有安全 token/IPC/端口边界 |
 
-CDS.12 以 Schema 63 新增三张无正文反馈/校准审计表；CDS.13 未再新增迁移。`eap-decision-run-adapter-v1` 保持兼容，诊断字段通过独立 `eap-decision-run-diagnostic-v2` 增加；LIFE/KIG 仍只有 `specialty-adapter-contract-v1` 预留契约，不代表两个后续专项已经施工。当前九个 DecisionKind 全部最高为 Shadow。本阶段后端全量为 `2304 passed, 1 warning`。
+CDS.12 以 Schema 63 新增三张无正文反馈/校准审计表；CDS.13 未再新增迁移。`eap-decision-run-adapter-v1` 保持兼容，诊断字段通过独立 `eap-decision-run-diagnostic-v2` 增加；LIFE.0 已冻结施工基线、两项 ADR、能力差距报告和 60 条纯合成固定场景，但尚未新增 LIFE 生产表或写路径；KIG 仍只有预留契约。当前九个 DecisionKind 全部最高为 Shadow。本阶段后端全量为 `2310 passed, 1 warning`。
 
 已知但不阻断当前开发的警告：
 

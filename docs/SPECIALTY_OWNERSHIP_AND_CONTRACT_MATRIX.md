@@ -28,15 +28,15 @@ ConstructionBaseline
 | 字段 | 当前值/规则 |
 |---|---|
 | repository | `liyi3068238601-oss/Xiadie` |
-| predecessor_pr | EAP PR `#1`，已合并 |
+| predecessor_pr | CDS PR `#2`，已合并 |
 | base_branch | `main` |
-| integration state | EAP 已技术冻结并合入 `main`；CDS.0～13 已施工并通过最终独立 Review，待合入目标基线后填写 LIFE.0 ConstructionBaseline |
-| base_commit_sha | CDS ConstructionBaseline：`6b8aa47134f8a9a55131c73bb1148e6912421c4f` |
-| schema_version | ConstructionBaseline 60；CDS.1/CDS.2 为 61/62；CDS.12 当前 63；Schema 48～60 不回写 |
+| integration state | EAP 与 CDS 已正式冻结并合入 `main`；LIFE.0 ConstructionBaseline 已锁定，LIFE 施工分支从该提交创建 |
+| base_commit_sha | LIFE predecessor：`main@0d7a2d08dc07f123d016da26da117fa58f9a48a1`（CDS PR #2 merge commit） |
+| schema_version | LIFE ConstructionBaseline 63；LIFE 首个有实际字段缺口的迁移为 64；Schema 48～63 不回写 |
 | frozen_protocols | CTX v1；EAP 六协议；CDS `cognitive-decision-v1`、`decision-kind-registry-v1`、`specialty-adapter-contract-v1`；以 Protocol Registry、ADR 和冻结报告为准 |
-| test_baseline | ConstructionBaseline：后端 `937 passed, 1 warning`；当前：后端 `2304 passed, 1 warning`、前端 `47 passed`、Vite 189 modules |
+| test_baseline | LIFE ConstructionBaseline：后端 `2304 passed, 1 warning`、前端 `47 passed`、Vite 189 modules、Electron 语法与 Windows frozen-backend smoke 通过 |
 | plan_version | CDS/LIFE/KIG v0.3；本矩阵 v1.0 |
-| recorded_at | 2026-07-22；各专项开工时重新记录 |
+| recorded_at | 2026-07-26（LIFE.0）；各后续专项开工时重新记录 |
 
 正式开工只允许两种方式：
 
