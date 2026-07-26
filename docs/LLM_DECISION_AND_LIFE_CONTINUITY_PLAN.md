@@ -1297,17 +1297,19 @@ LIFE.10 施工记录（2026-07-26）：复核发现初版 60 条夹具仅按序�
 
 目标：让生活事件自然转化为陪伴表达，而不是机械推送。
 
-- [ ] LifeEvent、重要日期、日记和个人目标只生成带 revision 的 `life_share` 主动种子。
-- [ ] 仅通过冻结 EAP adapter 进入既有候选和决策闭环；不得修改候选类型、授权、投递、反馈或另建发送器。
-- [ ] 支持安静、Live2D 动作、气泡、聊天消息、通知强度阶梯。
-- [ ] 接入 ExpressionPlan，不影响事实和工具行为。
-- [ ] 用户未回复时增加打扰负担，不降低关系。
-- [ ] 普通 UI 不显示内部原因。
-- [ ] 同一生活事件不得重复分享。
-- [ ] 长离线回归不自动一次性倾倒多天生活内容。
-- [ ] 如冻结接口不足，记录协议升级提案并停线 Review，不在本阶段旁路接线。
+- [x] LifeEvent、重要日期、日记和个人目标只生成带 revision 的 `life_share` 主动种子。
+- [x] 仅通过冻结 EAP adapter 进入既有候选和决策闭环；不得修改候选类型、授权、投递、反馈或另建发送器。
+- [x] 支持安静、Live2D 动作、气泡、聊天消息、通知强度阶梯。
+- [x] 接入 ExpressionPlan，不影响事实和工具行为。
+- [x] 用户未回复时增加打扰负担，不降低关系。
+- [x] 普通 UI 不显示内部原因。
+- [x] 同一生活事件不得重复分享。
+- [x] 长离线回归不自动一次性倾倒多天生活内容。
+- [x] 如冻结接口不足，记录协议升级提案并停线 Review，不在本阶段旁路接线。
 
 验收：连续主动重复率为 0；关闭/暂停后发送率为 0；生活分享人工自然度 ≥ 90%。
+
+LIFE.11 施工记录（2026-07-26）：冻结 EAP adapter 审计结论为接口足够，无需协议升级：既有 `life_share` seed、ContactEpisode、六级强度、ExpressionPlan、授权、投递、反馈和 unanswered pressure 均可原样复用。新增 `life_sharing.py` 只读取 active LIFE owner 对象并生成 body-free、revision/hash 绑定的 seed；LifeEvent 的 planned 层、未激活 Goal、静默 ImportantDate、private/never Diary 和未授权 ask/sensitive Diary 均在 LIFE 边界拒绝。日记 seed 只带标题，不带正文；同一 source type/id 即使修订变化也不重复分享。seed 随后只调用冻结 EAP `life_adapter` 与 runtime source 入口，不直接创建 Episode、Candidate、Decision、Delivery 或消息。普通/超过一天/超过七天离线批量上限分别为 3/2/1，30 天回归不会倾倒多日内容。EAP 继续按最低足够原则选择 silent/Live2D/bubble/chat/desktop/external 阶梯（external 保持硬禁用），并创建禁止修改 facts/safety/tool results/permissions/user boundary 的 ExpressionPlan；投递增加 unanswered pressure，但专项验证前后 bond/trust 不变。专项与冻结 EAP 邻接回归 `165 passed`，连续源重复率为 0，关闭/暂停零发送由既有最终门继续保证。人工自然度门留待用户约定的 LIFE 总体 Review，不以自评替代。
 
 建议 PR：`feat(companion): connect life continuity to proactive expression`
 
