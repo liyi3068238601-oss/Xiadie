@@ -924,6 +924,8 @@ test(cognition): freeze decision baselines and evaluation corpus
 
 施工记录（2026-07-23）：在现有 `KnowledgeResult`、知识搜索 `context_window=1`、引用、传输授权和 CTX 注入链上完成最小 EvidenceWindow 适配；按 `context_of` 将命中切片与相邻上下文组成预算原子，超大窗口只缩短正文并始终重新序列化完整 JSON，授权过滤则要求窗口全部成员获准。发送给聊天模型的记录仅保留 citation key、文件名、标题路径、公开定位和正文，内部 document/chunk ID 与 hash 继续留在后端用于授权、审计和引用验证。纯合成三场景评测达到正确切片因过大而全部跳过率 0、知识 JSON 非完整率 0、未授权私密资料远传率 0；未新增 Schema，未定义 KIG SourceRef/RetrievalBundle，未进入 CDS.7。普通设置文案不在本次最小施工范围，保持未勾选。
 
+交叉修复溯源（2026-07-26）：SSE `final` + `done` 重复触发最终正文的问题在 CDS.10 review 后修复提交 `c996585` 中收口；流级 `finalSeen` 保证当前协议只提交一次，同时保留旧服务端 done-only 兼容。该修复不改变 EvidenceWindow、授权或引用语义。
+
 ### CDS.7：ContextPlanner
 
 * [x] 定义 `context-priority-proposal-v1`，LLM 只在 Shadow 中输出语义优先级。
@@ -979,14 +981,16 @@ test(cognition): freeze decision baselines and evaluation corpus
 
 ### CDS.11：冻结 EAP 适配与 LIFE/KIG 接口契约
 
-* [ ] EAP 通过只读/稳定 adapter 消费共享 DecisionRun 能力，冻结的候选、授权、强度、投递与反馈状态机保持所有权不变。
-* [ ] EAP 永久保留真实候选裁决与投递权，CDS 不增设主动发送器。
-* [ ] 为尚未施工的 LIFE/KIG 定义最小 SourceKind、CandidateEnvelope、DecisionResult 和 revision 契约，不创建领域表或伪造生产消费者。
-* [ ] 未来 LifeEvent、日记和日期只提供来源，PWM/知识对象只提供可校验候选。
-* [ ] 未回复压力继续由程序计算。
-* [ ] 生活规划使用后台 Narrative Planner。
-* [ ] 离线退出期间不调用 LLM。
-* [ ] 同一生活事件和接触事件幂等。
+* [x] EAP 通过只读/稳定 adapter 消费共享 DecisionRun 能力，冻结的候选、授权、强度、投递与反馈状态机保持所有权不变。
+* [x] EAP 永久保留真实候选裁决与投递权，CDS 不增设主动发送器。
+* [x] 为尚未施工的 LIFE/KIG 定义最小 SourceKind、CandidateEnvelope、DecisionResult 和 revision 契约，不创建领域表或伪造生产消费者。
+* [x] 未来 LifeEvent、日记和日期只提供来源，PWM/知识对象只提供可校验候选。
+* [x] 未回复压力继续由程序计算。
+* [x] 生活规划使用后台 Narrative Planner。
+* [x] 离线退出期间不调用 LLM。
+* [x] 同一生活事件和接触事件幂等。
+
+施工记录（2026-07-26）：冻结纯接口 `specialty-adapter-contract-v1`，以 `TypedDict` 定义无正文 `RevisionRef`、`CandidateEnvelope`、`DecisionResult`，以 `Protocol` 预留 LIFE 来源与 KIG 候选提供者；没有创建领域实现、生产消费者或 Schema 63。LIFE 的事件、日记、日期、目标与时间线只能提供 revision/hash 来源，知识对象与 PWM 投影只有经校验后才能作为有限候选，跨专项结果永远不能自行授予 application 权。新增 `eap-decision-run-adapter-v1`，仅允许读取 `application_owner=eap` 的共享 DecisionRun，并固定返回无候选 ID、无正文且 `application_allowed=false` 的诊断投影。32 路并发读取一致，六张 EAP 领域表逐行零变化；未回复压力继续使用 EAP 确定性状态机，Narrative Planner 仅预留后台契约，断网或退出时禁止运行。同一生活/接触事件的 kind/id/revision 幂等身份已冻结。专项与回归 81 项通过；详见 ADR-0057 与 `docs/reports/cds-11-specialty-contract-audit.md`。当前等待独立 review，未进入 CDS.12。
 
 ### CDS.12：反馈与个体化校准
 
@@ -996,6 +1000,8 @@ test(cognition): freeze decision baselines and evaluation corpus
 * [ ] 支持按决策器回滚。
 * [ ] 完成跨 Provider 一致性测试。
 * [ ] 输出 Shadow 与真实行为对比报告。
+
+施工授权（2026-07-26）：凡本阶段验收确需真实模型，可直接使用项目已配置的 DeepSeek，不以 token 成本缩减必要样本；仍须经过结构化探测、来源授权、超时、隐私、预算记账与安全回退门禁，且真实模型结果不能绕过 Shadow/Advisory/Active 晋级规则。
 
 ### CDS.13：设置、诊断与冻结
 

@@ -247,6 +247,26 @@ def test_independent_oracle_rejects_provenance_bindings_and_member_shape_tamperi
         shadow.EPISODE_DECISION_KIND, episode_payload,
         replace(shadow.episode_fallback(episode_payload), same_goal=False),
     )
+    assert "episode_causal_chain_missing_selected" in oracle.safety_violations(
+        shadow.EPISODE_DECISION_KIND, episode_payload,
+        replace(shadow.episode_fallback(episode_payload), causal_chain=False),
+    )
+    assert "episode_turning_points_duplicate" in oracle.safety_violations(
+        shadow.EPISODE_DECISION_KIND, episode_payload,
+        replace(
+            shadow.episode_fallback(episode_payload),
+            turning_point_ids=("fragment-b", "fragment-b"),
+        ),
+    )
+    skipped_without_reason = replace(
+        shadow.episode_fallback(episode_payload),
+        action="skip", selected_ids=(), excluded_ids=episode_payload.candidate_ids,
+        boundary_start_id=None, boundary_end_id=None, turning_point_ids=(),
+        proposed_action="skip", reason_codes=("bounded_narrative",),
+    )
+    assert "episode_skip_without_reason" in oracle.safety_violations(
+        shadow.EPISODE_DECISION_KIND, episode_payload, skipped_without_reason,
+    )
     assert "episode_reason_matrix_invalid" in oracle.safety_violations(
         shadow.EPISODE_DECISION_KIND, episode_payload,
         replace(

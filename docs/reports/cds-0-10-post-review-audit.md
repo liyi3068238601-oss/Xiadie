@@ -47,3 +47,7 @@
 - 后端全量：`2284 passed, 1 warning`；唯一警告为既有 Starlette `httpx2` 迁移提示。
 - 前端：`45 passed`；TypeScript 与 Vite production build 189 modules。
 - CDS.10 重生成报告：240/240、oracle v3、安全违规 0、MEM 领域写入 0，质量样本 `promotion_evidence_eligible=false`。
+
+## 6. Post-fix review
+
+外部窄范围复审以 0 P0、0 P1、1 P2 通过，51/51 独立检查成功，允许进入 CDS.11。P2 要求的 oracle 三项直接负向覆盖已补齐；SQLite 版本观察以当前实际运行的 Python 3.12.13 / SQLite 3.50.4 和本轮 2284 项全量结果为准。
