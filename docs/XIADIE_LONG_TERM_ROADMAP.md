@@ -1045,3 +1045,9 @@ v2.0 的最终成功标准：普通用户能够把一个真实、复杂、跨资
 | 2026-07-22 | EAP.R5 反馈控制闭环与 R6 生产总验收施工 | Schema 60 完成 grounded feedback、历史与清除；生产模拟覆盖 15 分钟至 30 天及休眠、回拨、断网、Provider、崩溃、busy，新增 Windows resume 保护。协议保持 IMPLEMENTED，停线等待 R6 strict review；通过前不启动 LIFE/KIG。 |
 | 2026-07-22 | EAP.R6 strict review 通过并正式关闭专项 | 0 个 P0/P1，10/10 冻结指标通过；六个 EAP 协议与 Schema 60 正式冻结。后续专项固定为 CDS → LIFE → KIG，避免重复建设 DecisionRun、语义重排和跨源治理。 |
 | 2026-07-22 | CDS/LIFE/KIG v0.3 施工计划入库 | 采纳交叉专项 review：新增 ConstructionBaseline、唯一所有权矩阵、统一晋级/模型认证/预算/数据生命周期；LIFE 补单写者与真实性治理，KIG 拆为 KIG-R/KIG-P。PR #1 合并并锁定 SHA 前不启动 CDS 迁移施工。 |
+| 2026-07-22 | CDS.0 离线基线施工完成，等待 review | PR #1 已合并；以 `6b8aa47134f8a9a55131c73bb1148e6912421c4f`、Schema 60 和 `937 passed, 1 warning` 为 ConstructionBaseline，冻结六条旧算法轨道并建立 300 个纯合成场景。未改变聊天行为或占用 Schema 61，review 通过前不进入 CDS.1。 |
+| 2026-07-22 | CDS.0 review 通过并完成 CDS.1 共享运行时施工 | CDS.0 strict review 确认 0 P0/P1；CDS.1 以 Schema 61 扩展唯一 `decision_runs`，实现 `cognitive-decision-v1`、专属 Schema 注册、候选白名单、多来源复核、三模式、一次 JSON 修复、公共事件与无正文诊断。当前仅合成 probe Shadow，等待 CDS.1 review。 |
+| 2026-07-22 | CDS.1 review 通过并完成 CDS.2 模型运行时施工 | CDS.1 strict review 确认 0 P0/P1；Schema 62 实现逻辑角色路由、位置 fail-closed、binding 认证、合成 structured probe、per-kind 超时/熔断、统一 fallback 与预算/取消控制面。当前仍仅合成 probe Shadow，等待 CDS.2 review。 |
+| 2026-07-22 | CDS.2 review 通过并完成 CDS.3 Presence/Thread 校准 | CDS.2 strict review 确认 0 P0/P1；采纳 binding 版本、角色 probe timeout 与预算清理建议。新增只读 Shadow 协议和 660 轮纯合成评测，三项门为 0%/100%/0%；EAP v2 未修改，语义差异仅形成 v3 提案，等待 CDS.3 review。 |
+| 2026-07-22 | CDS.3 review 通过并完成 CDS.4 RecallPlanner Shadow | CDS.3 strict review 确认 0 P0/P1，两项 P2 均采纳，Presence 固定集扩为 900 轮。新增只读 RecallPlanner 协议和 600 轮纯合成对照；任务/来源需求及必需来源召回 100%，禁止检索违规 0%。现有检索与 ContextPackage 未改，等待 CDS.4 review。 |
+| 2026-07-26 | CDS.0～10 review 后审计与定点返工 | 核实 CDS.4～9 无需推倒重做；新增失败测试发现 CDS.10 Episode/Saga 语义动作矩阵未完全闭合，已同步收紧 validator 与独立 oracle v3。CDS.6 修复 final+done 重复最终回调；后端 2284 项、前端 45 项通过。CDS.10 小样本质量仍为 50%，禁止据此晋级，未进入 CDS.11。 |

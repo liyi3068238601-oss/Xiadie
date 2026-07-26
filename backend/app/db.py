@@ -2698,6 +2698,178 @@ MIGRATIONS = [
             ON proactive_feedback_events(feedback_id, created_at, id);
         """,
     ),
+    (
+        61,
+        """
+        -- CDS.1: extend the shared Schema 56 DecisionRun instead of creating a parallel ledger.
+        ALTER TABLE decision_runs ADD COLUMN policy_version TEXT NOT NULL DEFAULT '';
+        ALTER TABLE decision_runs ADD COLUMN mode TEXT NOT NULL DEFAULT 'legacy'
+            CHECK(mode IN ('legacy','shadow','advisory','active'));
+        ALTER TABLE decision_runs ADD COLUMN provider_location TEXT;
+        ALTER TABLE decision_runs ADD COLUMN source_snapshot_json TEXT NOT NULL DEFAULT '[]';
+        ALTER TABLE decision_runs ADD COLUMN snapshot_hash TEXT NOT NULL DEFAULT '';
+        ALTER TABLE decision_runs ADD COLUMN candidate_snapshot_hash TEXT NOT NULL DEFAULT '';
+        ALTER TABLE decision_runs ADD COLUMN candidate_count INTEGER NOT NULL DEFAULT 0
+            CHECK(candidate_count >= 0);
+        ALTER TABLE decision_runs ADD COLUMN selected_count INTEGER NOT NULL DEFAULT 0
+            CHECK(selected_count >= 0 AND selected_count <= candidate_count);
+        ALTER TABLE decision_runs ADD COLUMN action TEXT;
+        ALTER TABLE decision_runs ADD COLUMN confidence_band TEXT;
+        ALTER TABLE decision_runs ADD COLUMN reason_codes_json TEXT NOT NULL DEFAULT '[]';
+        ALTER TABLE decision_runs ADD COLUMN fallback_used INTEGER NOT NULL DEFAULT 0
+            CHECK(fallback_used IN (0,1));
+        ALTER TABLE decision_runs ADD COLUMN prompt_template_hash TEXT NOT NULL DEFAULT '';
+        ALTER TABLE decision_runs ADD COLUMN input_schema_hash TEXT NOT NULL DEFAULT '';
+        ALTER TABLE decision_runs ADD COLUMN output_schema_hash TEXT NOT NULL DEFAULT '';
+        ALTER TABLE decision_runs ADD COLUMN validator_version TEXT NOT NULL DEFAULT '';
+        ALTER TABLE decision_runs ADD COLUMN fallback_version TEXT NOT NULL DEFAULT '';
+        ALTER TABLE decision_runs ADD COLUMN model_binding_revision TEXT NOT NULL DEFAULT '';
+        ALTER TABLE decision_runs ADD COLUMN temperature REAL;
+        ALTER TABLE decision_runs ADD COLUMN top_p REAL;
+        ALTER TABLE decision_runs ADD COLUMN retention_class TEXT NOT NULL DEFAULT 'operational';
+        ALTER TABLE decision_runs ADD COLUMN expires_at REAL;
+        ALTER TABLE decision_runs ADD COLUMN privacy_scope TEXT NOT NULL DEFAULT 'body_free';
+        ALTER TABLE decision_runs ADD COLUMN aggregate_after_expiry INTEGER NOT NULL DEFAULT 1
+            CHECK(aggregate_after_expiry IN (0,1));
+
+        CREATE TABLE decision_run_events (
+            id TEXT PRIMARY KEY,
+            run_id TEXT NOT NULL REFERENCES decision_runs(id) ON DELETE CASCADE,
+            event_type TEXT NOT NULL,
+            from_status TEXT,
+            to_status TEXT NOT NULL,
+            mode TEXT NOT NULL CHECK(mode IN ('legacy','shadow','advisory','active')),
+            error_code TEXT,
+            warning_codes_json TEXT NOT NULL DEFAULT '[]',
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_decision_run_events_run
+            ON decision_run_events(run_id, created_at, id);
+        CREATE INDEX idx_decision_runs_diagnostics
+            ON decision_runs(task_kind, mode, created_at);
+        CREATE INDEX idx_decision_runs_expiry
+            ON decision_runs(expires_at)
+            WHERE expires_at IS NOT NULL;
+        """,
+    ),
+    (
+        62,
+        """
+        -- CDS.2: model routing, certification, circuit breakers and body-free budgets.
+        ALTER TABLE decision_runs ADD COLUMN logical_role TEXT NOT NULL DEFAULT 'legacy'
+            CHECK(logical_role IN ('legacy','fast','reasoning','creative'));
+        ALTER TABLE decision_runs ADD COLUMN provider_location_revision INTEGER
+            CHECK(provider_location_revision IS NULL OR provider_location_revision >= 1);
+        ALTER TABLE decision_runs ADD COLUMN certification_level TEXT NOT NULL DEFAULT 'unverified'
+            CHECK(certification_level IN (
+                'unverified','structured_capable','decision_verified','local_sensitive_verified'
+            ));
+
+        CREATE TABLE cognition_model_certifications (
+            id TEXT PRIMARY KEY,
+            provider_id TEXT NOT NULL,
+            model_id TEXT NOT NULL,
+            provider_location TEXT NOT NULL CHECK(provider_location IN ('local','remote','unknown')),
+            provider_location_revision INTEGER NOT NULL CHECK(provider_location_revision >= 1),
+            logical_role TEXT NOT NULL CHECK(logical_role IN ('fast','reasoning','creative')),
+            decision_kind TEXT NOT NULL,
+            protocol_version TEXT NOT NULL,
+            model_binding_revision TEXT NOT NULL,
+            certification_level TEXT NOT NULL CHECK(certification_level IN (
+                'unverified','structured_capable','decision_verified','local_sensitive_verified'
+            )),
+            probe_version TEXT NOT NULL,
+            last_error_code TEXT,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            UNIQUE(provider_id,model_id,provider_location,provider_location_revision,logical_role,
+                   decision_kind,protocol_version,model_binding_revision)
+        );
+
+        CREATE TABLE cognition_circuit_breakers (
+            id TEXT PRIMARY KEY,
+            provider_id TEXT NOT NULL,
+            model_id TEXT NOT NULL,
+            decision_kind TEXT NOT NULL,
+            protocol_version TEXT NOT NULL,
+            model_binding_revision TEXT NOT NULL,
+            state TEXT NOT NULL CHECK(state IN ('closed','open','half_open')),
+            consecutive_failures INTEGER NOT NULL DEFAULT 0 CHECK(consecutive_failures >= 0),
+            open_until REAL,
+            last_error_code TEXT,
+            updated_at REAL NOT NULL,
+            UNIQUE(provider_id,model_id,decision_kind,protocol_version,model_binding_revision)
+        );
+
+        CREATE TABLE cognition_budget_events (
+            id TEXT PRIMARY KEY,
+            task_id TEXT NOT NULL,
+            decision_kind TEXT NOT NULL,
+            logical_role TEXT NOT NULL CHECK(logical_role IN ('fast','reasoning','creative')),
+            provider_location TEXT NOT NULL CHECK(provider_location IN ('local','remote','unknown')),
+            priority TEXT NOT NULL CHECK(priority IN ('foreground','normal','background')),
+            status TEXT NOT NULL CHECK(status IN ('authorized','completed','rejected','cancelled')),
+            estimated_tokens INTEGER NOT NULL DEFAULT 0 CHECK(estimated_tokens >= 0),
+            actual_tokens INTEGER CHECK(actual_tokens IS NULL OR actual_tokens >= 0),
+            error_code TEXT,
+            created_at REAL NOT NULL,
+            completed_at REAL,
+            UNIQUE(task_id)
+        );
+        CREATE INDEX idx_cognition_budget_window
+            ON cognition_budget_events(created_at,provider_location,status);
+        """,
+    ),
+    (
+        63,
+        """
+        -- CDS.12: body-free feedback and per-decision calibration audit.
+        CREATE TABLE cognition_calibration_profiles (
+            decision_kind TEXT PRIMARY KEY,
+            feedback_domain TEXT NOT NULL CHECK(feedback_domain IN (
+                'recall','proactive','relationship','memory'
+            )),
+            profile_version TEXT NOT NULL,
+            revision INTEGER NOT NULL CHECK(revision >= 0),
+            parameters_json TEXT NOT NULL DEFAULT '{}',
+            feedback_count INTEGER NOT NULL DEFAULT 0 CHECK(feedback_count >= 0),
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+
+        CREATE TABLE cognition_feedback_signals (
+            id TEXT PRIMARY KEY,
+            decision_kind TEXT NOT NULL,
+            feedback_domain TEXT NOT NULL CHECK(feedback_domain IN (
+                'recall','proactive','relationship','memory'
+            )),
+            feedback_kind TEXT NOT NULL CHECK(feedback_kind IN (
+                'helpful','not_helpful','missing','wrong_source','quick_reply','later_reply',
+                'unanswered','rejected','corrected'
+            )),
+            source_run_id TEXT REFERENCES decision_runs(id) ON DELETE SET NULL,
+            idempotency_key TEXT NOT NULL UNIQUE,
+            parameter_delta_json TEXT NOT NULL DEFAULT '{}',
+            profile_revision INTEGER NOT NULL CHECK(profile_revision >= 1),
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_cognition_feedback_decision
+            ON cognition_feedback_signals(decision_kind,created_at);
+
+        CREATE TABLE cognition_calibration_events (
+            id TEXT PRIMARY KEY,
+            decision_kind TEXT NOT NULL,
+            event_type TEXT NOT NULL CHECK(event_type IN ('feedback_applied','profile_rolled_back')),
+            from_revision INTEGER NOT NULL CHECK(from_revision >= 0),
+            to_revision INTEGER NOT NULL CHECK(to_revision > from_revision),
+            changes_json TEXT NOT NULL DEFAULT '{}',
+            idempotency_key TEXT NOT NULL UNIQUE,
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_cognition_calibration_events_decision
+            ON cognition_calibration_events(decision_kind,created_at);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

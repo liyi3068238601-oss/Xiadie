@@ -1,0 +1,6132 @@
+{
+  "report_version": "cognitive-decision-baseline-report-v1",
+  "evaluation_protocol_version": "cognitive-decision-eval-v1",
+  "synthetic_only": true,
+  "contains_user_data": false,
+  "construction_baseline": {
+    "repository": "liyi3068238601-oss/Xiadie",
+    "predecessor_pr": 1,
+    "base_branch": "main",
+    "base_commit_sha": "6b8aa47134f8a9a55131c73bb1148e6912421c4f",
+    "schema_version": 60,
+    "test_baseline": "937 passed, 1 warning",
+    "plan_version": "CDS v0.3",
+    "recorded_at": "2026-07-22"
+  },
+  "fixture_sha256": "1ecad02a68c1cce99948c0e9842bf8462b9e747c8ddced8e3f9bb8e122c7d02c",
+  "environment": {
+    "python": "3.12.13",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "algorithm_versions": {
+    "presence": "conversation-presence-v2",
+    "relationship_fallback": "companion-cognition-v1",
+    "knowledge_gate": "knowledge-recall-decision-v1",
+    "knowledge_threshold": "knowledge-recall-thresholds-v2",
+    "history_index": "conversation-history-index-v1",
+    "history_score": "conversation-history-score-v1-shadow",
+    "context_package": "context-package-v1",
+    "context_budget": "context-budget-v1",
+    "context_estimator": "xiadie-conservative-v1",
+    "memory_retention": "fragment-retention-v1"
+  },
+  "label_counts": {
+    "must_select": 245,
+    "may_select": 35,
+    "forbidden_select": 1120
+  },
+  "overall": {
+    "sample_count": 300,
+    "exact_match_rate": 0.636667,
+    "false_positive_selections": 234,
+    "false_negative_selections": 54,
+    "false_positive_case_rate": 0.33,
+    "false_negative_case_rate": 0.18,
+    "latency_ms": {
+      "average": 0.209549,
+      "p50": 0.00205,
+      "p95": 1.330395,
+      "max": 2.3171
+    },
+    "estimated_tokens": {
+      "total": 7224,
+      "average": 24.08,
+      "max": 256
+    }
+  },
+  "tracks": {
+    "context_fixed_budget": {
+      "sample_count": 50,
+      "exact_match_rate": 0.1,
+      "false_positive_selections": 180,
+      "false_negative_selections": 0,
+      "false_positive_case_rate": 0.9,
+      "false_negative_case_rate": 0.0,
+      "latency_ms": {
+        "average": 1.171232,
+        "p50": 1.25275,
+        "p95": 1.496875,
+        "max": 1.7763
+      },
+      "estimated_tokens": {
+        "total": 6624,
+        "average": 132.48,
+        "max": 256
+      }
+    },
+    "history_intent": {
+      "sample_count": 50,
+      "exact_match_rate": 0.6,
+      "false_positive_selections": 10,
+      "false_negative_selections": 10,
+      "false_positive_case_rate": 0.2,
+      "false_negative_case_rate": 0.2,
+      "latency_ms": {
+        "average": 0.000432,
+        "p50": 0.0003,
+        "p95": 0.0012,
+        "max": 0.0014
+      },
+      "estimated_tokens": {
+        "total": 0,
+        "average": 0.0,
+        "max": 0
+      }
+    },
+    "knowledge_gate": {
+      "sample_count": 50,
+      "exact_match_rate": 1.0,
+      "false_positive_selections": 0,
+      "false_negative_selections": 0,
+      "false_positive_case_rate": 0.0,
+      "false_negative_case_rate": 0.0,
+      "latency_ms": {
+        "average": 0.077252,
+        "p50": 0.0089,
+        "p95": 0.02815,
+        "max": 2.3171
+      },
+      "estimated_tokens": {
+        "total": 600,
+        "average": 12.0,
+        "max": 30
+      }
+    },
+    "memory_retention": {
+      "sample_count": 50,
+      "exact_match_rate": 1.0,
+      "false_positive_selections": 0,
+      "false_negative_selections": 0,
+      "false_positive_case_rate": 0.0,
+      "false_negative_case_rate": 0.0,
+      "latency_ms": {
+        "average": 0.006254,
+        "p50": 0.0054,
+        "p95": 0.007955,
+        "max": 0.0325
+      },
+      "estimated_tokens": {
+        "total": 0,
+        "average": 0.0,
+        "max": 0
+      }
+    },
+    "presence": {
+      "sample_count": 50,
+      "exact_match_rate": 0.92,
+      "false_positive_selections": 4,
+      "false_negative_selections": 4,
+      "false_positive_case_rate": 0.08,
+      "false_negative_case_rate": 0.08,
+      "latency_ms": {
+        "average": 0.0016,
+        "p50": 0.0013,
+        "p95": 0.0026,
+        "max": 0.0075
+      },
+      "estimated_tokens": {
+        "total": 0,
+        "average": 0.0,
+        "max": 0
+      }
+    },
+    "relationship_fallback": {
+      "sample_count": 50,
+      "exact_match_rate": 0.2,
+      "false_positive_selections": 40,
+      "false_negative_selections": 40,
+      "false_positive_case_rate": 0.8,
+      "false_negative_case_rate": 0.8,
+      "latency_ms": {
+        "average": 0.000522,
+        "p50": 0.0004,
+        "p95": 0.001355,
+        "max": 0.0027
+      },
+      "estimated_tokens": {
+        "total": 0,
+        "average": 0.0,
+        "max": 0
+      }
+    }
+  },
+  "failure_groups": {
+    "context_fixed_budget:attachment": 5,
+    "context_fixed_budget:attachment_knowledge": 5,
+    "context_fixed_budget:continuation": 5,
+    "context_fixed_budget:history": 5,
+    "context_fixed_budget:knowledge": 5,
+    "context_fixed_budget:knowledge_memory": 5,
+    "context_fixed_budget:lore": 5,
+    "context_fixed_budget:memory": 5,
+    "context_fixed_budget:private_memory_only": 5,
+    "history_intent:implicit_reference": 10,
+    "history_intent:negated": 10,
+    "presence:gaming": 1,
+    "presence:ordinary": 3,
+    "relationship_fallback:appreciation": 5,
+    "relationship_fallback:conflict": 5,
+    "relationship_fallback:reliable_help": 5,
+    "relationship_fallback:repair": 5,
+    "relationship_fallback:respected": 5,
+    "relationship_fallback:reunion": 5,
+    "relationship_fallback:success": 5,
+    "relationship_fallback:vulnerable": 5
+  },
+  "outcomes": [
+    {
+      "case_id": "presence_sleep_01",
+      "track": "presence",
+      "group": "sleep",
+      "selected": [
+        "away_sleep"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0075,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_sleep_02",
+      "track": "presence",
+      "group": "sleep",
+      "selected": [
+        "away_sleep"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0054,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_sleep_03",
+      "track": "presence",
+      "group": "sleep",
+      "selected": [
+        "away_sleep"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0018,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_sleep_04",
+      "track": "presence",
+      "group": "sleep",
+      "selected": [
+        "away_sleep"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.001,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_sleep_05",
+      "track": "presence",
+      "group": "sleep",
+      "selected": [
+        "away_sleep"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0012,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_ended_01",
+      "track": "presence",
+      "group": "ended",
+      "selected": [
+        "ended_conversation"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0013,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_ended_02",
+      "track": "presence",
+      "group": "ended",
+      "selected": [
+        "ended_conversation"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0009,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_ended_03",
+      "track": "presence",
+      "group": "ended",
+      "selected": [
+        "ended_conversation"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0015,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_ended_04",
+      "track": "presence",
+      "group": "ended",
+      "selected": [
+        "ended_conversation"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0009,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_ended_05",
+      "track": "presence",
+      "group": "ended",
+      "selected": [
+        "ended_conversation"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0008,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_dnd_01",
+      "track": "presence",
+      "group": "dnd",
+      "selected": [
+        "do_not_disturb"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.001,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_dnd_02",
+      "track": "presence",
+      "group": "dnd",
+      "selected": [
+        "do_not_disturb"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0011,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_dnd_03",
+      "track": "presence",
+      "group": "dnd",
+      "selected": [
+        "do_not_disturb"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0009,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_dnd_04",
+      "track": "presence",
+      "group": "dnd",
+      "selected": [
+        "do_not_disturb"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0013,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_dnd_05",
+      "track": "presence",
+      "group": "dnd",
+      "selected": [
+        "do_not_disturb"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0011,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_test_01",
+      "track": "presence",
+      "group": "test",
+      "selected": [
+        "away_brief"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.002,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": true
+      }
+    },
+    {
+      "case_id": "presence_test_02",
+      "track": "presence",
+      "group": "test",
+      "selected": [
+        "away_brief"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0015,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": true
+      }
+    },
+    {
+      "case_id": "presence_test_03",
+      "track": "presence",
+      "group": "test",
+      "selected": [
+        "away_brief"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0013,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": true
+      }
+    },
+    {
+      "case_id": "presence_test_04",
+      "track": "presence",
+      "group": "test",
+      "selected": [
+        "away_brief"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0012,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": true
+      }
+    },
+    {
+      "case_id": "presence_test_05",
+      "track": "presence",
+      "group": "test",
+      "selected": [
+        "away_brief"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0013,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": true
+      }
+    },
+    {
+      "case_id": "presence_meal_01",
+      "track": "presence",
+      "group": "meal",
+      "selected": [
+        "away_brief"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0013,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": true
+      }
+    },
+    {
+      "case_id": "presence_meal_02",
+      "track": "presence",
+      "group": "meal",
+      "selected": [
+        "away_brief"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0013,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": true
+      }
+    },
+    {
+      "case_id": "presence_meal_03",
+      "track": "presence",
+      "group": "meal",
+      "selected": [
+        "away_brief"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0012,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": true
+      }
+    },
+    {
+      "case_id": "presence_meal_04",
+      "track": "presence",
+      "group": "meal",
+      "selected": [
+        "away_brief"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0012,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": true
+      }
+    },
+    {
+      "case_id": "presence_meal_05",
+      "track": "presence",
+      "group": "meal",
+      "selected": [
+        "away_brief"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0013,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": true
+      }
+    },
+    {
+      "case_id": "presence_shower_01",
+      "track": "presence",
+      "group": "shower",
+      "selected": [
+        "away_brief"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0014,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": true
+      }
+    },
+    {
+      "case_id": "presence_shower_02",
+      "track": "presence",
+      "group": "shower",
+      "selected": [
+        "away_brief"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0015,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": true
+      }
+    },
+    {
+      "case_id": "presence_shower_03",
+      "track": "presence",
+      "group": "shower",
+      "selected": [
+        "away_brief"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0014,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": true
+      }
+    },
+    {
+      "case_id": "presence_shower_04",
+      "track": "presence",
+      "group": "shower",
+      "selected": [
+        "away_brief"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0013,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": true
+      }
+    },
+    {
+      "case_id": "presence_shower_05",
+      "track": "presence",
+      "group": "shower",
+      "selected": [
+        "away_brief"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0016,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": true
+      }
+    },
+    {
+      "case_id": "presence_meeting_01",
+      "track": "presence",
+      "group": "meeting",
+      "selected": [
+        "away_busy"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0013,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_meeting_02",
+      "track": "presence",
+      "group": "meeting",
+      "selected": [
+        "away_busy"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0013,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_meeting_03",
+      "track": "presence",
+      "group": "meeting",
+      "selected": [
+        "away_busy"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0015,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_meeting_04",
+      "track": "presence",
+      "group": "meeting",
+      "selected": [
+        "away_busy"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0016,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_meeting_05",
+      "track": "presence",
+      "group": "meeting",
+      "selected": [
+        "away_busy"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0013,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_gaming_01",
+      "track": "presence",
+      "group": "gaming",
+      "selected": [
+        "away_busy"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0016,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_gaming_02",
+      "track": "presence",
+      "group": "gaming",
+      "selected": [
+        "away_busy"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0014,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_gaming_03",
+      "track": "presence",
+      "group": "gaming",
+      "selected": [
+        "away_busy"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0022,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_gaming_04",
+      "track": "presence",
+      "group": "gaming",
+      "selected": [
+        "away_busy"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0016,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_gaming_05",
+      "track": "presence",
+      "group": "gaming",
+      "selected": [
+        "online"
+      ],
+      "false_negative": [
+        "away_busy"
+      ],
+      "false_positive": [
+        "online"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0026,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_extended_01",
+      "track": "presence",
+      "group": "extended",
+      "selected": [
+        "away_extended"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0026,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_extended_02",
+      "track": "presence",
+      "group": "extended",
+      "selected": [
+        "away_extended"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0015,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_extended_03",
+      "track": "presence",
+      "group": "extended",
+      "selected": [
+        "away_extended"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0015,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_extended_04",
+      "track": "presence",
+      "group": "extended",
+      "selected": [
+        "away_extended"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0014,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_extended_05",
+      "track": "presence",
+      "group": "extended",
+      "selected": [
+        "away_extended"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0019,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_ordinary_01",
+      "track": "presence",
+      "group": "ordinary",
+      "selected": [
+        "online"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0018,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_ordinary_02",
+      "track": "presence",
+      "group": "ordinary",
+      "selected": [
+        "online"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0016,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_ordinary_03",
+      "track": "presence",
+      "group": "ordinary",
+      "selected": [
+        "away_sleep"
+      ],
+      "false_negative": [
+        "online"
+      ],
+      "false_positive": [
+        "away_sleep"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0008,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_ordinary_04",
+      "track": "presence",
+      "group": "ordinary",
+      "selected": [
+        "ended_conversation"
+      ],
+      "false_negative": [
+        "online"
+      ],
+      "false_positive": [
+        "ended_conversation"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0009,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "presence_ordinary_05",
+      "track": "presence",
+      "group": "ordinary",
+      "selected": [
+        "do_not_disturb"
+      ],
+      "false_negative": [
+        "online"
+      ],
+      "false_positive": [
+        "do_not_disturb"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0011,
+      "estimated_tokens": 0,
+      "detail": {
+        "open_thread": false
+      }
+    },
+    {
+      "case_id": "relationship_ordinary_01",
+      "track": "relationship_fallback",
+      "group": "ordinary",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0027,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_ordinary_02",
+      "track": "relationship_fallback",
+      "group": "ordinary",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0012,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_ordinary_03",
+      "track": "relationship_fallback",
+      "group": "ordinary",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0006,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_ordinary_04",
+      "track": "relationship_fallback",
+      "group": "ordinary",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0005,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_ordinary_05",
+      "track": "relationship_fallback",
+      "group": "ordinary",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0005,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_appreciation_01",
+      "track": "relationship_fallback",
+      "group": "appreciation",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "shared_appreciation"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_appreciation_02",
+      "track": "relationship_fallback",
+      "group": "appreciation",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "shared_appreciation"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0004,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_appreciation_03",
+      "track": "relationship_fallback",
+      "group": "appreciation",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "shared_appreciation"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_appreciation_04",
+      "track": "relationship_fallback",
+      "group": "appreciation",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "shared_appreciation"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0004,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_appreciation_05",
+      "track": "relationship_fallback",
+      "group": "appreciation",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "shared_appreciation"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0013,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_reliable_help_01",
+      "track": "relationship_fallback",
+      "group": "reliable_help",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "reliable_help"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0004,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_reliable_help_02",
+      "track": "relationship_fallback",
+      "group": "reliable_help",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "reliable_help"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0004,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_reliable_help_03",
+      "track": "relationship_fallback",
+      "group": "reliable_help",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "reliable_help"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0004,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_reliable_help_04",
+      "track": "relationship_fallback",
+      "group": "reliable_help",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "reliable_help"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0004,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_reliable_help_05",
+      "track": "relationship_fallback",
+      "group": "reliable_help",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "reliable_help"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_success_01",
+      "track": "relationship_fallback",
+      "group": "success",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "shared_success"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0004,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_success_02",
+      "track": "relationship_fallback",
+      "group": "success",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "shared_success"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0004,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_success_03",
+      "track": "relationship_fallback",
+      "group": "success",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "shared_success"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_success_04",
+      "track": "relationship_fallback",
+      "group": "success",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "shared_success"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0005,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_success_05",
+      "track": "relationship_fallback",
+      "group": "success",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "shared_success"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0004,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_vulnerable_01",
+      "track": "relationship_fallback",
+      "group": "vulnerable",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "vulnerable_disclosure"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0011,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_vulnerable_02",
+      "track": "relationship_fallback",
+      "group": "vulnerable",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "vulnerable_disclosure"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0004,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_vulnerable_03",
+      "track": "relationship_fallback",
+      "group": "vulnerable",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "vulnerable_disclosure"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_vulnerable_04",
+      "track": "relationship_fallback",
+      "group": "vulnerable",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "vulnerable_disclosure"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_vulnerable_05",
+      "track": "relationship_fallback",
+      "group": "vulnerable",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "vulnerable_disclosure"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_respected_01",
+      "track": "relationship_fallback",
+      "group": "respected",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "boundary_respected"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_respected_02",
+      "track": "relationship_fallback",
+      "group": "respected",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "boundary_respected"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_respected_03",
+      "track": "relationship_fallback",
+      "group": "respected",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "boundary_respected"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0004,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_respected_04",
+      "track": "relationship_fallback",
+      "group": "respected",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "boundary_respected"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0011,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_respected_05",
+      "track": "relationship_fallback",
+      "group": "respected",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "boundary_respected"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_repair_01",
+      "track": "relationship_fallback",
+      "group": "repair",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "boundary_repair"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_repair_02",
+      "track": "relationship_fallback",
+      "group": "repair",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "boundary_repair"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0015,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_repair_03",
+      "track": "relationship_fallback",
+      "group": "repair",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "boundary_repair"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_repair_04",
+      "track": "relationship_fallback",
+      "group": "repair",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "boundary_repair"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0004,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_repair_05",
+      "track": "relationship_fallback",
+      "group": "repair",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "boundary_repair"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_reunion_01",
+      "track": "relationship_fallback",
+      "group": "reunion",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "reunion"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_reunion_02",
+      "track": "relationship_fallback",
+      "group": "reunion",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "reunion"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_reunion_03",
+      "track": "relationship_fallback",
+      "group": "reunion",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "reunion"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_reunion_04",
+      "track": "relationship_fallback",
+      "group": "reunion",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "reunion"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_reunion_05",
+      "track": "relationship_fallback",
+      "group": "reunion",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "reunion"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_conflict_01",
+      "track": "relationship_fallback",
+      "group": "conflict",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "conflict"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_conflict_02",
+      "track": "relationship_fallback",
+      "group": "conflict",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "conflict"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0004,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_conflict_03",
+      "track": "relationship_fallback",
+      "group": "conflict",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "conflict"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_conflict_04",
+      "track": "relationship_fallback",
+      "group": "conflict",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "conflict"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0004,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_conflict_05",
+      "track": "relationship_fallback",
+      "group": "conflict",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [
+        "conflict"
+      ],
+      "false_positive": [
+        "ordinary_exchange"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0004,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_ambiguous_01",
+      "track": "relationship_fallback",
+      "group": "ambiguous",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0004,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_ambiguous_02",
+      "track": "relationship_fallback",
+      "group": "ambiguous",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0004,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_ambiguous_03",
+      "track": "relationship_fallback",
+      "group": "ambiguous",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0004,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_ambiguous_04",
+      "track": "relationship_fallback",
+      "group": "ambiguous",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0014,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "relationship_ambiguous_05",
+      "track": "relationship_fallback",
+      "group": "ambiguous",
+      "selected": [
+        "ordinary_exchange"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0005,
+      "estimated_tokens": 0,
+      "detail": {
+        "confidence": 0.0,
+        "fallback": true
+      }
+    },
+    {
+      "case_id": "knowledge_explicit_01",
+      "track": "knowledge_gate",
+      "group": "explicit",
+      "selected": [
+        "knowledge"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 2.3171,
+      "estimated_tokens": 30,
+      "detail": {
+        "action": "retrieve",
+        "reason_code": "explicit_request",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_explicit_02",
+      "track": "knowledge_gate",
+      "group": "explicit",
+      "selected": [
+        "knowledge"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 1.0535,
+      "estimated_tokens": 30,
+      "detail": {
+        "action": "retrieve",
+        "reason_code": "exact_term_hit",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_explicit_03",
+      "track": "knowledge_gate",
+      "group": "explicit",
+      "selected": [
+        "knowledge"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0295,
+      "estimated_tokens": 30,
+      "detail": {
+        "action": "retrieve",
+        "reason_code": "explicit_request",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_explicit_04",
+      "track": "knowledge_gate",
+      "group": "explicit",
+      "selected": [
+        "knowledge"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0214,
+      "estimated_tokens": 30,
+      "detail": {
+        "action": "retrieve",
+        "reason_code": "explicit_request",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_explicit_05",
+      "track": "knowledge_gate",
+      "group": "explicit",
+      "selected": [
+        "knowledge"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0195,
+      "estimated_tokens": 30,
+      "detail": {
+        "action": "retrieve",
+        "reason_code": "explicit_request",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_natural_exact_01",
+      "track": "knowledge_gate",
+      "group": "natural_exact",
+      "selected": [
+        "knowledge"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0265,
+      "estimated_tokens": 30,
+      "detail": {
+        "action": "retrieve",
+        "reason_code": "exact_term_hit",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_natural_exact_02",
+      "track": "knowledge_gate",
+      "group": "natural_exact",
+      "selected": [
+        "knowledge"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0217,
+      "estimated_tokens": 30,
+      "detail": {
+        "action": "retrieve",
+        "reason_code": "exact_term_hit",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_natural_exact_03",
+      "track": "knowledge_gate",
+      "group": "natural_exact",
+      "selected": [
+        "knowledge"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0197,
+      "estimated_tokens": 30,
+      "detail": {
+        "action": "retrieve",
+        "reason_code": "exact_term_hit",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_natural_exact_04",
+      "track": "knowledge_gate",
+      "group": "natural_exact",
+      "selected": [
+        "knowledge"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0183,
+      "estimated_tokens": 30,
+      "detail": {
+        "action": "retrieve",
+        "reason_code": "exact_term_hit",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_natural_exact_05",
+      "track": "knowledge_gate",
+      "group": "natural_exact",
+      "selected": [
+        "knowledge"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0183,
+      "estimated_tokens": 30,
+      "detail": {
+        "action": "retrieve",
+        "reason_code": "exact_term_hit",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_source_conflict_01",
+      "track": "knowledge_gate",
+      "group": "source_conflict",
+      "selected": [
+        "knowledge"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0166,
+      "estimated_tokens": 30,
+      "detail": {
+        "action": "retrieve",
+        "reason_code": "source_conflict",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_source_conflict_02",
+      "track": "knowledge_gate",
+      "group": "source_conflict",
+      "selected": [
+        "knowledge"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0162,
+      "estimated_tokens": 30,
+      "detail": {
+        "action": "retrieve",
+        "reason_code": "explicit_request",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_source_conflict_03",
+      "track": "knowledge_gate",
+      "group": "source_conflict",
+      "selected": [
+        "knowledge"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0234,
+      "estimated_tokens": 30,
+      "detail": {
+        "action": "retrieve",
+        "reason_code": "lexical_candidate",
+        "confidence_band": "medium"
+      }
+    },
+    {
+      "case_id": "knowledge_source_conflict_04",
+      "track": "knowledge_gate",
+      "group": "source_conflict",
+      "selected": [
+        "knowledge"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0156,
+      "estimated_tokens": 30,
+      "detail": {
+        "action": "retrieve",
+        "reason_code": "explicit_request",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_source_conflict_05",
+      "track": "knowledge_gate",
+      "group": "source_conflict",
+      "selected": [
+        "knowledge"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0159,
+      "estimated_tokens": 30,
+      "detail": {
+        "action": "retrieve",
+        "reason_code": "source_conflict",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_forbidden_01",
+      "track": "knowledge_gate",
+      "group": "forbidden",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0031,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "explicit_forbidden",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_forbidden_02",
+      "track": "knowledge_gate",
+      "group": "forbidden",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0026,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "explicit_forbidden",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_forbidden_03",
+      "track": "knowledge_gate",
+      "group": "forbidden",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.002,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "explicit_forbidden",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_forbidden_04",
+      "track": "knowledge_gate",
+      "group": "forbidden",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0021,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "explicit_forbidden",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_forbidden_05",
+      "track": "knowledge_gate",
+      "group": "forbidden",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0019,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "explicit_forbidden",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_greeting_01",
+      "track": "knowledge_gate",
+      "group": "greeting",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0026,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "companion_smalltalk",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_greeting_02",
+      "track": "knowledge_gate",
+      "group": "greeting",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.002,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "companion_smalltalk",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_greeting_03",
+      "track": "knowledge_gate",
+      "group": "greeting",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0018,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "companion_smalltalk",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_greeting_04",
+      "track": "knowledge_gate",
+      "group": "greeting",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0016,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "companion_smalltalk",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_greeting_05",
+      "track": "knowledge_gate",
+      "group": "greeting",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0125,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "no_candidates",
+        "confidence_band": "low"
+      }
+    },
+    {
+      "case_id": "knowledge_emotion_01",
+      "track": "knowledge_gate",
+      "group": "emotion",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0025,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "emotional_support",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_emotion_02",
+      "track": "knowledge_gate",
+      "group": "emotion",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0023,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "emotional_support",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_emotion_03",
+      "track": "knowledge_gate",
+      "group": "emotion",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0021,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "emotional_support",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_emotion_04",
+      "track": "knowledge_gate",
+      "group": "emotion",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0018,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "emotional_support",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_emotion_05",
+      "track": "knowledge_gate",
+      "group": "emotion",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0021,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "emotional_support",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_simple_01",
+      "track": "knowledge_gate",
+      "group": "simple",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0026,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "simple_task",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_simple_02",
+      "track": "knowledge_gate",
+      "group": "simple",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0024,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "simple_task",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_simple_03",
+      "track": "knowledge_gate",
+      "group": "simple",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0023,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "simple_task",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_simple_04",
+      "track": "knowledge_gate",
+      "group": "simple",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0074,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "simple_task",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_simple_05",
+      "track": "knowledge_gate",
+      "group": "simple",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0022,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "simple_task",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_ambiguous_01",
+      "track": "knowledge_gate",
+      "group": "ambiguous",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0025,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "ambiguous_reference",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_ambiguous_02",
+      "track": "knowledge_gate",
+      "group": "ambiguous",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0023,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "ambiguous_reference",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_ambiguous_03",
+      "track": "knowledge_gate",
+      "group": "ambiguous",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0076,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "ambiguous_reference",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_ambiguous_04",
+      "track": "knowledge_gate",
+      "group": "ambiguous",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0032,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "ambiguous_reference",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_ambiguous_05",
+      "track": "knowledge_gate",
+      "group": "ambiguous",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0027,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "ambiguous_reference",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_unrelated_01",
+      "track": "knowledge_gate",
+      "group": "unrelated",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0212,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "no_candidates",
+        "confidence_band": "low"
+      }
+    },
+    {
+      "case_id": "knowledge_unrelated_02",
+      "track": "knowledge_gate",
+      "group": "unrelated",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0126,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "no_candidates",
+        "confidence_band": "low"
+      }
+    },
+    {
+      "case_id": "knowledge_unrelated_03",
+      "track": "knowledge_gate",
+      "group": "unrelated",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0119,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "no_candidates",
+        "confidence_band": "low"
+      }
+    },
+    {
+      "case_id": "knowledge_unrelated_04",
+      "track": "knowledge_gate",
+      "group": "unrelated",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0092,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "no_candidates",
+        "confidence_band": "low"
+      }
+    },
+    {
+      "case_id": "knowledge_unrelated_05",
+      "track": "knowledge_gate",
+      "group": "unrelated",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0086,
+      "estimated_tokens": 0,
+      "detail": {
+        "action": "skip",
+        "reason_code": "no_candidates",
+        "confidence_band": "low"
+      }
+    },
+    {
+      "case_id": "knowledge_double_negative_01",
+      "track": "knowledge_gate",
+      "group": "double_negative",
+      "selected": [
+        "knowledge"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0248,
+      "estimated_tokens": 30,
+      "detail": {
+        "action": "retrieve",
+        "reason_code": "explicit_request",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_double_negative_02",
+      "track": "knowledge_gate",
+      "group": "double_negative",
+      "selected": [
+        "knowledge"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0189,
+      "estimated_tokens": 30,
+      "detail": {
+        "action": "retrieve",
+        "reason_code": "explicit_request",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_double_negative_03",
+      "track": "knowledge_gate",
+      "group": "double_negative",
+      "selected": [
+        "knowledge"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0156,
+      "estimated_tokens": 30,
+      "detail": {
+        "action": "retrieve",
+        "reason_code": "explicit_request",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_double_negative_04",
+      "track": "knowledge_gate",
+      "group": "double_negative",
+      "selected": [
+        "knowledge"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0143,
+      "estimated_tokens": 30,
+      "detail": {
+        "action": "retrieve",
+        "reason_code": "explicit_request",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "knowledge_double_negative_05",
+      "track": "knowledge_gate",
+      "group": "double_negative",
+      "selected": [
+        "knowledge"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0141,
+      "estimated_tokens": 30,
+      "detail": {
+        "action": "retrieve",
+        "reason_code": "explicit_request",
+        "confidence_band": "high"
+      }
+    },
+    {
+      "case_id": "history_explicit_01",
+      "track": "history_intent",
+      "group": "explicit",
+      "selected": [
+        "cross_session_history"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0014,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": true
+      }
+    },
+    {
+      "case_id": "history_explicit_02",
+      "track": "history_intent",
+      "group": "explicit",
+      "selected": [
+        "cross_session_history"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.001,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": true
+      }
+    },
+    {
+      "case_id": "history_explicit_03",
+      "track": "history_intent",
+      "group": "explicit",
+      "selected": [
+        "cross_session_history"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0004,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": true
+      }
+    },
+    {
+      "case_id": "history_explicit_04",
+      "track": "history_intent",
+      "group": "explicit",
+      "selected": [
+        "cross_session_history"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0005,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": true
+      }
+    },
+    {
+      "case_id": "history_explicit_05",
+      "track": "history_intent",
+      "group": "explicit",
+      "selected": [
+        "cross_session_history"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": true
+      }
+    },
+    {
+      "case_id": "history_explicit_06",
+      "track": "history_intent",
+      "group": "explicit",
+      "selected": [
+        "cross_session_history"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": true
+      }
+    },
+    {
+      "case_id": "history_explicit_07",
+      "track": "history_intent",
+      "group": "explicit",
+      "selected": [
+        "cross_session_history"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": true
+      }
+    },
+    {
+      "case_id": "history_explicit_08",
+      "track": "history_intent",
+      "group": "explicit",
+      "selected": [
+        "cross_session_history"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0012,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": true
+      }
+    },
+    {
+      "case_id": "history_explicit_09",
+      "track": "history_intent",
+      "group": "explicit",
+      "selected": [
+        "cross_session_history"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0005,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": true
+      }
+    },
+    {
+      "case_id": "history_explicit_10",
+      "track": "history_intent",
+      "group": "explicit",
+      "selected": [
+        "cross_session_history"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": true
+      }
+    },
+    {
+      "case_id": "history_ordinary_01",
+      "track": "history_intent",
+      "group": "ordinary",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_ordinary_02",
+      "track": "history_intent",
+      "group": "ordinary",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0005,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_ordinary_03",
+      "track": "history_intent",
+      "group": "ordinary",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_ordinary_04",
+      "track": "history_intent",
+      "group": "ordinary",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_ordinary_05",
+      "track": "history_intent",
+      "group": "ordinary",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0002,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_ordinary_06",
+      "track": "history_intent",
+      "group": "ordinary",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_ordinary_07",
+      "track": "history_intent",
+      "group": "ordinary",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0004,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_ordinary_08",
+      "track": "history_intent",
+      "group": "ordinary",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0012,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_ordinary_09",
+      "track": "history_intent",
+      "group": "ordinary",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0004,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_ordinary_10",
+      "track": "history_intent",
+      "group": "ordinary",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_recent_current_01",
+      "track": "history_intent",
+      "group": "recent_current",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_recent_current_02",
+      "track": "history_intent",
+      "group": "recent_current",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_recent_current_03",
+      "track": "history_intent",
+      "group": "recent_current",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0002,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_recent_current_04",
+      "track": "history_intent",
+      "group": "recent_current",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0002,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_recent_current_05",
+      "track": "history_intent",
+      "group": "recent_current",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0005,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_recent_current_06",
+      "track": "history_intent",
+      "group": "recent_current",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0004,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_recent_current_07",
+      "track": "history_intent",
+      "group": "recent_current",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0004,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_recent_current_08",
+      "track": "history_intent",
+      "group": "recent_current",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0002,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_recent_current_09",
+      "track": "history_intent",
+      "group": "recent_current",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0005,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_recent_current_10",
+      "track": "history_intent",
+      "group": "recent_current",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_implicit_reference_01",
+      "track": "history_intent",
+      "group": "implicit_reference",
+      "selected": [],
+      "false_negative": [
+        "cross_session_history"
+      ],
+      "false_positive": [],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_implicit_reference_02",
+      "track": "history_intent",
+      "group": "implicit_reference",
+      "selected": [],
+      "false_negative": [
+        "cross_session_history"
+      ],
+      "false_positive": [],
+      "exact_match": false,
+      "latency_ms": 0.0004,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_implicit_reference_03",
+      "track": "history_intent",
+      "group": "implicit_reference",
+      "selected": [],
+      "false_negative": [
+        "cross_session_history"
+      ],
+      "false_positive": [],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_implicit_reference_04",
+      "track": "history_intent",
+      "group": "implicit_reference",
+      "selected": [],
+      "false_negative": [
+        "cross_session_history"
+      ],
+      "false_positive": [],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_implicit_reference_05",
+      "track": "history_intent",
+      "group": "implicit_reference",
+      "selected": [],
+      "false_negative": [
+        "cross_session_history"
+      ],
+      "false_positive": [],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_implicit_reference_06",
+      "track": "history_intent",
+      "group": "implicit_reference",
+      "selected": [],
+      "false_negative": [
+        "cross_session_history"
+      ],
+      "false_positive": [],
+      "exact_match": false,
+      "latency_ms": 0.0002,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_implicit_reference_07",
+      "track": "history_intent",
+      "group": "implicit_reference",
+      "selected": [],
+      "false_negative": [
+        "cross_session_history"
+      ],
+      "false_positive": [],
+      "exact_match": false,
+      "latency_ms": 0.0004,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_implicit_reference_08",
+      "track": "history_intent",
+      "group": "implicit_reference",
+      "selected": [],
+      "false_negative": [
+        "cross_session_history"
+      ],
+      "false_positive": [],
+      "exact_match": false,
+      "latency_ms": 0.0002,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_implicit_reference_09",
+      "track": "history_intent",
+      "group": "implicit_reference",
+      "selected": [],
+      "false_negative": [
+        "cross_session_history"
+      ],
+      "false_positive": [],
+      "exact_match": false,
+      "latency_ms": 0.0006,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_implicit_reference_10",
+      "track": "history_intent",
+      "group": "implicit_reference",
+      "selected": [],
+      "false_negative": [
+        "cross_session_history"
+      ],
+      "false_positive": [],
+      "exact_match": false,
+      "latency_ms": 0.0002,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": false
+      }
+    },
+    {
+      "case_id": "history_negated_01",
+      "track": "history_intent",
+      "group": "negated",
+      "selected": [
+        "cross_session_history"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "cross_session_history"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0004,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": true
+      }
+    },
+    {
+      "case_id": "history_negated_02",
+      "track": "history_intent",
+      "group": "negated",
+      "selected": [
+        "cross_session_history"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "cross_session_history"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": true
+      }
+    },
+    {
+      "case_id": "history_negated_03",
+      "track": "history_intent",
+      "group": "negated",
+      "selected": [
+        "cross_session_history"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "cross_session_history"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": true
+      }
+    },
+    {
+      "case_id": "history_negated_04",
+      "track": "history_intent",
+      "group": "negated",
+      "selected": [
+        "cross_session_history"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "cross_session_history"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0005,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": true
+      }
+    },
+    {
+      "case_id": "history_negated_05",
+      "track": "history_intent",
+      "group": "negated",
+      "selected": [
+        "cross_session_history"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "cross_session_history"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": true
+      }
+    },
+    {
+      "case_id": "history_negated_06",
+      "track": "history_intent",
+      "group": "negated",
+      "selected": [
+        "cross_session_history"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "cross_session_history"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": true
+      }
+    },
+    {
+      "case_id": "history_negated_07",
+      "track": "history_intent",
+      "group": "negated",
+      "selected": [
+        "cross_session_history"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "cross_session_history"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0006,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": true
+      }
+    },
+    {
+      "case_id": "history_negated_08",
+      "track": "history_intent",
+      "group": "negated",
+      "selected": [
+        "cross_session_history"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "cross_session_history"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0005,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": true
+      }
+    },
+    {
+      "case_id": "history_negated_09",
+      "track": "history_intent",
+      "group": "negated",
+      "selected": [
+        "cross_session_history"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "cross_session_history"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0012,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": true
+      }
+    },
+    {
+      "case_id": "history_negated_10",
+      "track": "history_intent",
+      "group": "negated",
+      "selected": [
+        "cross_session_history"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "cross_session_history"
+      ],
+      "exact_match": false,
+      "latency_ms": 0.0003,
+      "estimated_tokens": 0,
+      "detail": {
+        "explicit_recall": true
+      }
+    },
+    {
+      "case_id": "context_attachment_01",
+      "track": "context_fixed_budget",
+      "group": "attachment",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.2547,
+      "estimated_tokens": 64,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 12,
+          "cross_session_recall": 9,
+          "existing_memory_digest": 8,
+          "knowledge": 14,
+          "lore": 6,
+          "attachment": 15
+        }
+      }
+    },
+    {
+      "case_id": "context_attachment_02",
+      "track": "context_fixed_budget",
+      "group": "attachment",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.2269,
+      "estimated_tokens": 96,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 19,
+          "cross_session_recall": 14,
+          "existing_memory_digest": 12,
+          "knowledge": 21,
+          "lore": 9,
+          "attachment": 21
+        }
+      }
+    },
+    {
+      "case_id": "context_attachment_03",
+      "track": "context_fixed_budget",
+      "group": "attachment",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.2527,
+      "estimated_tokens": 128,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 25,
+          "cross_session_recall": 19,
+          "existing_memory_digest": 16,
+          "knowledge": 28,
+          "lore": 12,
+          "attachment": 28
+        }
+      }
+    },
+    {
+      "case_id": "context_attachment_04",
+      "track": "context_fixed_budget",
+      "group": "attachment",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.4167,
+      "estimated_tokens": 192,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 38,
+          "cross_session_recall": 28,
+          "existing_memory_digest": 24,
+          "knowledge": 42,
+          "lore": 19,
+          "attachment": 41
+        }
+      }
+    },
+    {
+      "case_id": "context_attachment_05",
+      "track": "context_fixed_budget",
+      "group": "attachment",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.5333,
+      "estimated_tokens": 256,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 51,
+          "cross_session_recall": 38,
+          "existing_memory_digest": 33,
+          "knowledge": 56,
+          "lore": 25,
+          "attachment": 53
+        }
+      }
+    },
+    {
+      "case_id": "context_knowledge_01",
+      "track": "context_fixed_budget",
+      "group": "knowledge",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.2448,
+      "estimated_tokens": 64,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 12,
+          "cross_session_recall": 9,
+          "existing_memory_digest": 8,
+          "knowledge": 14,
+          "lore": 6,
+          "attachment": 15
+        }
+      }
+    },
+    {
+      "case_id": "context_knowledge_02",
+      "track": "context_fixed_budget",
+      "group": "knowledge",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.2233,
+      "estimated_tokens": 96,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 19,
+          "cross_session_recall": 14,
+          "existing_memory_digest": 12,
+          "knowledge": 21,
+          "lore": 9,
+          "attachment": 21
+        }
+      }
+    },
+    {
+      "case_id": "context_knowledge_03",
+      "track": "context_fixed_budget",
+      "group": "knowledge",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.2424,
+      "estimated_tokens": 128,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 25,
+          "cross_session_recall": 19,
+          "existing_memory_digest": 16,
+          "knowledge": 28,
+          "lore": 12,
+          "attachment": 28
+        }
+      }
+    },
+    {
+      "case_id": "context_knowledge_04",
+      "track": "context_fixed_budget",
+      "group": "knowledge",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.2944,
+      "estimated_tokens": 192,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 38,
+          "cross_session_recall": 28,
+          "existing_memory_digest": 24,
+          "knowledge": 42,
+          "lore": 19,
+          "attachment": 41
+        }
+      }
+    },
+    {
+      "case_id": "context_knowledge_05",
+      "track": "context_fixed_budget",
+      "group": "knowledge",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.3612,
+      "estimated_tokens": 256,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 51,
+          "cross_session_recall": 38,
+          "existing_memory_digest": 33,
+          "knowledge": 56,
+          "lore": 25,
+          "attachment": 53
+        }
+      }
+    },
+    {
+      "case_id": "context_history_01",
+      "track": "context_fixed_budget",
+      "group": "history",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.1887,
+      "estimated_tokens": 64,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 12,
+          "cross_session_recall": 9,
+          "existing_memory_digest": 8,
+          "knowledge": 14,
+          "lore": 6,
+          "attachment": 15
+        }
+      }
+    },
+    {
+      "case_id": "context_history_02",
+      "track": "context_fixed_budget",
+      "group": "history",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.2116,
+      "estimated_tokens": 96,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 19,
+          "cross_session_recall": 14,
+          "existing_memory_digest": 12,
+          "knowledge": 21,
+          "lore": 9,
+          "attachment": 21
+        }
+      }
+    },
+    {
+      "case_id": "context_history_03",
+      "track": "context_fixed_budget",
+      "group": "history",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.2499,
+      "estimated_tokens": 128,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 25,
+          "cross_session_recall": 19,
+          "existing_memory_digest": 16,
+          "knowledge": 28,
+          "lore": 12,
+          "attachment": 28
+        }
+      }
+    },
+    {
+      "case_id": "context_history_04",
+      "track": "context_fixed_budget",
+      "group": "history",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.2859,
+      "estimated_tokens": 192,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 38,
+          "cross_session_recall": 28,
+          "existing_memory_digest": 24,
+          "knowledge": 42,
+          "lore": 19,
+          "attachment": 41
+        }
+      }
+    },
+    {
+      "case_id": "context_history_05",
+      "track": "context_fixed_budget",
+      "group": "history",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.4922,
+      "estimated_tokens": 256,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 51,
+          "cross_session_recall": 38,
+          "existing_memory_digest": 33,
+          "knowledge": 56,
+          "lore": 25,
+          "attachment": 53
+        }
+      }
+    },
+    {
+      "case_id": "context_memory_01",
+      "track": "context_fixed_budget",
+      "group": "memory",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "knowledge",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.3223,
+      "estimated_tokens": 64,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 12,
+          "cross_session_recall": 9,
+          "existing_memory_digest": 8,
+          "knowledge": 14,
+          "lore": 6,
+          "attachment": 15
+        }
+      }
+    },
+    {
+      "case_id": "context_memory_02",
+      "track": "context_fixed_budget",
+      "group": "memory",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "knowledge",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.3552,
+      "estimated_tokens": 96,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 19,
+          "cross_session_recall": 14,
+          "existing_memory_digest": 12,
+          "knowledge": 21,
+          "lore": 9,
+          "attachment": 21
+        }
+      }
+    },
+    {
+      "case_id": "context_memory_03",
+      "track": "context_fixed_budget",
+      "group": "memory",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "knowledge",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.2584,
+      "estimated_tokens": 128,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 25,
+          "cross_session_recall": 19,
+          "existing_memory_digest": 16,
+          "knowledge": 28,
+          "lore": 12,
+          "attachment": 28
+        }
+      }
+    },
+    {
+      "case_id": "context_memory_04",
+      "track": "context_fixed_budget",
+      "group": "memory",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "knowledge",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.2906,
+      "estimated_tokens": 192,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 38,
+          "cross_session_recall": 28,
+          "existing_memory_digest": 24,
+          "knowledge": 42,
+          "lore": 19,
+          "attachment": 41
+        }
+      }
+    },
+    {
+      "case_id": "context_memory_05",
+      "track": "context_fixed_budget",
+      "group": "memory",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "knowledge",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.3488,
+      "estimated_tokens": 256,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 51,
+          "cross_session_recall": 38,
+          "existing_memory_digest": 33,
+          "knowledge": 56,
+          "lore": 25,
+          "attachment": 53
+        }
+      }
+    },
+    {
+      "case_id": "context_lore_01",
+      "track": "context_fixed_budget",
+      "group": "lore",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.1824,
+      "estimated_tokens": 64,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 12,
+          "cross_session_recall": 9,
+          "existing_memory_digest": 8,
+          "knowledge": 14,
+          "lore": 6,
+          "attachment": 15
+        }
+      }
+    },
+    {
+      "case_id": "context_lore_02",
+      "track": "context_fixed_budget",
+      "group": "lore",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.2042,
+      "estimated_tokens": 96,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 19,
+          "cross_session_recall": 14,
+          "existing_memory_digest": 12,
+          "knowledge": 21,
+          "lore": 9,
+          "attachment": 21
+        }
+      }
+    },
+    {
+      "case_id": "context_lore_03",
+      "track": "context_fixed_budget",
+      "group": "lore",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.2336,
+      "estimated_tokens": 128,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 25,
+          "cross_session_recall": 19,
+          "existing_memory_digest": 16,
+          "knowledge": 28,
+          "lore": 12,
+          "attachment": 28
+        }
+      }
+    },
+    {
+      "case_id": "context_lore_04",
+      "track": "context_fixed_budget",
+      "group": "lore",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.292,
+      "estimated_tokens": 192,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 38,
+          "cross_session_recall": 28,
+          "existing_memory_digest": 24,
+          "knowledge": 42,
+          "lore": 19,
+          "attachment": 41
+        }
+      }
+    },
+    {
+      "case_id": "context_lore_05",
+      "track": "context_fixed_budget",
+      "group": "lore",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.3322,
+      "estimated_tokens": 256,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 51,
+          "cross_session_recall": 38,
+          "existing_memory_digest": 33,
+          "knowledge": 56,
+          "lore": 25,
+          "attachment": 53
+        }
+      }
+    },
+    {
+      "case_id": "context_knowledge_memory_01",
+      "track": "context_fixed_budget",
+      "group": "knowledge_memory",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.1773,
+      "estimated_tokens": 64,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 12,
+          "cross_session_recall": 9,
+          "existing_memory_digest": 8,
+          "knowledge": 14,
+          "lore": 6,
+          "attachment": 15
+        }
+      }
+    },
+    {
+      "case_id": "context_knowledge_memory_02",
+      "track": "context_fixed_budget",
+      "group": "knowledge_memory",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.2084,
+      "estimated_tokens": 96,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 19,
+          "cross_session_recall": 14,
+          "existing_memory_digest": 12,
+          "knowledge": 21,
+          "lore": 9,
+          "attachment": 21
+        }
+      }
+    },
+    {
+      "case_id": "context_knowledge_memory_03",
+      "track": "context_fixed_budget",
+      "group": "knowledge_memory",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.3961,
+      "estimated_tokens": 128,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 25,
+          "cross_session_recall": 19,
+          "existing_memory_digest": 16,
+          "knowledge": 28,
+          "lore": 12,
+          "attachment": 28
+        }
+      }
+    },
+    {
+      "case_id": "context_knowledge_memory_04",
+      "track": "context_fixed_budget",
+      "group": "knowledge_memory",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.7763,
+      "estimated_tokens": 192,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 38,
+          "cross_session_recall": 28,
+          "existing_memory_digest": 24,
+          "knowledge": 42,
+          "lore": 19,
+          "attachment": 41
+        }
+      }
+    },
+    {
+      "case_id": "context_knowledge_memory_05",
+      "track": "context_fixed_budget",
+      "group": "knowledge_memory",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.3684,
+      "estimated_tokens": 256,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 51,
+          "cross_session_recall": 38,
+          "existing_memory_digest": 33,
+          "knowledge": 56,
+          "lore": 25,
+          "attachment": 53
+        }
+      }
+    },
+    {
+      "case_id": "context_continuation_01",
+      "track": "context_fixed_budget",
+      "group": "continuation",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.1906,
+      "estimated_tokens": 64,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 12,
+          "cross_session_recall": 9,
+          "existing_memory_digest": 8,
+          "knowledge": 14,
+          "lore": 6,
+          "attachment": 15
+        }
+      }
+    },
+    {
+      "case_id": "context_continuation_02",
+      "track": "context_fixed_budget",
+      "group": "continuation",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.2081,
+      "estimated_tokens": 96,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 19,
+          "cross_session_recall": 14,
+          "existing_memory_digest": 12,
+          "knowledge": 21,
+          "lore": 9,
+          "attachment": 21
+        }
+      }
+    },
+    {
+      "case_id": "context_continuation_03",
+      "track": "context_fixed_budget",
+      "group": "continuation",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.2528,
+      "estimated_tokens": 128,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 25,
+          "cross_session_recall": 19,
+          "existing_memory_digest": 16,
+          "knowledge": 28,
+          "lore": 12,
+          "attachment": 28
+        }
+      }
+    },
+    {
+      "case_id": "context_continuation_04",
+      "track": "context_fixed_budget",
+      "group": "continuation",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.2851,
+      "estimated_tokens": 192,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 38,
+          "cross_session_recall": 28,
+          "existing_memory_digest": 24,
+          "knowledge": 42,
+          "lore": 19,
+          "attachment": 41
+        }
+      }
+    },
+    {
+      "case_id": "context_continuation_05",
+      "track": "context_fixed_budget",
+      "group": "continuation",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.3303,
+      "estimated_tokens": 256,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 51,
+          "cross_session_recall": 38,
+          "existing_memory_digest": 33,
+          "knowledge": 56,
+          "lore": 25,
+          "attachment": 53
+        }
+      }
+    },
+    {
+      "case_id": "context_attachment_knowledge_01",
+      "track": "context_fixed_budget",
+      "group": "attachment_knowledge",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.1844,
+      "estimated_tokens": 64,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 12,
+          "cross_session_recall": 9,
+          "existing_memory_digest": 8,
+          "knowledge": 14,
+          "lore": 6,
+          "attachment": 15
+        }
+      }
+    },
+    {
+      "case_id": "context_attachment_knowledge_02",
+      "track": "context_fixed_budget",
+      "group": "attachment_knowledge",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.2194,
+      "estimated_tokens": 96,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 19,
+          "cross_session_recall": 14,
+          "existing_memory_digest": 12,
+          "knowledge": 21,
+          "lore": 9,
+          "attachment": 21
+        }
+      }
+    },
+    {
+      "case_id": "context_attachment_knowledge_03",
+      "track": "context_fixed_budget",
+      "group": "attachment_knowledge",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.2315,
+      "estimated_tokens": 128,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 25,
+          "cross_session_recall": 19,
+          "existing_memory_digest": 16,
+          "knowledge": 28,
+          "lore": 12,
+          "attachment": 28
+        }
+      }
+    },
+    {
+      "case_id": "context_attachment_knowledge_04",
+      "track": "context_fixed_budget",
+      "group": "attachment_knowledge",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.3502,
+      "estimated_tokens": 192,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 38,
+          "cross_session_recall": 28,
+          "existing_memory_digest": 24,
+          "knowledge": 42,
+          "lore": 19,
+          "attachment": 41
+        }
+      }
+    },
+    {
+      "case_id": "context_attachment_knowledge_05",
+      "track": "context_fixed_budget",
+      "group": "attachment_knowledge",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.5007,
+      "estimated_tokens": 256,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 51,
+          "cross_session_recall": 38,
+          "existing_memory_digest": 33,
+          "knowledge": 56,
+          "lore": 25,
+          "attachment": 53
+        }
+      }
+    },
+    {
+      "case_id": "context_none_01",
+      "track": "context_fixed_budget",
+      "group": "none",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.011,
+      "estimated_tokens": 0,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 0,
+          "cross_session_recall": 0,
+          "existing_memory_digest": 0,
+          "knowledge": 0,
+          "lore": 0,
+          "attachment": 0
+        }
+      }
+    },
+    {
+      "case_id": "context_none_02",
+      "track": "context_fixed_budget",
+      "group": "none",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0068,
+      "estimated_tokens": 0,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 0,
+          "cross_session_recall": 0,
+          "existing_memory_digest": 0,
+          "knowledge": 0,
+          "lore": 0,
+          "attachment": 0
+        }
+      }
+    },
+    {
+      "case_id": "context_none_03",
+      "track": "context_fixed_budget",
+      "group": "none",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0055,
+      "estimated_tokens": 0,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 0,
+          "cross_session_recall": 0,
+          "existing_memory_digest": 0,
+          "knowledge": 0,
+          "lore": 0,
+          "attachment": 0
+        }
+      }
+    },
+    {
+      "case_id": "context_none_04",
+      "track": "context_fixed_budget",
+      "group": "none",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0053,
+      "estimated_tokens": 0,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 0,
+          "cross_session_recall": 0,
+          "existing_memory_digest": 0,
+          "knowledge": 0,
+          "lore": 0,
+          "attachment": 0
+        }
+      }
+    },
+    {
+      "case_id": "context_none_05",
+      "track": "context_fixed_budget",
+      "group": "none",
+      "selected": [],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0053,
+      "estimated_tokens": 0,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 0,
+          "cross_session_recall": 0,
+          "existing_memory_digest": 0,
+          "knowledge": 0,
+          "lore": 0,
+          "attachment": 0
+        }
+      }
+    },
+    {
+      "case_id": "context_private_memory_only_01",
+      "track": "context_fixed_budget",
+      "group": "private_memory_only",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.4226,
+      "estimated_tokens": 64,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 12,
+          "cross_session_recall": 9,
+          "existing_memory_digest": 8,
+          "knowledge": 14,
+          "lore": 6,
+          "attachment": 15
+        }
+      }
+    },
+    {
+      "case_id": "context_private_memory_only_02",
+      "track": "context_fixed_budget",
+      "group": "private_memory_only",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.2385,
+      "estimated_tokens": 96,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 19,
+          "cross_session_recall": 14,
+          "existing_memory_digest": 12,
+          "knowledge": 21,
+          "lore": 9,
+          "attachment": 21
+        }
+      }
+    },
+    {
+      "case_id": "context_private_memory_only_03",
+      "track": "context_fixed_budget",
+      "group": "private_memory_only",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.2446,
+      "estimated_tokens": 128,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 25,
+          "cross_session_recall": 19,
+          "existing_memory_digest": 16,
+          "knowledge": 28,
+          "lore": 12,
+          "attachment": 28
+        }
+      }
+    },
+    {
+      "case_id": "context_private_memory_only_04",
+      "track": "context_fixed_budget",
+      "group": "private_memory_only",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.2857,
+      "estimated_tokens": 192,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 38,
+          "cross_session_recall": 28,
+          "existing_memory_digest": 24,
+          "knowledge": 42,
+          "lore": 19,
+          "attachment": 41
+        }
+      }
+    },
+    {
+      "case_id": "context_private_memory_only_05",
+      "track": "context_fixed_budget",
+      "group": "private_memory_only",
+      "selected": [
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "false_negative": [],
+      "false_positive": [
+        "attachment",
+        "cross_session_recall",
+        "knowledge",
+        "lore",
+        "rolling_summary"
+      ],
+      "exact_match": false,
+      "latency_ms": 1.3583,
+      "estimated_tokens": 256,
+      "detail": {
+        "component_tokens": {
+          "rolling_summary": 51,
+          "cross_session_recall": 38,
+          "existing_memory_digest": 33,
+          "knowledge": 56,
+          "lore": 25,
+          "attachment": 53
+        }
+      }
+    },
+    {
+      "case_id": "retention_core_01",
+      "track": "memory_retention",
+      "group": "core",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0325,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.078,
+        "protection_reasons": [
+          "core_memory"
+        ]
+      }
+    },
+    {
+      "case_id": "retention_core_02",
+      "track": "memory_retention",
+      "group": "core",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0122,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.0815,
+        "protection_reasons": [
+          "core_memory"
+        ]
+      }
+    },
+    {
+      "case_id": "retention_core_03",
+      "track": "memory_retention",
+      "group": "core",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0079,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.085,
+        "protection_reasons": [
+          "core_memory"
+        ]
+      }
+    },
+    {
+      "case_id": "retention_core_04",
+      "track": "memory_retention",
+      "group": "core",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0061,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.0885,
+        "protection_reasons": [
+          "core_memory"
+        ]
+      }
+    },
+    {
+      "case_id": "retention_core_05",
+      "track": "memory_retention",
+      "group": "core",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0055,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.092,
+        "protection_reasons": [
+          "core_memory"
+        ]
+      }
+    },
+    {
+      "case_id": "retention_correction_01",
+      "track": "memory_retention",
+      "group": "correction",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0058,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.173,
+        "protection_reasons": [
+          "current_correction"
+        ]
+      }
+    },
+    {
+      "case_id": "retention_correction_02",
+      "track": "memory_retention",
+      "group": "correction",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0055,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.1765,
+        "protection_reasons": [
+          "current_correction"
+        ]
+      }
+    },
+    {
+      "case_id": "retention_correction_03",
+      "track": "memory_retention",
+      "group": "correction",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0054,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.18,
+        "protection_reasons": [
+          "current_correction"
+        ]
+      }
+    },
+    {
+      "case_id": "retention_correction_04",
+      "track": "memory_retention",
+      "group": "correction",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.005,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.1835,
+        "protection_reasons": [
+          "current_correction"
+        ]
+      }
+    },
+    {
+      "case_id": "retention_correction_05",
+      "track": "memory_retention",
+      "group": "correction",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0052,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.187,
+        "protection_reasons": [
+          "current_correction"
+        ]
+      }
+    },
+    {
+      "case_id": "retention_active_plan_01",
+      "track": "memory_retention",
+      "group": "active_plan",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0067,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.331867,
+        "protection_reasons": [
+          "unfinished_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "retention_active_plan_02",
+      "track": "memory_retention",
+      "group": "active_plan",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.008,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.335367,
+        "protection_reasons": [
+          "unfinished_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "retention_active_plan_03",
+      "track": "memory_retention",
+      "group": "active_plan",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0056,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.338867,
+        "protection_reasons": [
+          "unfinished_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "retention_active_plan_04",
+      "track": "memory_retention",
+      "group": "active_plan",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0056,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.342367,
+        "protection_reasons": [
+          "unfinished_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "retention_active_plan_05",
+      "track": "memory_retention",
+      "group": "active_plan",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0057,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.345867,
+        "protection_reasons": [
+          "unfinished_plan"
+        ]
+      }
+    },
+    {
+      "case_id": "retention_recent_high_01",
+      "track": "memory_retention",
+      "group": "recent_high",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0068,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.645673,
+        "protection_reasons": []
+      }
+    },
+    {
+      "case_id": "retention_recent_high_02",
+      "track": "memory_retention",
+      "group": "recent_high",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0061,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.649173,
+        "protection_reasons": []
+      }
+    },
+    {
+      "case_id": "retention_recent_high_03",
+      "track": "memory_retention",
+      "group": "recent_high",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0054,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.652673,
+        "protection_reasons": []
+      }
+    },
+    {
+      "case_id": "retention_recent_high_04",
+      "track": "memory_retention",
+      "group": "recent_high",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0053,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.656173,
+        "protection_reasons": []
+      }
+    },
+    {
+      "case_id": "retention_recent_high_05",
+      "track": "memory_retention",
+      "group": "recent_high",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0053,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.659673,
+        "protection_reasons": []
+      }
+    },
+    {
+      "case_id": "retention_stale_low_01",
+      "track": "memory_retention",
+      "group": "stale_low",
+      "selected": [
+        "freeze"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0063,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.038,
+        "protection_reasons": []
+      }
+    },
+    {
+      "case_id": "retention_stale_low_02",
+      "track": "memory_retention",
+      "group": "stale_low",
+      "selected": [
+        "freeze"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0055,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.0415,
+        "protection_reasons": []
+      }
+    },
+    {
+      "case_id": "retention_stale_low_03",
+      "track": "memory_retention",
+      "group": "stale_low",
+      "selected": [
+        "freeze"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0051,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.045,
+        "protection_reasons": []
+      }
+    },
+    {
+      "case_id": "retention_stale_low_04",
+      "track": "memory_retention",
+      "group": "stale_low",
+      "selected": [
+        "freeze"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.005,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.0485,
+        "protection_reasons": []
+      }
+    },
+    {
+      "case_id": "retention_stale_low_05",
+      "track": "memory_retention",
+      "group": "stale_low",
+      "selected": [
+        "freeze"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0049,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.052,
+        "protection_reasons": []
+      }
+    },
+    {
+      "case_id": "retention_stale_medium_01",
+      "track": "memory_retention",
+      "group": "stale_medium",
+      "selected": [
+        "cool"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.006,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.33767,
+        "protection_reasons": []
+      }
+    },
+    {
+      "case_id": "retention_stale_medium_02",
+      "track": "memory_retention",
+      "group": "stale_medium",
+      "selected": [
+        "cool"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0055,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.34117,
+        "protection_reasons": []
+      }
+    },
+    {
+      "case_id": "retention_stale_medium_03",
+      "track": "memory_retention",
+      "group": "stale_medium",
+      "selected": [
+        "cool"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0052,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.34467,
+        "protection_reasons": []
+      }
+    },
+    {
+      "case_id": "retention_stale_medium_04",
+      "track": "memory_retention",
+      "group": "stale_medium",
+      "selected": [
+        "cool"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0052,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.34817,
+        "protection_reasons": []
+      }
+    },
+    {
+      "case_id": "retention_stale_medium_05",
+      "track": "memory_retention",
+      "group": "stale_medium",
+      "selected": [
+        "cool"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0052,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.35167,
+        "protection_reasons": []
+      }
+    },
+    {
+      "case_id": "retention_duplicate_01",
+      "track": "memory_retention",
+      "group": "duplicate",
+      "selected": [
+        "freeze"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0059,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.0,
+        "protection_reasons": []
+      }
+    },
+    {
+      "case_id": "retention_duplicate_02",
+      "track": "memory_retention",
+      "group": "duplicate",
+      "selected": [
+        "freeze"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0054,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.0,
+        "protection_reasons": []
+      }
+    },
+    {
+      "case_id": "retention_duplicate_03",
+      "track": "memory_retention",
+      "group": "duplicate",
+      "selected": [
+        "freeze"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.005,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.0,
+        "protection_reasons": []
+      }
+    },
+    {
+      "case_id": "retention_duplicate_04",
+      "track": "memory_retention",
+      "group": "duplicate",
+      "selected": [
+        "freeze"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0053,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.0,
+        "protection_reasons": []
+      }
+    },
+    {
+      "case_id": "retention_duplicate_05",
+      "track": "memory_retention",
+      "group": "duplicate",
+      "selected": [
+        "freeze"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0053,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.0,
+        "protection_reasons": []
+      }
+    },
+    {
+      "case_id": "retention_relationship_01",
+      "track": "memory_retention",
+      "group": "relationship",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0061,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.63117,
+        "protection_reasons": []
+      }
+    },
+    {
+      "case_id": "retention_relationship_02",
+      "track": "memory_retention",
+      "group": "relationship",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0057,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.63467,
+        "protection_reasons": [
+          "stable_boundary"
+        ]
+      }
+    },
+    {
+      "case_id": "retention_relationship_03",
+      "track": "memory_retention",
+      "group": "relationship",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0053,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.63817,
+        "protection_reasons": [
+          "stable_boundary"
+        ]
+      }
+    },
+    {
+      "case_id": "retention_relationship_04",
+      "track": "memory_retention",
+      "group": "relationship",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0052,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.64167,
+        "protection_reasons": [
+          "stable_boundary"
+        ]
+      }
+    },
+    {
+      "case_id": "retention_relationship_05",
+      "track": "memory_retention",
+      "group": "relationship",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0053,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.64517,
+        "protection_reasons": [
+          "stable_boundary"
+        ]
+      }
+    },
+    {
+      "case_id": "retention_saga_anchor_01",
+      "track": "memory_retention",
+      "group": "saga_anchor",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0059,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.441836,
+        "protection_reasons": [
+          "active_saga_anchor"
+        ]
+      }
+    },
+    {
+      "case_id": "retention_saga_anchor_02",
+      "track": "memory_retention",
+      "group": "saga_anchor",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0055,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.445336,
+        "protection_reasons": [
+          "active_saga_anchor"
+        ]
+      }
+    },
+    {
+      "case_id": "retention_saga_anchor_03",
+      "track": "memory_retention",
+      "group": "saga_anchor",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0053,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.448836,
+        "protection_reasons": [
+          "active_saga_anchor"
+        ]
+      }
+    },
+    {
+      "case_id": "retention_saga_anchor_04",
+      "track": "memory_retention",
+      "group": "saga_anchor",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0054,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.452336,
+        "protection_reasons": [
+          "active_saga_anchor"
+        ]
+      }
+    },
+    {
+      "case_id": "retention_saga_anchor_05",
+      "track": "memory_retention",
+      "group": "saga_anchor",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0053,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.455836,
+        "protection_reasons": [
+          "active_saga_anchor"
+        ]
+      }
+    },
+    {
+      "case_id": "retention_frequent_old_01",
+      "track": "memory_retention",
+      "group": "frequent_old",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0054,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.478,
+        "protection_reasons": []
+      }
+    },
+    {
+      "case_id": "retention_frequent_old_02",
+      "track": "memory_retention",
+      "group": "frequent_old",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0051,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.4815,
+        "protection_reasons": []
+      }
+    },
+    {
+      "case_id": "retention_frequent_old_03",
+      "track": "memory_retention",
+      "group": "frequent_old",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0049,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.485,
+        "protection_reasons": []
+      }
+    },
+    {
+      "case_id": "retention_frequent_old_04",
+      "track": "memory_retention",
+      "group": "frequent_old",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.0049,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.4885,
+        "protection_reasons": []
+      }
+    },
+    {
+      "case_id": "retention_frequent_old_05",
+      "track": "memory_retention",
+      "group": "frequent_old",
+      "selected": [
+        "retain"
+      ],
+      "false_negative": [],
+      "false_positive": [],
+      "exact_match": true,
+      "latency_ms": 0.005,
+      "estimated_tokens": 0,
+      "detail": {
+        "score": 0.492,
+        "protection_reasons": []
+      }
+    }
+  ]
+}

@@ -164,6 +164,9 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
   const [memoryObserverMode, setMemoryObserverMode] = useState<"current" | "dedicated">("current");
   const [memoryObserverPid, setMemoryObserverPid] = useState("");
   const [memoryObserverModel, setMemoryObserverModel] = useState("");
+  const [cognition, setCognition] = useState<api.CognitionSettings | null>(null);
+  const [cognitionDiagnostics, setCognitionDiagnostics] = useState<api.CognitionDiagnostics | null>(null);
+  const [cognitionBusy, setCognitionBusy] = useState(false);
 
   const loadProviders = () => {
     setLoading(true);
@@ -199,6 +202,50 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
   };
 
   useEffect(loadProviders, []);
+
+  const loadCognition = () => {
+    api.getCognitionSettings()
+      .then((value) => {
+        setCognition(value);
+        if (value.diagnostics_visible) {
+          api.getCognitionDiagnostics().then(setCognitionDiagnostics).catch(() => setCognitionDiagnostics(null));
+        } else {
+          setCognitionDiagnostics(null);
+        }
+      })
+      .catch(() => setCognition(null));
+  };
+
+  useEffect(loadCognition, []);
+
+  const saveCognition = (body: Parameters<typeof api.updateCognitionSettings>[0], message: string) => {
+    setCognitionBusy(true);
+    api.updateCognitionSettings(body)
+      .then((value) => {
+        setCognition(value);
+        toast(message);
+        if (value.diagnostics_visible) {
+          api.getCognitionDiagnostics().then(setCognitionDiagnostics).catch(() => setCognitionDiagnostics(null));
+        } else {
+          setCognitionDiagnostics(null);
+        }
+      })
+      .catch((e) => toast(e.message || "保存思考辅助设置失败"))
+      .finally(() => setCognitionBusy(false));
+  };
+
+  const rollbackCognition = () => {
+    if (!window.confirm("关闭全部模型决策并恢复原有确定性逻辑？已有诊断记录不会删除。")) return;
+    setCognitionBusy(true);
+    api.rollbackCognitionSettings()
+      .then((value) => {
+        setCognition(value);
+        setCognitionDiagnostics(null);
+        toast("已回退到原有确定性逻辑");
+      })
+      .catch((e) => toast(e.message || "回退失败"))
+      .finally(() => setCognitionBusy(false));
+  };
 
   const selProvider = providers.find((p) => p.id === selPid);
 
@@ -788,6 +835,138 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
                   </button>
                 </div>
               </section>
+
+              {/* CDS.13：普通层只描述自然能力，高级层才显示协议控制与无正文诊断。 */}
+              {cognition && (
+                <section className="settings-card settings-observer" aria-labelledby="cognition-settings-title">
+                  <div className="settings-provider-head">
+                    <div>
+                      <p className="settings-card-eyebrow">思考辅助</p>
+                      <strong id="cognition-settings-title">让遐蝶更稳妥地理解和回应</strong>
+                    </div>
+                    <label className="settings-switch-row">
+                      <input
+                        type="checkbox"
+                        checked={cognition.enabled}
+                        disabled={cognitionBusy}
+                        onChange={(e) => saveCognition(
+                          { enabled: e.target.checked },
+                          e.target.checked ? "已开启思考辅助" : "已关闭思考辅助",
+                        )}
+                      />
+                      <span>{cognition.enabled ? "已开启" : "已关闭"}</span>
+                    </label>
+                  </div>
+                  <ul className="settings-card-sub">
+                    {cognition.natural_capabilities.map((item) => <li key={item}>{item}</li>)}
+                  </ul>
+
+                  <details className="settings-advanced">
+                    <summary>高级设置与诊断</summary>
+                    <p className="settings-card-sub">
+                      当前所有决策的最高模式由已冻结注册表限制；这里不能越级开启 Advisory 或 Active。
+                    </p>
+
+                    <div className="settings-model-selects">
+                      <label>
+                        显示无正文诊断
+                        <input
+                          type="checkbox"
+                          checked={cognition.diagnostics_visible}
+                          disabled={cognitionBusy}
+                          onChange={(e) => saveCognition(
+                            { diagnostics_visible: e.target.checked },
+                            e.target.checked ? "已显示安全诊断" : "已隐藏安全诊断",
+                          )}
+                        />
+                      </label>
+                    </div>
+
+                    <p className="settings-card-eyebrow settings-section-eyebrow">决策模式</p>
+                    {Object.entries(cognition.decision_modes).map(([kind, mode]) => {
+                      const ceiling = cognition.mode_ceilings[kind];
+                      const rank: Record<api.CognitionMode, number> = { off: -1, shadow: 0, advisory: 1, active: 2 };
+                      return (
+                        <label key={kind} className="settings-model-selects">
+                          <span>{kind}</span>
+                          <select
+                            className="settings-select"
+                            value={mode}
+                            disabled={cognitionBusy}
+                            onChange={(e) => saveCognition(
+                              { decision_modes: { [kind]: e.target.value as api.CognitionMode } },
+                              `已更新 ${kind} 模式`,
+                            )}
+                          >
+                            {(["off", "shadow", "advisory", "active"] as api.CognitionMode[])
+                              .filter((candidate) => rank[candidate] <= rank[ceiling])
+                              .map((candidate) => <option key={candidate} value={candidate}>{candidate}</option>)}
+                          </select>
+                          <small>上限：{ceiling}</small>
+                        </label>
+                      );
+                    })}
+
+                    <p className="settings-card-eyebrow settings-section-eyebrow">模型角色</p>
+                    {cognition.roles.map((role) => {
+                      const binding = cognition.model_bindings[role];
+                      const value = binding ? `${binding.provider_id}::${binding.model}` : "";
+                      return (
+                        <label key={role} className="settings-model-selects">
+                          <span>{role}</span>
+                          <select
+                            className="settings-select settings-select-wide"
+                            value={value}
+                            disabled={cognitionBusy}
+                            onChange={(e) => {
+                              const [provider_id, ...modelParts] = e.target.value.split("::");
+                              const model = modelParts.join("::");
+                              saveCognition(
+                                { model_bindings: { [role]: provider_id && model ? { provider_id, model } : null } },
+                                provider_id && model ? `已保存 ${role} 模型` : `${role} 将跟随当前模型`,
+                              );
+                            }}
+                          >
+                            <option value="">跟随当前模型</option>
+                            {providers.filter((p) => p.enabled && p.id !== "mock").flatMap((p) =>
+                              p.models.map((model) => (
+                                <option key={`${p.id}::${model}`} value={`${p.id}::${model}`}>
+                                  {p.name} · {model}
+                                </option>
+                              )),
+                            )}
+                          </select>
+                        </label>
+                      );
+                    })}
+
+                    <div className="settings-card-sub">
+                      <strong>隐私边界：</strong>诊断不保存正文、Prompt、原始模型输出或候选 ID；含正文的远程处理仍需授权。
+                    </div>
+
+                    {cognition.diagnostics_visible && cognitionDiagnostics && (
+                      <div className="settings-card-sub" aria-label="思考辅助安全诊断">
+                        <p>
+                          {cognitionDiagnostics.diagnostic_version} · {cognitionDiagnostics.protocol_version} · {cognitionDiagnostics.registry_version}
+                        </p>
+                        {cognitionDiagnostics.summaries.length === 0
+                          ? <p>暂无决策运行记录。</p>
+                          : cognitionDiagnostics.summaries.map((summary) => (
+                            <p key={summary.decision_kind}>
+                              {summary.decision_kind}：{summary.run_count} 次，fallback {summary.fallback_count} 次，
+                              中位延迟 {summary.latency_ms_median ?? "—"} ms，最大 {summary.latency_ms_max ?? "—"} ms，
+                              错误码 {Object.keys(summary.error_codes).length ? JSON.stringify(summary.error_codes) : "无"}
+                            </p>
+                          ))}
+                      </div>
+                    )}
+
+                    <button className="btn danger" disabled={cognitionBusy} onClick={rollbackCognition}>
+                      一键回退到原有逻辑
+                    </button>
+                  </details>
+                </section>
+              )}
 
               {/* 供应商卡片网格 */}
               <p className="settings-card-eyebrow settings-section-eyebrow">供应商</p>

@@ -284,6 +284,64 @@ def test_stale_running_cognition_is_recovered():
     assert get_run(queued["id"]).status == "recovery_pending"
 
 
+def test_interruption_after_relationship_apply_converges_idempotently(monkeypatch):
+    sid, uid, aid = _turn()
+    provider = _provider()
+
+    async def complete(*_args, **_kwargs):
+        return {"text": json.dumps(_valid_result(), ensure_ascii=False)}
+
+    monkeypatch.setattr(llm, "complete_json", complete)
+    original_apply = relationship.apply_suggestion
+    interrupted = False
+
+    def interrupt_after_apply(suggestion_id):
+        nonlocal interrupted
+        result = original_apply(suggestion_id)
+        if not interrupted:
+            interrupted = True
+            raise RuntimeError("worker interrupted")
+        return result
+
+    monkeypatch.setattr(relationship, "apply_suggestion", interrupt_after_apply)
+    before = repository.get_snapshot(advance_time=False)["relationship"]
+    queued = cognition_service.enqueue_turn(
+        chat_provider=provider, chat_model="test-model", session_id=sid,
+        user_message_id=uid, assistant_message_id=aid,
+    )
+    with pytest.raises(RuntimeError, match="worker interrupted"):
+        asyncio.run(cognition_service.process_due(limit=1))
+    after_interruption = repository.get_snapshot(advance_time=False)["relationship"]
+    assert after_interruption["bond"] == pytest.approx(before["bond"] + 0.001)
+    assert get_run(queued["id"]).status == "running"
+
+    conn = db.connect()
+    try:
+        conn.execute(
+            "UPDATE decision_runs SET updated_at=? WHERE id=?",
+            (db.now() - cognition_service.RUNNING_STALE_SECONDS - 1, queued["id"]),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    assert asyncio.run(cognition_service.process_due(limit=1)) == 1
+    final = repository.get_snapshot(advance_time=False)["relationship"]
+    run = get_run(queued["id"])
+    assert run.status == "applied" and run.attempt_count == 2
+    assert final["bond"] == pytest.approx(after_interruption["bond"])
+    conn = db.connect()
+    try:
+        assert conn.execute(
+            "SELECT COUNT(*) FROM companion_cognition_results WHERE run_id=?", (run.id,),
+        ).fetchone()[0] == 1
+        assert conn.execute(
+            "SELECT COUNT(*) FROM affect_events WHERE source='relationship_meaning' "
+            "AND source_message_id=?", (uid,),
+        ).fetchone()[0] == 1
+    finally:
+        conn.close()
+
+
 def test_real_chat_api_queues_cognition_without_mechanical_bond(monkeypatch):
     provider = _provider()
     monkeypatch.setattr(main_module, "_current_model", lambda: (provider, "test-model"))

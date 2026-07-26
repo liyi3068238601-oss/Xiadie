@@ -378,10 +378,69 @@ def _bounded_components(
         extra = min(unused, max(0, requested[name] - allocations[name]))
         allocations[name] += extra
         unused -= extra
-    return {
+    bounded = {
         name: _truncate_to_tokens(value, allocations[name])
         for name, value in normalized.items()
+        if name != "knowledge"
     }
+    bounded["knowledge"] = _truncate_knowledge_block(
+        normalized["knowledge"], allocations["knowledge"],
+    )
+    return bounded
+
+
+def _truncate_knowledge_block(text: str, max_tokens: int) -> str:
+    value = str(text or "")
+    limit = max(0, int(max_tokens))
+    if context_budget.estimate_tokens(value) <= limit:
+        return value
+    marker = "```json\n"
+    if marker not in value or not value.endswith("\n```"):
+        return _truncate_to_tokens(value, limit)
+    prefix, payload = value.split(marker, 1)
+    try:
+        records = json.loads(payload[:-4])
+    except (TypeError, ValueError):
+        return ""
+    if not isinstance(records, list):
+        return ""
+    for count in range(len(records), 0, -1):
+        selected = records[:count]
+        low, high = 0, max(
+            (len(str(part.get("quoted_content") or ""))
+             for record in selected if isinstance(record, dict)
+             for part in record.get("parts", []) if isinstance(part, dict)),
+            default=0,
+        )
+        best = ""
+        while low <= high:
+            content_limit = (low + high) // 2
+            shortened = _shorten_knowledge_records(selected, content_limit)
+            candidate = prefix + marker + json.dumps(
+                shortened, ensure_ascii=False, separators=(",", ":"),
+            ) + "\n```"
+            if context_budget.estimate_tokens(candidate) <= limit:
+                best = candidate
+                low = content_limit + 1
+            else:
+                high = content_limit - 1
+        if best:
+            return best
+    return ""
+
+
+def _shorten_knowledge_records(records: Sequence[object], limit: int) -> list[object]:
+    shortened = json.loads(json.dumps(records, ensure_ascii=False))
+    for record in shortened:
+        if not isinstance(record, dict):
+            continue
+        for part in record.get("parts", []):
+            if not isinstance(part, dict):
+                continue
+            content = str(part.get("quoted_content") or "")
+            if len(content) > limit:
+                part["quoted_content"] = content[:max(0, limit - 1)].rstrip() + "…"
+    return shortened
 
 
 def _truncate_to_tokens(text: str, max_tokens: int) -> str:

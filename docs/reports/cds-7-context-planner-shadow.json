@@ -1,0 +1,3015 @@
+{
+  "report_version": "context-planner-shadow-report-v1",
+  "protocol_version": "context-priority-proposal-eval-v1",
+  "synthetic_only": true,
+  "contains_user_data": false,
+  "fixture_sha256": "8a957ae964e80a8e1edc04a742de87d880ad0ff5081f894e09d60d8d72c3dcbf",
+  "sample_count": 80,
+  "group_counts": {
+    "document": 20,
+    "history": 20,
+    "lore": 20,
+    "relationship": 20
+  },
+  "proposal_exact_rate": 1.0,
+  "protected_region_preservation_rate": 1.0,
+  "output_reserve_preservation_rate": 1.0,
+  "real_assembly_validation_rate": 1.0,
+  "difference_recording_rate": 1.0,
+  "proposal_actual_difference_rate": 1.0,
+  "production_assembly_changed": false,
+  "outcomes": [
+    {
+      "case_id": "document-01-01",
+      "group": "document",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "knowledge",
+        "attachment",
+        "rolling_summary",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "knowledge",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 532,
+        "lore": 409,
+        "attachment": 2254,
+        "knowledge": 901
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "document-01-02",
+      "group": "document",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "knowledge",
+        "attachment",
+        "rolling_summary",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "knowledge",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 532,
+        "lore": 409,
+        "attachment": 2254,
+        "knowledge": 901
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "document-01-03",
+      "group": "document",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "knowledge",
+        "attachment",
+        "rolling_summary",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "knowledge",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 532,
+        "lore": 409,
+        "attachment": 2254,
+        "knowledge": 901
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "document-01-04",
+      "group": "document",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "knowledge",
+        "attachment",
+        "rolling_summary",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "knowledge",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 665,
+        "lore": 512,
+        "attachment": 2817,
+        "knowledge": 1126
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "document-02-01",
+      "group": "document",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "knowledge",
+        "rolling_summary",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 2625,
+        "lore": 409,
+        "attachment": 0,
+        "knowledge": 1062
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "document-02-02",
+      "group": "document",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "knowledge",
+        "rolling_summary",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 2786,
+        "lore": 409,
+        "attachment": 0,
+        "knowledge": 901
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "document-02-03",
+      "group": "document",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "knowledge",
+        "rolling_summary",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 3482,
+        "lore": 512,
+        "attachment": 0,
+        "knowledge": 1126
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "document-02-04",
+      "group": "document",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "knowledge",
+        "rolling_summary",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 4179,
+        "lore": 614,
+        "attachment": 0,
+        "knowledge": 1351
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "document-03-01",
+      "group": "document",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "knowledge",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 2625,
+        "lore": 409,
+        "attachment": 0,
+        "knowledge": 1062
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "document-03-02",
+      "group": "document",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "knowledge",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 3150,
+        "lore": 512,
+        "attachment": 0,
+        "knowledge": 1458
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "document-03-03",
+      "group": "document",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "knowledge",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 3675,
+        "lore": 614,
+        "attachment": 0,
+        "knowledge": 1855
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "document-03-04",
+      "group": "document",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "knowledge",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 4200,
+        "lore": 716,
+        "attachment": 0,
+        "knowledge": 2252
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "document-04-01",
+      "group": "document",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "knowledge",
+        "rolling_summary",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 2625,
+        "lore": 512,
+        "attachment": 0,
+        "knowledge": 1983
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "document-04-02",
+      "group": "document",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "knowledge",
+        "rolling_summary",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 3150,
+        "lore": 614,
+        "attachment": 0,
+        "knowledge": 2380
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "document-04-03",
+      "group": "document",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "knowledge",
+        "rolling_summary",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 3675,
+        "lore": 716,
+        "attachment": 0,
+        "knowledge": 2777
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "document-04-04",
+      "group": "document",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "knowledge",
+        "rolling_summary",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 4200,
+        "lore": 819,
+        "attachment": 0,
+        "knowledge": 3173
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "document-05-01",
+      "group": "document",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "knowledge",
+        "attachment",
+        "rolling_summary",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 1554,
+        "lore": 614,
+        "attachment": 2625,
+        "knowledge": 1351
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "document-05-02",
+      "group": "document",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "knowledge",
+        "attachment",
+        "rolling_summary",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 1726,
+        "lore": 716,
+        "attachment": 3150,
+        "knowledge": 1576
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "document-05-03",
+      "group": "document",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "knowledge",
+        "attachment",
+        "rolling_summary",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 1896,
+        "lore": 819,
+        "attachment": 3675,
+        "knowledge": 1802
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "document-05-04",
+      "group": "document",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "knowledge",
+        "attachment",
+        "rolling_summary",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 2068,
+        "lore": 921,
+        "attachment": 4200,
+        "knowledge": 2027
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "history-01-01",
+      "group": "history",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "cross_session_recall",
+        "rolling_summary",
+        "existing_memory_digest",
+        "attachment",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "knowledge",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 532,
+        "lore": 409,
+        "attachment": 2254,
+        "knowledge": 901
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall",
+          "rolling_summary"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "history-01-02",
+      "group": "history",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "cross_session_recall",
+        "rolling_summary",
+        "existing_memory_digest",
+        "attachment",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "knowledge",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 532,
+        "lore": 409,
+        "attachment": 2254,
+        "knowledge": 901
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall",
+          "rolling_summary"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "history-01-03",
+      "group": "history",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "cross_session_recall",
+        "rolling_summary",
+        "existing_memory_digest",
+        "attachment",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "knowledge",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 532,
+        "lore": 409,
+        "attachment": 2254,
+        "knowledge": 901
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall",
+          "rolling_summary"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "history-01-04",
+      "group": "history",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "cross_session_recall",
+        "rolling_summary",
+        "existing_memory_digest",
+        "attachment",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "knowledge",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 665,
+        "lore": 512,
+        "attachment": 2817,
+        "knowledge": 1126
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall",
+          "rolling_summary"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "history-02-01",
+      "group": "history",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "cross_session_recall",
+        "rolling_summary",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 2625,
+        "lore": 409,
+        "attachment": 0,
+        "knowledge": 1062
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall",
+          "rolling_summary"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "history-02-02",
+      "group": "history",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "cross_session_recall",
+        "rolling_summary",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 2786,
+        "lore": 409,
+        "attachment": 0,
+        "knowledge": 901
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall",
+          "rolling_summary"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "history-02-03",
+      "group": "history",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "cross_session_recall",
+        "rolling_summary",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 3482,
+        "lore": 512,
+        "attachment": 0,
+        "knowledge": 1126
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall",
+          "rolling_summary"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "history-02-04",
+      "group": "history",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "cross_session_recall",
+        "rolling_summary",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 4179,
+        "lore": 614,
+        "attachment": 0,
+        "knowledge": 1351
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall",
+          "rolling_summary"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "history-03-01",
+      "group": "history",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 2625,
+        "lore": 409,
+        "attachment": 0,
+        "knowledge": 1062
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "history-03-02",
+      "group": "history",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 3150,
+        "lore": 512,
+        "attachment": 0,
+        "knowledge": 1458
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "history-03-03",
+      "group": "history",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 3675,
+        "lore": 614,
+        "attachment": 0,
+        "knowledge": 1855
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "history-03-04",
+      "group": "history",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 4200,
+        "lore": 716,
+        "attachment": 0,
+        "knowledge": 2252
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "history-04-01",
+      "group": "history",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "cross_session_recall",
+        "rolling_summary",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 2625,
+        "lore": 512,
+        "attachment": 0,
+        "knowledge": 1983
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall",
+          "rolling_summary"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "history-04-02",
+      "group": "history",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "cross_session_recall",
+        "rolling_summary",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 3150,
+        "lore": 614,
+        "attachment": 0,
+        "knowledge": 2380
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall",
+          "rolling_summary"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "history-04-03",
+      "group": "history",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "cross_session_recall",
+        "rolling_summary",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 3675,
+        "lore": 716,
+        "attachment": 0,
+        "knowledge": 2777
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall",
+          "rolling_summary"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "history-04-04",
+      "group": "history",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "cross_session_recall",
+        "rolling_summary",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 4200,
+        "lore": 819,
+        "attachment": 0,
+        "knowledge": 3173
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall",
+          "rolling_summary"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "history-05-01",
+      "group": "history",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "cross_session_recall",
+        "rolling_summary",
+        "existing_memory_digest",
+        "attachment",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 1554,
+        "lore": 614,
+        "attachment": 2625,
+        "knowledge": 1351
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall",
+          "rolling_summary"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "history-05-02",
+      "group": "history",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "cross_session_recall",
+        "rolling_summary",
+        "existing_memory_digest",
+        "attachment",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 1726,
+        "lore": 716,
+        "attachment": 3150,
+        "knowledge": 1576
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall",
+          "rolling_summary"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "history-05-03",
+      "group": "history",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "cross_session_recall",
+        "rolling_summary",
+        "existing_memory_digest",
+        "attachment",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 1896,
+        "lore": 819,
+        "attachment": 3675,
+        "knowledge": 1802
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall",
+          "rolling_summary"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "history-05-04",
+      "group": "history",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "cross_session_recall",
+        "rolling_summary",
+        "existing_memory_digest",
+        "attachment",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 2068,
+        "lore": 921,
+        "attachment": 4200,
+        "knowledge": 2027
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall",
+          "rolling_summary"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "relationship-01-01",
+      "group": "relationship",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "existing_memory_digest",
+        "rolling_summary",
+        "cross_session_recall",
+        "attachment",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "knowledge",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 532,
+        "lore": 409,
+        "attachment": 2254,
+        "knowledge": 901
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "relationship-01-02",
+      "group": "relationship",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "existing_memory_digest",
+        "rolling_summary",
+        "cross_session_recall",
+        "attachment",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "knowledge",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 532,
+        "lore": 409,
+        "attachment": 2254,
+        "knowledge": 901
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "relationship-01-03",
+      "group": "relationship",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "existing_memory_digest",
+        "rolling_summary",
+        "cross_session_recall",
+        "attachment",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "knowledge",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 532,
+        "lore": 409,
+        "attachment": 2254,
+        "knowledge": 901
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "relationship-01-04",
+      "group": "relationship",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "existing_memory_digest",
+        "rolling_summary",
+        "cross_session_recall",
+        "attachment",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "knowledge",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 665,
+        "lore": 512,
+        "attachment": 2817,
+        "knowledge": 1126
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "relationship-02-01",
+      "group": "relationship",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "existing_memory_digest",
+        "rolling_summary",
+        "cross_session_recall",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 2625,
+        "lore": 409,
+        "attachment": 0,
+        "knowledge": 1062
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "relationship-02-02",
+      "group": "relationship",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "existing_memory_digest",
+        "rolling_summary",
+        "cross_session_recall",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 2786,
+        "lore": 409,
+        "attachment": 0,
+        "knowledge": 901
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "relationship-02-03",
+      "group": "relationship",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "existing_memory_digest",
+        "rolling_summary",
+        "cross_session_recall",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 3482,
+        "lore": 512,
+        "attachment": 0,
+        "knowledge": 1126
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "relationship-02-04",
+      "group": "relationship",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "existing_memory_digest",
+        "rolling_summary",
+        "cross_session_recall",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 4179,
+        "lore": 614,
+        "attachment": 0,
+        "knowledge": 1351
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "relationship-03-01",
+      "group": "relationship",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "existing_memory_digest",
+        "cross_session_recall",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 2625,
+        "lore": 409,
+        "attachment": 0,
+        "knowledge": 1062
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "relationship-03-02",
+      "group": "relationship",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "existing_memory_digest",
+        "cross_session_recall",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 3150,
+        "lore": 512,
+        "attachment": 0,
+        "knowledge": 1458
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "relationship-03-03",
+      "group": "relationship",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "existing_memory_digest",
+        "cross_session_recall",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 3675,
+        "lore": 614,
+        "attachment": 0,
+        "knowledge": 1855
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "relationship-03-04",
+      "group": "relationship",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "existing_memory_digest",
+        "cross_session_recall",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 4200,
+        "lore": 716,
+        "attachment": 0,
+        "knowledge": 2252
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "relationship-04-01",
+      "group": "relationship",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "existing_memory_digest",
+        "rolling_summary",
+        "cross_session_recall",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 2625,
+        "lore": 512,
+        "attachment": 0,
+        "knowledge": 1983
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "relationship-04-02",
+      "group": "relationship",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "existing_memory_digest",
+        "rolling_summary",
+        "cross_session_recall",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 3150,
+        "lore": 614,
+        "attachment": 0,
+        "knowledge": 2380
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "relationship-04-03",
+      "group": "relationship",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "existing_memory_digest",
+        "rolling_summary",
+        "cross_session_recall",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 3675,
+        "lore": 716,
+        "attachment": 0,
+        "knowledge": 2777
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "relationship-04-04",
+      "group": "relationship",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "existing_memory_digest",
+        "rolling_summary",
+        "cross_session_recall",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 4200,
+        "lore": 819,
+        "attachment": 0,
+        "knowledge": 3173
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "relationship-05-01",
+      "group": "relationship",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "existing_memory_digest",
+        "rolling_summary",
+        "cross_session_recall",
+        "attachment",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 1554,
+        "lore": 614,
+        "attachment": 2625,
+        "knowledge": 1351
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "relationship-05-02",
+      "group": "relationship",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "existing_memory_digest",
+        "rolling_summary",
+        "cross_session_recall",
+        "attachment",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 1726,
+        "lore": 716,
+        "attachment": 3150,
+        "knowledge": 1576
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "relationship-05-03",
+      "group": "relationship",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "existing_memory_digest",
+        "rolling_summary",
+        "cross_session_recall",
+        "attachment",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 1896,
+        "lore": 819,
+        "attachment": 3675,
+        "knowledge": 1802
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "relationship-05-04",
+      "group": "relationship",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "existing_memory_digest",
+        "rolling_summary",
+        "cross_session_recall",
+        "attachment",
+        "knowledge",
+        "lore"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 2068,
+        "lore": 921,
+        "attachment": 4200,
+        "knowledge": 2027
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "lore-01-01",
+      "group": "lore",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "lore",
+        "rolling_summary",
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "knowledge",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 532,
+        "lore": 409,
+        "attachment": 2254,
+        "knowledge": 901
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "lore-01-02",
+      "group": "lore",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "lore",
+        "rolling_summary",
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "knowledge",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 532,
+        "lore": 409,
+        "attachment": 2254,
+        "knowledge": 901
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "lore-01-03",
+      "group": "lore",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "lore",
+        "rolling_summary",
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "knowledge",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 532,
+        "lore": 409,
+        "attachment": 2254,
+        "knowledge": 901
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "lore-01-04",
+      "group": "lore",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "lore",
+        "rolling_summary",
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "knowledge",
+        "existing_memory_digest",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 665,
+        "lore": 512,
+        "attachment": 2817,
+        "knowledge": 1126
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "lore-02-01",
+      "group": "lore",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "lore",
+        "rolling_summary",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 2625,
+        "lore": 409,
+        "attachment": 0,
+        "knowledge": 1062
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "lore-02-02",
+      "group": "lore",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "lore",
+        "rolling_summary",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 2786,
+        "lore": 409,
+        "attachment": 0,
+        "knowledge": 901
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "lore-02-03",
+      "group": "lore",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "lore",
+        "rolling_summary",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 3482,
+        "lore": 512,
+        "attachment": 0,
+        "knowledge": 1126
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "lore-02-04",
+      "group": "lore",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "lore",
+        "rolling_summary",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 4179,
+        "lore": 614,
+        "attachment": 0,
+        "knowledge": 1351
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "lore-03-01",
+      "group": "lore",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "lore",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 2625,
+        "lore": 409,
+        "attachment": 0,
+        "knowledge": 1062
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "lore-03-02",
+      "group": "lore",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "lore",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 3150,
+        "lore": 512,
+        "attachment": 0,
+        "knowledge": 1458
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "lore-03-03",
+      "group": "lore",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "lore",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 3675,
+        "lore": 614,
+        "attachment": 0,
+        "knowledge": 1855
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "lore-03-04",
+      "group": "lore",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "lore",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 4200,
+        "lore": 716,
+        "attachment": 0,
+        "knowledge": 2252
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "lore-04-01",
+      "group": "lore",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "lore",
+        "rolling_summary",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 2625,
+        "lore": 512,
+        "attachment": 0,
+        "knowledge": 1983
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "lore-04-02",
+      "group": "lore",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "lore",
+        "rolling_summary",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 3150,
+        "lore": 614,
+        "attachment": 0,
+        "knowledge": 2380
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "lore-04-03",
+      "group": "lore",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "lore",
+        "rolling_summary",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 3675,
+        "lore": 716,
+        "attachment": 0,
+        "knowledge": 2777
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "lore-04-04",
+      "group": "lore",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "lore",
+        "rolling_summary",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge"
+      ],
+      "actual_fixed_ratio_order": [
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 4200,
+        "lore": 819,
+        "attachment": 0,
+        "knowledge": 3173
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "lore-05-01",
+      "group": "lore",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "lore",
+        "rolling_summary",
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 1554,
+        "lore": 614,
+        "attachment": 2625,
+        "knowledge": 1351
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "lore-05-02",
+      "group": "lore",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "lore",
+        "rolling_summary",
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 1726,
+        "lore": 716,
+        "attachment": 3150,
+        "knowledge": 1576
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "lore-05-03",
+      "group": "lore",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "lore",
+        "rolling_summary",
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 1896,
+        "lore": 819,
+        "attachment": 3675,
+        "knowledge": 1802
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    },
+    {
+      "case_id": "lore-05-04",
+      "group": "lore",
+      "proposal_exact": true,
+      "proposed_allocation_rank": [
+        "lore",
+        "rolling_summary",
+        "attachment",
+        "cross_session_recall",
+        "existing_memory_digest",
+        "knowledge"
+      ],
+      "actual_fixed_ratio_order": [
+        "attachment",
+        "existing_memory_digest",
+        "knowledge",
+        "lore"
+      ],
+      "actual_component_tokens": {
+        "rolling_summary": 0,
+        "cross_session_recall": 0,
+        "existing_memory_digest": 2068,
+        "lore": 921,
+        "attachment": 4200,
+        "knowledge": 2027
+      },
+      "differences": {
+        "order_changed": true,
+        "proposed_but_not_injected": [
+          "rolling_summary",
+          "cross_session_recall"
+        ],
+        "injected_outside_proposal": []
+      },
+      "difference_recorded": true,
+      "protected_regions_preserved": true,
+      "output_reserve_preserved": true,
+      "real_assembly_valid": true
+    }
+  ]
+}

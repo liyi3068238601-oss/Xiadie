@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+import hashlib
 from pathlib import Path
 import re
 
@@ -28,11 +29,12 @@ def _sections() -> list[dict]:
     return result
 
 
-def retrieve_lore(query: str, max_sections: int = MAX_SECTIONS, max_chars: int = MAX_CHARS) -> str:
-    """返回与问题相关的设定小节；无明确命中时不注入任何背景。"""
+def retrieve_lore_candidates(
+    query: str, max_sections: int = MAX_SECTIONS, max_chars: int = MAX_CHARS,
+) -> list[dict]:
     clean_query = re.sub(r"\s+", "", query.casefold())
     if not clean_query:
-        return ""
+        return []
     ranked = []
     for index, section in enumerate(_sections()):
         score = 0
@@ -45,12 +47,30 @@ def retrieve_lore(query: str, max_sections: int = MAX_SECTIONS, max_chars: int =
         if score:
             ranked.append((score, -index, section))
     ranked.sort(reverse=True, key=lambda item: (item[0], item[1]))
-    blocks = []
+    candidates = []
     used = 0
-    for _, _, section in ranked[:max_sections]:
-        block = f"## {section['title']}\n{section['body']}"
-        if blocks and used + len(block) > max_chars:
+    for legacy_rank, (_, _, section) in enumerate(ranked[:max_sections]):
+        content = f"## {section['title']}\n{section['body']}"
+        if candidates and used + len(content) > max_chars:
             break
-        blocks.append(block[:max_chars - used])
-        used += len(block)
-    return "\n\n".join(blocks)
+        content = content[:max_chars - used]
+        content_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
+        section_id = hashlib.sha256(section["title"].encode("utf-8")).hexdigest()
+        candidates.append({
+            "section_id": section_id,
+            "revision": content_hash,
+            "content_sha256": content_hash,
+            "content": content,
+            "legacy_rank": legacy_rank,
+            "source_available": True,
+        })
+        used += len(content)
+    return candidates
+
+
+def retrieve_lore(query: str, max_sections: int = MAX_SECTIONS, max_chars: int = MAX_CHARS) -> str:
+    """返回与问题相关的设定小节；无明确命中时不注入任何背景。"""
+    return "\n\n".join(
+        item["content"]
+        for item in retrieve_lore_candidates(query, max_sections=max_sections, max_chars=max_chars)
+    )

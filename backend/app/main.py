@@ -16,16 +16,24 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from . import (
-    archivist, archivist_worker, companion_state, context_assembler, context_budget,
+    archivist, archivist_worker, cognitive_decision, cognition_calibration,
+    cognition_diagnostics as cognition_diagnostic_views, cognition_runtime,
+    cognition_settings, companion_state, context_assembler, context_budget,
     context_controls, context_diagnostics, conversation_summaries,
     conversation_summary_service, db,
     entities, episode_consolidator, history_recall,
     episode_summary_service, episodes, knowledge, knowledge_cleanup, knowledge_context,
     knowledge_embeddings, knowledge_grants,
     knowledge_management, knowledge_parser, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search,
-    knowledge_worker, llm, lore, memory, memory_conflicts, saga_consolidator, saga_lifecycle, saga_summary,
+    knowledge_worker, llm, lore, memory, memory_conflicts, memory_shadow_proposals,
+    saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, secret_store, slow_lifecycle,
 )
+from . import candidate_reranker_shadow  # noqa: F401
+from . import presence_thread_shadow  # noqa: F401 - registers CDS.3 Shadow contract
+from . import recall_planner_shadow  # noqa: F401 - registers CDS.4 Shadow contract
+from . import context_planner_shadow  # noqa: F401 - registers CDS.7 Shadow contract
+from . import episode_saga_shadow  # noqa: F401 - registers CDS.10 Shadow contracts
 from . import memory_observer_service
 from .affect import observer_service as affect_observer_service
 from .proactive import presence as proactive_presence
@@ -65,6 +73,7 @@ def cleanup_orphan_attachments(max_age_seconds: float = 3600) -> int:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db.init_db()
+    cognition_runtime.recover_control_plane()
     # 启动时清理上一次运行遗留的孤儿附件（message_id IS NULL 且超过 1 小时）
     cleanup_orphan_attachments()
     conversation_summaries.recover_stale_runs()
@@ -479,6 +488,8 @@ def _context_capability(provider: dict | None, model: str):
 
 @app.post("/api/chat")
 async def chat(body: ChatIn) -> StreamingResponse:
+    # CDS.2: a real user turn preempts only not-started low-priority cognition work.
+    cognition_runtime.DEFAULT_GOVERNOR.cancel_pending_for_user_message()
     # 空 content 且无附件：拒绝（regenerate 不受此约束，因为复用历史消息）
     if not body.regenerate and not body.content.strip() and not body.attachment_ids:
         raise HTTPException(400, "content 和 attachment_ids 至少有一个非空")
@@ -893,6 +904,14 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 candidate = memory.maybe_create_candidate(body.content, body.session_id, uid)
             except Exception:  # noqa: BLE001 - 记忆兜底不能吞掉成功的聊天回复
                 candidate = None
+        final_payload = {
+            "message_id": aid,
+            "content": full,
+            "knowledge_citations": [
+                knowledge_context.citation_public(row) for row in _message_knowledge_citations(aid)
+            ],
+        }
+        yield _sse("final", final_payload)
         yield _sse(
             "done",
             {
@@ -903,10 +922,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 "affect_observation": affect_observation,
                 "companion_cognition": affect_observation,
                 "memory_observation": memory_observation,
-                "content": full,
-                "knowledge_citations": [
-                    knowledge_context.citation_public(row) for row in _message_knowledge_citations(aid)
-                ],
+                **final_payload,
             },
         )
 
@@ -1015,6 +1031,82 @@ def resolve_proactive_feedback(feedback_id: str, body: ProactiveFeedbackResolveI
 @app.get("/api/proactive/diagnostics")
 def proactive_diagnostics(limit: int = 100) -> dict:
     return proactive_feedback.diagnostics(limit)
+
+
+@app.get("/api/cognition/diagnostics")
+def cognition_diagnostics(decision_kind: str | None = None, limit: int = 50) -> dict:
+    """Read-only CDS diagnostics with a strict body-free field allowlist."""
+    return cognitive_decision.diagnostics(decision_kind=decision_kind, limit=limit)
+
+
+class CognitionFeedbackIn(BaseModel):
+    decision_kind: str = Field(min_length=1, max_length=80)
+    feedback_kind: str = Field(min_length=1, max_length=40)
+    source_run_id: str | None = Field(default=None, max_length=80)
+    request_nonce: str = Field(min_length=1, max_length=128)
+
+
+class CognitionRollbackIn(BaseModel):
+    request_nonce: str = Field(min_length=1, max_length=128)
+
+
+@app.get("/api/cognition/calibration")
+def cognition_calibration_diagnostics(limit: int = 100) -> dict:
+    return cognition_calibration.diagnostics(limit)
+
+
+@app.post("/api/cognition/feedback")
+def submit_cognition_feedback(body: CognitionFeedbackIn) -> dict:
+    try:
+        return cognition_calibration.submit_feedback(
+            decision_kind=body.decision_kind, feedback_kind=body.feedback_kind,
+            source_run_id=body.source_run_id, request_nonce=body.request_nonce,
+        )
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+
+class CognitionSettingsIn(BaseModel):
+    enabled: bool | None = None
+    diagnostics_visible: bool | None = None
+    decision_modes: dict[str, str] | None = None
+    model_bindings: dict[str, dict[str, str] | None] | None = None
+
+
+@app.get("/api/cognition/settings")
+def read_cognition_settings() -> dict:
+    return cognition_settings.get_settings()
+
+
+@app.put("/api/cognition/settings")
+def write_cognition_settings(body: CognitionSettingsIn) -> dict:
+    try:
+        return cognition_settings.update_settings(
+            enabled=body.enabled, diagnostics_visible=body.diagnostics_visible,
+            decision_modes=body.decision_modes, model_bindings=body.model_bindings,
+        )
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+
+@app.post("/api/cognition/settings/rollback")
+def rollback_cognition_settings() -> dict:
+    return cognition_settings.rollback_to_legacy()
+
+
+@app.get("/api/cognition/diagnostics/v2")
+def cognition_diagnostics_v2(decision_kind: str | None = None, limit: int = 100) -> dict:
+    return cognition_diagnostic_views.read(decision_kind=decision_kind, limit=limit)
+
+
+@app.post("/api/cognition/calibration/{decision_kind}/rollback")
+def rollback_cognition_profile(decision_kind: str, body: CognitionRollbackIn) -> dict:
+    try:
+        return cognition_calibration.rollback_profile(
+            decision_kind=decision_kind, request_nonce=body.request_nonce,
+        )
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
 
 
 @app.delete("/api/proactive/data")

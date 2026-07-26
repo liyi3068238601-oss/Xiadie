@@ -1,11 +1,13 @@
-"""EAP 公共 run 账本工具：source_hash 计算、状态机常量、idempotency_key 生成。
+"""Schema 56/61 shared DecisionRun repository and body-free event ledger.
 
-按 spec 第 6.5 节"复用公共 DecisionRun"要求，本模块提供最小公共抽象：
+The original EAP-compatible API remains stable. CDS.1 extends the same rows with
+versioned decision metadata, retention and diagnostics rather than creating a
+parallel generic run table. This module provides:
 - compute_source_hash：对输入消息列表做 JSON 规范化后 sha256，返回 64 字符 hex
 - RunStatus：统一状态机常量（与 affect_observer_runs 对齐）
 - make_idempotency_key：按 protocol + 关键标识生成幂等键
 
-不强制现有 11 个 run 表迁移到此抽象；EAP 新建表时复用本模块。
+Historical domain-owned run tables are not migrated; they remain read-only adapter targets.
 """
 
 import hashlib
@@ -50,10 +52,15 @@ class DecisionRun:
     id: str
     task_kind: str
     protocol_version: str
+    policy_version: str
+    mode: str
     source_type: str
     source_id: str
     source_revision: str
     source_hash: str
+    source_snapshot: list[dict[str, Any]]
+    snapshot_hash: str
+    candidate_snapshot_hash: str
     idempotency_key: str
     status: str
     attempt_count: int
@@ -61,11 +68,33 @@ class DecisionRun:
     next_attempt_at: float | None
     provider_id: str | None
     model_id: str | None
+    provider_location: str | None
+    provider_location_revision: int | None
+    logical_role: str
+    certification_level: str
     latency_ms: int | None
     input_tokens: int | None
     output_tokens: int | None
     error_code: str | None
     warnings: list[str]
+    candidate_count: int
+    selected_count: int
+    action: str | None
+    confidence_band: str | None
+    reason_codes: list[str]
+    fallback_used: bool
+    prompt_template_hash: str
+    input_schema_hash: str
+    output_schema_hash: str
+    validator_version: str
+    fallback_version: str
+    model_binding_revision: str
+    temperature: float | None
+    top_p: float | None
+    retention_class: str
+    expires_at: float | None
+    privacy_scope: str
+    aggregate_after_expiry: bool
     created_at: float
     updated_at: float
     completed_at: float | None
@@ -128,14 +157,34 @@ def make_idempotency_key(protocol: str, *parts: str) -> str:
 def _from_row(row) -> DecisionRun:
     return DecisionRun(
         id=row["id"], task_kind=row["task_kind"], protocol_version=row["protocol_version"],
+        policy_version=row["policy_version"], mode=row["mode"],
         source_type=row["source_type"], source_id=row["source_id"],
         source_revision=row["source_revision"], source_hash=row["source_hash"],
+        source_snapshot=json.loads(row["source_snapshot_json"]),
+        snapshot_hash=row["snapshot_hash"],
+        candidate_snapshot_hash=row["candidate_snapshot_hash"],
         idempotency_key=row["idempotency_key"], status=row["status"],
         attempt_count=row["attempt_count"], max_attempts=row["max_attempts"],
         next_attempt_at=row["next_attempt_at"], provider_id=row["provider_id"],
-        model_id=row["model_id"], latency_ms=row["latency_ms"],
+        model_id=row["model_id"], provider_location=row["provider_location"],
+        provider_location_revision=row["provider_location_revision"],
+        logical_role=row["logical_role"], certification_level=row["certification_level"],
+        latency_ms=row["latency_ms"],
         input_tokens=row["input_tokens"], output_tokens=row["output_tokens"],
         error_code=row["error_code"], warnings=json.loads(row["warnings_json"]),
+        candidate_count=row["candidate_count"], selected_count=row["selected_count"],
+        action=row["action"], confidence_band=row["confidence_band"],
+        reason_codes=json.loads(row["reason_codes_json"]),
+        fallback_used=bool(row["fallback_used"]),
+        prompt_template_hash=row["prompt_template_hash"],
+        input_schema_hash=row["input_schema_hash"],
+        output_schema_hash=row["output_schema_hash"],
+        validator_version=row["validator_version"], fallback_version=row["fallback_version"],
+        model_binding_revision=row["model_binding_revision"],
+        temperature=row["temperature"], top_p=row["top_p"],
+        retention_class=row["retention_class"], expires_at=row["expires_at"],
+        privacy_scope=row["privacy_scope"],
+        aggregate_after_expiry=bool(row["aggregate_after_expiry"]),
         created_at=row["created_at"], updated_at=row["updated_at"],
         completed_at=row["completed_at"],
     )
@@ -146,11 +195,32 @@ def create_or_get_run(
     source_revision: str, source_hash: str, idempotency_key: str,
     max_attempts: int = 3, provider_id: str | None = None,
     model_id: str | None = None, now: float | None = None,
+    policy_version: str = "", mode: str = "legacy", provider_location: str | None = None,
+    provider_location_revision: int | None = None, logical_role: str = "legacy",
+    certification_level: str = "unverified",
+    source_snapshot: Iterable[dict[str, Any]] = (), snapshot_hash: str = "",
+    candidate_snapshot_hash: str = "", candidate_count: int = 0,
+    prompt_template_hash: str = "", input_schema_hash: str = "",
+    output_schema_hash: str = "", validator_version: str = "",
+    fallback_version: str = "", model_binding_revision: str = "",
+    temperature: float | None = None, top_p: float | None = None,
+    retention_class: str = "operational", expires_at: float | None = None,
+    privacy_scope: str = "body_free", aggregate_after_expiry: bool = True,
 ) -> tuple[DecisionRun, bool]:
     if not all((task_kind, protocol_version, source_type, source_id, source_hash, idempotency_key)):
         raise ValueError("DecisionRun identity fields must not be empty")
     if max_attempts < 1:
         raise ValueError("max_attempts must be positive")
+    if mode not in {"legacy", "shadow", "advisory", "active"}:
+        raise ValueError("invalid DecisionRun mode")
+    if logical_role not in {"legacy", "fast", "reasoning", "creative"}:
+        raise ValueError("invalid DecisionRun logical role")
+    if certification_level not in {
+        "unverified", "structured_capable", "decision_verified", "local_sensitive_verified",
+    }:
+        raise ValueError("invalid DecisionRun certification level")
+    if candidate_count < 0:
+        raise ValueError("candidate_count must not be negative")
     now = db.now() if now is None else now
     conn = db.connect()
     try:
@@ -162,13 +232,28 @@ def create_or_get_run(
         run_id = db.new_id()
         try:
             conn.execute(
-                "INSERT INTO decision_runs (id,task_kind,protocol_version,source_type,source_id,"
-                "source_revision,source_hash,idempotency_key,status,attempt_count,max_attempts,"
-                "provider_id,model_id,warnings_json,created_at,updated_at) "
-                "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                (run_id, task_kind, protocol_version, source_type, source_id, source_revision,
-                 source_hash, idempotency_key, RunStatus.QUEUED, 0, max_attempts,
-                 provider_id, model_id, "[]", now, now),
+                "INSERT INTO decision_runs (id,task_kind,protocol_version,policy_version,mode,"
+                "source_type,source_id,source_revision,source_hash,source_snapshot_json,"
+                "snapshot_hash,candidate_snapshot_hash,idempotency_key,status,attempt_count,"
+                "max_attempts,provider_id,model_id,provider_location,warnings_json,"
+                "provider_location_revision,logical_role,certification_level,"
+                "candidate_count,prompt_template_hash,input_schema_hash,output_schema_hash,"
+                "validator_version,fallback_version,model_binding_revision,temperature,top_p,"
+                "retention_class,expires_at,privacy_scope,aggregate_after_expiry,created_at,updated_at) "
+                "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (run_id, task_kind, protocol_version, policy_version, mode, source_type, source_id,
+                 source_revision, source_hash,
+                 json.dumps(list(source_snapshot), ensure_ascii=False, sort_keys=True),
+                 snapshot_hash, candidate_snapshot_hash, idempotency_key, RunStatus.QUEUED, 0,
+                 max_attempts, provider_id, model_id, provider_location, "[]",
+                 provider_location_revision, logical_role, certification_level, candidate_count,
+                 prompt_template_hash, input_schema_hash, output_schema_hash, validator_version,
+                 fallback_version, model_binding_revision, temperature, top_p, retention_class,
+                 expires_at, privacy_scope, int(aggregate_after_expiry), now, now),
+            )
+            _record_event(
+                conn, run_id=run_id, event_type="created", from_status=None,
+                to_status=RunStatus.QUEUED, mode=mode, created_at=now,
             )
         except sqlite3.IntegrityError:
             conn.rollback()
@@ -234,7 +319,132 @@ def transition_run(
         if cursor.rowcount != 1:
             conn.rollback()
             raise ValueError("DecisionRun changed concurrently")
+        _record_event(
+            conn, run_id=run_id, event_type="transition", from_status=row["status"],
+            to_status=status, mode=row["mode"], error_code=error_code,
+            warning_codes=list(warnings), created_at=now,
+        )
         conn.commit()
         return _from_row(conn.execute("SELECT * FROM decision_runs WHERE id=?", (run_id,)).fetchone())
     finally:
         conn.close()
+
+
+def _record_event(
+    conn, *, run_id: str, event_type: str, from_status: str | None, to_status: str,
+    mode: str, created_at: float, error_code: str | None = None,
+    warning_codes: Iterable[str] = (),
+) -> None:
+    conn.execute(
+        "INSERT INTO decision_run_events(id,run_id,event_type,from_status,to_status,mode,"
+        "error_code,warning_codes_json,created_at) VALUES(?,?,?,?,?,?,?,?,?)",
+        (db.new_id(), run_id, event_type, from_status, to_status, mode, error_code,
+         json.dumps(list(warning_codes), ensure_ascii=False), created_at),
+    )
+
+
+def _record_validated_decision_outcome(
+    run_id: str, *, action: str, selected_count: int, confidence_band: str,
+    reason_codes: Iterable[str], fallback_used: bool,
+    validated_candidate_snapshot_hash: str,
+) -> DecisionRun:
+    """Internal CDS collaborator; caller must validate IDs against this exact snapshot."""
+    conn = db.connect()
+    try:
+        row = conn.execute("SELECT * FROM decision_runs WHERE id=?", (run_id,)).fetchone()
+        if not row:
+            raise ValueError("DecisionRun not found")
+        if not validated_candidate_snapshot_hash or (
+            validated_candidate_snapshot_hash != row["candidate_snapshot_hash"]
+        ):
+            raise ValueError("validated candidate snapshot mismatch")
+        if selected_count < 0 or selected_count > row["candidate_count"]:
+            raise ValueError("selected_count exceeds candidate_count")
+        conn.execute(
+            "UPDATE decision_runs SET action=?,selected_count=?,confidence_band=?,"
+            "reason_codes_json=?,fallback_used=?,updated_at=? WHERE id=?",
+            (action, selected_count, confidence_band,
+             json.dumps(list(reason_codes), ensure_ascii=False), int(fallback_used), db.now(), run_id),
+        )
+        conn.commit()
+        return _from_row(conn.execute("SELECT * FROM decision_runs WHERE id=?", (run_id,)).fetchone())
+    finally:
+        conn.close()
+
+
+def list_diagnostics(*, decision_kind: str | None = None, limit: int = 50) -> list[dict]:
+    """Return a strict body-free allowlist; expired rows are omitted."""
+    limit = max(1, min(int(limit), 200))
+    clauses = ["(expires_at IS NULL OR expires_at>?)"]
+    params: list[Any] = [db.now()]
+    if decision_kind:
+        clauses.append("task_kind=?")
+        params.append(decision_kind)
+    params.append(limit)
+    conn = db.connect()
+    try:
+        rows = conn.execute(
+            "SELECT id,task_kind,protocol_version,policy_version,mode,status,attempt_count,"
+            "provider_id,model_id,provider_location,provider_location_revision,logical_role,"
+            "certification_level,latency_ms,input_tokens,output_tokens,"
+            "error_code,warnings_json,candidate_count,selected_count,action,confidence_band,"
+            "reason_codes_json,fallback_used,validator_version,fallback_version,"
+            "model_binding_revision,retention_class,expires_at,privacy_scope,created_at,"
+            "updated_at,completed_at FROM decision_runs WHERE " + " AND ".join(clauses)
+            + " ORDER BY created_at DESC LIMIT ?",
+            tuple(params),
+        ).fetchall()
+    finally:
+        conn.close()
+    return [{
+        "id": row["id"], "decision_kind": row["task_kind"],
+        "protocol_version": row["protocol_version"], "policy_version": row["policy_version"],
+        "mode": row["mode"], "status": row["status"],
+        "attempt_count": row["attempt_count"], "provider_id": row["provider_id"],
+        "model_id": row["model_id"], "provider_location": row["provider_location"],
+        "provider_location_revision": row["provider_location_revision"],
+        "logical_role": row["logical_role"],
+        "certification_level": row["certification_level"],
+        "latency_ms": row["latency_ms"], "prompt_tokens": row["input_tokens"],
+        "completion_tokens": row["output_tokens"], "error_code": row["error_code"],
+        "warning_codes": json.loads(row["warnings_json"]),
+        "candidate_count": row["candidate_count"], "selected_count": row["selected_count"],
+        "action": row["action"], "confidence_band": row["confidence_band"],
+        "reason_codes": json.loads(row["reason_codes_json"]),
+        "fallback_used": bool(row["fallback_used"]),
+        "validator_version": row["validator_version"],
+        "fallback_version": row["fallback_version"],
+        "model_binding_revision": row["model_binding_revision"],
+        "retention_class": row["retention_class"], "expires_at": row["expires_at"],
+        "privacy_scope": row["privacy_scope"], "created_at": row["created_at"],
+        "updated_at": row["updated_at"], "finished_at": row["completed_at"],
+    } for row in rows]
+
+
+def list_diagnostic_events(*, decision_kind: str | None = None, limit: int = 100) -> list[dict]:
+    """Return body-free transition events for non-expired DecisionRuns."""
+    limit = max(1, min(int(limit), 400))
+    clauses = ["(r.expires_at IS NULL OR r.expires_at>?)"]
+    params: list[Any] = [db.now()]
+    if decision_kind:
+        clauses.append("r.task_kind=?")
+        params.append(decision_kind)
+    params.append(limit)
+    conn = db.connect()
+    try:
+        rows = conn.execute(
+            "SELECT e.id,e.run_id,e.event_type,e.from_status,e.to_status,e.mode,e.error_code,"
+            "e.warning_codes_json,e.created_at FROM decision_run_events e "
+            "JOIN decision_runs r ON r.id=e.run_id WHERE " + " AND ".join(clauses)
+            + " ORDER BY e.created_at DESC,e.id DESC LIMIT ?",
+            tuple(params),
+        ).fetchall()
+    finally:
+        conn.close()
+    return [{
+        "id": row["id"], "run_id": row["run_id"], "event_type": row["event_type"],
+        "from_status": row["from_status"], "to_status": row["to_status"],
+        "mode": row["mode"], "error_code": row["error_code"],
+        "warning_codes": json.loads(row["warning_codes_json"]),
+        "created_at": row["created_at"],
+    } for row in rows]

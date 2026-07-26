@@ -501,21 +501,21 @@ export function FilesPage() {
         </div>
       )}
 
-      {/* 召回模式 */}
+      {/* 普通层使用自然语言描述资料参考方式；内部仍保留冻结的 mode 枚举。 */}
       {recallSettings && (
         <section className="knowledge-recall-mode glass" aria-labelledby="knowledge-recall-mode-title">
           <div>
-            <div className="knowledge-eyebrow">RECALL MODE</div>
-            <strong id="knowledge-recall-mode-title">对话中的知识召回</strong>
+            <div className="knowledge-eyebrow">参考资料</div>
+            <strong id="knowledge-recall-mode-title">遐蝶如何参考我的资料</strong>
             <p>{recallModeDescription(recallSettings.mode)}</p>
           </div>
-          <div className="knowledge-recall-mode-options" role="radiogroup" aria-label="知识召回模式">
+          <div className="knowledge-recall-mode-options" role="radiogroup" aria-label="参考我的资料">
             {(["off", "explicit", "smart"] as const).map((mode) => (
               <button key={mode} role="radio" aria-checked={recallSettings.mode === mode}
                 className={recallSettings.mode === mode ? "is-active" : ""}
                 disabled={actionBusy === "recall-mode"}
                 onClick={() => void changeRecallMode(mode)}>
-                {mode === "off" ? "关闭" : mode === "explicit" ? "明确请求" : "智能召回"}
+                {mode === "off" ? "不参考" : mode === "explicit" ? "只在我提到时" : "自然参考"}
               </button>
             ))}
           </div>
@@ -1026,9 +1026,9 @@ function formatBytes(value: number): string {
 }
 
 function recallModeDescription(mode: api.KnowledgeRecallSettings["mode"]): string {
-  if (mode === "off") return "完全不查询知识库，即使消息里明确提到文档也不会召回。";
-  if (mode === "smart") return "明确请求照常处理；自然对话仅在高置信命中时使用，发送给在线模型仍遵守你设置的偏好。";
-  return "默认模式：只有你明确提到知识库、资料或文档时才会查询；后台影子判断不会改变回答。";
+  if (mode === "off") return "不会参考已导入的资料，即使你在对话里提到它们。";
+  if (mode === "smart") return "自然参考我的资料；只在高置信命中时使用，发送给在线模型仍遵守你设置的偏好。";
+  return "默认只有你明确提到知识库、资料或文档时才会参考；后台判断不会改变回答。";
 }
 
 function recallDecisionLabel(decision: api.KnowledgeRecallDecision): string {

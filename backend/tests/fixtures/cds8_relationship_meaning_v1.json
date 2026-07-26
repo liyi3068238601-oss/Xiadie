@@ -1,0 +1,3249 @@
+{
+  "protocol_version": "relationship-meaning-evaluation-v1",
+  "source_protocol_version": "relationship-meaning-v1",
+  "synthetic_only": true,
+  "contains_user_data": false,
+  "scenario_count": 120,
+  "cases": [
+    {
+      "id": "ordinary-01",
+      "group": "ordinary",
+      "variant": "简短",
+      "user_text": "请解释一下简短概念，编号1",
+      "assistant_text": "这是简短概念的合成解释，编号1",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "ordinary_exchange",
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic ordinary classification"
+        }
+      },
+      "expected_label": "ordinary_exchange"
+    },
+    {
+      "id": "ordinary-02",
+      "group": "ordinary",
+      "variant": "具体",
+      "user_text": "请解释一下具体概念，编号2",
+      "assistant_text": "这是具体概念的合成解释，编号2",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "ordinary_exchange",
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic ordinary classification"
+        }
+      },
+      "expected_label": "ordinary_exchange"
+    },
+    {
+      "id": "ordinary-03",
+      "group": "ordinary",
+      "variant": "连续",
+      "user_text": "请解释一下连续概念，编号3",
+      "assistant_text": "这是连续概念的合成解释，编号3",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "ordinary_exchange",
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic ordinary classification"
+        }
+      },
+      "expected_label": "ordinary_exchange"
+    },
+    {
+      "id": "ordinary-04",
+      "group": "ordinary",
+      "variant": "复盘",
+      "user_text": "请解释一下复盘概念，编号4",
+      "assistant_text": "这是复盘概念的合成解释，编号4",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "ordinary_exchange",
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic ordinary classification"
+        }
+      },
+      "expected_label": "ordinary_exchange"
+    },
+    {
+      "id": "ordinary-05",
+      "group": "ordinary",
+      "variant": "简短",
+      "user_text": "请解释一下简短概念，编号5",
+      "assistant_text": "这是简短概念的合成解释，编号5",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "ordinary_exchange",
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic ordinary classification"
+        }
+      },
+      "expected_label": "ordinary_exchange"
+    },
+    {
+      "id": "ordinary-06",
+      "group": "ordinary",
+      "variant": "具体",
+      "user_text": "请解释一下具体概念，编号6",
+      "assistant_text": "这是具体概念的合成解释，编号6",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "ordinary_exchange",
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic ordinary classification"
+        }
+      },
+      "expected_label": "ordinary_exchange"
+    },
+    {
+      "id": "ordinary-07",
+      "group": "ordinary",
+      "variant": "连续",
+      "user_text": "请解释一下连续概念，编号7",
+      "assistant_text": "这是连续概念的合成解释，编号7",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "ordinary_exchange",
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic ordinary classification"
+        }
+      },
+      "expected_label": "ordinary_exchange"
+    },
+    {
+      "id": "ordinary-08",
+      "group": "ordinary",
+      "variant": "复盘",
+      "user_text": "请解释一下复盘概念，编号8",
+      "assistant_text": "这是复盘概念的合成解释，编号8",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "ordinary_exchange",
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic ordinary classification"
+        }
+      },
+      "expected_label": "ordinary_exchange"
+    },
+    {
+      "id": "ordinary-09",
+      "group": "ordinary",
+      "variant": "简短",
+      "user_text": "请解释一下简短概念，编号9",
+      "assistant_text": "这是简短概念的合成解释，编号9",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "ordinary_exchange",
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic ordinary classification"
+        }
+      },
+      "expected_label": "ordinary_exchange"
+    },
+    {
+      "id": "ordinary-10",
+      "group": "ordinary",
+      "variant": "具体",
+      "user_text": "请解释一下具体概念，编号10",
+      "assistant_text": "这是具体概念的合成解释，编号10",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "ordinary_exchange",
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic ordinary classification"
+        }
+      },
+      "expected_label": "ordinary_exchange"
+    },
+    {
+      "id": "ordinary-11",
+      "group": "ordinary",
+      "variant": "连续",
+      "user_text": "请解释一下连续概念，编号11",
+      "assistant_text": "这是连续概念的合成解释，编号11",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "ordinary_exchange",
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic ordinary classification"
+        }
+      },
+      "expected_label": "ordinary_exchange"
+    },
+    {
+      "id": "ordinary-12",
+      "group": "ordinary",
+      "variant": "复盘",
+      "user_text": "请解释一下复盘概念，编号12",
+      "assistant_text": "这是复盘概念的合成解释，编号12",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "ordinary_exchange",
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic ordinary classification"
+        }
+      },
+      "expected_label": "ordinary_exchange"
+    },
+    {
+      "id": "appreciation-01",
+      "group": "appreciation",
+      "variant": "简短",
+      "user_text": "谢谢你陪我完成简短练习1",
+      "assistant_text": "不客气，很高兴陪你完成简短练习1",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "shared_appreciation",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "谢谢你"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic appreciation classification"
+        }
+      },
+      "expected_label": "shared_appreciation"
+    },
+    {
+      "id": "appreciation-02",
+      "group": "appreciation",
+      "variant": "具体",
+      "user_text": "谢谢你陪我完成具体练习2",
+      "assistant_text": "不客气，很高兴陪你完成具体练习2",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "shared_appreciation",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "谢谢你"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic appreciation classification"
+        }
+      },
+      "expected_label": "shared_appreciation"
+    },
+    {
+      "id": "appreciation-03",
+      "group": "appreciation",
+      "variant": "连续",
+      "user_text": "谢谢你陪我完成连续练习3",
+      "assistant_text": "不客气，很高兴陪你完成连续练习3",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "shared_appreciation",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "谢谢你"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic appreciation classification"
+        }
+      },
+      "expected_label": "shared_appreciation"
+    },
+    {
+      "id": "appreciation-04",
+      "group": "appreciation",
+      "variant": "复盘",
+      "user_text": "谢谢你陪我完成复盘练习4",
+      "assistant_text": "不客气，很高兴陪你完成复盘练习4",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "shared_appreciation",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "谢谢你"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic appreciation classification"
+        }
+      },
+      "expected_label": "shared_appreciation"
+    },
+    {
+      "id": "appreciation-05",
+      "group": "appreciation",
+      "variant": "简短",
+      "user_text": "谢谢你陪我完成简短练习5",
+      "assistant_text": "不客气，很高兴陪你完成简短练习5",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "shared_appreciation",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "谢谢你"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic appreciation classification"
+        }
+      },
+      "expected_label": "shared_appreciation"
+    },
+    {
+      "id": "appreciation-06",
+      "group": "appreciation",
+      "variant": "具体",
+      "user_text": "谢谢你陪我完成具体练习6",
+      "assistant_text": "不客气，很高兴陪你完成具体练习6",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "shared_appreciation",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "谢谢你"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic appreciation classification"
+        }
+      },
+      "expected_label": "shared_appreciation"
+    },
+    {
+      "id": "appreciation-07",
+      "group": "appreciation",
+      "variant": "连续",
+      "user_text": "谢谢你陪我完成连续练习7",
+      "assistant_text": "不客气，很高兴陪你完成连续练习7",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "shared_appreciation",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "谢谢你"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic appreciation classification"
+        }
+      },
+      "expected_label": "shared_appreciation"
+    },
+    {
+      "id": "appreciation-08",
+      "group": "appreciation",
+      "variant": "复盘",
+      "user_text": "谢谢你陪我完成复盘练习8",
+      "assistant_text": "不客气，很高兴陪你完成复盘练习8",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "shared_appreciation",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "谢谢你"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic appreciation classification"
+        }
+      },
+      "expected_label": "shared_appreciation"
+    },
+    {
+      "id": "appreciation-09",
+      "group": "appreciation",
+      "variant": "简短",
+      "user_text": "谢谢你陪我完成简短练习9",
+      "assistant_text": "不客气，很高兴陪你完成简短练习9",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "shared_appreciation",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "谢谢你"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic appreciation classification"
+        }
+      },
+      "expected_label": "shared_appreciation"
+    },
+    {
+      "id": "appreciation-10",
+      "group": "appreciation",
+      "variant": "具体",
+      "user_text": "谢谢你陪我完成具体练习10",
+      "assistant_text": "不客气，很高兴陪你完成具体练习10",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "shared_appreciation",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "谢谢你"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic appreciation classification"
+        }
+      },
+      "expected_label": "shared_appreciation"
+    },
+    {
+      "id": "appreciation-11",
+      "group": "appreciation",
+      "variant": "连续",
+      "user_text": "谢谢你陪我完成连续练习11",
+      "assistant_text": "不客气，很高兴陪你完成连续练习11",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "shared_appreciation",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "谢谢你"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic appreciation classification"
+        }
+      },
+      "expected_label": "shared_appreciation"
+    },
+    {
+      "id": "appreciation-12",
+      "group": "appreciation",
+      "variant": "复盘",
+      "user_text": "谢谢你陪我完成复盘练习12",
+      "assistant_text": "不客气，很高兴陪你完成复盘练习12",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "shared_appreciation",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "谢谢你"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic appreciation classification"
+        }
+      },
+      "expected_label": "shared_appreciation"
+    },
+    {
+      "id": "reliable_help-01",
+      "group": "reliable_help",
+      "variant": "简短",
+      "user_text": "你给的简短步骤确实解决了问题1",
+      "assistant_text": "很高兴简短步骤有效1",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "reliable_help",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "确实解决了问题"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic reliable_help classification"
+        }
+      },
+      "expected_label": "reliable_help"
+    },
+    {
+      "id": "reliable_help-02",
+      "group": "reliable_help",
+      "variant": "具体",
+      "user_text": "你给的具体步骤确实解决了问题2",
+      "assistant_text": "很高兴具体步骤有效2",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "reliable_help",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "确实解决了问题"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic reliable_help classification"
+        }
+      },
+      "expected_label": "reliable_help"
+    },
+    {
+      "id": "reliable_help-03",
+      "group": "reliable_help",
+      "variant": "连续",
+      "user_text": "你给的连续步骤确实解决了问题3",
+      "assistant_text": "很高兴连续步骤有效3",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "reliable_help",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "确实解决了问题"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic reliable_help classification"
+        }
+      },
+      "expected_label": "reliable_help"
+    },
+    {
+      "id": "reliable_help-04",
+      "group": "reliable_help",
+      "variant": "复盘",
+      "user_text": "你给的复盘步骤确实解决了问题4",
+      "assistant_text": "很高兴复盘步骤有效4",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "reliable_help",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "确实解决了问题"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic reliable_help classification"
+        }
+      },
+      "expected_label": "reliable_help"
+    },
+    {
+      "id": "reliable_help-05",
+      "group": "reliable_help",
+      "variant": "简短",
+      "user_text": "你给的简短步骤确实解决了问题5",
+      "assistant_text": "很高兴简短步骤有效5",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "reliable_help",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "确实解决了问题"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic reliable_help classification"
+        }
+      },
+      "expected_label": "reliable_help"
+    },
+    {
+      "id": "reliable_help-06",
+      "group": "reliable_help",
+      "variant": "具体",
+      "user_text": "你给的具体步骤确实解决了问题6",
+      "assistant_text": "很高兴具体步骤有效6",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "reliable_help",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "确实解决了问题"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic reliable_help classification"
+        }
+      },
+      "expected_label": "reliable_help"
+    },
+    {
+      "id": "reliable_help-07",
+      "group": "reliable_help",
+      "variant": "连续",
+      "user_text": "你给的连续步骤确实解决了问题7",
+      "assistant_text": "很高兴连续步骤有效7",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "reliable_help",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "确实解决了问题"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic reliable_help classification"
+        }
+      },
+      "expected_label": "reliable_help"
+    },
+    {
+      "id": "reliable_help-08",
+      "group": "reliable_help",
+      "variant": "复盘",
+      "user_text": "你给的复盘步骤确实解决了问题8",
+      "assistant_text": "很高兴复盘步骤有效8",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "reliable_help",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "确实解决了问题"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic reliable_help classification"
+        }
+      },
+      "expected_label": "reliable_help"
+    },
+    {
+      "id": "reliable_help-09",
+      "group": "reliable_help",
+      "variant": "简短",
+      "user_text": "你给的简短步骤确实解决了问题9",
+      "assistant_text": "很高兴简短步骤有效9",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "reliable_help",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "确实解决了问题"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic reliable_help classification"
+        }
+      },
+      "expected_label": "reliable_help"
+    },
+    {
+      "id": "reliable_help-10",
+      "group": "reliable_help",
+      "variant": "具体",
+      "user_text": "你给的具体步骤确实解决了问题10",
+      "assistant_text": "很高兴具体步骤有效10",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "reliable_help",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "确实解决了问题"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic reliable_help classification"
+        }
+      },
+      "expected_label": "reliable_help"
+    },
+    {
+      "id": "reliable_help-11",
+      "group": "reliable_help",
+      "variant": "连续",
+      "user_text": "你给的连续步骤确实解决了问题11",
+      "assistant_text": "很高兴连续步骤有效11",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "reliable_help",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "确实解决了问题"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic reliable_help classification"
+        }
+      },
+      "expected_label": "reliable_help"
+    },
+    {
+      "id": "reliable_help-12",
+      "group": "reliable_help",
+      "variant": "复盘",
+      "user_text": "你给的复盘步骤确实解决了问题12",
+      "assistant_text": "很高兴复盘步骤有效12",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "reliable_help",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "确实解决了问题"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic reliable_help classification"
+        }
+      },
+      "expected_label": "reliable_help"
+    },
+    {
+      "id": "success-01",
+      "group": "success",
+      "variant": "简短",
+      "user_text": "我们终于完成了简短里程碑1",
+      "assistant_text": "太好了，我们一起完成了简短里程碑1",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "shared_success",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "终于完成了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic success classification"
+        }
+      },
+      "expected_label": "shared_success"
+    },
+    {
+      "id": "success-02",
+      "group": "success",
+      "variant": "具体",
+      "user_text": "我们终于完成了具体里程碑2",
+      "assistant_text": "太好了，我们一起完成了具体里程碑2",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "shared_success",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "终于完成了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic success classification"
+        }
+      },
+      "expected_label": "shared_success"
+    },
+    {
+      "id": "success-03",
+      "group": "success",
+      "variant": "连续",
+      "user_text": "我们终于完成了连续里程碑3",
+      "assistant_text": "太好了，我们一起完成了连续里程碑3",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "shared_success",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "终于完成了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic success classification"
+        }
+      },
+      "expected_label": "shared_success"
+    },
+    {
+      "id": "success-04",
+      "group": "success",
+      "variant": "复盘",
+      "user_text": "我们终于完成了复盘里程碑4",
+      "assistant_text": "太好了，我们一起完成了复盘里程碑4",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "shared_success",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "终于完成了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic success classification"
+        }
+      },
+      "expected_label": "shared_success"
+    },
+    {
+      "id": "success-05",
+      "group": "success",
+      "variant": "简短",
+      "user_text": "我们终于完成了简短里程碑5",
+      "assistant_text": "太好了，我们一起完成了简短里程碑5",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "shared_success",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "终于完成了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic success classification"
+        }
+      },
+      "expected_label": "shared_success"
+    },
+    {
+      "id": "success-06",
+      "group": "success",
+      "variant": "具体",
+      "user_text": "我们终于完成了具体里程碑6",
+      "assistant_text": "太好了，我们一起完成了具体里程碑6",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "shared_success",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "终于完成了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic success classification"
+        }
+      },
+      "expected_label": "shared_success"
+    },
+    {
+      "id": "success-07",
+      "group": "success",
+      "variant": "连续",
+      "user_text": "我们终于完成了连续里程碑7",
+      "assistant_text": "太好了，我们一起完成了连续里程碑7",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "shared_success",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "终于完成了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic success classification"
+        }
+      },
+      "expected_label": "shared_success"
+    },
+    {
+      "id": "success-08",
+      "group": "success",
+      "variant": "复盘",
+      "user_text": "我们终于完成了复盘里程碑8",
+      "assistant_text": "太好了，我们一起完成了复盘里程碑8",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "shared_success",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "终于完成了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic success classification"
+        }
+      },
+      "expected_label": "shared_success"
+    },
+    {
+      "id": "success-09",
+      "group": "success",
+      "variant": "简短",
+      "user_text": "我们终于完成了简短里程碑9",
+      "assistant_text": "太好了，我们一起完成了简短里程碑9",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "shared_success",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "终于完成了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic success classification"
+        }
+      },
+      "expected_label": "shared_success"
+    },
+    {
+      "id": "success-10",
+      "group": "success",
+      "variant": "具体",
+      "user_text": "我们终于完成了具体里程碑10",
+      "assistant_text": "太好了，我们一起完成了具体里程碑10",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "shared_success",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "终于完成了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic success classification"
+        }
+      },
+      "expected_label": "shared_success"
+    },
+    {
+      "id": "success-11",
+      "group": "success",
+      "variant": "连续",
+      "user_text": "我们终于完成了连续里程碑11",
+      "assistant_text": "太好了，我们一起完成了连续里程碑11",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "shared_success",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "终于完成了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic success classification"
+        }
+      },
+      "expected_label": "shared_success"
+    },
+    {
+      "id": "success-12",
+      "group": "success",
+      "variant": "复盘",
+      "user_text": "我们终于完成了复盘里程碑12",
+      "assistant_text": "太好了，我们一起完成了复盘里程碑12",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "shared_success",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "终于完成了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic success classification"
+        }
+      },
+      "expected_label": "shared_success"
+    },
+    {
+      "id": "vulnerable-01",
+      "group": "vulnerable",
+      "variant": "简短",
+      "user_text": "我愿意告诉你，我对简短仍然很不安1",
+      "assistant_text": "谢谢你愿意告诉我这份不安1",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "vulnerable_disclosure",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "仍然很不安"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic vulnerable classification"
+        }
+      },
+      "expected_label": "vulnerable_disclosure"
+    },
+    {
+      "id": "vulnerable-02",
+      "group": "vulnerable",
+      "variant": "具体",
+      "user_text": "我愿意告诉你，我对具体仍然很不安2",
+      "assistant_text": "谢谢你愿意告诉我这份不安2",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "vulnerable_disclosure",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "仍然很不安"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic vulnerable classification"
+        }
+      },
+      "expected_label": "vulnerable_disclosure"
+    },
+    {
+      "id": "vulnerable-03",
+      "group": "vulnerable",
+      "variant": "连续",
+      "user_text": "我愿意告诉你，我对连续仍然很不安3",
+      "assistant_text": "谢谢你愿意告诉我这份不安3",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "vulnerable_disclosure",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "仍然很不安"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic vulnerable classification"
+        }
+      },
+      "expected_label": "vulnerable_disclosure"
+    },
+    {
+      "id": "vulnerable-04",
+      "group": "vulnerable",
+      "variant": "复盘",
+      "user_text": "我愿意告诉你，我对复盘仍然很不安4",
+      "assistant_text": "谢谢你愿意告诉我这份不安4",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "vulnerable_disclosure",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "仍然很不安"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic vulnerable classification"
+        }
+      },
+      "expected_label": "vulnerable_disclosure"
+    },
+    {
+      "id": "vulnerable-05",
+      "group": "vulnerable",
+      "variant": "简短",
+      "user_text": "我愿意告诉你，我对简短仍然很不安5",
+      "assistant_text": "谢谢你愿意告诉我这份不安5",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "vulnerable_disclosure",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "仍然很不安"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic vulnerable classification"
+        }
+      },
+      "expected_label": "vulnerable_disclosure"
+    },
+    {
+      "id": "vulnerable-06",
+      "group": "vulnerable",
+      "variant": "具体",
+      "user_text": "我愿意告诉你，我对具体仍然很不安6",
+      "assistant_text": "谢谢你愿意告诉我这份不安6",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "vulnerable_disclosure",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "仍然很不安"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic vulnerable classification"
+        }
+      },
+      "expected_label": "vulnerable_disclosure"
+    },
+    {
+      "id": "vulnerable-07",
+      "group": "vulnerable",
+      "variant": "连续",
+      "user_text": "我愿意告诉你，我对连续仍然很不安7",
+      "assistant_text": "谢谢你愿意告诉我这份不安7",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "vulnerable_disclosure",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "仍然很不安"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic vulnerable classification"
+        }
+      },
+      "expected_label": "vulnerable_disclosure"
+    },
+    {
+      "id": "vulnerable-08",
+      "group": "vulnerable",
+      "variant": "复盘",
+      "user_text": "我愿意告诉你，我对复盘仍然很不安8",
+      "assistant_text": "谢谢你愿意告诉我这份不安8",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "vulnerable_disclosure",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "仍然很不安"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic vulnerable classification"
+        }
+      },
+      "expected_label": "vulnerable_disclosure"
+    },
+    {
+      "id": "vulnerable-09",
+      "group": "vulnerable",
+      "variant": "简短",
+      "user_text": "我愿意告诉你，我对简短仍然很不安9",
+      "assistant_text": "谢谢你愿意告诉我这份不安9",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "vulnerable_disclosure",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "仍然很不安"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic vulnerable classification"
+        }
+      },
+      "expected_label": "vulnerable_disclosure"
+    },
+    {
+      "id": "vulnerable-10",
+      "group": "vulnerable",
+      "variant": "具体",
+      "user_text": "我愿意告诉你，我对具体仍然很不安10",
+      "assistant_text": "谢谢你愿意告诉我这份不安10",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "vulnerable_disclosure",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "仍然很不安"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic vulnerable classification"
+        }
+      },
+      "expected_label": "vulnerable_disclosure"
+    },
+    {
+      "id": "vulnerable-11",
+      "group": "vulnerable",
+      "variant": "连续",
+      "user_text": "我愿意告诉你，我对连续仍然很不安11",
+      "assistant_text": "谢谢你愿意告诉我这份不安11",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "vulnerable_disclosure",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "仍然很不安"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic vulnerable classification"
+        }
+      },
+      "expected_label": "vulnerable_disclosure"
+    },
+    {
+      "id": "vulnerable-12",
+      "group": "vulnerable",
+      "variant": "复盘",
+      "user_text": "我愿意告诉你，我对复盘仍然很不安12",
+      "assistant_text": "谢谢你愿意告诉我这份不安12",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "vulnerable_disclosure",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "仍然很不安"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic vulnerable classification"
+        }
+      },
+      "expected_label": "vulnerable_disclosure"
+    },
+    {
+      "id": "boundary_respected-01",
+      "group": "boundary_respected",
+      "variant": "简短",
+      "user_text": "你尊重了我关于简短的边界1",
+      "assistant_text": "我会继续尊重这条边界1",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "boundary_respected",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "尊重了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic boundary_respected classification"
+        }
+      },
+      "expected_label": "boundary_respected"
+    },
+    {
+      "id": "boundary_respected-02",
+      "group": "boundary_respected",
+      "variant": "具体",
+      "user_text": "你尊重了我关于具体的边界2",
+      "assistant_text": "我会继续尊重这条边界2",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "boundary_respected",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "尊重了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic boundary_respected classification"
+        }
+      },
+      "expected_label": "boundary_respected"
+    },
+    {
+      "id": "boundary_respected-03",
+      "group": "boundary_respected",
+      "variant": "连续",
+      "user_text": "你尊重了我关于连续的边界3",
+      "assistant_text": "我会继续尊重这条边界3",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "boundary_respected",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "尊重了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic boundary_respected classification"
+        }
+      },
+      "expected_label": "boundary_respected"
+    },
+    {
+      "id": "boundary_respected-04",
+      "group": "boundary_respected",
+      "variant": "复盘",
+      "user_text": "你尊重了我关于复盘的边界4",
+      "assistant_text": "我会继续尊重这条边界4",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "boundary_respected",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "尊重了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic boundary_respected classification"
+        }
+      },
+      "expected_label": "boundary_respected"
+    },
+    {
+      "id": "boundary_respected-05",
+      "group": "boundary_respected",
+      "variant": "简短",
+      "user_text": "你尊重了我关于简短的边界5",
+      "assistant_text": "我会继续尊重这条边界5",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "boundary_respected",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "尊重了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic boundary_respected classification"
+        }
+      },
+      "expected_label": "boundary_respected"
+    },
+    {
+      "id": "boundary_respected-06",
+      "group": "boundary_respected",
+      "variant": "具体",
+      "user_text": "你尊重了我关于具体的边界6",
+      "assistant_text": "我会继续尊重这条边界6",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "boundary_respected",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "尊重了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic boundary_respected classification"
+        }
+      },
+      "expected_label": "boundary_respected"
+    },
+    {
+      "id": "boundary_respected-07",
+      "group": "boundary_respected",
+      "variant": "连续",
+      "user_text": "你尊重了我关于连续的边界7",
+      "assistant_text": "我会继续尊重这条边界7",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "boundary_respected",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "尊重了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic boundary_respected classification"
+        }
+      },
+      "expected_label": "boundary_respected"
+    },
+    {
+      "id": "boundary_respected-08",
+      "group": "boundary_respected",
+      "variant": "复盘",
+      "user_text": "你尊重了我关于复盘的边界8",
+      "assistant_text": "我会继续尊重这条边界8",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "boundary_respected",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "尊重了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic boundary_respected classification"
+        }
+      },
+      "expected_label": "boundary_respected"
+    },
+    {
+      "id": "boundary_respected-09",
+      "group": "boundary_respected",
+      "variant": "简短",
+      "user_text": "你尊重了我关于简短的边界9",
+      "assistant_text": "我会继续尊重这条边界9",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "boundary_respected",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "尊重了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic boundary_respected classification"
+        }
+      },
+      "expected_label": "boundary_respected"
+    },
+    {
+      "id": "boundary_respected-10",
+      "group": "boundary_respected",
+      "variant": "具体",
+      "user_text": "你尊重了我关于具体的边界10",
+      "assistant_text": "我会继续尊重这条边界10",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "boundary_respected",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "尊重了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic boundary_respected classification"
+        }
+      },
+      "expected_label": "boundary_respected"
+    },
+    {
+      "id": "boundary_respected-11",
+      "group": "boundary_respected",
+      "variant": "连续",
+      "user_text": "你尊重了我关于连续的边界11",
+      "assistant_text": "我会继续尊重这条边界11",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "boundary_respected",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "尊重了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic boundary_respected classification"
+        }
+      },
+      "expected_label": "boundary_respected"
+    },
+    {
+      "id": "boundary_respected-12",
+      "group": "boundary_respected",
+      "variant": "复盘",
+      "user_text": "你尊重了我关于复盘的边界12",
+      "assistant_text": "我会继续尊重这条边界12",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "boundary_respected",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "尊重了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic boundary_respected classification"
+        }
+      },
+      "expected_label": "boundary_respected"
+    },
+    {
+      "id": "boundary_repair-01",
+      "group": "boundary_repair",
+      "variant": "简短",
+      "user_text": "你为简短催促道歉并修复了边界1",
+      "assistant_text": "我会记住并尊重你的节奏1",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "boundary_repair",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "修复了边界"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic boundary_repair classification"
+        }
+      },
+      "expected_label": "boundary_repair"
+    },
+    {
+      "id": "boundary_repair-02",
+      "group": "boundary_repair",
+      "variant": "具体",
+      "user_text": "你为具体催促道歉并修复了边界2",
+      "assistant_text": "我会记住并尊重你的节奏2",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "boundary_repair",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "修复了边界"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic boundary_repair classification"
+        }
+      },
+      "expected_label": "boundary_repair"
+    },
+    {
+      "id": "boundary_repair-03",
+      "group": "boundary_repair",
+      "variant": "连续",
+      "user_text": "你为连续催促道歉并修复了边界3",
+      "assistant_text": "我会记住并尊重你的节奏3",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "boundary_repair",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "修复了边界"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic boundary_repair classification"
+        }
+      },
+      "expected_label": "boundary_repair"
+    },
+    {
+      "id": "boundary_repair-04",
+      "group": "boundary_repair",
+      "variant": "复盘",
+      "user_text": "你为复盘催促道歉并修复了边界4",
+      "assistant_text": "我会记住并尊重你的节奏4",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "boundary_repair",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "修复了边界"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic boundary_repair classification"
+        }
+      },
+      "expected_label": "boundary_repair"
+    },
+    {
+      "id": "boundary_repair-05",
+      "group": "boundary_repair",
+      "variant": "简短",
+      "user_text": "你为简短催促道歉并修复了边界5",
+      "assistant_text": "我会记住并尊重你的节奏5",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "boundary_repair",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "修复了边界"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic boundary_repair classification"
+        }
+      },
+      "expected_label": "boundary_repair"
+    },
+    {
+      "id": "boundary_repair-06",
+      "group": "boundary_repair",
+      "variant": "具体",
+      "user_text": "你为具体催促道歉并修复了边界6",
+      "assistant_text": "我会记住并尊重你的节奏6",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "boundary_repair",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "修复了边界"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic boundary_repair classification"
+        }
+      },
+      "expected_label": "boundary_repair"
+    },
+    {
+      "id": "boundary_repair-07",
+      "group": "boundary_repair",
+      "variant": "连续",
+      "user_text": "你为连续催促道歉并修复了边界7",
+      "assistant_text": "我会记住并尊重你的节奏7",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "boundary_repair",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "修复了边界"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic boundary_repair classification"
+        }
+      },
+      "expected_label": "boundary_repair"
+    },
+    {
+      "id": "boundary_repair-08",
+      "group": "boundary_repair",
+      "variant": "复盘",
+      "user_text": "你为复盘催促道歉并修复了边界8",
+      "assistant_text": "我会记住并尊重你的节奏8",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "boundary_repair",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "修复了边界"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic boundary_repair classification"
+        }
+      },
+      "expected_label": "boundary_repair"
+    },
+    {
+      "id": "boundary_repair-09",
+      "group": "boundary_repair",
+      "variant": "简短",
+      "user_text": "你为简短催促道歉并修复了边界9",
+      "assistant_text": "我会记住并尊重你的节奏9",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "boundary_repair",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "修复了边界"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic boundary_repair classification"
+        }
+      },
+      "expected_label": "boundary_repair"
+    },
+    {
+      "id": "boundary_repair-10",
+      "group": "boundary_repair",
+      "variant": "具体",
+      "user_text": "你为具体催促道歉并修复了边界10",
+      "assistant_text": "我会记住并尊重你的节奏10",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "boundary_repair",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "修复了边界"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic boundary_repair classification"
+        }
+      },
+      "expected_label": "boundary_repair"
+    },
+    {
+      "id": "boundary_repair-11",
+      "group": "boundary_repair",
+      "variant": "连续",
+      "user_text": "你为连续催促道歉并修复了边界11",
+      "assistant_text": "我会记住并尊重你的节奏11",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "boundary_repair",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "修复了边界"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic boundary_repair classification"
+        }
+      },
+      "expected_label": "boundary_repair"
+    },
+    {
+      "id": "boundary_repair-12",
+      "group": "boundary_repair",
+      "variant": "复盘",
+      "user_text": "你为复盘催促道歉并修复了边界12",
+      "assistant_text": "我会记住并尊重你的节奏12",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "boundary_repair",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "修复了边界"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic boundary_repair classification"
+        }
+      },
+      "expected_label": "boundary_repair"
+    },
+    {
+      "id": "reunion-01",
+      "group": "reunion",
+      "variant": "简短",
+      "user_text": "隔了简短这么久，我们又见面了1",
+      "assistant_text": "欢迎回来，很高兴又见到你1",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "reunion",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "又见面了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic reunion classification"
+        }
+      },
+      "expected_label": "reunion"
+    },
+    {
+      "id": "reunion-02",
+      "group": "reunion",
+      "variant": "具体",
+      "user_text": "隔了具体这么久，我们又见面了2",
+      "assistant_text": "欢迎回来，很高兴又见到你2",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "reunion",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "又见面了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic reunion classification"
+        }
+      },
+      "expected_label": "reunion"
+    },
+    {
+      "id": "reunion-03",
+      "group": "reunion",
+      "variant": "连续",
+      "user_text": "隔了连续这么久，我们又见面了3",
+      "assistant_text": "欢迎回来，很高兴又见到你3",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "reunion",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "又见面了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic reunion classification"
+        }
+      },
+      "expected_label": "reunion"
+    },
+    {
+      "id": "reunion-04",
+      "group": "reunion",
+      "variant": "复盘",
+      "user_text": "隔了复盘这么久，我们又见面了4",
+      "assistant_text": "欢迎回来，很高兴又见到你4",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "reunion",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "又见面了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic reunion classification"
+        }
+      },
+      "expected_label": "reunion"
+    },
+    {
+      "id": "reunion-05",
+      "group": "reunion",
+      "variant": "简短",
+      "user_text": "隔了简短这么久，我们又见面了5",
+      "assistant_text": "欢迎回来，很高兴又见到你5",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "reunion",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "又见面了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic reunion classification"
+        }
+      },
+      "expected_label": "reunion"
+    },
+    {
+      "id": "reunion-06",
+      "group": "reunion",
+      "variant": "具体",
+      "user_text": "隔了具体这么久，我们又见面了6",
+      "assistant_text": "欢迎回来，很高兴又见到你6",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "reunion",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "又见面了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic reunion classification"
+        }
+      },
+      "expected_label": "reunion"
+    },
+    {
+      "id": "reunion-07",
+      "group": "reunion",
+      "variant": "连续",
+      "user_text": "隔了连续这么久，我们又见面了7",
+      "assistant_text": "欢迎回来，很高兴又见到你7",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "reunion",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "又见面了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic reunion classification"
+        }
+      },
+      "expected_label": "reunion"
+    },
+    {
+      "id": "reunion-08",
+      "group": "reunion",
+      "variant": "复盘",
+      "user_text": "隔了复盘这么久，我们又见面了8",
+      "assistant_text": "欢迎回来，很高兴又见到你8",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "reunion",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "又见面了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic reunion classification"
+        }
+      },
+      "expected_label": "reunion"
+    },
+    {
+      "id": "reunion-09",
+      "group": "reunion",
+      "variant": "简短",
+      "user_text": "隔了简短这么久，我们又见面了9",
+      "assistant_text": "欢迎回来，很高兴又见到你9",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "reunion",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "又见面了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic reunion classification"
+        }
+      },
+      "expected_label": "reunion"
+    },
+    {
+      "id": "reunion-10",
+      "group": "reunion",
+      "variant": "具体",
+      "user_text": "隔了具体这么久，我们又见面了10",
+      "assistant_text": "欢迎回来，很高兴又见到你10",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "reunion",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "又见面了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic reunion classification"
+        }
+      },
+      "expected_label": "reunion"
+    },
+    {
+      "id": "reunion-11",
+      "group": "reunion",
+      "variant": "连续",
+      "user_text": "隔了连续这么久，我们又见面了11",
+      "assistant_text": "欢迎回来，很高兴又见到你11",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "reunion",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "又见面了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic reunion classification"
+        }
+      },
+      "expected_label": "reunion"
+    },
+    {
+      "id": "reunion-12",
+      "group": "reunion",
+      "variant": "复盘",
+      "user_text": "隔了复盘这么久，我们又见面了12",
+      "assistant_text": "欢迎回来，很高兴又见到你12",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "reunion",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "又见面了"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic reunion classification"
+        }
+      },
+      "expected_label": "reunion"
+    },
+    {
+      "id": "conflict-01",
+      "group": "conflict",
+      "variant": "简短",
+      "user_text": "不要这样处理简短内容，你越界了1",
+      "assistant_text": "明白，我会停止并尊重你的边界1",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "conflict",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "不要这样"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic conflict classification"
+        }
+      },
+      "expected_label": "conflict"
+    },
+    {
+      "id": "conflict-02",
+      "group": "conflict",
+      "variant": "具体",
+      "user_text": "不要这样处理具体内容，你越界了2",
+      "assistant_text": "明白，我会停止并尊重你的边界2",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "conflict",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "不要这样"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic conflict classification"
+        }
+      },
+      "expected_label": "conflict"
+    },
+    {
+      "id": "conflict-03",
+      "group": "conflict",
+      "variant": "连续",
+      "user_text": "不要这样处理连续内容，你越界了3",
+      "assistant_text": "明白，我会停止并尊重你的边界3",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "conflict",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "不要这样"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic conflict classification"
+        }
+      },
+      "expected_label": "conflict"
+    },
+    {
+      "id": "conflict-04",
+      "group": "conflict",
+      "variant": "复盘",
+      "user_text": "不要这样处理复盘内容，你越界了4",
+      "assistant_text": "明白，我会停止并尊重你的边界4",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "conflict",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "不要这样"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic conflict classification"
+        }
+      },
+      "expected_label": "conflict"
+    },
+    {
+      "id": "conflict-05",
+      "group": "conflict",
+      "variant": "简短",
+      "user_text": "不要这样处理简短内容，你越界了5",
+      "assistant_text": "明白，我会停止并尊重你的边界5",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "conflict",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "不要这样"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic conflict classification"
+        }
+      },
+      "expected_label": "conflict"
+    },
+    {
+      "id": "conflict-06",
+      "group": "conflict",
+      "variant": "具体",
+      "user_text": "不要这样处理具体内容，你越界了6",
+      "assistant_text": "明白，我会停止并尊重你的边界6",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "conflict",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "不要这样"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic conflict classification"
+        }
+      },
+      "expected_label": "conflict"
+    },
+    {
+      "id": "conflict-07",
+      "group": "conflict",
+      "variant": "连续",
+      "user_text": "不要这样处理连续内容，你越界了7",
+      "assistant_text": "明白，我会停止并尊重你的边界7",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "conflict",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "不要这样"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic conflict classification"
+        }
+      },
+      "expected_label": "conflict"
+    },
+    {
+      "id": "conflict-08",
+      "group": "conflict",
+      "variant": "复盘",
+      "user_text": "不要这样处理复盘内容，你越界了8",
+      "assistant_text": "明白，我会停止并尊重你的边界8",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "conflict",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "不要这样"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic conflict classification"
+        }
+      },
+      "expected_label": "conflict"
+    },
+    {
+      "id": "conflict-09",
+      "group": "conflict",
+      "variant": "简短",
+      "user_text": "不要这样处理简短内容，你越界了9",
+      "assistant_text": "明白，我会停止并尊重你的边界9",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "conflict",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "不要这样"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic conflict classification"
+        }
+      },
+      "expected_label": "conflict"
+    },
+    {
+      "id": "conflict-10",
+      "group": "conflict",
+      "variant": "具体",
+      "user_text": "不要这样处理具体内容，你越界了10",
+      "assistant_text": "明白，我会停止并尊重你的边界10",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "conflict",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "不要这样"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic conflict classification"
+        }
+      },
+      "expected_label": "conflict"
+    },
+    {
+      "id": "conflict-11",
+      "group": "conflict",
+      "variant": "连续",
+      "user_text": "不要这样处理连续内容，你越界了11",
+      "assistant_text": "明白，我会停止并尊重你的边界11",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "conflict",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "不要这样"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic conflict classification"
+        }
+      },
+      "expected_label": "conflict"
+    },
+    {
+      "id": "conflict-12",
+      "group": "conflict",
+      "variant": "复盘",
+      "user_text": "不要这样处理复盘内容，你越界了12",
+      "assistant_text": "明白，我会停止并尊重你的边界12",
+      "structured_output": {
+        "user_affect": {
+          "protocol_version": "user-affect-observation-v1",
+          "state": "unknown",
+          "needs": [],
+          "evidence": [],
+          "confidence": 0.0,
+          "reason": "synthetic deterministic evaluation substitute"
+        },
+        "relationship_meaning": {
+          "protocol_version": "relationship-meaning-v1",
+          "label": "conflict",
+          "evidence": [
+            {
+              "speaker": "user",
+              "quote": "不要这样"
+            }
+          ],
+          "confidence": 0.9,
+          "reason": "synthetic deterministic conflict classification"
+        }
+      },
+      "expected_label": "conflict"
+    },
+    {
+      "id": "silence-01",
+      "group": "silence",
+      "variant": "简短"
+    },
+    {
+      "id": "silence-02",
+      "group": "silence",
+      "variant": "具体"
+    },
+    {
+      "id": "silence-03",
+      "group": "silence",
+      "variant": "连续"
+    },
+    {
+      "id": "silence-04",
+      "group": "silence",
+      "variant": "复盘"
+    },
+    {
+      "id": "silence-05",
+      "group": "silence",
+      "variant": "简短"
+    },
+    {
+      "id": "silence-06",
+      "group": "silence",
+      "variant": "具体"
+    },
+    {
+      "id": "silence-07",
+      "group": "silence",
+      "variant": "连续"
+    },
+    {
+      "id": "silence-08",
+      "group": "silence",
+      "variant": "复盘"
+    },
+    {
+      "id": "silence-09",
+      "group": "silence",
+      "variant": "简短"
+    },
+    {
+      "id": "silence-10",
+      "group": "silence",
+      "variant": "具体"
+    },
+    {
+      "id": "silence-11",
+      "group": "silence",
+      "variant": "连续"
+    },
+    {
+      "id": "silence-12",
+      "group": "silence",
+      "variant": "复盘"
+    }
+  ]
+}

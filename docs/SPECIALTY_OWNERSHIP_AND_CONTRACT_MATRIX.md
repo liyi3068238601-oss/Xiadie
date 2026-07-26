@@ -2,7 +2,7 @@
 
 - 版本：v1.0
 - 日期：2026-07-22
-- 状态：施工前规范；与三份专项计划共同生效
+- 状态：CDS 已通过最终独立 Review 并正式冻结；LIFE 协议门已解除
 - 适用顺序：`CDS → LIFE → KIG`
 - 解释优先级：冻结协议与 ADR > 本矩阵 > 专项计划 > 阶段施工记录
 
@@ -28,13 +28,13 @@ ConstructionBaseline
 | 字段 | 当前值/规则 |
 |---|---|
 | repository | `liyi3068238601-oss/Xiadie` |
-| predecessor_pr | EAP draft PR `#1` |
+| predecessor_pr | EAP PR `#1`，已合并 |
 | base_branch | `main` |
-| integration state | EAP 已技术冻结，但 PR #1 尚未合并；技术冻结不等于仓库集成完成 |
-| base_commit_sha | CDS.0 开工时填写 PR #1 的 `main` 合并提交；不得填写会继续移动的分支名 |
-| schema_version | 60；Schema 48～60 不回写 |
-| frozen_protocols | CTX v1；EAP 六协议；以 Protocol Registry、ADR 和冻结报告为准 |
-| test_baseline | 后端 `937 passed, 1 warning`；前端 `41 passed`；Vite 188 modules；R6 Windows 验收见专项报告 |
+| integration state | EAP 已技术冻结并合入 `main`；CDS.0～13 已施工并通过最终独立 Review，待合入目标基线后填写 LIFE.0 ConstructionBaseline |
+| base_commit_sha | CDS ConstructionBaseline：`6b8aa47134f8a9a55131c73bb1148e6912421c4f` |
+| schema_version | ConstructionBaseline 60；CDS.1/CDS.2 为 61/62；CDS.12 当前 63；Schema 48～60 不回写 |
+| frozen_protocols | CTX v1；EAP 六协议；CDS `cognitive-decision-v1`、`decision-kind-registry-v1`、`specialty-adapter-contract-v1`；以 Protocol Registry、ADR 和冻结报告为准 |
+| test_baseline | ConstructionBaseline：后端 `937 passed, 1 warning`；当前：后端 `2304 passed, 1 warning`、前端 `47 passed`、Vite 189 modules |
 | plan_version | CDS/LIFE/KIG v0.3；本矩阵 v1.0 |
 | recorded_at | 2026-07-22；各专项开工时重新记录 |
 
@@ -67,14 +67,14 @@ ConstructionBaseline
 | 所有者 | adapter_version | source_revision_format | fallback_owner | temporary_chat_behavior | remote_transfer_policy | migration_owner |
 |---|---|---|---|---|---|---|
 | CTX | `context-adapter-v1` | 对话/组件 revision + hash | CTX 固定预算 | 仅当前会话、无跨会话读取 | 继承 CTX 来源授权 | CTX 新协议 ADR |
-| EAP | `eap-adapter-v1` | source kind/id/revision/hash | EAP 确定性安全门 | 不形成跨会话 Presence/关系/主动事实 | EAP 设置与 Provider 策略 | EAP 协议升级 |
-| CDS | `decision-adapter-v1` | `source_snapshot[]` + aggregate hash | DecisionKind 注册的领域 fallback | 无持久化应用；只允许短期最小诊断 | 按 decision_kind 隐私级别 | CDS 通用表；领域字段归领域专项 |
+| EAP | `eap-decision-run-adapter-v1`；诊断 v2 | source kind/id/revision/hash | EAP 确定性安全门 | 不形成跨会话 Presence/关系/主动事实 | EAP 设置与 Provider 策略 | EAP 协议升级 |
+| CDS | `cognitive-decision-v1` / `specialty-adapter-contract-v1` | `source_snapshot[]` + aggregate hash | DecisionKind 注册的领域 fallback | 无持久化应用；只允许短期无正文诊断 | 按 decision_kind 隐私级别 | CDS 通用表；领域字段归领域专项 |
 | MEM | `memory-adapter-v1` | memory id/revision/hash | MEM 既有算法 | 不读写长期记忆 | 继承记忆远传策略 | MEM |
 | Knowledge | `knowledge-adapter-v1` | document/chunk revision/hash/locator | 现有 FTS/Dense 降级 | 文件逐次授权，不进入长期派生层 | transmission policy/grant | Knowledge/KIG 补差阶段 |
 | LIFE | `life-adapter-v1` | event/state/schedule revision/hash | LIFE 确定性 reducer | 不生成长期 LifeEvent、Goal、Date、Diary | 日记/生活数据单独授权 | LIFE |
 | KIG | `source-ref-v1` | adapter registry 返回的 revision/hash | 原系统继续工作 | 不抽取 Claim/Entity/Relation/PWM | 逐来源隐私与授权 | KIG |
 
-迁移号严格串行：CDS 使用 60 之后确有必要的首个版本；LIFE 使用 CDS 最终版本 + 1；KIG 使用 LIFE 最终版本 + 1。没有实际字段缺口不得为了“占号”创建空迁移。
+迁移号严格串行：CDS 最终冻结 Schema 为 63；LIFE 可在锁定已合并 predecessor commit 和 LIFE.0 ConstructionBaseline 后使用首个确有必要的 Schema 64；KIG 使用 LIFE 最终版本 + 1。没有实际字段缺口不得为了“占号”创建空迁移。
 
 ## 4. DecisionKindRegistry 规范
 

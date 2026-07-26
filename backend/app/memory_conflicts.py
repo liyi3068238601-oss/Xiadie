@@ -19,7 +19,10 @@ def scan_conflicts(*, limit: int = 50) -> dict:
     try:
         conn.execute("BEGIN IMMEDIATE")
         for pair in candidates:
-            relation_type, confidence, rule = _classify(pair["source_content"], pair["target_content"])
+            projection = classify_projection(pair["source_content"], pair["target_content"])
+            relation_type = projection["relation_type"]
+            confidence = projection["confidence"]
+            rule = projection["reason_code"]
             if not relation_type:
                 continue
             now = db.now()
@@ -173,17 +176,30 @@ def _candidate_pairs(limit: int) -> list[dict]:
 
 
 def _classify(left: str, right: str) -> tuple[str | None, float, str]:
+    projection = classify_projection(left, right)
+    return projection["relation_type"], projection["confidence"], projection["reason_code"]
+
+
+def classify_projection(left: str, right: str) -> dict:
     a, b = _normalize(left), _normalize(right)
     if not a or not b or a == b:
-        return None, 0.0, ""
+        return {"relation_type": None, "confidence": 0.0, "reason_code": ""}
     stripped_a, neg_a = _without_negation(a)
     stripped_b, neg_b = _without_negation(b)
     if stripped_a == stripped_b and neg_a != neg_b:
-        return "superseded", 0.98, "explicit_negation_newer_wins"
+        return {
+            "relation_type": "superseded",
+            "confidence": 0.98,
+            "reason_code": "explicit_negation_newer_wins",
+        }
     similarity = _similarity(a, b)
     if similarity >= POSSIBLE_THRESHOLD:
-        return "possible_conflict", round(similarity, 6), "shared_entity_scope_kind_similarity"
-    return None, 0.0, ""
+        return {
+            "relation_type": "possible_conflict",
+            "confidence": round(similarity, 6),
+            "reason_code": "shared_entity_scope_kind_similarity",
+        }
+    return {"relation_type": None, "confidence": 0.0, "reason_code": ""}
 
 
 def _normalize(value: str) -> str:

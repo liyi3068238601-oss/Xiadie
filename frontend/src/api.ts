@@ -1,3 +1,5 @@
+import { dispatchChatSseEvent } from "./chatSseProtocol";
+
 // 后端 API 客户端。dev 期指向本地 FastAPI，可被 Electron 注入的全局覆盖。
 export const API_BASE: string =
   (window as any).__XIADIE_API__ || "http://127.0.0.1:8756";
@@ -727,6 +729,48 @@ export interface CurrentModel {
   model: string;
   capabilities: string[];
 }
+export type CognitionMode = "off" | "shadow" | "advisory" | "active";
+export type CognitionModelRole = "fast" | "reasoning" | "creative";
+export interface CognitionModelBinding {
+  provider_id: string;
+  model: string;
+}
+export interface CognitionSettings {
+  settings_version: string;
+  enabled: boolean;
+  diagnostics_visible: boolean;
+  decision_modes: Record<string, CognitionMode>;
+  mode_ceilings: Record<string, CognitionMode>;
+  model_bindings: Partial<Record<CognitionModelRole, CognitionModelBinding>>;
+  roles: CognitionModelRole[];
+  natural_capabilities: string[];
+  privacy: {
+    raw_output_persisted: boolean;
+    body_in_diagnostics: boolean;
+    remote_body_bearing_requires_authorization: boolean;
+  };
+}
+export interface CognitionDiagnosticSummary {
+  decision_kind: string;
+  run_count: number;
+  fallback_count: number;
+  latency_ms_median: number | null;
+  latency_ms_max: number | null;
+  error_codes: Record<string, number>;
+}
+export interface CognitionDiagnostics {
+  diagnostic_version: string;
+  protocol_version: string;
+  registry_version: string;
+  settings: CognitionSettings;
+  summaries: CognitionDiagnosticSummary[];
+  privacy: {
+    body_persisted: boolean;
+    prompt_persisted: boolean;
+    raw_output_persisted: boolean;
+    candidate_ids_exposed: boolean;
+  };
+}
 export interface ToolLog {
   id: string;
   tool: string;
@@ -1053,6 +1097,22 @@ export const setCurrentModel = (provider_id: string, model: string) =>
     method: "POST",
     body: JSON.stringify({ provider_id, model }),
   });
+export const getCognitionSettings = () =>
+  j<CognitionSettings>("/api/cognition/settings");
+export const updateCognitionSettings = (body: {
+  enabled?: boolean;
+  diagnostics_visible?: boolean;
+  decision_modes?: Record<string, CognitionMode>;
+  model_bindings?: Partial<Record<CognitionModelRole, CognitionModelBinding | null>>;
+}) =>
+  j<CognitionSettings>("/api/cognition/settings", {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+export const rollbackCognitionSettings = () =>
+  j<CognitionSettings>("/api/cognition/settings/rollback", { method: "POST", body: "{}" });
+export const getCognitionDiagnostics = (limit = 100) =>
+  j<CognitionDiagnostics>(`/api/cognition/diagnostics/v2?limit=${limit}`);
 export const getObserverModel = () =>
   j<ObserverModelConfig>("/api/companion-state/observer-model");
 export const setObserverModel = (body: ObserverModelConfig) =>
@@ -1181,6 +1241,11 @@ export interface ChatCallbacks {
     knowledge_recall_mode: "off" | "explicit" | "smart";
   }) => void;
   onDelta?: (text: string) => void;
+  onFinal?: (d: {
+    message_id: string;
+    content: string;
+    knowledge_citations: KnowledgeCitation[];
+  }) => void;
   onError?: (message: string, hint: string) => void;
   onDone?: (d: {
     message_id: string;
@@ -1300,6 +1365,7 @@ export async function streamChat(
     }
     const reader = r.body.getReader();
     const decoder = new TextDecoder();
+    const protocolState = { finalSeen: false };
     let buf = "";
     for (;;) {
       const { done, value } = await reader.read();
@@ -1313,10 +1379,7 @@ export async function streamChat(
         if (!evLine || !dataLine) continue;
         const ev = evLine.slice(6).trim();
         const data = JSON.parse(dataLine.slice(5).trim());
-        if (ev === "meta") cb.onMeta?.(data);
-        else if (ev === "delta") cb.onDelta?.(data.text);
-        else if (ev === "error") cb.onError?.(data.message, data.hint);
-        else if (ev === "done") cb.onDone?.(data);
+        dispatchChatSseEvent(ev, data, cb, protocolState);
       }
     }
   } catch {

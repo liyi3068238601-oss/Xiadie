@@ -82,6 +82,10 @@ cd frontend && npm run build                    # 前端类型检查 + 生产构
 
 首启使用内置 `mock` 演示模型，界面全部可用但回复为占位文案。到 **设置 → 模型 API** 填入任意兼容 OpenAI 接口的 Base URL + API Key，点"连接测试"通过后"设为当前"即可获得真实回复。密钥仅保存在本地 SQLite；正式版需迁移到系统安全存储（见"待办"）。
 
+## 许可证
+
+本项目自身代码采用 [MIT License](LICENSE)。第三方依赖、Live2D Core、角色模型及其他资源仍分别受其自身许可约束；MIT 声明不覆盖这些内容，详见 [NOTICE.md](NOTICE.md)。
+
 ## 数据与安全
 
 - 本地优先：会话/记忆/任务/设置存 `backend/data/xiadie.db`。

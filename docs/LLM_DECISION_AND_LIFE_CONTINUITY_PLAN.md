@@ -2,7 +2,7 @@
 
 - 版本：v0.3（施工基线、单写者、真实性与长期治理补强）
 - 日期：2026-07-22
-- 状态：计划优化完成；等待 CDS 合并、冻结并锁定最终提交后施工
+- 状态：CDS 已通过最终 Review 并正式冻结；等待 CDS 合入目标基线并在 LIFE.0 锁定 predecessor commit 后施工
 - 专项代号：`LIFE`（Life, Inference, Feedback and Existence）
 - 适用范围：连续自我状态、每日生活日程、离线世界续演、重要日期、日记、自我时间线及其与记忆、情绪、关系和主动陪伴的编排；共享 LLM 决策治理由前置 `CDS` 提供
 - 关联专项：`CTX` 对话上下文、会话摘要与跨会话回忆；`EAP` 完整情感、关系积温与主动陪伴；`CDS` 共享认知决策协议与运行时
@@ -17,8 +17,8 @@
 
 ## 0. 当前仓库基线与强制施工边界
 
-1. CTX 与 EAP 已冻结，当前数据库基线为 Schema 60。LIFE 不修改六个冻结 EAP 协议；需要不兼容能力时先提交新协议版本与 ADR，待独立 Review 后另行施工。
-2. Schema 56 已存在共享 `decision_runs`；CDS 负责完成通用协议、validator、repository、Shadow/Advisory/Active 和诊断。LIFE 只注册领域任务与结果 Schema，不新建第二套通用 DecisionRun。
+1. CTX、EAP 与 CDS 已冻结，当前数据库 Schema 为 63。LIFE 不修改冻结协议；需要不兼容能力时先提交新协议版本与 ADR，待独立 Review 后另行施工。
+2. Schema 56 已存在共享 `decision_runs`，CDS 已正式冻结通用协议、validator、repository、Shadow/Advisory/Active 和诊断。LIFE 只注册领域任务与结果 Schema，不新建第二套通用 DecisionRun。
 3. LIFE 独占的领域对象是 LifeClock、SelfState、PersonalGoal、DailySchedule、LifeEvent、ImportantDate、DiaryEntry、ContinuityThread、SelfTimeline 和 BoundaryProfile。关系、情绪、长期记忆、上下文、投递与反馈继续由现有所有者维护。
 4. EAP 已提供 `life_share` 种子适配位。LIFE 首版只通过该稳定入口提供来源化种子，不新增候选类型、渠道、投递器或授权旁路。
 5. KIG/PWM 尚未施工；LIFE 可以保留只读来源 adapter，但不得提前创建 SourceRef、Claim、Entity、Relation、版本/新鲜度或跨源治理表。
@@ -129,7 +129,7 @@ LIFE 事件账本、连续状态和离线续演
 LIFE 总验收冻结后才允许 KIG 开工
 ```
 
-当前 CTX/EAP 已完成并冻结，CDS 尚待施工。LIFE 不先行搭建临时决策底座；只有 CDS 独立 Review 通过、0 个未解决 P0/P1、协议和最终 Schema 记录完成后才从下一迁移号开工。
+当前 CTX/EAP/CDS 已完成并冻结；CDS 最终 Review 为 0 P0/P1/P2，Schema 63 和兼容矩阵已记录。LIFE 不搭建临时决策底座；在 CDS 合入目标基线并完成 LIFE.0 ConstructionBaseline 后，才可从有证据的 Schema 64 开工。
 
 ---
 
