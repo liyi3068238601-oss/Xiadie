@@ -3248,6 +3248,34 @@ MIGRATIONS = [
         );
         """,
     ),
+    (
+        71,
+        """
+        -- LIFE.9: provenance-aware SelfTimeline search projection.
+        CREATE TABLE self_timeline_entries (
+            id TEXT PRIMARY KEY,
+            source_type TEXT NOT NULL CHECK(source_type IN (
+                'life_event','diary_entry','schedule_segment','tool_run','proactive_delivery','personal_goal'
+            )),
+            source_id TEXT NOT NULL,
+            source_revision TEXT NOT NULL,
+            world_layer TEXT NOT NULL CHECK(world_layer IN (
+                'planned','simulated','inferred','observed','performed'
+            )),
+            source_status TEXT NOT NULL,
+            occurred_at REAL NOT NULL,
+            summary TEXT NOT NULL,
+            source_locator TEXT NOT NULL,
+            content_hash TEXT NOT NULL,
+            indexed_at REAL NOT NULL,
+            UNIQUE(source_type,source_id,source_revision)
+        );
+        CREATE INDEX idx_self_timeline_recent
+            ON self_timeline_entries(source_status,occurred_at DESC);
+        CREATE INDEX idx_self_timeline_source
+            ON self_timeline_entries(source_type,source_id);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

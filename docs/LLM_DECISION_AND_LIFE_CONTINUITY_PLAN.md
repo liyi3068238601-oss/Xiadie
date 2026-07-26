@@ -1257,17 +1257,19 @@ LIFE.8 施工记录（2026-07-26）：Schema 70 新增 DiaryEntry、append-only 
 
 目标：让遐蝶可靠回答自己曾经做过什么。
 
-- [ ] 建立 LifeEvent、日记、日程、ToolRun、主动行为和目标变化的统一检索索引。
-- [ ] 实现本地初筛和可选 LLM 重排。
-- [ ] 结果带 world layer、状态、时间和来源。
-- [ ] 用户询问“你做过什么”时按需注入 ContextAssembler。
-- [ ] planned 内容不能作为已发生回答。
-- [ ] inferred 内容使用自然的不确定表达。
-- [ ] 定义并验证 `epistemic-expression-v1`：planned 用“原本打算”，simulated 用“在自己的日程里”，inferred 用“大概按原来的节奏”，observed 明示观察来源，performed 仅在 ToolRun 存在时用“确实完成”，无记录时明确没有可靠记录。
-- [ ] 提供原事件入口和用户可删除能力。
-- [ ] 当前问题无关时不注入大量自我生活记录。
+- [x] 建立 LifeEvent、日记、日程、ToolRun、主动行为和目标变化的统一检索索引。
+- [x] 实现本地初筛和可选 LLM 重排。
+- [x] 结果带 world layer、状态、时间和来源。
+- [x] 用户询问“你做过什么”时按需注入 ContextAssembler。
+- [x] planned 内容不能作为已发生回答。
+- [x] inferred 内容使用自然的不确定表达。
+- [x] 定义并验证 `epistemic-expression-v1`：planned 用“原本打算”，simulated 用“在自己的日程里”，inferred 用“大概按原来的节奏”，observed 明示观察来源，performed 仅在 ToolRun 存在时用“确实完成”，无记录时明确没有可靠记录。
+- [x] 提供原事件入口和用户可删除能力。
+- [x] 当前问题无关时不注入大量自我生活记录。
 
 验收：真实执行、模拟生活和计划三类问答 100% 不混淆；无记录时不编造。
+
+LIFE.9 施工记录（2026-07-26）：Schema 71 新增 SelfTimeline 本地检索投影，统一索引 LifeEvent、日记标题、日程片段、ToolRun、已投递主动行为与 PersonalGoal，逐条保留 source type/id/revision、world layer、status、time、locator 与 hash。查询先本地初筛；可选 LLM 重排仍保持 Shadow，当前不作为必经路径。聊天仅在“你做过/经历/最近生活”等自我时间线问题时把最多 5 条、1200 字符的 block 通过现有 ContextAssembler `lore_digest` 预算接入，无关问题注入为空。`epistemic-expression-v1` 固定 planned/ simulated/inferred/observed/performed 五种表达；performed 只来自已完成 ToolRun、已投递记录或 LIFE.2 已验证 performed event。无记录明确禁止编造。投影提供 source locator 和删除函数；敏感日记只索引为通用私密标题。专项 6 项通过。阶段独立 Review 留待 LIFE 总体 Review。
 
 建议 PR：`feat(context): add provenance-aware self timeline recall`
 

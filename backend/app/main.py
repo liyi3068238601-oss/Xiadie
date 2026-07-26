@@ -27,7 +27,7 @@ from . import (
     knowledge_management, knowledge_parser, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search,
     knowledge_worker, life_catchup_service, life_events, life_runtime, life_schedule, llm, lore, memory, memory_conflicts, memory_shadow_proposals,
     saga_consolidator, saga_lifecycle, saga_summary,
-    saga_summary_service, secret_store, slow_lifecycle,
+    saga_summary_service, secret_store, self_timeline, slow_lifecycle,
 )
 from . import candidate_reranker_shadow  # noqa: F401
 from . import presence_thread_shadow  # noqa: F401 - registers CDS.3 Shadow contract
@@ -621,6 +621,9 @@ async def chat(body: ChatIn) -> StreamingResponse:
             if parts:
                 attachment_block = "\n\n".join(parts)
         knowledge_block = knowledge_context.prompt_block(knowledge_retrieval)
+        self_timeline.refresh(conn=conn)
+        timeline_block = self_timeline.context_block(body.content)
+        effective_lore_digest = "\n\n".join(part for part in (lore_digest, timeline_block) if part)
         if knowledge_retrieval:
             conn.execute(
                 "INSERT INTO knowledge_chat_retrievals("
@@ -649,7 +652,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 capability=capability,
                 memory_digest=digest,
                 affect_guidance=style,
-                lore_digest=lore_digest,
+                lore_digest=effective_lore_digest,
                 knowledge_block=knowledge_block,
                 active_summary=active_summary,
                 cross_session_recall=history_prepared["turns"],
@@ -734,7 +737,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
                         capability=capability,
                         memory_digest=used_digest,
                         affect_guidance=style,
-                        lore_digest=lore_digest,
+                        lore_digest=effective_lore_digest,
                         knowledge_block=knowledge_block,
                         active_summary=active_summary,
                         cross_session_recall=history_prepared["turns"],
