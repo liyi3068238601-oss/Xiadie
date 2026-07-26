@@ -25,7 +25,7 @@ from . import (
     episode_summary_service, episodes, knowledge, knowledge_cleanup, knowledge_context,
     knowledge_embeddings, knowledge_grants,
     knowledge_management, knowledge_parser, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search,
-    knowledge_worker, life_catchup_service, life_events, life_runtime, llm, lore, memory, memory_conflicts, memory_shadow_proposals,
+    knowledge_worker, life_catchup_service, life_events, life_runtime, life_schedule, llm, lore, memory, memory_conflicts, memory_shadow_proposals,
     saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, secret_store, slow_lifecycle,
 )
@@ -1066,6 +1066,12 @@ def get_life_state() -> dict:
         "rest_need": state.rest_need, "social_openness": state.social_openness,
         "conservative_mode": state.conservative_mode, "anomaly_code": state.anomaly_code,
     }
+
+
+@app.get("/api/life/schedules/{local_date}")
+def get_life_schedule(local_date: str, timezone_id: str = "Asia/Shanghai") -> dict:
+    schedule = life_schedule.get_active_schedule(local_date=local_date, timezone_id=timezone_id)
+    return {"item": schedule}
 
 
 class CognitionFeedbackIn(BaseModel):

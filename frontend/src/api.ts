@@ -52,6 +52,30 @@ export interface Session {
   message_count?: number;
   updated_at: number;
 }
+export interface LifeScheduleSegment {
+  id: string;
+  ordinal: number;
+  start_minute: number;
+  end_minute: number;
+  activity_code: string;
+  label: string;
+  detail_status: "coarse" | "detailed" | "cancelled";
+  detail_revision: number;
+}
+export interface LifeSchedule {
+  id: string;
+  local_date: string;
+  timezone_id: string;
+  revision: number;
+  status: "active" | "replaced" | "disabled";
+  algorithm_version: string;
+  segments: LifeScheduleSegment[];
+}
+export function getLifeSchedule(localDate: string, timezoneId = "Asia/Shanghai") {
+  return j<{ item: LifeSchedule | null }>(
+    `/api/life/schedules/${encodeURIComponent(localDate)}?timezone_id=${encodeURIComponent(timezoneId)}`,
+  );
+}
 export interface Message {
   id: string;
   session_id: string;

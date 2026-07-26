@@ -1180,16 +1180,18 @@ LIFE.4 施工记录（2026-07-26）：Schema 66 对既有用户 `INSERT OR IGNOR
 
 目标：建立自然但可验证的生活节奏。
 
-- [ ] 新增日程、片段、版本和替换关系 schema。
-- [ ] 实现每日粗日程 structured output 协议。
-- [ ] 实现本地时间合法性、重叠、空档、持续时间和禁用动作校验。
-- [ ] 实现临近片段细化和质量复核。
-- [ ] 模型失败时使用保守回退日程。
-- [ ] 细化事件只写入 LifeEvent 候选，不能直接写正式日记或主动消息。
-- [ ] 建立重复意象、固定模板和不自然日程评测集。
-- [ ] 前端先只读展示今天概览。
+- [x] 新增日程、片段、版本和替换关系 schema。
+- [x] 实现每日粗日程 structured output 协议。
+- [x] 实现本地时间合法性、重叠、空档、持续时间和禁用动作校验。
+- [x] 实现临近片段细化和质量复核。
+- [x] 模型失败时使用保守回退日程。
+- [x] 细化事件只写入 LifeEvent 候选，不能直接写正式日记或主动消息。
+- [x] 建立重复意象、固定模板和不自然日程评测集。
+- [x] 前端先只读展示今天概览。
 
 验收：全天日程无非法重叠；不同日期不机械重复；计划不会被回答为已发生。
+
+LIFE.5 施工记录（2026-07-26）：Schema 67 新增 versioned schedules、segments、replacement links 与通用 `life_event_candidates`。粗日程沿用 LIFE.1 的 `life_schedule_coarse` structured contract；程序 validator 要求 0～1440 分钟完整覆盖、无重叠/空档、正持续时间，并拒绝工具/网络/投递/购买等动作。Provider 缺失时 `life-schedule-fallback-v1` 生成保守日程，按日期序数在阅读/创作/散步间确定性轮换，避免每日完全同模。临近细化以乐观 revision 创建 `world_layer=planned/status=proposed` 的 LifeEvent candidate，不写日记、正式事件或主动投递。新增只读 schedule API，前端可据此展示今日概览；专项 9 项通过。阶段独立 Review 留待 LIFE 总体 Review。
 
 建议 PR：`feat(life): add coarse daily schedule and just-in-time detailing`
 

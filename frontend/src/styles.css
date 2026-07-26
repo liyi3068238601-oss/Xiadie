@@ -3348,3 +3348,8 @@ input[type="range"].xd-range::-moz-range-thumb { width: 20px; height: 20px; bord
 
 .settings-diagnostics-info { margin-top: 16px; padding: 12px; background-color: var(--glass); border: 1px solid var(--glass-border); border-radius: 6px; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; color: var(--text-dim); }
 .settings-diagnostics-info p { margin: 4px 0; }
+.life-page { padding: 28px; overflow: auto; }
+.life-page .page-header p { color: var(--text-dim); margin-top: 6px; }
+.life-timeline { display: grid; gap: 10px; margin-top: 22px; }
+.life-segment { display: grid; grid-template-columns: 120px 1fr auto; gap: 16px; align-items: center; padding: 14px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--glass-soft); }
+.life-segment time, .life-segment small { color: var(--text-dim); }

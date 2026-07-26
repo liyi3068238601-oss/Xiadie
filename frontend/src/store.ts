@@ -6,6 +6,7 @@ import * as api from "./api";
 export type View =
   | "chat"
   | "tasks"
+  | "life"
   | "memories"
   | "files"
   | "tools"

@@ -3043,6 +3043,66 @@ MIGRATIONS = [
         );
         """,
     ),
+    (
+        67,
+        """
+        -- LIFE.5: versioned daily schedules and planned LifeEvent candidates.
+        CREATE TABLE life_schedules (
+            id TEXT PRIMARY KEY,
+            local_date TEXT NOT NULL,
+            timezone_id TEXT NOT NULL,
+            revision INTEGER NOT NULL CHECK(revision >= 1),
+            status TEXT NOT NULL CHECK(status IN ('active','replaced','disabled')),
+            algorithm_version TEXT NOT NULL,
+            source_run_id TEXT REFERENCES decision_runs(id) ON DELETE SET NULL,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            UNIQUE(local_date,timezone_id,revision)
+        );
+        CREATE UNIQUE INDEX idx_life_schedule_active_date
+            ON life_schedules(local_date,timezone_id) WHERE status='active';
+
+        CREATE TABLE life_schedule_segments (
+            id TEXT PRIMARY KEY,
+            schedule_id TEXT NOT NULL REFERENCES life_schedules(id) ON DELETE CASCADE,
+            ordinal INTEGER NOT NULL CHECK(ordinal >= 0),
+            start_minute INTEGER NOT NULL CHECK(start_minute BETWEEN 0 AND 1439),
+            end_minute INTEGER NOT NULL CHECK(end_minute BETWEEN 1 AND 1440),
+            activity_code TEXT NOT NULL,
+            label TEXT NOT NULL,
+            detail_status TEXT NOT NULL CHECK(detail_status IN ('coarse','detailed','cancelled')),
+            detail_revision INTEGER NOT NULL DEFAULT 0 CHECK(detail_revision >= 0),
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            UNIQUE(schedule_id,ordinal)
+        );
+
+        CREATE TABLE life_schedule_replacements (
+            id TEXT PRIMARY KEY,
+            old_schedule_id TEXT NOT NULL REFERENCES life_schedules(id) ON DELETE RESTRICT,
+            new_schedule_id TEXT NOT NULL REFERENCES life_schedules(id) ON DELETE RESTRICT,
+            reason_code TEXT NOT NULL,
+            created_at REAL NOT NULL,
+            UNIQUE(old_schedule_id,new_schedule_id)
+        );
+
+        CREATE TABLE life_event_candidates (
+            id TEXT PRIMARY KEY,
+            source_kind TEXT NOT NULL,
+            source_id TEXT NOT NULL,
+            source_revision TEXT NOT NULL,
+            event_kind TEXT NOT NULL,
+            world_layer TEXT NOT NULL CHECK(world_layer IN ('planned','simulated')),
+            summary TEXT NOT NULL,
+            status TEXT NOT NULL CHECK(status IN ('proposed','materialized','rejected')),
+            idempotency_key TEXT NOT NULL UNIQUE,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_life_event_candidates_source
+            ON life_event_candidates(source_kind,source_id,status);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
