@@ -135,6 +135,12 @@ def run_catchup(*, interval_end: float, lease_token: str, timezone_snapshot: str
         return {"status": "skipped", "reason_code": "wall_clock_rollback", "candidate_count": 0}
     catchup_id, seed, idempotency_key = _identity(snapshot, interval_end)
     strategy = _strategy(interval_end - snapshot["exited_at"])
+    if not date_crossings:
+        # Lazy import avoids a module cycle; LIFE.7 remains the date owner.
+        from . import important_dates
+        date_crossings = important_dates.crossings(
+            interval_start=snapshot["exited_at"], interval_end=interval_end,
+        )
     target_revision = int(snapshot["state_revision"]) + 1
     conn = db.connect()
     try:

@@ -32,7 +32,7 @@ ConstructionBaseline
 | base_branch | `main` |
 | integration state | EAP 与 CDS 已正式冻结并合入 `main`；LIFE.0 ConstructionBaseline 已锁定，LIFE 施工分支从该提交创建 |
 | base_commit_sha | LIFE predecessor：`main@0d7a2d08dc07f123d016da26da117fa58f9a48a1`（CDS PR #2 merge commit） |
-| schema_version | LIFE ConstructionBaseline 63；LIFE.2～LIFE.6 使用迁移 64～68；Schema 48～63 不回写 |
+| schema_version | LIFE ConstructionBaseline 63；LIFE.2～LIFE.7 使用迁移 64～69；Schema 48～63 不回写 |
 | frozen_protocols | CTX v1；EAP 六协议；CDS `cognitive-decision-v1`、`decision-kind-registry-v1`、`specialty-adapter-contract-v1`；以 Protocol Registry、ADR 和冻结报告为准 |
 | test_baseline | LIFE ConstructionBaseline：后端 `2304 passed, 1 warning`、前端 `47 passed`、Vite 189 modules、Electron 语法与 Windows frozen-backend smoke 通过 |
 | plan_version | CDS/LIFE/KIG v0.3；本矩阵 v1.0 |

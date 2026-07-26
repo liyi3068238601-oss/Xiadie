@@ -3146,6 +3146,52 @@ MIGRATIONS = [
         );
         """,
     ),
+    (
+        69,
+        """
+        -- LIFE.7: sourced solar-calendar ImportantDate candidates and boundaries.
+        CREATE TABLE important_dates (
+            id TEXT PRIMARY KEY,
+            label TEXT NOT NULL,
+            status TEXT NOT NULL CHECK(status IN ('candidate','active','revoked')),
+            recurrence TEXT NOT NULL CHECK(recurrence IN ('once','yearly_solar')),
+            date_year INTEGER,
+            date_month INTEGER CHECK(date_month IS NULL OR date_month BETWEEN 1 AND 12),
+            date_day INTEGER CHECK(date_day IS NULL OR date_day BETWEEN 1 AND 31),
+            timezone_id TEXT NOT NULL,
+            confidence REAL NOT NULL CHECK(confidence BETWEEN 0 AND 1),
+            celebration_policy TEXT NOT NULL CHECK(celebration_policy IN ('natural','day_only','none')),
+            revision INTEGER NOT NULL DEFAULT 1 CHECK(revision >= 1),
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_important_dates_status ON important_dates(status,date_month,date_day);
+
+        CREATE TABLE important_date_sources (
+            id TEXT PRIMARY KEY,
+            important_date_id TEXT NOT NULL REFERENCES important_dates(id) ON DELETE CASCADE,
+            source_kind TEXT NOT NULL CHECK(source_kind IN ('user_statement','memory','manual')),
+            source_id TEXT NOT NULL,
+            source_revision TEXT NOT NULL,
+            source_hash TEXT NOT NULL,
+            active INTEGER NOT NULL DEFAULT 1 CHECK(active IN (0,1)),
+            created_at REAL NOT NULL,
+            removed_at REAL,
+            UNIQUE(important_date_id,source_kind,source_id,source_revision)
+        );
+
+        CREATE TABLE important_date_events (
+            id TEXT PRIMARY KEY,
+            important_date_id TEXT NOT NULL REFERENCES important_dates(id) ON DELETE CASCADE,
+            event_type TEXT NOT NULL,
+            from_status TEXT,
+            to_status TEXT NOT NULL,
+            revision INTEGER NOT NULL CHECK(revision >= 1),
+            reason_code TEXT NOT NULL,
+            created_at REAL NOT NULL
+        );
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

@@ -1218,16 +1218,18 @@ LIFE.6 施工记录（2026-07-26）：Schema 68 新增 PersonalGoal、逐来源 
 
 目标：可靠管理生日、纪念日、约定、考试、发布和共同里程碑。
 
-- [ ] 新增日期 schema、重复规则、时区和来源。
-- [ ] LLM 只提取候选；程序计算日期和下一次发生。
-- [ ] 含糊日期保持 candidate 或询问确认。
-- [ ] 实现准备、当天、事后阶段。
-- [ ] 连接用户边界、主动候选和日程调整。
-- [ ] 支持阳历；农历作为后续兼容或独立 PR，不在首版混写。
-- [ ] 用户拒绝庆祝或提醒时形成硬边界。
-- [ ] 删除来源时日期候选撤销或转为用户手动条目。
+- [x] 新增日期 schema、重复规则、时区和来源。
+- [x] LLM 只提取候选；程序计算日期和下一次发生。
+- [x] 含糊日期保持 candidate 或询问确认。
+- [x] 实现准备、当天、事后阶段。
+- [x] 连接用户边界、主动候选和日程调整。
+- [x] 支持阳历；农历作为后续兼容或独立 PR，不在首版混写。
+- [x] 用户拒绝庆祝或提醒时形成硬边界。
+- [x] 删除来源时日期候选撤销或转为用户手动条目。
 
 验收：跨年、闰年、时区切换和错过日期处理正确；未确认日期不会主动祝福错误对象。
+
+LIFE.7 施工记录（2026-07-26）：Schema 69 新增 ImportantDate、逐来源 revision/hash 与事件；v1 recurrence 仅 `once/yearly_solar`，明确不混入农历。LLM 对应 LIFE.1 协议只产生 candidate；程序确认合法月日、计算下一次发生并跳过非闰年的 2 月 29 日。含糊日期保留 candidate，不能进入主动路径；active 日期具有 preparation/day/follow_up/upcoming/missed 阶段。`celebration_policy=none` 是主动硬边界，day_only 不提前准备。CatchUp 在创建请求时由 LIFE.7 owner 扫描确认日期，将区间交叉以 id/revision 候选注入；未确认日期不会进入。删除最后来源即 revoked；manual 来源保留时继续有效。专项 7 项通过。阶段独立 Review 留待 LIFE 总体 Review。
 
 建议 PR：`feat(life): add sourced important dates and relationship-aware handling`
 

@@ -2,7 +2,7 @@
 
 > 最近复核日期：2026-07-26
 >
-> 当前施工状态：CDS PR #2 已合并；LIFE.0～LIFE.6 已完成内部施工验证，阶段独立 Review 按用户要求留待 LIFE 总体 Review；Schema 68 为当前版本
+> 当前施工状态：CDS PR #2 已合并；LIFE.0～LIFE.7 已完成内部施工验证，阶段独立 Review 按用户要求留待 LIFE 总体 Review；Schema 69 为当前版本
 >
 > 当前版本：`v0.1.0` MVP 骨架（知识库系统 K 系列已完成）
 >
