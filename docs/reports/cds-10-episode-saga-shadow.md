@@ -17,7 +17,7 @@
 
 ## 边界
 
-- Schema 保持 62，未新增迁移、表或列。
+- CDS.10 阶段未新增迁移、表或列；阶段基线为 Schema 62，当前项目为 Schema 63。
 - EpisodeBoundaryProposal 与 SagaTransitionProposal 使用独立输入/输出 Schema，均固定 Shadow。
 - 独立 oracle：`cds10-narrative-safety-oracle-v3`，不读取 fixture expected。
 - adapter 只接受真实 pending/qualified 候选，复核资格并强制绑定候选及 Fragment/Episode/Saga 完整来源链 hash（含 Fragment→Episode、Episode→Saga 反向归属）；MEM 继续是唯一 application owner。

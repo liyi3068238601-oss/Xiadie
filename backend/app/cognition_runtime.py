@@ -397,6 +397,12 @@ async def execute_registered_decision(
     """Execute one registered decision; every infrastructure failure returns its fallback."""
     governor = governor or DEFAULT_GOVERNOR
     definition = cds.REGISTRY.get(header.decision_kind)
+    from . import cognition_settings  # local import keeps the settings/registry boundary acyclic
+    if not cognition_settings.decision_allows(header.decision_kind, header.mode):
+        run, _ = cds.create_run(header, payload, candidates, logical_role=role.value)
+        return cds.evaluate_failure(
+            run.id, header, payload, error_code="cognition_decision_disabled",
+        )
     try:
         binding = resolve_model_binding(role)
     except cds.DecisionProtocolError:

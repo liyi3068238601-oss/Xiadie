@@ -7,6 +7,7 @@ from .. import cognitive_decision as cds
 from . import run_ledger
 
 ADAPTER_VERSION = "eap-decision-run-adapter-v1"
+DIAGNOSTIC_ADAPTER_VERSION = "eap-decision-run-diagnostic-v2"
 
 
 class EapDecisionRunView(TypedDict):
@@ -25,6 +26,11 @@ class EapDecisionRunView(TypedDict):
     confidence_band: str | None
     fallback_used: bool
     application_allowed: bool
+
+
+class EapDecisionRunDiagnosticV2(EapDecisionRunView):
+    error_code: str | None
+    latency_ms: int | None
 
 
 def read_eap_decision_run(run_id: str) -> EapDecisionRunView | None:
@@ -63,4 +69,20 @@ def read_eap_decision_run(run_id: str) -> EapDecisionRunView | None:
         "confidence_band": run.confidence_band,
         "fallback_used": run.fallback_used,
         "application_allowed": False,
+    }
+
+
+def read_eap_decision_run_v2(run_id: str) -> EapDecisionRunDiagnosticV2 | None:
+    """Versioned CDS.13 extension; v1 remains unchanged for compatibility."""
+    view = read_eap_decision_run(run_id)
+    if view is None:
+        return None
+    run = run_ledger.get_run(run_id)
+    if run is None:  # fail closed if the diagnostic expired between the two reads
+        return None
+    return {
+        **view,
+        "adapter_version": DIAGNOSTIC_ADAPTER_VERSION,
+        "error_code": run.error_code,
+        "latency_ms": run.latency_ms,
     }

@@ -17,7 +17,8 @@ from pydantic import BaseModel, Field
 
 from . import (
     archivist, archivist_worker, cognitive_decision, cognition_calibration,
-    cognition_runtime, companion_state, context_assembler, context_budget,
+    cognition_diagnostics as cognition_diagnostic_views, cognition_runtime,
+    cognition_settings, companion_state, context_assembler, context_budget,
     context_controls, context_diagnostics, conversation_summaries,
     conversation_summary_service, db,
     entities, episode_consolidator, history_recall,
@@ -1063,6 +1064,39 @@ def submit_cognition_feedback(body: CognitionFeedbackIn) -> dict:
         )
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
+
+
+class CognitionSettingsIn(BaseModel):
+    enabled: bool | None = None
+    diagnostics_visible: bool | None = None
+    decision_modes: dict[str, str] | None = None
+    model_bindings: dict[str, dict[str, str] | None] | None = None
+
+
+@app.get("/api/cognition/settings")
+def read_cognition_settings() -> dict:
+    return cognition_settings.get_settings()
+
+
+@app.put("/api/cognition/settings")
+def write_cognition_settings(body: CognitionSettingsIn) -> dict:
+    try:
+        return cognition_settings.update_settings(
+            enabled=body.enabled, diagnostics_visible=body.diagnostics_visible,
+            decision_modes=body.decision_modes, model_bindings=body.model_bindings,
+        )
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+
+
+@app.post("/api/cognition/settings/rollback")
+def rollback_cognition_settings() -> dict:
+    return cognition_settings.rollback_to_legacy()
+
+
+@app.get("/api/cognition/diagnostics/v2")
+def cognition_diagnostics_v2(decision_kind: str | None = None, limit: int = 100) -> dict:
+    return cognition_diagnostic_views.read(decision_kind=decision_kind, limit=limit)
 
 
 @app.post("/api/cognition/calibration/{decision_kind}/rollback")

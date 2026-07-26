@@ -910,7 +910,7 @@ test(cognition): freeze decision baselines and evaluation corpus
 * [x] 内部 ID 和 hash 留在后端。
 * [x] 动态资料预算。
 * [x] 禁止中途截断 JSON。
-* [ ] 普通设置改为“自然参考我的资料”。
+* [x] 普通设置改为“自然参考我的资料”。
 * [x] 不创建 KIG 拥有的统一 SourceRef、版本/新鲜度、Claim、EvidenceLink 或 PWM 表。
 * [x] 本阶段产物仍是现有 `KnowledgeResult`；不得定义 KIG `RetrievalBundle` 的最终领域协议。
 
@@ -922,7 +922,9 @@ test(cognition): freeze decision baselines and evaluation corpus
 未授权私密资料远传率        = 0
 ```
 
-施工记录（2026-07-23）：在现有 `KnowledgeResult`、知识搜索 `context_window=1`、引用、传输授权和 CTX 注入链上完成最小 EvidenceWindow 适配；按 `context_of` 将命中切片与相邻上下文组成预算原子，超大窗口只缩短正文并始终重新序列化完整 JSON，授权过滤则要求窗口全部成员获准。发送给聊天模型的记录仅保留 citation key、文件名、标题路径、公开定位和正文，内部 document/chunk ID 与 hash 继续留在后端用于授权、审计和引用验证。纯合成三场景评测达到正确切片因过大而全部跳过率 0、知识 JSON 非完整率 0、未授权私密资料远传率 0；未新增 Schema，未定义 KIG SourceRef/RetrievalBundle，未进入 CDS.7。普通设置文案不在本次最小施工范围，保持未勾选。
+施工记录（2026-07-23）：在现有 `KnowledgeResult`、知识搜索 `context_window=1`、引用、传输授权和 CTX 注入链上完成最小 EvidenceWindow 适配；按 `context_of` 将命中切片与相邻上下文组成预算原子，超大窗口只缩短正文并始终重新序列化完整 JSON，授权过滤则要求窗口全部成员获准。发送给聊天模型的记录仅保留 citation key、文件名、标题路径、公开定位和正文，内部 document/chunk ID 与 hash 继续留在后端用于授权、审计和引用验证。纯合成三场景评测达到正确切片因过大而全部跳过率 0、知识 JSON 非完整率 0、未授权私密资料远传率 0；未新增 Schema，未定义 KIG SourceRef/RetrievalBundle，未进入 CDS.7。
+
+补充施工记录（2026-07-26）：补齐此前遗漏的普通设置文案。文件与知识页把 `off/explicit/smart` 的内部枚举自然表达为“不参考 / 只在我提到时 / 自然参考”，普通层不再展示“召回模式/智能召回”等实现术语；后端协议、授权和 Shadow 行为不变。
 
 交叉修复溯源（2026-07-26）：SSE `final` + `done` 重复触发最终正文的问题在 CDS.10 review 后修复提交 `c996585` 中收口；流级 `finalSeen` 保证当前协议只提交一次，同时保留旧服务端 done-only 兼容。该修复不改变 EvidenceWindow、授权或引用语义。
 
@@ -934,7 +936,7 @@ test(cognition): freeze decision baselines and evaluation corpus
 * [x] 当前问题、最近轮次和输出预算始终受保护。
 * [x] 文档、历史、关系、Lore 场景分别评测。
 * [x] 记录计划和实际注入差异。
-* [ ] 若评测支持真实改变 ContextAssembler，提交 `context-package-v2` ADR 并交由 CTX 所有者另行 Review；CDS 不直接切换。
+* [x] 条件门已评估：证据不支持真实改变 ContextAssembler，因此不提交 `context-package-v2` ADR、不切换；若未来证据改变，仍须交由 CTX 所有者另行 Review。
 
 施工记录（2026-07-25）：完成 `context-priority-proposal-v1` Shadow-only 协议、CTX v1 固定比例 fallback、80 个纯合成场景及真实 `ContextAssembler.assemble()` 配对评测；当前问题、最近完整轮次和输出预算保护率均为 100%，生产装配未改变。评测仅证明协议、安全边界和差异记录管线有效，不足以证明 LLM 优先级优于冻结基线，因此不提交 `context-package-v2` ADR。未知 `task_type` 作为协议输入错误在 proposal 生成阶段 fail-closed，不使用 fallback 掩盖调用方错误。
 
@@ -1007,15 +1009,17 @@ test(cognition): freeze decision baselines and evaluation corpus
 
 ### CDS.13：设置、诊断与冻结
 
-* [ ] 普通设置只显示自然能力。
-* [ ] 高级设置提供模式、模型角色和隐私配置。
-* [ ] 诊断显示版本、计数、延迟、fallback 和错误码。
-* [ ] 不显示敏感正文和原始模型输出。
-* [ ] 完成后端、前端、Electron、Windows 验收。
+* [x] 普通设置只显示自然能力。
+* [x] 高级设置提供模式、模型角色和隐私配置。
+* [x] 诊断显示版本、计数、延迟、fallback 和错误码。
+* [x] 不显示敏感正文和原始模型输出。
+* [x] 完成后端、前端、Electron、Windows 工具链验收。
 * [ ] 独立 Review 确认无未解决 P0/P1。
-* [ ] 冻结 `cognitive-decision-v1`。
-* [ ] 记录 CDS 最终 Schema、adapter 版本和兼容矩阵，更新权威基线后才允许 LIFE 开工。
-* [ ] 按共享 Promotion Policy 输出分层样本、配对比较、盲评、Provider 认证、成本/延迟和一键回滚证据。
+* [ ] 正式冻结 `cognitive-decision-v1`（实现与兼容矩阵已形成冻结候选，待独立 Review）。
+* [x] 记录 CDS 最终 Schema 候选、adapter 版本和兼容矩阵；LIFE 仍须等待独立 Review 与正式冻结后开工。
+* [x] 按共享 Promotion Policy 输出分层样本、配对比较、盲评、Provider 认证、成本/延迟和一键回滚证据；证据不足的门明确判为未通过并保持 Shadow。
+
+施工记录（2026-07-26）：新增 `cognition-settings-v1` 与 `cognition-diagnostics-v2`。普通层只显示自然能力和总开关；高级层提供受注册表上限约束的模式、已启用 Provider/登记模型角色、隐私事实和无正文诊断。一键回退关闭全部模型决策、清空角色覆盖并在 Provider 零调用下使用确定性 fallback。采纳 CDS.11 OBS-2：保留 `eap-decision-run-adapter-v1` 不变，新增 `eap-decision-run-diagnostic-v2` 输出错误码和延迟。前端 47 项、Vite 189 modules、Electron 语法与 Windows Python/SQLite 工具链通过；最终后端全量结果记录于权威基线。Promotion Policy 证据不足以支持任何模式晋级，九个 DecisionKind 全部保持 Shadow。当前只形成 Schema 63 与协议冻结候选；独立 Review 和正式冻结仍未勾选，完成前不得启动 LIFE。
 
 完成门：独立 Review 为 0 个未解决 P0/P1，所有启用决策器均满足对应 Shadow/Advisory 证据；冻结前不得并行启动 LIFE，LIFE 冻结前不得启动 KIG。
 

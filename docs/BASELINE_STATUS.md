@@ -2,7 +2,7 @@
 
 > 最近复核日期：2026-07-26
 >
-> 当前施工状态：CDS.11 EAP/LIFE/KIG 最小适配契约施工完成，等待独立 review（ConstructionBaseline 仍为 `6b8aa47134f8a9a55131c73bb1148e6912421c4f`）
+> 当前施工状态：CDS.0～13 施工完成，Schema 63 与协议兼容矩阵形成冻结候选；等待 CDS 总体独立 review 后正式冻结并解锁 LIFE（ConstructionBaseline 仍为 `6b8aa47134f8a9a55131c73bb1148e6912421c4f`）
 >
 > 当前版本：`v0.1.0` MVP 骨架（知识库系统 K 系列已完成）
 >
@@ -35,11 +35,11 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider` | 通过：2290 passed，1 warning；其中施工前 ConstructionBaseline 为 937 passed，当前 Schema 62 |
-| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：45 项；TypeScript 检查及 Vite 生产构建 189 modules 成功 |
-| Electron | `cd desktop; node --check main.js; node --check preload.js` | 通过：无语法错误；桌宠、主窗口及 R6 主动陪伴设置页完成 Windows 实机 smoke |
+| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider` | 通过：2304 passed，1 warning；其中施工前 ConstructionBaseline 为 937 passed，当前 Schema 63 |
+| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：47 项；TypeScript 检查及 Vite 生产构建 189 modules 成功 |
+| Electron / Windows | `node --check main.js; node --check preload.js`；`scripts\test-frozen-backend.ps1 -Port 18756` | 通过：无语法错误；冻结后端 health 与本地 embedding smoke 通过；沿用既有安全 token/IPC/端口边界 |
 
-CDS.11 未新增迁移，当前 Schema 仍为 62。`eap-decision-run-adapter-v1` 只读共享 DecisionRun，LIFE/KIG 只冻结 `specialty-adapter-contract-v1`，不代表两个后续专项已经施工。本阶段后端全量为 `2290 passed, 1 warning`。
+CDS.12 以 Schema 63 新增三张无正文反馈/校准审计表；CDS.13 未再新增迁移。`eap-decision-run-adapter-v1` 保持兼容，诊断字段通过独立 `eap-decision-run-diagnostic-v2` 增加；LIFE/KIG 仍只有 `specialty-adapter-contract-v1` 预留契约，不代表两个后续专项已经施工。当前九个 DecisionKind 全部最高为 Shadow。本阶段后端全量为 `2304 passed, 1 warning`。
 
 已知但不阻断当前开发的警告：
 
