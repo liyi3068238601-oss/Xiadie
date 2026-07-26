@@ -39,10 +39,22 @@ test("legacy done content remains an authoritative fallback", () => {
   assert.equal(done.message_id, "m2");
 });
 
+test("current final plus done payload invokes authoritative replacement once", () => {
+  let finalCalls = 0;
+  const state = { finalSeen: false };
+  const callbacks = { onFinal: () => { finalCalls += 1; } };
+
+  dispatchChatSseEvent("final", { message_id: "m3", content: "最终文本" }, callbacks, state);
+  dispatchChatSseEvent("done", { message_id: "m3", content: "最终文本" }, callbacks, state);
+
+  assert.equal(finalCalls, 1);
+  assert.equal(state.finalSeen, true);
+});
+
 test("typed runtime protocol preserves final and legacy done replacement", async () => {
   const normalized = typedProtocol
     .replace(/export interface[\s\S]*?\n}\n\n/, "")
-    .replace(/export function dispatchChatSseEvent\([\s\S]*?\): void \{/, "export function dispatchChatSseEvent(event, data, callbacks) {");
+    .replace(/export function dispatchChatSseEvent\([\s\S]*?\): void \{/, "export function dispatchChatSseEvent(event, data, callbacks, state) {");
   const fixture = await readFile(
     new URL("./fixtures/chatSseProtocol.mjs", import.meta.url), "utf8",
   );

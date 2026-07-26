@@ -1307,6 +1307,7 @@ export async function streamChat(
     }
     const reader = r.body.getReader();
     const decoder = new TextDecoder();
+    const protocolState = { finalSeen: false };
     let buf = "";
     for (;;) {
       const { done, value } = await reader.read();
@@ -1320,7 +1321,7 @@ export async function streamChat(
         if (!evLine || !dataLine) continue;
         const ev = evLine.slice(6).trim();
         const data = JSON.parse(dataLine.slice(5).trim());
-        dispatchChatSseEvent(ev, data, cb);
+        dispatchChatSseEvent(ev, data, cb, protocolState);
       }
     }
   } catch {

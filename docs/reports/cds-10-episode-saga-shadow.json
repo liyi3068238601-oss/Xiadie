@@ -17,7 +17,7 @@
   "merge_execution_rate": 0.0,
   "application_allowed_rate": 0.0,
   "safety_violation_count": 0,
-  "oracle_version": "cds10-narrative-safety-oracle-v2",
+  "oracle_version": "cds10-narrative-safety-oracle-v3",
   "shadow_ledger_write_count": 2,
   "changed_shadow_ledger_tables": [
     "decision_run_events",
@@ -34,6 +34,7 @@
     "corpus_role": "labeled_raw_narrative_regression",
     "candidate_path": "real_database_candidates",
     "label_authorship": "human_authored_synthetic_not_reviewed",
+    "promotion_evidence_eligible": false,
     "sample_count": 8,
     "correct_count": 4,
     "error_count": 4,

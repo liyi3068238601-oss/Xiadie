@@ -975,6 +975,8 @@ test(cognition): freeze decision baselines and evaluation corpus
 
 施工记录（2026-07-25）：新增 `episode_boundary_proposal` 与 `saga_transition_proposal` 两个最高仅 Shadow 的专属协议。Episode adapter 在单个只读事务中绑定候选 Fragment 的 lifecycle revision/hash、active Entity 完整状态、Fragment→Episode 反向归属并复用 `episodes.score_group`；Saga adapter 绑定候选 Episode、active Entity 完整状态、Episode→Saga 反向归属与目标 Saga 的 revision/hash 并复用 `sagas.assess_group`。资格门显式检查 Fragment 未归属任何正式 Episode、Episode 未归属除目标 Saga 之外的任何正式 Saga；任何归属变化使来源 hash 失效。严格 validator 重算完整动作矩阵，限制所有成员来自候选集合，低置信度跳过，revive 仅接受 user_confirmed 来源，`merge_suggestion` 始终 high impact 且不可执行。240 个纯合成规则场景经独立 `cds10-narrative-safety-oracle-v2` 和真实共享 DecisionRun Shadow 验证；oracle 独立检查 provenance、来源/目标绑定、Episode 连续成员和 Saga 最小成员。另以 8 个带人工标签的原始叙事样本走真实数据库候选路径，诚实结果为 accuracy 50.00%、macro precision/recall/F1 38.89%/50.00%/43.33%，不再宣称独立 holdout。规则集精确匹配与候选集合保持率均为 100%，低置信度选中、高影响 merge 自动执行、application_allowed、安全违规和 MEM 领域写入均为 0。Schema 保持 62，未修改 Episode/Saga 候选生成、正式应用、生命周期或聊天路径。详见 ADR-0056 与 `docs/reports/cds-10-episode-saga-shadow.md`。
 
+后续审计返工（2026-07-26）：外部 strict review 的 0 P0/P1 结论整体成立，但代码级复核新增发现 Episode validator 可接受 `same_goal=false` 或 `causal_chain=false` 的 form 提案，且 Episode/Saga reason code 未与动作矩阵绑定。已按 TDD 收紧 validator，并将独立 oracle 升至 `cds10-narrative-safety-oracle-v3`；240/240 规则场景、安全零写入与 Shadow 门保持不变。CDS.6 同轮修复 SSE `final` + `done` 重复触发最终正文的问题，保留旧服务端 done-only 兼容。8 条未独立评审叙事样本的 50% accuracy 仅作观察，不支持 Advisory/Active 晋级。当前仍停在 CDS.10，未进入 CDS.11。
+
 ### CDS.11：冻结 EAP 适配与 LIFE/KIG 接口契约
 
 * [ ] EAP 通过只读/稳定 adapter 消费共享 DecisionRun 能力，冻结的候选、授权、强度、投递与反馈状态机保持所有权不变。

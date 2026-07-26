@@ -19,7 +19,7 @@
 
 - Schema 保持 62，未新增迁移、表或列。
 - EpisodeBoundaryProposal 与 SagaTransitionProposal 使用独立输入/输出 Schema，均固定 Shadow。
-- 独立 oracle：`cds10-narrative-safety-oracle-v2`，不读取 fixture expected。
+- 独立 oracle：`cds10-narrative-safety-oracle-v3`，不读取 fixture expected。
 - adapter 只接受真实 pending/qualified 候选，复核资格并强制绑定候选及 Fragment/Episode/Saga 完整来源链 hash（含 Fragment→Episode、Episode→Saga 反向归属）；MEM 继续是唯一 application owner。
 - Episode 资格门检查 Fragment 未归属任何正式 Episode；Saga 资格门检查 Episode 未归属除目标 Saga 之外的任何正式 Saga；任何归属变化使来源 hash 失效。
 - Episode 所选边界必须连续；Saga 非 skip 提案至少包含 2 个成员。
@@ -29,6 +29,7 @@
 
 - 角色：`labeled_raw_narrative_regression`；SHA-256：`b72ce4d56a89c68ec0e67f28ab56bcc1ce530c8f59960a92186bf3c6a7610147`。
 - 标签：人工编写的合成标签，未经过独立评审。
+- 用途：只观察规则与标签在真实候选路径上的差异，不作为 Shadow→Advisory/Active 晋级证据。
 - 候选路径：`real_database_candidates`；样本：8；正确/错误：4/4。
 - Accuracy：50.00%。
 - Macro precision / recall / F1：38.89% / 50.00% / 43.33%。

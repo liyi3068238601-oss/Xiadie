@@ -243,6 +243,17 @@ def test_independent_oracle_rejects_provenance_bindings_and_member_shape_tamperi
     assert "episode_members_non_contiguous" in oracle.safety_violations(
         shadow.EPISODE_DECISION_KIND, episode_payload, episode_result,
     )
+    assert "episode_goal_mismatch_selected" in oracle.safety_violations(
+        shadow.EPISODE_DECISION_KIND, episode_payload,
+        replace(shadow.episode_fallback(episode_payload), same_goal=False),
+    )
+    assert "episode_reason_matrix_invalid" in oracle.safety_violations(
+        shadow.EPISODE_DECISION_KIND, episode_payload,
+        replace(
+            shadow.episode_fallback(episode_payload),
+            reason_codes=("causal_chain_missing",),
+        ),
+    )
     assert "candidate_provenance_missing" in oracle.safety_violations(
         shadow.EPISODE_DECISION_KIND,
         replace(episode_payload, candidate_provenance=None),
@@ -257,6 +268,13 @@ def test_independent_oracle_rejects_provenance_bindings_and_member_shape_tamperi
     saga_result = replace(shadow.saga_fallback(saga_payload), selected_ids=("episode-a",))
     assert "saga_member_count_invalid" in oracle.safety_violations(
         shadow.SAGA_DECISION_KIND, saga_payload, saga_result,
+    )
+    assert "saga_reason_matrix_invalid" in oracle.safety_violations(
+        shadow.SAGA_DECISION_KIND, saga_payload,
+        replace(
+            shadow.saga_fallback(saga_payload),
+            reason_codes=("merge_requires_review",),
+        ),
     )
 
 
@@ -320,6 +338,25 @@ def test_episode_validator_rejects_inconsistent_candidate_action_and_boundaries(
             result, selected_ids=("fragment-a", "fragment-b"),
             excluded_ids=("fragment-c",), boundary_end_id="fragment-b",
             turning_point_ids=("fragment-c",),
+        ),
+    )
+    for invalid in invalid_results:
+        with pytest.raises(cds.DecisionProtocolError):
+            shadow.validate_episode(payload, invalid)
+
+
+def test_episode_validator_rejects_semantically_incoherent_action_matrix():
+    payload = _episode_input()
+    result = shadow.episode_fallback(payload)
+    invalid_results = (
+        replace(result, same_goal=False),
+        replace(result, causal_chain=False),
+        replace(result, reason_codes=("goal_mismatch",)),
+        replace(result, turning_point_ids=("fragment-b", "fragment-b")),
+        replace(
+            result, action="skip", selected_ids=(), excluded_ids=payload.candidate_ids,
+            boundary_start_id=None, boundary_end_id=None, turning_point_ids=(),
+            proposed_action="skip", reason_codes=("bounded_narrative",),
         ),
     )
     for invalid in invalid_results:
@@ -415,6 +452,27 @@ def test_saga_validator_rejects_inconsistent_state_action_and_impact_flags():
     for invalid in invalid_results:
         with pytest.raises(cds.DecisionProtocolError):
             shadow.validate_saga(payload, invalid)
+
+
+def test_saga_validator_rejects_reason_codes_that_disagree_with_transition():
+    branch_payload = _saga_input(
+        target_saga_id="saga-a", target_status="active", transition_hint="branch",
+    )
+    branch = shadow.saga_fallback(branch_payload)
+    with pytest.raises(cds.DecisionProtocolError, match="matrix"):
+        shadow.validate_saga(
+            branch_payload, replace(branch, reason_codes=("merge_requires_review",)),
+        )
+
+    merge_payload = _saga_input(
+        target_saga_id="saga-a", target_status="active",
+        transition_hint="merge_suggestion",
+    )
+    merge = shadow.saga_fallback(merge_payload)
+    with pytest.raises(cds.DecisionProtocolError, match="matrix"):
+        shadow.validate_saga(
+            merge_payload, replace(merge, reason_codes=("bounded_transition",)),
+        )
 
 
 def test_common_validators_reject_direct_application_and_unlisted_members():
@@ -982,6 +1040,7 @@ def test_runner_report_proves_shadow_ledger_and_mem_zero_write():
     assert report["quality_corpus_role"] == "labeled_raw_narrative_regression"
     assert report["quality_metrics"]["candidate_path"] == "real_database_candidates"
     assert report["quality_metrics"]["label_authorship"] == "human_authored_synthetic_not_reviewed"
+    assert report["quality_metrics"]["promotion_evidence_eligible"] is False
     assert report["quality_metrics"]["sample_count"] > 0
     assert 0.0 <= report["quality_metrics"]["accuracy"] <= 1.0
     assert report["quality_metrics"]["correct_count"] + report["quality_metrics"]["error_count"] == report["quality_metrics"]["sample_count"]

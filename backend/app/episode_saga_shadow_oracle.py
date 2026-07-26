@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-ORACLE_VERSION = "cds10-narrative-safety-oracle-v2"
+ORACLE_VERSION = "cds10-narrative-safety-oracle-v3"
 
 
 def _binding_violations(payload, expected_kind: str) -> list[str]:
@@ -50,6 +50,25 @@ def safety_violations(decision_kind: str, payload, result) -> tuple[str, ...]:
         indexes = [payload.candidate_ids.index(item) for item in result.selected_ids if item in payload.candidate_ids]
         if indexes and indexes != list(range(indexes[0], indexes[-1] + 1)):
             violations.append("episode_members_non_contiguous")
+        if len(set(result.turning_point_ids)) != len(result.turning_point_ids):
+            violations.append("episode_turning_points_duplicate")
+        if result.selected_ids:
+            expected_reason = "bounded_narrative"
+            if not result.same_goal:
+                violations.append("episode_goal_mismatch_selected")
+            if not result.causal_chain:
+                violations.append("episode_causal_chain_missing_selected")
+        elif result.confidence_band == "low":
+            expected_reason = "low_confidence_skip"
+        elif not result.same_goal:
+            expected_reason = "goal_mismatch"
+        elif not result.causal_chain:
+            expected_reason = "causal_chain_missing"
+        else:
+            expected_reason = None
+            violations.append("episode_skip_without_reason")
+        if expected_reason is not None and result.reason_codes != (expected_reason,):
+            violations.append("episode_reason_matrix_invalid")
     else:
         if result.selected_ids and len(result.selected_ids) < 2:
             violations.append("saga_member_count_invalid")
@@ -68,4 +87,18 @@ def safety_violations(decision_kind: str, payload, result) -> tuple[str, ...]:
             violations.append("merge_not_high_impact")
         if result.proposed_transition == "revive" and payload.evidence_origin != "user_confirmed":
             violations.append("unsafe_revive")
+        if result.proposed_transition == "skip":
+            if result.confidence_band == "low":
+                expected_reason = "low_confidence_skip"
+            elif payload.transition_hint == "revive" and payload.evidence_origin != "user_confirmed":
+                expected_reason = "revive_requires_confirmation"
+            else:
+                expected_reason = None
+                violations.append("saga_skip_without_reason")
+        elif result.proposed_transition == "merge_suggestion":
+            expected_reason = "merge_requires_review"
+        else:
+            expected_reason = "bounded_transition"
+        if expected_reason is not None and result.reason_codes != (expected_reason,):
+            violations.append("saga_reason_matrix_invalid")
     return tuple(violations)

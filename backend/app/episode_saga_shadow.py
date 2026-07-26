@@ -437,6 +437,7 @@ def _load_bindings_from_connection(conn, ordered: tuple[str, ...], source_kind: 
 
 
 def _source_hash(conn, source_kind: str, row: dict, entity_ids: set[str]) -> str:
+    # 异步生命周期评估时间只表示后台扫描时刻，不改变叙事语义或来源内容。
     excluded = {"last_lifecycle_evaluated_at"}
     dependencies = []
     reverse_dependencies = []
@@ -612,6 +613,7 @@ def validate_episode(payload: EpisodeBoundaryInput, result: EpisodeBoundaryPropo
         or not isinstance(result.turning_point_ids, tuple)
         or len(set(result.selected_ids)) != len(result.selected_ids)
         or len(set(result.excluded_ids)) != len(result.excluded_ids)
+        or len(set(result.turning_point_ids)) != len(result.turning_point_ids)
         or not set(result.selected_ids) <= set(payload.candidate_ids)
         or not set(result.excluded_ids) <= set(payload.candidate_ids)
     ):
@@ -619,6 +621,24 @@ def validate_episode(payload: EpisodeBoundaryInput, result: EpisodeBoundaryPropo
     if payload.projected_confidence == cds.ConfidenceBand.LOW.value and result != episode_fallback(payload):
         raise cds.DecisionProtocolError("episode_action_matrix_invalid", "low confidence episode matrix requires fallback")
     selected = bool(result.selected_ids)
+    if selected:
+        expected_reason = "bounded_narrative"
+        if not result.same_goal or not result.causal_chain:
+            raise cds.DecisionProtocolError(
+                "episode_action_matrix_invalid",
+                "episode formation requires one goal and a causal chain",
+            )
+    elif result.confidence_band == cds.ConfidenceBand.LOW.value:
+        expected_reason = "low_confidence_skip"
+    elif not result.same_goal:
+        expected_reason = "goal_mismatch"
+    elif not result.causal_chain:
+        expected_reason = "causal_chain_missing"
+    else:
+        raise cds.DecisionProtocolError(
+            "episode_action_matrix_invalid",
+            "episode skip requires a bounded semantic reason",
+        )
     if selected:
         indexes = [payload.candidate_ids.index(item) for item in result.selected_ids]
         if indexes != list(range(indexes[0], indexes[-1] + 1)):
@@ -637,6 +657,7 @@ def validate_episode(payload: EpisodeBoundaryInput, result: EpisodeBoundaryPropo
         or not isinstance(result.outcome_present, bool)
         or (selected and len(result.selected_ids) < 2)
         or (selected and result.confidence_band == cds.ConfidenceBand.LOW.value)
+        or result.reason_codes != (expected_reason,)
     ):
         raise cds.DecisionProtocolError("episode_action_matrix_invalid", "episode proposal matrix is invalid")
     _validate_common(result.reason_codes, result.confidence_band, result.advisory_only, EPISODE_REASONS)
@@ -701,6 +722,20 @@ def validate_saga(payload: SagaTransitionInput, result: SagaTransitionProposal) 
         "complete": {"active"},
         "merge_suggestion": {"active", "completed"},
     }
+    if result.proposed_transition == "skip":
+        if result.confidence_band == cds.ConfidenceBand.LOW.value:
+            expected_reason = "low_confidence_skip"
+        elif payload.transition_hint == "revive" and payload.evidence_origin != "user_confirmed":
+            expected_reason = "revive_requires_confirmation"
+        else:
+            raise cds.DecisionProtocolError(
+                "saga_action_matrix_invalid",
+                "saga skip requires a bounded semantic reason",
+            )
+    elif result.proposed_transition == "merge_suggestion":
+        expected_reason = "merge_requires_review"
+    else:
+        expected_reason = "bounded_transition"
     if (
         result.execution_allowed is not False
         or result.action != (cds.DecisionAction.SELECT.value if selected else cds.DecisionAction.SKIP.value)
@@ -709,6 +744,7 @@ def validate_saga(payload: SagaTransitionInput, result: SagaTransitionProposal) 
         or (result_requires_target and payload.target_status not in allowed_target_statuses[result.proposed_transition])
         or result.high_impact != (result.proposed_transition == "merge_suggestion")
         or (selected and result.confidence_band == cds.ConfidenceBand.LOW.value)
+        or result.reason_codes != (expected_reason,)
     ):
         raise cds.DecisionProtocolError("saga_action_matrix_invalid", "saga proposal matrix is invalid")
     _validate_common(result.reason_codes, result.confidence_band, result.advisory_only, SAGA_REASONS)

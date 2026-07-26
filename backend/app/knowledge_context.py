@@ -49,8 +49,8 @@ def _effective_budget(capability, default_budget: int) -> int:
 
     策略：取默认预算与 context_window * 0.3 的较小值，但至少 1500 tokens。
     - 4K 模型 → 1200 tokens（被下限提升为 1500）
-    - 8K 模型 → 2400 tokens
-    - 32K 模型 → 9600 tokens
+    - 8K (8192) 模型 → 2457 tokens（`int` 向下取整）
+    - 32K (32768) 模型 → 9830 tokens（`int` 向下取整）
     - 128K+ 模型 → 12000 tokens（保持默认值）
     """
     if capability is None:
