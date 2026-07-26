@@ -2,7 +2,7 @@
 
 - 版本：v1.0
 - 日期：2026-07-22
-- 状态：CDS 冻结候选；待 CDS 总体独立 review 后正式生效并解锁 LIFE
+- 状态：CDS 已通过最终独立 Review 并正式冻结；LIFE 协议门已解除
 - 适用顺序：`CDS → LIFE → KIG`
 - 解释优先级：冻结协议与 ADR > 本矩阵 > 专项计划 > 阶段施工记录
 
@@ -30,10 +30,10 @@ ConstructionBaseline
 | repository | `liyi3068238601-oss/Xiadie` |
 | predecessor_pr | EAP PR `#1`，已合并 |
 | base_branch | `main` |
-| integration state | EAP 已技术冻结并合入 `main`；CDS.0～13 已施工，当前分支等待总体独立 review |
+| integration state | EAP 已技术冻结并合入 `main`；CDS.0～13 已施工并通过最终独立 Review，待合入目标基线后填写 LIFE.0 ConstructionBaseline |
 | base_commit_sha | CDS ConstructionBaseline：`6b8aa47134f8a9a55131c73bb1148e6912421c4f` |
 | schema_version | ConstructionBaseline 60；CDS.1/CDS.2 为 61/62；CDS.12 当前 63；Schema 48～60 不回写 |
-| frozen_protocols | CTX v1；EAP 六协议；以 Protocol Registry、ADR 和冻结报告为准 |
+| frozen_protocols | CTX v1；EAP 六协议；CDS `cognitive-decision-v1`、`decision-kind-registry-v1`、`specialty-adapter-contract-v1`；以 Protocol Registry、ADR 和冻结报告为准 |
 | test_baseline | ConstructionBaseline：后端 `937 passed, 1 warning`；当前：后端 `2304 passed, 1 warning`、前端 `47 passed`、Vite 189 modules |
 | plan_version | CDS/LIFE/KIG v0.3；本矩阵 v1.0 |
 | recorded_at | 2026-07-22；各专项开工时重新记录 |
@@ -74,7 +74,7 @@ ConstructionBaseline
 | LIFE | `life-adapter-v1` | event/state/schedule revision/hash | LIFE 确定性 reducer | 不生成长期 LifeEvent、Goal、Date、Diary | 日记/生活数据单独授权 | LIFE |
 | KIG | `source-ref-v1` | adapter registry 返回的 revision/hash | 原系统继续工作 | 不抽取 Claim/Entity/Relation/PWM | 逐来源隐私与授权 | KIG |
 
-迁移号严格串行：CDS 最终施工 Schema 候选为 63；总体独立 review 与正式冻结通过后，LIFE 可使用首个确有必要的 Schema 64；KIG 使用 LIFE 最终版本 + 1。没有实际字段缺口不得为了“占号”创建空迁移。
+迁移号严格串行：CDS 最终冻结 Schema 为 63；LIFE 可在锁定已合并 predecessor commit 和 LIFE.0 ConstructionBaseline 后使用首个确有必要的 Schema 64；KIG 使用 LIFE 最终版本 + 1。没有实际字段缺口不得为了“占号”创建空迁移。
 
 ## 4. DecisionKindRegistry 规范
 

@@ -1,8 +1,8 @@
 # 遐蝶 LLM 认知决策改造专项施工计划
 
 * **版本：** v0.3（施工基线、晋级、预算与数据治理补强）
-* **日期：** 2026-07-22
-* **状态：** 计划优化完成；等待 EAP PR #1 合并并锁定 `main` 合并提交后施工
+* **日期：** 2026-07-26
+* **状态：** CDS.0～13 已完成并通过最终独立 Review；`cognitive-decision-v1`、Schema 63 与兼容矩阵正式冻结
 * **专项代号：** `CDS`（Cognitive Decision Service）
 * **适用范围：** 将当前依赖正则、固定权重、固定阈值和固定优先级的语义判断，逐步升级为“本地候选 + LLM 结构化判断 + 程序验证与执行”的统一认知决策体系
 * **关联专项：**
@@ -14,7 +14,7 @@
 * **上线顺序：** 所有决策器必须经过 `Shadow → Advisory → Active`
 * **执行规则：** 每阶段完成代码、测试、文档、Review 和独立提交后，才能进入下一阶段
 * **专项顺序：** `CDS → LIFE → KIG`；CDS 是后三个专项中的第一项
-* **迁移规则：** 当前冻结基线为 Schema 60；只有出现不可由现有表表达且有证据的字段时才新增迁移，首个可用版本为 61
+* **迁移规则：** CDS ConstructionBaseline 为 Schema 60，最终冻结为 Schema 63；LIFE 首个有证据的迁移号为 64
 * **共享规范：** `docs/SPECIALTY_OWNERSHIP_AND_CONTRACT_MATRIX.md` 是所有权、Adapter、晋级、模型认证、预算与数据生命周期的规范事实源
 
 ---
@@ -29,7 +29,7 @@
 4. 现有 Knowledge 已具备文档、切片、FTS/Dense、引用、删除生命周期、传输策略、搜索与 CTX 接线。CDS 只拥有共享决策运行时、有限候选协议、校验与模式门禁；跨源治理、版本/新鲜度、证据支持度和 PWM 归 KIG。
 5. LIFE 尚未施工。CDS 只冻结供 LIFE/KIG 使用的 adapter 契约，不创建 LifeClock、LifeEvent、日记、日期或 PWM 表。
 6. 任一决策器必须先有固定评测集和真实 Shadow 证据，再进入 Advisory；没有独立 Review 与 0 个未解决 P0/P1，不得 Active 或冻结。
-7. EAP 当前是协议技术冻结，但 GitHub PR #1 仍为 open/draft。CDS.0 默认必须等待该 PR 合并，并把 `main` 合并提交写入 ConstructionBaseline；只有用户明确批准固定 SHA 的例外路径才能提前开工。
+7. EAP GitHub PR #1 已合并；CDS ConstructionBaseline 已锁定为 `main@6b8aa47134f8a9a55131c73bb1148e6912421c4f`。
 8. 正式施工前必须复制共享规范中的 ConstructionBaseline，记录 repository、predecessor PR、base commit SHA、Schema、冻结协议、测试基线、计划版本和时间。字段不完整时只能审计。
 
 顺序门禁：
@@ -1014,12 +1014,14 @@ test(cognition): freeze decision baselines and evaluation corpus
 * [x] 诊断显示版本、计数、延迟、fallback 和错误码。
 * [x] 不显示敏感正文和原始模型输出。
 * [x] 完成后端、前端、Electron、Windows 工具链验收。
-* [ ] 独立 Review 确认无未解决 P0/P1。
-* [ ] 正式冻结 `cognitive-decision-v1`（实现与兼容矩阵已形成冻结候选，待独立 Review）。
-* [x] 记录 CDS 最终 Schema 候选、adapter 版本和兼容矩阵；LIFE 仍须等待独立 Review 与正式冻结后开工。
+* [x] 独立 Review 确认无未解决 P0/P1。
+* [x] 正式冻结 `cognitive-decision-v1` 与 `decision-kind-registry-v1`。
+* [x] 记录 CDS 最终 Schema 63、adapter 版本和兼容矩阵；LIFE 可在锁定已合并 predecessor commit 后从必要的 Schema 64 开工。
 * [x] 按共享 Promotion Policy 输出分层样本、配对比较、盲评、Provider 认证、成本/延迟和一键回滚证据；证据不足的门明确判为未通过并保持 Shadow。
 
-施工记录（2026-07-26）：新增 `cognition-settings-v1` 与 `cognition-diagnostics-v2`。普通层只显示自然能力和总开关；高级层提供受注册表上限约束的模式、已启用 Provider/登记模型角色、隐私事实和无正文诊断。一键回退关闭全部模型决策、清空角色覆盖并在 Provider 零调用下使用确定性 fallback。采纳 CDS.11 OBS-2：保留 `eap-decision-run-adapter-v1` 不变，新增 `eap-decision-run-diagnostic-v2` 输出错误码和延迟。前端 47 项、Vite 189 modules、Electron 语法与 Windows Python/SQLite 工具链通过；最终后端全量结果记录于权威基线。Promotion Policy 证据不足以支持任何模式晋级，九个 DecisionKind 全部保持 Shadow。当前只形成 Schema 63 与协议冻结候选；独立 Review 和正式冻结仍未勾选，完成前不得启动 LIFE。
+施工记录（2026-07-26）：新增 `cognition-settings-v1` 与 `cognition-diagnostics-v2`。普通层只显示自然能力和总开关；高级层提供受注册表上限约束的模式、已启用 Provider/登记模型角色、隐私事实和无正文诊断。一键回退关闭全部模型决策、清空角色覆盖并在 Provider 零调用下使用确定性 fallback。采纳 CDS.11 OBS-2：保留 `eap-decision-run-adapter-v1` 不变，新增 `eap-decision-run-diagnostic-v2` 输出错误码和延迟。前端 47 项、Vite 189 modules、Electron 语法与 Windows Python/SQLite 工具链通过；最终后端全量结果记录于权威基线。Promotion Policy 证据不足以支持任何模式晋级，九个 DecisionKind 全部保持 Shadow。提交 `d0c6011` 时形成 Schema 63 与协议冻结候选，随后由下述最终 Review 正式冻结。
+
+最终 Review 记录（2026-07-26）：`cds-final-review` 独立审查结论为通过，0 P0 / 0 P1 / 0 P2 / 3 个非阻断观察，53/54 项独立验证通过（1 项为审查脚本误报），并确认后端 2304 项、前端 47 项。OBS-1（profile 尚未接生产）保持原设计，只有具体 DecisionKind 准备晋级时才另做 Shadow 对照后接线；OBS-2（EAP v2 双读）已有 `None` fail-closed，不为极低风险改写 v1；OBS-3（既有 preload `sendSync`）不属于 CDS 变更，留给后续独立可靠性改造。由此正式冻结 `cognitive-decision-v1`、`decision-kind-registry-v1`、Schema 63 与兼容矩阵；所有 DecisionKind 仍保持 Shadow。LIFE 的协议门已解除，但正式施工仍须先锁定已合并 predecessor commit 并填写 LIFE.0 ConstructionBaseline。
 
 完成门：独立 Review 为 0 个未解决 P0/P1，所有启用决策器均满足对应 Shadow/Advisory 证据；冻结前不得并行启动 LIFE，LIFE 冻结前不得启动 KIG。
 

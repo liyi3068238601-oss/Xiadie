@@ -1,10 +1,10 @@
-# CDS.13 设置、诊断与冻结候选验收报告
+# CDS.13 设置、诊断与正式冻结验收报告
 
 > 日期：2026-07-26
 >
 > 当前 Schema：63
 >
-> 结论：施工完成，协议为冻结候选；全部 DecisionKind 保持 Shadow，待独立 review 后正式冻结并解锁 LIFE
+> 结论：施工与最终独立 Review 均完成；0 P0/P1/P2，协议及 Schema 63 正式冻结，全部 DecisionKind 保持 Shadow
 
 ## Review 建议处置
 
@@ -50,8 +50,14 @@
 - Windows 工具链：Python 3.12.13、SQLite 3.50.4；冻结后端在隔离端口 18756 的 health 与本地 BGE-M3 smoke 通过（embedding available/local-only 均为 true）；沿用现有 token、CORS 与 launcher 边界，未新增端口或 IPC。
 - 后端全量：`2304 passed, 1 warning`，耗时 508.91 秒。
 
-## 尚待外部完成
+## 最终独立 Review 与观察处置
 
-1. CDS 总体独立 review，要求 0 个未解决 P0/P1。
-2. review 通过后把 `cognitive-decision-v1`、`decision-kind-registry-v1` 和本兼容矩阵从“冻结候选”改为“正式冻结”。
-3. 只有完成上述两项，才允许 LIFE 使用 Schema 64 开工；KIG 仍须等待 LIFE 冻结。
+`cds-final-review` 结论：通过，0 P0 / 0 P1 / 0 P2 / 3 个非阻断观察；53/54 项独立验证通过，其中 1 项为审查脚本误报。审查明确确认 `cognitive-decision-v1`、`decision-kind-registry-v1`、Schema 63 与本兼容矩阵可以正式冻结。
+
+| 观察 | 决定 | 理由 |
+|---|---|---|
+| 校准 profile 未接生产路径 | 保持现状 | 符合 Shadow 设计；具体 DecisionKind 晋级前另做收益证据和接线 Review |
+| EAP diagnostic v2 双读 | 不改 | 第二次读取失败返回 `None`，已 fail-closed；不为极低风险破坏稳定 v1 |
+| preload 使用既有 `sendSync` | 延后独立改造 | CDS.13 未新增 IPC；冻结后顺手修改会引入未经本次 Review 的跨边界变更 |
+
+LIFE 的协议门已解除，但正式施工仍须先把 CDS 合入目标基线、锁定不可变 predecessor commit 并完成 LIFE.0 ConstructionBaseline；KIG 继续等待 LIFE 正式冻结。

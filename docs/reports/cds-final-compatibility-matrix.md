@@ -1,6 +1,6 @@
-# CDS 最终兼容矩阵（冻结候选）
+# CDS 最终兼容矩阵（正式冻结）
 
-> 日期：2026-07-26；Schema 63；待 CDS 总体独立 review
+> 日期：2026-07-26；Schema 63；最终独立 Review 0 P0/P1/P2，正式冻结
 
 | 边界 | 版本/状态 | 唯一应用所有者 | CDS 权限 | 兼容与回退 |
 |---|---|---|---|---|
@@ -15,4 +15,4 @@
 | MEM | 既有 validator/reducer | MEM | 只提 conflict/retention/Episode/Saga proposal | CDS 不写正式 Fragment/Episode/Saga |
 | Knowledge | 现有 KnowledgeResult/EvidenceWindow | Knowledge/CTX | 质量评测与无正文候选信封 | 不定义 KIG RetrievalBundle |
 
-迁移序列：CDS ConstructionBaseline 60 → CDS 61/62 → CDS 反馈校准 63 → LIFE 首个必要迁移候选 64。64 只是在独立 review 后可用，不代表 LIFE 已开工。
+迁移序列：CDS ConstructionBaseline 60 → CDS 61/62 → CDS 最终冻结 63 → LIFE 首个必要迁移 64。最终 Review 已解除 LIFE 协议门；64 仍须在锁定已合并 predecessor commit 与 LIFE.0 ConstructionBaseline 后才能使用，不代表 LIFE 已开工。

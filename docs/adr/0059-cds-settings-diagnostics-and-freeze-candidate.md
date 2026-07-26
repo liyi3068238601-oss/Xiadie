@@ -1,6 +1,6 @@
-# ADR-0059：CDS 设置、诊断与冻结候选
+# ADR-0059：CDS 设置、诊断与正式冻结
 
-- 状态：Accepted as freeze candidate；待 CDS 总体独立 review 后正式冻结
+- 状态：Accepted / Frozen；最终独立 Review 为 0 P0/P1/P2
 - 日期：2026-07-26
 - 关联：CDS.13、ADR-0051～0058、共享 Promotion Policy
 
@@ -12,7 +12,11 @@
 4. 一键回退关闭全部模型决策、清空角色覆盖并恢复各领域确定性 fallback；它不删除审计、反馈或领域数据。
 5. `cognition-diagnostics-v2` 只返回协议/注册表/设置版本、计数、延迟、fallback 与错误码，不返回正文、Prompt、原始模型输出、候选 ID 或来源快照。
 6. EAP `eap-decision-run-adapter-v1` 保持字段和语义不变；新增 `eap-decision-run-diagnostic-v2` 提供 `error_code` 与 `latency_ms`，避免静默破坏 v1 消费者。
-7. Schema 63 是 CDS 最终施工 Schema 候选。LIFE 的首个必要迁移号为 64，但必须在 CDS 独立 review 为 0 个未解决 P0/P1、协议正式冻结并更新基线后才能占用。
+7. Schema 63 是 CDS 最终冻结 Schema。最终独立 Review 已确认 0 个未解决 P0/P1；LIFE 可在锁定已合并 predecessor commit 和 LIFE.0 ConstructionBaseline 后使用首个必要迁移号 64。
+
+## 最终 Review
+
+2026-07-26 `cds-final-review` 独立审查结论为通过：0 P0 / 0 P1 / 0 P2 / 3 个非阻断观察。由此正式冻结 `cognitive-decision-v1`、`decision-kind-registry-v1`、Schema 63 与最终兼容矩阵。冻结不改变运行模式：九个 DecisionKind 仍全部最高为 Shadow。
 
 ## 晋级结论
 

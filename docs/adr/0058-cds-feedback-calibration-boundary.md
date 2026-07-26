@@ -1,6 +1,6 @@
 # ADR-0058：CDS 反馈与个体化校准边界
 
-- 状态：Accepted；等待 CDS 总体独立 review
+- 状态：Accepted；CDS 最终独立 Review 已通过并正式冻结
 - 日期：2026-07-26
 - 关联：CDS.12、ADR-0051/0052/0057、共享 Promotion Policy
 
