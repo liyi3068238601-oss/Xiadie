@@ -1199,16 +1199,18 @@ LIFE.5 施工记录（2026-07-26）：Schema 67 新增 versioned schedules、seg
 
 目标：让遐蝶拥有自己的连续目标，而不是全天等待用户。
 
-- [ ] 新增 PersonalGoal 及状态机。
-- [ ] 实现人格、用户建议和日记反思三类目标来源。
-- [ ] 用户随口建议只生成候选，高置信明确约定才可激活。
-- [ ] 日程生成消费最多 1～3 个活跃目标。
-- [ ] 实现进展、暂停、完成、放弃和阶段变化事件。
-- [ ] 动态改期只修改未来未发生片段。
-- [ ] 目标不得授予工具权限。
-- [ ] 建立“围着用户转”和“完全忽略用户”两类平衡评测。
+- [x] 新增 PersonalGoal 及状态机。
+- [x] 实现人格、用户建议和日记反思三类目标来源。
+- [x] 用户随口建议只生成候选，高置信明确约定才可激活。
+- [x] 日程生成消费最多 1～3 个活跃目标。
+- [x] 实现进展、暂停、完成、放弃和阶段变化事件。
+- [x] 动态改期只修改未来未发生片段。
+- [x] 目标不得授予工具权限。
+- [x] 建立“围着用户转”和“完全忽略用户”两类平衡评测。
 
 验收：遐蝶有独立生活线索；用户临时离开不会使所有活动停摆；目标变化有来源。
+
+LIFE.6 施工记录（2026-07-26）：Schema 68 新增 PersonalGoal、逐来源 revision/hash 与无正文 lifecycle events，状态为 candidate/active/paused/completed/revoked。用户建议必须 `user_explicit + explicit_confirmation + confidence>=0.85` 才可激活；persona/diary reflection 允许由同一高置信领域策略形成角色自有目标，important date/life event 默认仍是候选。进展以 revisioned progress event 记录；非法/过期转换拒绝。日程选择最多 3 个 active goal，并在同时存在时至少保留一条角色独立线和一条用户明确线，避免“只围用户”或“完全忽略用户”；动态改期函数只返回 `start_minute>=current` 的 future bindings 且不直接修改日程。Goal schema 无 ToolRun/delivery/execution 字段。专项 8 项通过。阶段独立 Review 留待 LIFE 总体 Review。
 
 建议 PR：`feat(life): add personal goals and bounded schedule replanning`
 

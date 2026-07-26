@@ -3103,6 +3103,49 @@ MIGRATIONS = [
             ON life_event_candidates(source_kind,source_id,status);
         """,
     ),
+    (
+        68,
+        """
+        -- LIFE.6: provenance-bound PersonalGoal FSM without tool authority.
+        CREATE TABLE personal_goals (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            status TEXT NOT NULL CHECK(status IN ('candidate','active','paused','completed','revoked')),
+            priority INTEGER NOT NULL CHECK(priority BETWEEN 1 AND 5),
+            confidence REAL NOT NULL CHECK(confidence BETWEEN 0 AND 1),
+            revision INTEGER NOT NULL DEFAULT 1 CHECK(revision >= 1),
+            target_date TEXT,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_personal_goals_status ON personal_goals(status,priority,updated_at);
+
+        CREATE TABLE personal_goal_sources (
+            id TEXT PRIMARY KEY,
+            goal_id TEXT NOT NULL REFERENCES personal_goals(id) ON DELETE CASCADE,
+            source_kind TEXT NOT NULL CHECK(source_kind IN (
+                'persona','user_explicit','important_date','diary_reflection','life_event'
+            )),
+            source_id TEXT NOT NULL,
+            source_revision TEXT NOT NULL,
+            source_hash TEXT NOT NULL,
+            explicit_confirmation INTEGER NOT NULL DEFAULT 0 CHECK(explicit_confirmation IN (0,1)),
+            created_at REAL NOT NULL,
+            UNIQUE(goal_id,source_kind,source_id,source_revision)
+        );
+
+        CREATE TABLE personal_goal_events (
+            id TEXT PRIMARY KEY,
+            goal_id TEXT NOT NULL REFERENCES personal_goals(id) ON DELETE CASCADE,
+            event_type TEXT NOT NULL,
+            from_status TEXT,
+            to_status TEXT NOT NULL,
+            revision INTEGER NOT NULL CHECK(revision >= 1),
+            reason_code TEXT NOT NULL,
+            created_at REAL NOT NULL
+        );
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
