@@ -9,7 +9,7 @@ import runpy
 from collections import Counter
 from pathlib import Path
 
-from app import cognitive_decision as cds, db, specialty_contracts
+from app import cognitive_decision as cds, specialty_contracts
 from app.affect import engine
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
@@ -77,20 +77,17 @@ def test_life0_affect_baseline_is_deterministic_finite_and_relationship_stable()
     assert all(row["trust"] == engine.DEFAULT_RELATIONSHIP["trust"] for row in rows)
 
 
-def test_life0_has_no_life_domain_tables_or_parallel_owner_yet():
-    conn = db.connect()
-    try:
-        tables = {row[0] for row in conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table'"
-        ).fetchall()}
-    finally:
-        conn.close()
-    assert "life_proactive_seeds" in tables
-    assert not ({
-        "life_events", "life_clock", "life_self_state", "daily_schedules",
-        "personal_goals", "important_dates", "diary_entries", "continuity_threads",
-        "self_timeline_entries",
-    } & tables)
+def test_life0_report_records_no_life_domain_or_parallel_owner_at_baseline():
+    capabilities = {
+        item["capability"]: (item["state"], item["owner"])
+        for item in _report()["current_capability_matrix"]
+    }
+    assert capabilities["life_proactive_seed_adapter"] == ("partial", "EAP")
+    assert capabilities["life_clock_self_state"] == ("missing", "LIFE")
+    assert capabilities["life_event_ledger"] == ("missing", "LIFE")
+    assert capabilities["daily_schedule_goal"] == ("missing", "LIFE")
+    assert capabilities["diary_continuity"] == ("missing", "LIFE")
+    assert capabilities["self_timeline"] == ("missing", "LIFE")
     assert _report()["scenario_coverage"] == {
         "implemented": 0, "partial_adjacent_guards": 15, "missing_life_domain": 45,
     }

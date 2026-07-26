@@ -2,7 +2,7 @@
 
 > 最近复核日期：2026-07-26
 >
-> 当前施工状态：CDS PR #2 已合并；LIFE.0～LIFE.9 已完成内部施工验证，阶段独立 Review 按用户要求留待 LIFE 总体 Review；Schema 71 为当前版本
+> 当前施工状态：CDS PR #2 已合并；LIFE.0～LIFE.13 技术施工完成，等待真实安装/休眠人工验收与 LIFE 总体 Review；Schema 71 为当前版本，KIG 尚未解锁
 >
 > 当前版本：`v0.1.0` MVP 骨架（知识库系统 K 系列已完成）
 >
@@ -35,11 +35,11 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider` | LIFE.0 全量基线通过：2310 passed，1 warning；LIFE.1 回归 26、LIFE.2 回归 113、LIFE.3 回归 80、LIFE.3+4 回归 28 passed；当前 Schema 66，专项完成时重新跑全量 |
-| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：47 项；TypeScript 检查及 Vite 生产构建 189 modules 成功 |
-| Electron / Windows | `node --check main.js; node --check preload.js`；`scripts\test-frozen-backend.ps1 -Port 18756` | 通过：无语法错误；冻结后端 health 与本地 embedding smoke 通过；沿用既有安全 token/IPC/端口边界 |
+| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests -q -p no:cacheprovider` | 通过：2416 passed，1 warning；当前 Schema 71 |
+| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：50 项；TypeScript 检查及 Vite 生产构建 190 modules 成功 |
+| Electron / Windows | Electron contract/语法；`scripts\test-frozen-backend.ps1 -Port 18756`；win-unpacked 生命周期 smoke | 3 项 contract 及语法通过；冻结后端、BGE-M3、首启、托盘保活、崩溃清理与重启通过；实际安装和整机休眠/唤醒待人工验收 |
 
-CDS.12 以 Schema 63 新增三张无正文反馈/校准审计表；CDS.13 未再新增迁移。`eap-decision-run-adapter-v1` 保持兼容。LIFE.0 已冻结施工基线；LIFE.1 在 CDS Registry 注册 6 类 Shadow 决策且不新增运行账本；LIFE.2 以 Schema 64 新增 provenance-aware LifeEvent 唯一账本，并复用 `tool_logs` 作为 performed agent action 的 ToolRun 证据源。KIG 仍只有预留契约。LIFE.0 后端全量基线为 `2310 passed, 1 warning`，后续阶段将在专项完成时重新跑全量。
+CDS.12 以 Schema 63 新增三张无正文反馈/校准审计表；CDS.13 未再新增迁移。`eap-decision-run-adapter-v1` 保持兼容。LIFE.0～13 已完成技术施工：Schema 64～71 分别建立来源事件、运行时、CatchUp、日程、目标、日期、日记和 SelfTimeline；6 类模型决策因样本/Provider 门不足继续 Shadow。LIFE 产品页、EAP adapter、IANA 时区与保守派生数据压缩已接线。KIG 仍只有预留契约，必须等待 LIFE 总 Review 与正式冻结。
 
 已知但不阻断当前开发的警告：
 

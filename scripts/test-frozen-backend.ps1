@@ -36,13 +36,28 @@ try {
   }
   if (-not $ready) { throw "Frozen backend did not become healthy within 30 seconds." }
   $embedding = Invoke-RestMethod "http://127.0.0.1:$Port/api/knowledge/embedding/status" -Headers @{ "X-Xiadie-Token" = $token }
+  $dateBody = @{
+    label = "LIFE timezone smoke"
+    recurrence = "once"
+    date_year = 2028
+    date_month = 2
+    date_day = 29
+    timezone_id = "Asia/Shanghai"
+    celebration_policy = "none"
+  } | ConvertTo-Json
+  $lifeDate = Invoke-RestMethod "http://127.0.0.1:$Port/api/life/dates" -Method Post `
+    -Headers @{ "X-Xiadie-Token" = $token } -ContentType "application/json" -Body $dateBody
   if ($health.status -ne "ok" -or -not $embedding.available -or -not $embedding.local_only) {
     throw "Frozen backend or local embedding contract is unavailable."
+  }
+  if ($lifeDate.timezone_id -ne "Asia/Shanghai" -or $lifeDate.status -ne "active") {
+    throw "Frozen backend LIFE timezone contract is unavailable."
   }
   [pscustomobject]@{
     Health = $health.status
     EmbeddingAvailable = $embedding.available
     LocalOnly = $embedding.local_only
+    LifeTimezone = $lifeDate.timezone_id
     ModelHash = $embedding.model_sha256
   }
 } finally {

@@ -5,6 +5,7 @@ import calendar
 import re
 from datetime import date, datetime, time, timedelta, timezone
 from typing import Any
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from . import db
 from .life_catchup import DateCrossing
@@ -27,6 +28,13 @@ def _valid_date(year: int, month: int, day: int) -> bool:
         return False
 
 
+def _timezone(timezone_id: str) -> ZoneInfo:
+    try:
+        return ZoneInfo(timezone_id)
+    except (ZoneInfoNotFoundError, ValueError) as exc:
+        raise ImportantDateError("timezone_invalid", "important date timezone is invalid") from exc
+
+
 def create_candidate(*, label: str, recurrence: str, date_year: int | None,
                      date_month: int | None, date_day: int | None, timezone_id: str,
                      confidence: float, source_kind: str, source_id: str,
@@ -34,6 +42,7 @@ def create_candidate(*, label: str, recurrence: str, date_year: int | None,
                      celebration_policy: str = "natural", now: float | None = None) -> dict[str, Any]:
     if not label or len(label) > 160 or recurrence not in {"once", "yearly_solar"} or not timezone_id:
         raise ImportantDateError("date_invalid", "important date identity is invalid")
+    _timezone(timezone_id)
     if source_kind not in SOURCE_KINDS or not source_id or not source_revision or not _HEX64.fullmatch(source_hash):
         raise ImportantDateError("source_invalid", "important date source is invalid")
     if celebration_policy not in {"natural", "day_only", "none"} or not 0 <= confidence <= 1:
@@ -254,8 +263,6 @@ def remove_source(*, source_kind: str, source_id: str, now: float | None = None)
 def crossings(*, interval_start: float, interval_end: float) -> tuple[DateCrossing, ...]:
     if interval_end < interval_start:
         return ()
-    start_day = datetime.fromtimestamp(interval_start, timezone.utc).date()
-    end_day = datetime.fromtimestamp(interval_end, timezone.utc).date()
     conn = db.connect()
     try:
         rows = conn.execute("SELECT * FROM important_dates WHERE status='active'").fetchall()
@@ -264,12 +271,15 @@ def crossings(*, interval_start: float, interval_end: float) -> tuple[DateCrossi
     result: list[DateCrossing] = []
     for row in rows:
         item = dict(row)
+        item_timezone = _timezone(item["timezone_id"])
+        start_day = datetime.fromtimestamp(interval_start, item_timezone).date()
+        end_day = datetime.fromtimestamp(interval_end, item_timezone).date()
         cursor = start_day
         while cursor <= end_day:
             occurrence = next_occurrence(item, today=cursor)
             if occurrence is None or occurrence > end_day:
                 break
-            timestamp = datetime.combine(occurrence, time.min, timezone.utc).timestamp()
+            timestamp = datetime.combine(occurrence, time.min, item_timezone).timestamp()
             if interval_start < timestamp <= interval_end:
                 result.append(DateCrossing(item["id"], str(item["revision"]), timestamp))
             cursor = occurrence + timedelta(days=1)
