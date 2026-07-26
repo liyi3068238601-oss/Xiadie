@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import math
+import re
 import sqlite3
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
@@ -88,7 +89,11 @@ def _local_hour(timestamp: float, timezone_id: str) -> float:
             "China Standard Time": 8.0,
         }
         if timezone_id not in fixed_offsets:
-            raise LifeRuntimeError("timezone_invalid", "timezone is not available")
+            match = re.fullmatch(r"UTC([+-])(\d{2}):(\d{2})", timezone_id)
+            if not match or int(match.group(2)) > 14 or int(match.group(3)) > 59:
+                raise LifeRuntimeError("timezone_invalid", "timezone is not available")
+            sign = 1 if match.group(1) == "+" else -1
+            fixed_offsets[timezone_id] = sign * (int(match.group(2)) + int(match.group(3)) / 60)
         local = datetime.fromtimestamp(
             timestamp, timezone.utc,
         ) + timedelta(hours=fixed_offsets[timezone_id])
@@ -184,6 +189,16 @@ def heartbeat_lease(*, lease_token: str, now: float,
         conn.close()
 
 
+def release_lease(*, lease_token: str) -> bool:
+    conn = db.connect()
+    try:
+        cursor = conn.execute("DELETE FROM life_runtime_lease WHERE id=1 AND lease_token=?", (lease_token,))
+        conn.commit()
+        return cursor.rowcount == 1
+    finally:
+        conn.close()
+
+
 def _from_row(row: sqlite3.Row) -> SelfState:
     return SelfState(
         revision=row["revision"], logical_time=row["logical_time"],
@@ -206,6 +221,9 @@ def get_state() -> SelfState | None:
 
 def materialize(*, lease_token: str, now: float, timezone_id: str,
                 modulation: Modulation | None = None) -> SelfState:
+    # Resolve the read-only EAP projection before LIFE acquires BEGIN IMMEDIATE;
+    # EAP may need to initialize its singleton rows on a first-ever startup.
+    resolved_modulation = modulation if modulation is not None else read_affect_modulation()
     conn = db.connect()
     try:
         conn.execute("BEGIN IMMEDIATE")
@@ -228,7 +246,7 @@ def materialize(*, lease_token: str, now: float, timezone_id: str,
             event_type = "conservative_hold"
         else:
             elapsed = max(0.0, min(now - state.reliable_wall_time, MAX_ADVANCE_SECONDS))
-            reduced = reduce_state(state, elapsed_seconds=elapsed, modulation=modulation or read_affect_modulation())
+            reduced = reduce_state(state, elapsed_seconds=elapsed, modulation=resolved_modulation)
             next_state = replace(
                 reduced, revision=state.revision + 1, reliable_wall_time=now,
                 timezone_id=timezone_id, conservative_mode=False, anomaly_code=None,

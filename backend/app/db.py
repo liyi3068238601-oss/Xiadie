@@ -2988,6 +2988,61 @@ MIGRATIONS = [
             ON life_runtime_events(to_revision,created_at);
         """,
     ),
+    (
+        66,
+        """
+        -- LIFE.4: bounded, deterministic startup catch-up. This is not background execution.
+        INSERT OR IGNORE INTO settings(key,value) VALUES('life_continuity_mode','continuous_simulated');
+
+        CREATE TABLE life_exit_snapshots (
+            id TEXT PRIMARY KEY,
+            exited_at REAL NOT NULL,
+            timezone_snapshot TEXT NOT NULL,
+            schedule_revision TEXT NOT NULL,
+            state_revision INTEGER NOT NULL CHECK(state_revision >= 0),
+            algorithm_version TEXT NOT NULL,
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_life_exit_snapshots_time ON life_exit_snapshots(exited_at DESC);
+
+        CREATE TABLE life_catchup_requests (
+            catchup_id TEXT PRIMARY KEY,
+            exit_snapshot_id TEXT NOT NULL REFERENCES life_exit_snapshots(id) ON DELETE RESTRICT,
+            interval_start REAL NOT NULL,
+            interval_end REAL NOT NULL CHECK(interval_end >= interval_start),
+            timezone_snapshot TEXT NOT NULL,
+            schedule_revision TEXT NOT NULL,
+            state_revision INTEGER NOT NULL CHECK(state_revision >= 0),
+            algorithm_version TEXT NOT NULL,
+            deterministic_seed TEXT NOT NULL,
+            materialization_revision INTEGER NOT NULL CHECK(materialization_revision >= 1),
+            span_strategy TEXT NOT NULL CHECK(span_strategy IN (
+                'detailed','daily','weekly','regression_transition'
+            )),
+            status TEXT NOT NULL CHECK(status IN ('queued','applied','skipped')),
+            candidate_count INTEGER NOT NULL DEFAULT 0 CHECK(candidate_count BETWEEN 0 AND 16),
+            model_call_count INTEGER NOT NULL DEFAULT 0 CHECK(model_call_count BETWEEN 0 AND 2),
+            idempotency_key TEXT NOT NULL UNIQUE,
+            created_at REAL NOT NULL,
+            completed_at REAL
+        );
+
+        CREATE TABLE life_catchup_candidates (
+            id TEXT PRIMARY KEY,
+            catchup_id TEXT NOT NULL REFERENCES life_catchup_requests(catchup_id) ON DELETE CASCADE,
+            ordinal INTEGER NOT NULL CHECK(ordinal >= 0),
+            candidate_kind TEXT NOT NULL CHECK(candidate_kind IN (
+                'continuity_transition','simulated_day','simulated_week','important_date_crossing'
+            )),
+            occurred_at REAL NOT NULL,
+            source_id TEXT,
+            source_revision TEXT,
+            world_layer TEXT NOT NULL DEFAULT 'simulated' CHECK(world_layer='simulated'),
+            created_at REAL NOT NULL,
+            UNIQUE(catchup_id,ordinal)
+        );
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

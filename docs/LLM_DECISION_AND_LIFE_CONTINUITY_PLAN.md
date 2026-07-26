@@ -1158,19 +1158,21 @@ LIFE.3 施工记录（2026-07-26）：Schema 65 新增单例 LifeClock/SelfState
 
 目标：应用完全退出后，下次启动可安全补算角色世界的时间流逝。
 
-- [ ] 默认设置 `continuous_simulated`，迁移现有用户时明确兼容策略。
-- [ ] 实现退出快照和启动 CatchUpRequest。
-- [ ] CatchUp 固化 `catchup_id/interval_start/interval_end/timezone_snapshot/schedule_revision/state_revision/algorithm_version/deterministic_seed/materialization_revision`。
-- [ ] 按离线跨度选择详细、日级、周级或回归过渡策略。
-- [ ] 限制单次续演事件数量和模型调用次数。
-- [ ] 无模型、断网或余额不足时使用确定性回退。
-- [ ] 离线期间禁止真实工具、网络和消息投递声明。
-- [ ] 重要日期跨越必须可靠进入候选。
-- [ ] 重复启动不重复物化相同时间区间。
-- [ ] 相同输入生成相同候选，或由确定性幂等键识别为已处理；不得依赖进程内随机状态保证一致性。
-- [ ] 提供暂停、关闭和模式切换。
+- [x] 默认设置 `continuous_simulated`，迁移现有用户时明确兼容策略。
+- [x] 实现退出快照和启动 CatchUpRequest。
+- [x] CatchUp 固化 `catchup_id/interval_start/interval_end/timezone_snapshot/schedule_revision/state_revision/algorithm_version/deterministic_seed/materialization_revision`。
+- [x] 按离线跨度选择详细、日级、周级或回归过渡策略。
+- [x] 限制单次续演事件数量和模型调用次数。
+- [x] 无模型、断网或余额不足时使用确定性回退。
+- [x] 离线期间禁止真实工具、网络和消息投递声明。
+- [x] 重要日期跨越必须可靠进入候选。
+- [x] 重复启动不重复物化相同时间区间。
+- [x] 相同输入生成相同候选，或由确定性幂等键识别为已处理；不得依赖进程内随机状态保证一致性。
+- [x] 提供暂停、关闭和模式切换。
 
 验收：20 分钟、8 小时、3 天、30 天、180 天离线均能启动；无重复事件；无虚假外部执行。
+
+LIFE.4 施工记录（2026-07-26）：Schema 66 对既有用户 `INSERT OR IGNORE` 默认 `continuous_simulated`，新增退出快照、冻结字段齐全的 CatchUpRequest 与仅 `world_layer=simulated` 的候选表。应用 lifespan 启动时原子认领 LIFE 租约并补算，退出时记录快照、停止 heartbeat 并释放租约；应用完全退出期间没有 worker。20 分钟/8 小时/3 天/30 天/180 天分别选择 detailed/daily/weekly/regression transition，候选上限 16、模型调用上限 2，当前确定性路径始终 0 次模型调用。跨区间的重要日期通过 revision-bound callback 进入候选；同区间 seed、catchup ID、幂等键和 materialization revision 固定，双启动不重复推进。paused/disabled 不建 request；倒时钟保守跳过。候选 schema 不含 ToolRun、网络或 delivery 字段，长离线测试确认三者写入均为 0。首启时还修复了“持 LIFE 写锁后初始化 EAP”导致的自锁：现改为事务前读取 EAP 只读投影。LIFE.3+4 共 28 项通过。阶段独立 Review 留待 LIFE 总体 Review。
 
 建议 PR：`feat(life): enable bounded offline world catch-up by default`
 
