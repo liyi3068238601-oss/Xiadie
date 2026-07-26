@@ -2,7 +2,7 @@
 
 > 最近复核日期：2026-07-26
 >
-> 当前施工状态：CDS PR #2 已合并；LIFE.0～LIFE.2 已完成内部施工验证，阶段独立 Review 按用户要求留待 LIFE 总体 Review；Schema 64 为当前版本
+> 当前施工状态：CDS PR #2 已合并；LIFE.0～LIFE.3 已完成内部施工验证，阶段独立 Review 按用户要求留待 LIFE 总体 Review；Schema 65 为当前版本
 >
 > 当前版本：`v0.1.0` MVP 骨架（知识库系统 K 系列已完成）
 >
@@ -35,7 +35,7 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider` | LIFE.0 全量基线通过：2310 passed，1 warning；LIFE.1 相关回归 26 passed，LIFE.2 迁移/API/邻接回归 113 passed；当前 Schema 64，专项完成时重新跑全量 |
+| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest -q -p no:cacheprovider` | LIFE.0 全量基线通过：2310 passed，1 warning；LIFE.1 相关回归 26 passed，LIFE.2 回归 113 passed，LIFE.3 回归 80 passed；当前 Schema 65，专项完成时重新跑全量 |
 | 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：47 项；TypeScript 检查及 Vite 生产构建 189 modules 成功 |
 | Electron / Windows | `node --check main.js; node --check preload.js`；`scripts\test-frozen-backend.ps1 -Port 18756` | 通过：无语法错误；冻结后端 health 与本地 embedding smoke 通过；沿用既有安全 token/IPC/端口边界 |
 

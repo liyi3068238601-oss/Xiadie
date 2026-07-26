@@ -2942,6 +2942,52 @@ MIGRATIONS = [
             ON life_event_audit_events(event_id,created_at,id);
         """,
     ),
+    (
+        65,
+        """
+        -- LIFE.3: deterministic LifeClock/SelfState and single-materializer lease.
+        CREATE TABLE life_runtime_state (
+            id INTEGER PRIMARY KEY CHECK(id=1),
+            algorithm_version TEXT NOT NULL,
+            revision INTEGER NOT NULL DEFAULT 0 CHECK(revision >= 0),
+            logical_time REAL NOT NULL,
+            reliable_wall_time REAL NOT NULL,
+            timezone_id TEXT NOT NULL,
+            current_activity TEXT NOT NULL,
+            activity_since REAL NOT NULL,
+            energy REAL NOT NULL CHECK(energy BETWEEN 0 AND 1),
+            focus REAL NOT NULL CHECK(focus BETWEEN 0 AND 1),
+            rest_need REAL NOT NULL CHECK(rest_need BETWEEN 0 AND 1),
+            social_openness REAL NOT NULL CHECK(social_openness BETWEEN 0 AND 1),
+            conservative_mode INTEGER NOT NULL DEFAULT 0 CHECK(conservative_mode IN (0,1)),
+            anomaly_code TEXT,
+            updated_at REAL NOT NULL
+        );
+
+        CREATE TABLE life_runtime_lease (
+            id INTEGER PRIMARY KEY CHECK(id=1),
+            process_instance_id TEXT NOT NULL,
+            boot_session_id TEXT NOT NULL,
+            lease_token TEXT NOT NULL UNIQUE,
+            acquired_at REAL NOT NULL,
+            expires_at REAL NOT NULL,
+            heartbeat_at REAL NOT NULL
+        );
+
+        CREATE TABLE life_runtime_events (
+            id TEXT PRIMARY KEY,
+            from_revision INTEGER NOT NULL CHECK(from_revision >= 0),
+            to_revision INTEGER NOT NULL CHECK(to_revision > from_revision),
+            elapsed_seconds REAL NOT NULL CHECK(elapsed_seconds >= 0),
+            event_type TEXT NOT NULL CHECK(event_type IN ('advanced','conservative_hold')),
+            anomaly_code TEXT,
+            algorithm_version TEXT NOT NULL,
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_life_runtime_events_revision
+            ON life_runtime_events(to_revision,created_at);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

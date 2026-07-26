@@ -1137,18 +1137,20 @@ LIFE.2 施工记录（2026-07-26）：Schema 64 新增唯一 `life_events` 账�
 
 目标：让生活状态随时间连续变化，不按天随机重置。
 
-- [ ] 新增 LifeClock 和生活状态字段。
-- [ ] 建立 `LifeRuntimeLease(process_instance_id, boot_session_id, lease_token, acquired_at, expires_at, heartbeat_at)`；同一数据库只允许一个 LIFE materializer。
-- [ ] CatchUp 和物化必须先原子认领租约；双击启动、托盘重叠和崩溃残留租约均有超时恢复与并发测试。
-- [ ] 实现纯函数 state reducer 与版本化算法。
-- [ ] 连接现有 affect/relationship 的只读调制接口。
-- [ ] 增加迟滞、惯性和最小持续时间，避免状态跳变。
-- [ ] 实现 Windows 睡眠、休眠、重启和时区检测。
-- [ ] 系统时间异常时进入保守模式。
-- [ ] 新消息默认唤醒聊天响应，但不直接清除当前生活状态。
-- [ ] 提供 1/8/24/72/168 小时模拟测试。
+- [x] 新增 LifeClock 和生活状态字段。
+- [x] 建立 `LifeRuntimeLease(process_instance_id, boot_session_id, lease_token, acquired_at, expires_at, heartbeat_at)`；同一数据库只允许一个 LIFE materializer。
+- [x] CatchUp 和物化必须先原子认领租约；双击启动、托盘重叠和崩溃残留租约均有超时恢复与并发测试。
+- [x] 实现纯函数 state reducer 与版本化算法。
+- [x] 连接现有 affect/relationship 的只读调制接口。
+- [x] 增加迟滞、惯性和最小持续时间，避免状态跳变。
+- [x] 实现 Windows 睡眠、休眠、重启和时区检测。
+- [x] 系统时间异常时进入保守模式。
+- [x] 新消息默认唤醒聊天响应，但不直接清除当前生活状态。
+- [x] 提供 1/8/24/72/168 小时模拟测试。
 
 验收：相同快照和时间输入得到相同结果；状态无 NaN/Infinity；普通聊天不会机械提升长期关系；两个进程不能生成两套生活状态或离线经历。
+
+LIFE.3 施工记录（2026-07-26）：Schema 65 新增单例 LifeClock/SelfState、数据库 `LifeRuntimeLease` 与无正文 revision 事件。`life-state-reducer-v1` 以 5 分钟步长纯函数推进 energy/focus/rest/social openness，活动切换有 45 分钟最小持续时间；1/8/24/72/168 小时输出确定、有限且有界。EAP affect/relationship 通过 `advance_time=False` 只读调制，LIFE 不回写其状态，聊天主链也不清空当前生活状态。租约使用 `BEGIN IMMEDIATE` 原子认领、heartbeat 与过期接管，覆盖双启动/残留租约；正向大跨度视为睡眠/休眠/重启流逝，倒时钟与时区变化进入 conservative hold。Windows frozen Python 无 IANA tzdata 的事实已处理：标准 ZoneInfo 优先，UTC/中国标准时提供确定性兼容映射。专项 14 项、LIFE.2/API/CDS 邻接回归合计 80 项通过。阶段独立 Review 留待 LIFE 总体 Review。
 
 建议 PR：`feat(life): add continuous self state and reliable life clock`
 

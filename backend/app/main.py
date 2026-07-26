@@ -25,7 +25,7 @@ from . import (
     episode_summary_service, episodes, knowledge, knowledge_cleanup, knowledge_context,
     knowledge_embeddings, knowledge_grants,
     knowledge_management, knowledge_parser, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search,
-    knowledge_worker, life_events, llm, lore, memory, memory_conflicts, memory_shadow_proposals,
+    knowledge_worker, life_events, life_runtime, llm, lore, memory, memory_conflicts, memory_shadow_proposals,
     saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, secret_store, slow_lifecycle,
 )
@@ -1049,6 +1049,21 @@ def get_life_events(include_revoked: bool = False, limit: int = 100) -> dict:
 @app.get("/api/life/events/diagnostics")
 def get_life_event_diagnostics(event_id: str | None = None, limit: int = 200) -> dict:
     return {"items": life_events.diagnostics(event_id=event_id, limit=limit)}
+
+
+@app.get("/api/life/state")
+def get_life_state() -> dict:
+    state = life_runtime.get_state()
+    if state is None:
+        return {"initialized": False, "algorithm_version": life_runtime.ALGORITHM_VERSION}
+    return {
+        "initialized": True, "algorithm_version": life_runtime.ALGORITHM_VERSION,
+        "revision": state.revision, "logical_time": state.logical_time,
+        "timezone_id": state.timezone_id, "current_activity": state.current_activity,
+        "activity_since": state.activity_since, "energy": state.energy, "focus": state.focus,
+        "rest_need": state.rest_need, "social_openness": state.social_openness,
+        "conservative_mode": state.conservative_mode, "anomaly_code": state.anomaly_code,
+    }
 
 
 class CognitionFeedbackIn(BaseModel):
