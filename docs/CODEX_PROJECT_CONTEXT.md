@@ -1,5 +1,7 @@
 # 遐蝶 Codex 项目上下文
 
+> KIG 施工快照（2026-07-27）：KIG.0～KIG.5 已完成，当前 Schema 74；已交付来源治理、原子索引切换、信息分类提案、结构化语义切片及 `query-plan-v1` 六源受控路由。Query Planner 保持 CDS Shadow/proposal-only，显式查询确定性旁路模型，远端失败安全回退。下一阶段为 KIG.6 混合召回与统一候选。
+
 > 状态：当前执行约束  
 > 适用对象：Codex、维护者和后续参与开发的协作者  
 > 项目根目录：`E:\Xiadie\Xiadie`  

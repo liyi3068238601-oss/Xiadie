@@ -2,7 +2,7 @@
 
 - 版本：v0.3（施工基线、双里程碑、来源依赖与图谱治理补强）
 - 日期：2026-07-22
-- 状态：KIG.0～KIG.4 已完成；当前 Schema 74，KIG.5 可开工
+- 状态：KIG.0～KIG.5 已完成；当前 Schema 74，KIG.6 可开工
 - 专项代号：`KIG`（Knowledge Intelligence & Governance）
 - 子系统代号：`PWM`（Personal World Model）
 - 适用范围：用户知识库、信息分类与治理、多源检索、LLM 查询规划与重排、证据与引用、冲突与版本、个人世界模型，以及与对话历史、长期记忆、生活连续性、任务和 ContextAssembler 的接口
@@ -1778,14 +1778,16 @@ KIG.4 施工记录（2026-07-27）：Schema 74 为原 `knowledge_chunks` 与 KIG
 
 目标：在检索前决定问题类型、来源和子查询。
 
-- [ ] 在 CDS 冻结的 DecisionRun/CandidateEnvelope 上注册 `query-plan-v1`，不自建通用模型运行、模式或审计框架。
-- [ ] 明确单文档和显式来源问题跳过 Planner。
-- [ ] 支持 Knowledge/Memory/History/Life/Task/Lore 源选择。
-- [ ] 支持时间、版本、实体、原话和冲突需求。
-- [ ] 用户关闭某源后 Planner 建议也不得放行。
-- [ ] 建立提示注入和模糊指代测试。
+- [x] 在 CDS 冻结的 DecisionRun/CandidateEnvelope 上注册 `query-plan-v1`，不自建通用模型运行、模式或审计框架。
+- [x] 明确单文档和显式来源问题跳过 Planner。
+- [x] 支持 Knowledge/Memory/History/Life/Task/Lore 源选择。
+- [x] 支持时间、版本、实体、原话和冲突需求。
+- [x] 用户关闭某源后 Planner 建议也不得放行。
+- [x] 建立提示注入和模糊指代测试。
 
 验收：跨库问题能选择正确来源；普通明确查询不增加无意义模型调用。
+
+KIG.5 施工记录（2026-07-27）：新增 `query-plan-v1` typed input/result，并在既有 CDS DecisionRun/CandidateEnvelope 注册 `kig_query_planner` Shadow DecisionKind；未新增迁移，Schema 保持 74。显式来源、单文档、普通明确查询与时间/版本/实体/原话/冲突/跨库请求由确定性规则直接规划并记录 `bypassed_model=true`，只有模糊指代进入授权模型路径。所有输出限于 Knowledge/Memory/History/Life/Task/Lore 六个候选、最多 4 个各 160 字符子查询，关闭来源在程序与 validator 两层硬拒绝；提示注入作为不可信数据处理。模型输出仅是 `proposal_only` Shadow 建议，重复 DecisionRun 不重复调用，失败或未授权退回 Knowledge（可用时）或空计划，不执行检索和写入。阶段及关联回归 `881 passed, 1 warning`。最终代码实配 `deepseek-v4-flash` 两轮共 12 条纯合成模糊/注入样例：2 条明显注入由程序旁路拒绝，10 条进入模型，其中 3 条严格结果通过、7 条安全回退；来源越权 0、`application_allowed` 0、整体安全收口率 100%。模型调用一次成功率 30%，仅作为 Shadow 观测，不作为晋级证据。详见 `docs/reports/kig-5-query-planner.md`。
 
 建议 PR：`feat(retrieval): add bounded query planning and source routing`
 
