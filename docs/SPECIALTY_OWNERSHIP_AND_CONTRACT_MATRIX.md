@@ -2,7 +2,7 @@
 
 - 版本：v1.1
 - 日期：2026-07-27
-- 状态：CDS 与 LIFE 已通过最终独立 Review 并正式冻结；KIG 协议门在 LIFE 合入 `main` 后解除
+- 状态：CDS 与 LIFE 已通过最终独立 Review并合入 `main`；KIG 协议门已解除
 - 适用顺序：`CDS → LIFE → KIG`
 - 解释优先级：冻结协议与 ADR > 本矩阵 > 专项计划 > 阶段施工记录
 
@@ -47,7 +47,9 @@ LIFE v1 冻结与 KIG 待锁定基线：
 | frozen adapters | CDS `specialty-adapter-contract-v1`；EAP `eap-decision-run-adapter-v1`；LIFE `life-adapter-v1`，兼容关系保持 |
 | frozen LIFE tests | 后端 `2423 passed, 1 warning`；前端 `50 passed`；Vite 190 modules；Electron lifecycle contract 3 项与 Windows 安装验收通过 |
 | KIG next schema | 72；不得预占空迁移 |
-| KIG predecessor | 待 LIFE PR 合入 `main` 后记录不可变 merge commit；此前只允许审计和计划复核 |
+| KIG predecessor | LIFE PR #3 merge `main@f16d80ab0d2457065dc65d7d284d3cbf3584f5ee` |
+| KIG.0 test baseline | 后端 `2428 passed, 1 warning`；前端 `50 passed`；Vite 190 modules；Electron contract 3 项 |
+| KIG.0 boundary | ADR-0062～0064；60 条合成固定集；0 个职责冲突；未新增迁移或生产写路径 |
 | recorded_at | 2026-07-27（LIFE v1 freeze） |
 
 正式开工只允许两种方式：
@@ -86,7 +88,7 @@ LIFE v1 冻结与 KIG 待锁定基线：
 | LIFE | `life-adapter-v1` | event/state/schedule revision/hash | LIFE 确定性 reducer | 不生成长期 LifeEvent、Goal、Date、Diary | 日记/生活数据单独授权 | LIFE |
 | KIG | `source-ref-v1` | adapter registry 返回的 revision/hash | 原系统继续工作 | 不抽取 Claim/Entity/Relation/PWM | 逐来源隐私与授权 | KIG |
 
-迁移号严格串行：CDS 最终冻结 Schema 为 63；LIFE 最终冻结 Schema 为 71；KIG 在 LIFE PR 合入 `main` 并锁定 merge commit 后可使用首个确有必要的 Schema 72。没有实际字段缺口不得为了“占号”创建空迁移。
+迁移号严格串行：CDS 最终冻结 Schema 为 63；LIFE 最终冻结 Schema 为 71；KIG predecessor 已锁定为 `main@f16d80ab0d2457065dc65d7d284d3cbf3584f5ee`，可使用首个确有必要的 Schema 72。没有实际字段缺口不得为了“占号”创建空迁移。
 
 ## 4. DecisionKindRegistry 规范
 

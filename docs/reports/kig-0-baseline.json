@@ -1,0 +1,858 @@
+{
+  "report_version": "kig-construction-baseline-v1",
+  "construction_baseline": {
+    "repository": "liyi3068238601-oss/Xiadie",
+    "predecessor_pr": 3,
+    "base_branch": "main",
+    "base_commit_sha": "f16d80ab0d2457065dc65d7d284d3cbf3584f5ee",
+    "schema_version": 71,
+    "next_schema_version": 72,
+    "frozen_protocols": [
+      "cognitive-decision-v1",
+      "decision-kind-registry-v1",
+      "specialty-adapter-contract-v1",
+      "context-package-v1",
+      "knowledge-search-v2",
+      "eap-decision-run-adapter-v1",
+      "life-adapter-v1"
+    ],
+    "test_baseline": {
+      "backend": "2428 passed, 1 warning",
+      "frontend": "50 passed",
+      "vite_modules": 190,
+      "electron_contracts": 3
+    },
+    "plan_version": "KIG v0.3",
+    "recorded_at": "2026-07-27"
+  },
+  "fixture_sha256": "63f99d122ad55185296c44576424e908356b1db46b61c6cd8f6d7bea39080bb7",
+  "environment": {
+    "python": "3.12.13",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "privacy": {
+    "synthetic_only": true,
+    "contains_user_data": false,
+    "provider_calls": 0
+  },
+  "scenario_counts": {
+    "knowledge_memory": 20,
+    "multi_document": 20,
+    "single_document": 20
+  },
+  "metrics": {
+    "knowledge_recall_rate": 1.0,
+    "cross_memory_recall_rate": 1.0,
+    "citation_allowlist_accuracy": 1.0,
+    "knowledge_latency_ms": {
+      "count": 60,
+      "average": 8.808495,
+      "p50": 8.9395,
+      "p90": 9.59367,
+      "max": 12.3439
+    },
+    "memory_latency_ms": {
+      "count": 20,
+      "average": 7.905035,
+      "p50": 8.02675,
+      "p90": 8.44943,
+      "max": 8.9759
+    },
+    "knowledge_tokens": {
+      "count": 60,
+      "average": 245.333333,
+      "p50": 225.0,
+      "p90": 290.0,
+      "max": 290.0
+    },
+    "unified_cross_source_evidence_rate": 0.0
+  },
+  "per_category": {
+    "knowledge_memory": {
+      "cases": 20,
+      "knowledge_recall_rate": 1.0,
+      "memory_recall_rate": 1.0
+    },
+    "multi_document": {
+      "cases": 20,
+      "knowledge_recall_rate": 1.0,
+      "memory_recall_rate": null
+    },
+    "single_document": {
+      "cases": 20,
+      "knowledge_recall_rate": 1.0,
+      "memory_recall_rate": null
+    }
+  },
+  "capability_matrix": [
+    {
+      "capability": "knowledge_import_parse_chunk",
+      "state": "x",
+      "owner": "Knowledge",
+      "evidence": "knowledge.py/knowledge_parser.py/knowledge_chunker.py/knowledge_worker.py"
+    },
+    {
+      "capability": "knowledge_fts_dense_search_v2",
+      "state": "x",
+      "owner": "Knowledge",
+      "evidence": "knowledge_search.py/knowledge_embeddings.py"
+    },
+    {
+      "capability": "knowledge_citation_locator_delete_grants",
+      "state": "x",
+      "owner": "Knowledge",
+      "evidence": "knowledge_context.py/knowledge_cleanup.py/knowledge_grants.py"
+    },
+    {
+      "capability": "context_hard_budget",
+      "state": "arrow",
+      "owner": "CTX",
+      "evidence": "context_assembler.py/context_budget.py"
+    },
+    {
+      "capability": "fragment_episode_saga",
+      "state": "arrow",
+      "owner": "MEM",
+      "evidence": "memory.py/episodes.py/sagas.py"
+    },
+    {
+      "capability": "life_authoritative_ledger",
+      "state": "arrow",
+      "owner": "LIFE",
+      "evidence": "life_events.py/self_timeline.py"
+    },
+    {
+      "capability": "task_toolrun_sources",
+      "state": "partial",
+      "owner": "Task/ToolRegistry",
+      "evidence": "tasks and tool_logs exist; ToolRegistry not implemented",
+      "existing": "Task CRUD 与已完成 tool_logs 可查询",
+      "gap": "尚无正式 ToolRegistry 或来源 adapter",
+      "minimal_delta": "KIG 只读并验证既有行，未来 ToolRegistry 继续拥有写入权",
+      "rollback": "移除 KIG adapter，不修改 Task/ToolRun 权威行"
+    },
+    {
+      "capability": "lore_readonly_sections",
+      "state": "arrow",
+      "owner": "Lore",
+      "evidence": "lore.py"
+    },
+    {
+      "capability": "unified_source_ref_registry",
+      "state": "missing",
+      "owner": "KIG",
+      "evidence": "no KIG tables at Schema 71"
+    },
+    {
+      "capability": "cross_source_query_plan_evidence",
+      "state": "partial",
+      "owner": "KIG",
+      "evidence": "parallel CTX blocks exist; no unified candidate/evidence contract",
+      "existing": "CTX 可为 Knowledge、Memory、History、Life 与 Lore 并列分配预算",
+      "gap": "尚无统一 candidate、QueryPlan、EvidenceLink 或支持度校验",
+      "minimal_delta": "新增 KIG 信封和 adapter，同时保留 CTX 最终预算所有权",
+      "rollback": "关闭 KIG bundle，继续既有 CTX 并列装配"
+    },
+    {
+      "capability": "pwm_projection",
+      "state": "missing",
+      "owner": "KIG",
+      "evidence": "no pwm_ tables at Schema 71"
+    },
+    {
+      "capability": "web_result_live_adapter",
+      "state": "not_applicable",
+      "owner": "Future ToolRegistry",
+      "evidence": "compatibility slot only"
+    }
+  ],
+  "kig_tables_at_baseline": [],
+  "responsibility_conflicts": [],
+  "authority_order": [
+    "current user instruction",
+    "CODEX_PROJECT_CONTEXT.md",
+    "XIADIE_LONG_TERM_ROADMAP.md",
+    "accepted ADR",
+    "SPECIALTY_OWNERSHIP_AND_CONTRACT_MATRIX.md",
+    "KIG plan"
+  ],
+  "ownership_boundaries": {
+    "Knowledge": "documents, chunks, import, parsing, indexes, citations, grants and deletion",
+    "CTX": "final ContextPackage assembly and hard token budget",
+    "MEM": "fragments, episodes, sagas and memory_entities",
+    "EAP": "affect, relationship, proactive candidate, delivery and feedback",
+    "LIFE": "life events, schedules, goals, dates, diary and self timeline",
+    "Task/ToolRegistry": "tasks and real external execution evidence",
+    "KIG": "source adapters, derived evidence/version governance and rebuildable PWM projection"
+  },
+  "failure_modes": [
+    "no_unified_source_adapter_registry",
+    "no_cross_source_retrieval_candidate",
+    "no_query_plan_protocol",
+    "no_cross_source_evidence_link",
+    "no_version_freshness_governance",
+    "no_pwm_projection"
+  ],
+  "outcomes": [
+    {
+      "case_id": "single-01",
+      "category": "single_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 221,
+      "knowledge_latency_ms": 7.3812,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "single-02",
+      "category": "single_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 221,
+      "knowledge_latency_ms": 6.308,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "single-03",
+      "category": "single_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 221,
+      "knowledge_latency_ms": 11.2843,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "single-04",
+      "category": "single_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 221,
+      "knowledge_latency_ms": 8.6307,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "single-05",
+      "category": "single_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 221,
+      "knowledge_latency_ms": 6.7804,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "single-06",
+      "category": "single_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 221,
+      "knowledge_latency_ms": 6.7692,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "single-07",
+      "category": "single_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 221,
+      "knowledge_latency_ms": 6.4806,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "single-08",
+      "category": "single_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 221,
+      "knowledge_latency_ms": 6.1844,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "single-09",
+      "category": "single_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 221,
+      "knowledge_latency_ms": 6.7844,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "single-10",
+      "category": "single_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 221,
+      "knowledge_latency_ms": 12.0565,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "single-11",
+      "category": "single_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 221,
+      "knowledge_latency_ms": 8.8649,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "single-12",
+      "category": "single_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 221,
+      "knowledge_latency_ms": 8.8694,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "single-13",
+      "category": "single_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 221,
+      "knowledge_latency_ms": 8.7429,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "single-14",
+      "category": "single_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 221,
+      "knowledge_latency_ms": 9.1652,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "single-15",
+      "category": "single_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 221,
+      "knowledge_latency_ms": 8.9051,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "single-16",
+      "category": "single_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 221,
+      "knowledge_latency_ms": 9.1001,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "single-17",
+      "category": "single_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 221,
+      "knowledge_latency_ms": 9.5754,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "single-18",
+      "category": "single_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 221,
+      "knowledge_latency_ms": 8.8423,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "single-19",
+      "category": "single_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 221,
+      "knowledge_latency_ms": 8.7586,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "single-20",
+      "category": "single_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 221,
+      "knowledge_latency_ms": 8.7957,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "multi-01",
+      "category": "multi_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 2,
+      "knowledge_tokens": 290,
+      "knowledge_latency_ms": 9.1571,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "multi-02",
+      "category": "multi_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 2,
+      "knowledge_tokens": 290,
+      "knowledge_latency_ms": 9.2742,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "multi-03",
+      "category": "multi_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 2,
+      "knowledge_tokens": 290,
+      "knowledge_latency_ms": 8.7889,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "multi-04",
+      "category": "multi_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 2,
+      "knowledge_tokens": 290,
+      "knowledge_latency_ms": 8.2402,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "multi-05",
+      "category": "multi_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 2,
+      "knowledge_tokens": 290,
+      "knowledge_latency_ms": 9.0559,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "multi-06",
+      "category": "multi_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 2,
+      "knowledge_tokens": 290,
+      "knowledge_latency_ms": 9.1007,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "multi-07",
+      "category": "multi_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 2,
+      "knowledge_tokens": 290,
+      "knowledge_latency_ms": 8.9608,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "multi-08",
+      "category": "multi_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 2,
+      "knowledge_tokens": 290,
+      "knowledge_latency_ms": 9.089,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "multi-09",
+      "category": "multi_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 2,
+      "knowledge_tokens": 290,
+      "knowledge_latency_ms": 8.9925,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "multi-10",
+      "category": "multi_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 2,
+      "knowledge_tokens": 290,
+      "knowledge_latency_ms": 9.0077,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "multi-11",
+      "category": "multi_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 2,
+      "knowledge_tokens": 290,
+      "knowledge_latency_ms": 9.7581,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "multi-12",
+      "category": "multi_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 2,
+      "knowledge_tokens": 290,
+      "knowledge_latency_ms": 9.0496,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "multi-13",
+      "category": "multi_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 2,
+      "knowledge_tokens": 290,
+      "knowledge_latency_ms": 9.8113,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "multi-14",
+      "category": "multi_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 2,
+      "knowledge_tokens": 290,
+      "knowledge_latency_ms": 8.9673,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "multi-15",
+      "category": "multi_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 2,
+      "knowledge_tokens": 290,
+      "knowledge_latency_ms": 8.9879,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "multi-16",
+      "category": "multi_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 2,
+      "knowledge_tokens": 290,
+      "knowledge_latency_ms": 9.3436,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "multi-17",
+      "category": "multi_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 2,
+      "knowledge_tokens": 290,
+      "knowledge_latency_ms": 9.0298,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "multi-18",
+      "category": "multi_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 2,
+      "knowledge_tokens": 290,
+      "knowledge_latency_ms": 9.007,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "multi-19",
+      "category": "multi_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 2,
+      "knowledge_tokens": 290,
+      "knowledge_latency_ms": 8.8529,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "multi-20",
+      "category": "multi_document",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 2,
+      "knowledge_tokens": 290,
+      "knowledge_latency_ms": 8.7414,
+      "memory_latency_ms": 0.0
+    },
+    {
+      "case_id": "cross-01",
+      "category": "knowledge_memory",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 225,
+      "knowledge_latency_ms": 8.7658,
+      "memory_latency_ms": 8.9759
+    },
+    {
+      "case_id": "cross-02",
+      "category": "knowledge_memory",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 225,
+      "knowledge_latency_ms": 9.0485,
+      "memory_latency_ms": 7.6544
+    },
+    {
+      "case_id": "cross-03",
+      "category": "knowledge_memory",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 225,
+      "knowledge_latency_ms": 8.9783,
+      "memory_latency_ms": 7.7504
+    },
+    {
+      "case_id": "cross-04",
+      "category": "knowledge_memory",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 225,
+      "knowledge_latency_ms": 9.0088,
+      "memory_latency_ms": 7.5043
+    },
+    {
+      "case_id": "cross-05",
+      "category": "knowledge_memory",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 225,
+      "knowledge_latency_ms": 8.7533,
+      "memory_latency_ms": 8.0422
+    },
+    {
+      "case_id": "cross-06",
+      "category": "knowledge_memory",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 225,
+      "knowledge_latency_ms": 8.9182,
+      "memory_latency_ms": 8.4288
+    },
+    {
+      "case_id": "cross-07",
+      "category": "knowledge_memory",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 225,
+      "knowledge_latency_ms": 9.1359,
+      "memory_latency_ms": 8.6351
+    },
+    {
+      "case_id": "cross-08",
+      "category": "knowledge_memory",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 225,
+      "knowledge_latency_ms": 8.8245,
+      "memory_latency_ms": 5.6749
+    },
+    {
+      "case_id": "cross-09",
+      "category": "knowledge_memory",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 225,
+      "knowledge_latency_ms": 6.8084,
+      "memory_latency_ms": 8.1379
+    },
+    {
+      "case_id": "cross-10",
+      "category": "knowledge_memory",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 225,
+      "knowledge_latency_ms": 8.8369,
+      "memory_latency_ms": 8.0757
+    },
+    {
+      "case_id": "cross-11",
+      "category": "knowledge_memory",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 225,
+      "knowledge_latency_ms": 9.3774,
+      "memory_latency_ms": 7.9908
+    },
+    {
+      "case_id": "cross-12",
+      "category": "knowledge_memory",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 225,
+      "knowledge_latency_ms": 9.0372,
+      "memory_latency_ms": 7.8976
+    },
+    {
+      "case_id": "cross-13",
+      "category": "knowledge_memory",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 225,
+      "knowledge_latency_ms": 12.3439,
+      "memory_latency_ms": 8.1895
+    },
+    {
+      "case_id": "cross-14",
+      "category": "knowledge_memory",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 225,
+      "knowledge_latency_ms": 9.7683,
+      "memory_latency_ms": 8.0275
+    },
+    {
+      "case_id": "cross-15",
+      "category": "knowledge_memory",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 225,
+      "knowledge_latency_ms": 6.7988,
+      "memory_latency_ms": 7.6301
+    },
+    {
+      "case_id": "cross-16",
+      "category": "knowledge_memory",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 225,
+      "knowledge_latency_ms": 9.0884,
+      "memory_latency_ms": 8.0507
+    },
+    {
+      "case_id": "cross-17",
+      "category": "knowledge_memory",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 225,
+      "knowledge_latency_ms": 8.8978,
+      "memory_latency_ms": 7.2583
+    },
+    {
+      "case_id": "cross-18",
+      "category": "knowledge_memory",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 225,
+      "knowledge_latency_ms": 8.8405,
+      "memory_latency_ms": 8.1601
+    },
+    {
+      "case_id": "cross-19",
+      "category": "knowledge_memory",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 225,
+      "knowledge_latency_ms": 8.8726,
+      "memory_latency_ms": 7.9905
+    },
+    {
+      "case_id": "cross-20",
+      "category": "knowledge_memory",
+      "knowledge_hit": true,
+      "memory_hit": true,
+      "citation_valid": true,
+      "candidate_count": 1,
+      "knowledge_tokens": 225,
+      "knowledge_latency_ms": 8.911,
+      "memory_latency_ms": 8.026
+    }
+  ]
+}

@@ -1088,7 +1088,7 @@ Emotional Meaning / Episode Candidate
 完成门：
 
 - [x] 后端、前端、构建和 Electron 基线通过。
-- [ ] 独立 Review 确认没有第二套情绪、记忆或主动发送器。
+- [x] 独立 Review 确认没有第二套情绪、记忆或主动发送器。
 - [x] 文档明确离线续演不等于后台真实执行。
 
 LIFE.0 施工记录（2026-07-26）：CDS PR #2 已合并，锁定 predecessor `main@0d7a2d08dc07f123d016da26da117fa58f9a48a1`、Schema 63、冻结 CDS/EAP/CTX 协议及后端 2304/前端 47/Vite 189 基线。新增 ADR-0060/0061、60 条纯合成固定场景、无正文 JSON/Markdown 报告和 LIFE.0 专项测试；现有实现矩阵诚实记录为 LIFE 领域 45 条缺失、15 条仅具 CDS 邻接门禁，`life_proactive_seeds` 仍只是 EAP 入口。验证结果为后端 `2310 passed, 1 warning`（含 6 条 LIFE.0 专项测试）、前端 `47 passed`、Vite 189 modules、Electron 语法与 Windows frozen-backend/local embedding smoke 通过。用户已明确本专项完成后再给总体 Review，因此阶段独立 Review 门保留未勾选，期间只形成分阶段审查材料，不冒充外部 Review。
@@ -1371,7 +1371,7 @@ LIFE.13 施工记录（2026-07-27）：新增 180 个连续自然日的完整日
 
 模型预算维持日常结构化调用默认 500 output token，显式 Reasoner 认证硬上限 2048；CatchUp 每次最多 2 次模型调用而当前确定性路径为 0。真实 DeepSeek 两模型报告已完成，同一 Provider 内模型一致率 88.33%；因只有一个 Provider，跨 Provider 结论诚实保留 `provider_count_insufficient`，六类 LIFE 决策均不晋级。最终后端全量为 `2416 passed, 1 warning`，前端 `50 passed`，TypeScript/Vite（190 modules）、Electron 语法与 3 项 lifecycle contract 通过。当前代码重新生成 564,780,737-byte 未签名 NSIS，冻结/打包资源、IANA 时区和 BGE-M3 哈希通过；win-unpacked 与真实 NSIS 临时安装版均完成首启、关窗托盘保活、主进程崩溃后子后端退出及重启，卸载后专用安装目录、端口、快捷方式和卸载项均清理。休眠/唤醒不打断当前工作站，而由 Electron suspend/resume contract、LIFE 重启时间推进、system-resume guard API 和逾期投递保护的 3 项确定性测试覆盖。
 
-LIFE 最终独立 Review（2026-07-27）结论为 0 P0、0 P1、2 P2 与 2 个设计观察，允许冻结。冻结收口采纳 P2-1、P2-2 与 OBS-2：日记新增常见身份证件/联系方式格式识别，日程在落库前验证 IANA 时区，多 Provider 晋级强制要求至少 0.85 的成对一致率；OBS-1 按产品设计保留，persona/diary reflection 可在置信度至少 0.85 时形成遐蝶自己的生活目标，临时用户建议仍不能自动成为永久目标。收口后后端全量为 `2423 passed, 1 warning`。LIFE v1 最终冻结在 Schema 71，`life-adapter-v1` 对 CDS `specialty-adapter-contract-v1` 与 EAP `eap-decision-run-adapter-v1` 保持兼容，KIG 的首个可用迁移号为 72；KIG 正式写入施工仍须以 LIFE PR 合入 `main` 后的 merge commit 作为 predecessor。详细冻结证据见 `docs/reports/life-v1-freeze.md`。
+LIFE 最终独立 Review（2026-07-27）结论为 0 P0、0 P1、2 P2 与 2 个设计观察，允许冻结。冻结收口采纳 P2-1、P2-2 与 OBS-2：日记新增常见身份证件/联系方式格式识别，日程在落库前验证 IANA 时区，多 Provider 晋级强制要求至少 0.85 的成对一致率；OBS-1 按产品设计保留，persona/diary reflection 可在置信度至少 0.85 时形成遐蝶自己的生活目标，临时用户建议仍不能自动成为永久目标。收口后后端全量为 `2423 passed, 1 warning`。LIFE v1 最终冻结在 Schema 71，`life-adapter-v1` 对 CDS `specialty-adapter-contract-v1` 与 EAP `eap-decision-run-adapter-v1` 保持兼容；LIFE PR #3 已合入 `main@f16d80ab0d2457065dc65d7d284d3cbf3584f5ee`，KIG 的首个可用迁移号为 72。详细冻结证据见 `docs/reports/life-v1-freeze.md`。
 
 建议 PR：`feat(life): complete and freeze continuous companion life v1`
 

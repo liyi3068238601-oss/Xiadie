@@ -2,7 +2,7 @@
 
 - 版本：v0.3（施工基线、双里程碑、来源依赖与图谱治理补强）
 - 日期：2026-07-22
-- 状态：计划优化完成；等待 CDS、LIFE 依次集成并锁定最终提交后施工
+- 状态：KIG.0 ConstructionBaseline 已完成；KIG.1 可从 Schema 72 开工
 - 专项代号：`KIG`（Knowledge Intelligence & Governance）
 - 子系统代号：`PWM`（Personal World Model）
 - 适用范围：用户知识库、信息分类与治理、多源检索、LLM 查询规划与重排、证据与引用、冲突与版本、个人世界模型，以及与对话历史、长期记忆、生活连续性、任务和 ContextAssembler 的接口
@@ -1680,24 +1680,26 @@ embedding
 
 目标：确认真实知识库能力，不把旧设计或未接线骨架当成完成。
 
-- [ ] 以现有 Knowledge K0～K9 验收链为起点，审查知识接收、解析、切片、FTS/Dense、Embedding、检索 v2、引用、删除、传输授权、CTX 接线、UI、API、迁移和测试。
-- [ ] 审查 CTX、Fragment/Episode/Saga、LIFE、Task/ToolRun 和 Lore 的现有接口。
-- [ ] 建立 `[x]/[~]/[ ]/[→]/[-]` 能力矩阵。
-- [ ] 记录 20 个单文档、20 个多文档、20 个跨知识/记忆问题基线。
-- [ ] 记录召回率、引用准确率、延迟、token 和失败模式。
-- [ ] 新增 ADR：KIG 是治理和投影层，不是大一统正文数据库。
-- [ ] 新增 ADR：LLM 提议、程序裁决；PWM 不是事实权威。
-- [ ] 列出权威文档优先级和与 CTX/MEM/EAP/LIFE 的所有权边界。
-- [ ] 确认 CDS 与 LIFE 已冻结，记录二者最终 Schema 和 adapter 版本；任一未冻结则 KIG.0 只允许审计，不允许迁移施工。
-- [ ] 填写共享规范中的 ConstructionBaseline，锁定已合并 LIFE 的不可变提交与测试基线。
-- [ ] 新增 ADR：`memory_entities` 保持 MEM 权威领域实体，`pwm_entities` 为可重建派生实体；定义单向 proposal、删除与依赖边界。
-- [ ] 确认 `web_result` 仅为兼容位，KIG v1 不注册真实联网搜索、抓取或研究执行器。
+- [x] 以现有 Knowledge K0～K9 验收链为起点，审查知识接收、解析、切片、FTS/Dense、Embedding、检索 v2、引用、删除、传输授权、CTX 接线、UI、API、迁移和测试。
+- [x] 审查 CTX、Fragment/Episode/Saga、LIFE、Task/ToolRun 和 Lore 的现有接口。
+- [x] 建立 `[x]/[~]/[ ]/[→]/[-]` 能力矩阵。
+- [x] 记录 20 个单文档、20 个多文档、20 个跨知识/记忆问题基线。
+- [x] 记录召回率、引用准确率、延迟、token 和失败模式。
+- [x] 新增 ADR：KIG 是治理和投影层，不是大一统正文数据库。
+- [x] 新增 ADR：LLM 提议、程序裁决；PWM 不是事实权威。
+- [x] 列出权威文档优先级和与 CTX/MEM/EAP/LIFE 的所有权边界。
+- [x] 确认 CDS 与 LIFE 已冻结，记录二者最终 Schema 和 adapter 版本；任一未冻结则 KIG.0 只允许审计，不允许迁移施工。
+- [x] 填写共享规范中的 ConstructionBaseline，锁定已合并 LIFE 的不可变提交与测试基线。
+- [x] 新增 ADR：`memory_entities` 保持 MEM 权威领域实体，`pwm_entities` 为可重建派生实体；定义单向 proposal、删除与依赖边界。
+- [x] 确认 `web_result` 仅为兼容位，KIG v1 不注册真实联网搜索、抓取或研究执行器。
 
 完成门：
 
-- [ ] 后端、前端和 Electron 当前基线通过。
-- [ ] 0 个未解决的职责冲突。
-- [ ] 现有完整能力直接勾选，不重写。
+- [x] 后端、前端和 Electron 当前基线通过。
+- [x] 0 个未解决的职责冲突。
+- [x] 现有完整能力直接勾选，不重写。
+
+KIG.0 施工记录（2026-07-27）：ConstructionBaseline 锁定 LIFE PR #3 merge `main@f16d80ab0d2457065dc65d7d284d3cbf3584f5ee`、Schema 71、CDS/CTX/EAP/LIFE/Knowledge 冻结协议与测试基线。新增 60 条纯合成固定集：20 个单文档、20 个多文档、20 个 Knowledge+Memory 问题；隔离临时库实跑的 Knowledge 召回率、Knowledge+Memory 各源召回率和现有 citation allowlist 准确率均为 100%，但跨源统一 Evidence 支持率诚实记录为 0%。基线后端 `2428 passed, 1 warning`、前端 `50 passed`、Vite 190 modules、Electron 语法与 lifecycle contract 3 项通过。能力矩阵确认 Knowledge 主链完整复用，CTX/MEM/EAP/LIFE/Lore 所有权不转移；Task/tool_logs 仅部分具备来源条件，正式 ToolRegistry 仍属未来专项。ADR-0062～0064 分别冻结治理投影层、模型提议/PWM 非权威和 MEM/PWM 实体单向边界。KIG.0 未新增迁移或生产写路径，KIG.1 可在存在真实字段缺口时使用 Schema 72。证据见 `docs/reports/kig-0-construction-baseline.md` 与 `kig-0-baseline.json`。
 
 建议 PR：`docs(kig): audit and freeze knowledge governance boundaries`
 

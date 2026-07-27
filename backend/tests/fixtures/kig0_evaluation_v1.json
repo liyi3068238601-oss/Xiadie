@@ -1,0 +1,1071 @@
+{
+  "protocol_version": "kig-construction-baseline-eval-v1",
+  "synthetic_only": true,
+  "contains_user_data": false,
+  "documents": [
+    {
+      "id": "single-doc-01",
+      "title": "单文档基线 01",
+      "text": "# 单文档 01\nkigs01anchor 的合成结论是 single-value-01。"
+    },
+    {
+      "id": "single-doc-02",
+      "title": "单文档基线 02",
+      "text": "# 单文档 02\nkigs02anchor 的合成结论是 single-value-02。"
+    },
+    {
+      "id": "single-doc-03",
+      "title": "单文档基线 03",
+      "text": "# 单文档 03\nkigs03anchor 的合成结论是 single-value-03。"
+    },
+    {
+      "id": "single-doc-04",
+      "title": "单文档基线 04",
+      "text": "# 单文档 04\nkigs04anchor 的合成结论是 single-value-04。"
+    },
+    {
+      "id": "single-doc-05",
+      "title": "单文档基线 05",
+      "text": "# 单文档 05\nkigs05anchor 的合成结论是 single-value-05。"
+    },
+    {
+      "id": "single-doc-06",
+      "title": "单文档基线 06",
+      "text": "# 单文档 06\nkigs06anchor 的合成结论是 single-value-06。"
+    },
+    {
+      "id": "single-doc-07",
+      "title": "单文档基线 07",
+      "text": "# 单文档 07\nkigs07anchor 的合成结论是 single-value-07。"
+    },
+    {
+      "id": "single-doc-08",
+      "title": "单文档基线 08",
+      "text": "# 单文档 08\nkigs08anchor 的合成结论是 single-value-08。"
+    },
+    {
+      "id": "single-doc-09",
+      "title": "单文档基线 09",
+      "text": "# 单文档 09\nkigs09anchor 的合成结论是 single-value-09。"
+    },
+    {
+      "id": "single-doc-10",
+      "title": "单文档基线 10",
+      "text": "# 单文档 10\nkigs10anchor 的合成结论是 single-value-10。"
+    },
+    {
+      "id": "single-doc-11",
+      "title": "单文档基线 11",
+      "text": "# 单文档 11\nkigs11anchor 的合成结论是 single-value-11。"
+    },
+    {
+      "id": "single-doc-12",
+      "title": "单文档基线 12",
+      "text": "# 单文档 12\nkigs12anchor 的合成结论是 single-value-12。"
+    },
+    {
+      "id": "single-doc-13",
+      "title": "单文档基线 13",
+      "text": "# 单文档 13\nkigs13anchor 的合成结论是 single-value-13。"
+    },
+    {
+      "id": "single-doc-14",
+      "title": "单文档基线 14",
+      "text": "# 单文档 14\nkigs14anchor 的合成结论是 single-value-14。"
+    },
+    {
+      "id": "single-doc-15",
+      "title": "单文档基线 15",
+      "text": "# 单文档 15\nkigs15anchor 的合成结论是 single-value-15。"
+    },
+    {
+      "id": "single-doc-16",
+      "title": "单文档基线 16",
+      "text": "# 单文档 16\nkigs16anchor 的合成结论是 single-value-16。"
+    },
+    {
+      "id": "single-doc-17",
+      "title": "单文档基线 17",
+      "text": "# 单文档 17\nkigs17anchor 的合成结论是 single-value-17。"
+    },
+    {
+      "id": "single-doc-18",
+      "title": "单文档基线 18",
+      "text": "# 单文档 18\nkigs18anchor 的合成结论是 single-value-18。"
+    },
+    {
+      "id": "single-doc-19",
+      "title": "单文档基线 19",
+      "text": "# 单文档 19\nkigs19anchor 的合成结论是 single-value-19。"
+    },
+    {
+      "id": "single-doc-20",
+      "title": "单文档基线 20",
+      "text": "# 单文档 20\nkigs20anchor 的合成结论是 single-value-20。"
+    },
+    {
+      "id": "multi-doc-01-a",
+      "title": "多文档基线 01-a",
+      "text": "# 多文档 01-a\nkigm01shared 的 a 侧合成事实是 multi-01-a。"
+    },
+    {
+      "id": "multi-doc-01-b",
+      "title": "多文档基线 01-b",
+      "text": "# 多文档 01-b\nkigm01shared 的 b 侧合成事实是 multi-01-b。"
+    },
+    {
+      "id": "multi-doc-02-a",
+      "title": "多文档基线 02-a",
+      "text": "# 多文档 02-a\nkigm02shared 的 a 侧合成事实是 multi-02-a。"
+    },
+    {
+      "id": "multi-doc-02-b",
+      "title": "多文档基线 02-b",
+      "text": "# 多文档 02-b\nkigm02shared 的 b 侧合成事实是 multi-02-b。"
+    },
+    {
+      "id": "multi-doc-03-a",
+      "title": "多文档基线 03-a",
+      "text": "# 多文档 03-a\nkigm03shared 的 a 侧合成事实是 multi-03-a。"
+    },
+    {
+      "id": "multi-doc-03-b",
+      "title": "多文档基线 03-b",
+      "text": "# 多文档 03-b\nkigm03shared 的 b 侧合成事实是 multi-03-b。"
+    },
+    {
+      "id": "multi-doc-04-a",
+      "title": "多文档基线 04-a",
+      "text": "# 多文档 04-a\nkigm04shared 的 a 侧合成事实是 multi-04-a。"
+    },
+    {
+      "id": "multi-doc-04-b",
+      "title": "多文档基线 04-b",
+      "text": "# 多文档 04-b\nkigm04shared 的 b 侧合成事实是 multi-04-b。"
+    },
+    {
+      "id": "multi-doc-05-a",
+      "title": "多文档基线 05-a",
+      "text": "# 多文档 05-a\nkigm05shared 的 a 侧合成事实是 multi-05-a。"
+    },
+    {
+      "id": "multi-doc-05-b",
+      "title": "多文档基线 05-b",
+      "text": "# 多文档 05-b\nkigm05shared 的 b 侧合成事实是 multi-05-b。"
+    },
+    {
+      "id": "multi-doc-06-a",
+      "title": "多文档基线 06-a",
+      "text": "# 多文档 06-a\nkigm06shared 的 a 侧合成事实是 multi-06-a。"
+    },
+    {
+      "id": "multi-doc-06-b",
+      "title": "多文档基线 06-b",
+      "text": "# 多文档 06-b\nkigm06shared 的 b 侧合成事实是 multi-06-b。"
+    },
+    {
+      "id": "multi-doc-07-a",
+      "title": "多文档基线 07-a",
+      "text": "# 多文档 07-a\nkigm07shared 的 a 侧合成事实是 multi-07-a。"
+    },
+    {
+      "id": "multi-doc-07-b",
+      "title": "多文档基线 07-b",
+      "text": "# 多文档 07-b\nkigm07shared 的 b 侧合成事实是 multi-07-b。"
+    },
+    {
+      "id": "multi-doc-08-a",
+      "title": "多文档基线 08-a",
+      "text": "# 多文档 08-a\nkigm08shared 的 a 侧合成事实是 multi-08-a。"
+    },
+    {
+      "id": "multi-doc-08-b",
+      "title": "多文档基线 08-b",
+      "text": "# 多文档 08-b\nkigm08shared 的 b 侧合成事实是 multi-08-b。"
+    },
+    {
+      "id": "multi-doc-09-a",
+      "title": "多文档基线 09-a",
+      "text": "# 多文档 09-a\nkigm09shared 的 a 侧合成事实是 multi-09-a。"
+    },
+    {
+      "id": "multi-doc-09-b",
+      "title": "多文档基线 09-b",
+      "text": "# 多文档 09-b\nkigm09shared 的 b 侧合成事实是 multi-09-b。"
+    },
+    {
+      "id": "multi-doc-10-a",
+      "title": "多文档基线 10-a",
+      "text": "# 多文档 10-a\nkigm10shared 的 a 侧合成事实是 multi-10-a。"
+    },
+    {
+      "id": "multi-doc-10-b",
+      "title": "多文档基线 10-b",
+      "text": "# 多文档 10-b\nkigm10shared 的 b 侧合成事实是 multi-10-b。"
+    },
+    {
+      "id": "multi-doc-11-a",
+      "title": "多文档基线 11-a",
+      "text": "# 多文档 11-a\nkigm11shared 的 a 侧合成事实是 multi-11-a。"
+    },
+    {
+      "id": "multi-doc-11-b",
+      "title": "多文档基线 11-b",
+      "text": "# 多文档 11-b\nkigm11shared 的 b 侧合成事实是 multi-11-b。"
+    },
+    {
+      "id": "multi-doc-12-a",
+      "title": "多文档基线 12-a",
+      "text": "# 多文档 12-a\nkigm12shared 的 a 侧合成事实是 multi-12-a。"
+    },
+    {
+      "id": "multi-doc-12-b",
+      "title": "多文档基线 12-b",
+      "text": "# 多文档 12-b\nkigm12shared 的 b 侧合成事实是 multi-12-b。"
+    },
+    {
+      "id": "multi-doc-13-a",
+      "title": "多文档基线 13-a",
+      "text": "# 多文档 13-a\nkigm13shared 的 a 侧合成事实是 multi-13-a。"
+    },
+    {
+      "id": "multi-doc-13-b",
+      "title": "多文档基线 13-b",
+      "text": "# 多文档 13-b\nkigm13shared 的 b 侧合成事实是 multi-13-b。"
+    },
+    {
+      "id": "multi-doc-14-a",
+      "title": "多文档基线 14-a",
+      "text": "# 多文档 14-a\nkigm14shared 的 a 侧合成事实是 multi-14-a。"
+    },
+    {
+      "id": "multi-doc-14-b",
+      "title": "多文档基线 14-b",
+      "text": "# 多文档 14-b\nkigm14shared 的 b 侧合成事实是 multi-14-b。"
+    },
+    {
+      "id": "multi-doc-15-a",
+      "title": "多文档基线 15-a",
+      "text": "# 多文档 15-a\nkigm15shared 的 a 侧合成事实是 multi-15-a。"
+    },
+    {
+      "id": "multi-doc-15-b",
+      "title": "多文档基线 15-b",
+      "text": "# 多文档 15-b\nkigm15shared 的 b 侧合成事实是 multi-15-b。"
+    },
+    {
+      "id": "multi-doc-16-a",
+      "title": "多文档基线 16-a",
+      "text": "# 多文档 16-a\nkigm16shared 的 a 侧合成事实是 multi-16-a。"
+    },
+    {
+      "id": "multi-doc-16-b",
+      "title": "多文档基线 16-b",
+      "text": "# 多文档 16-b\nkigm16shared 的 b 侧合成事实是 multi-16-b。"
+    },
+    {
+      "id": "multi-doc-17-a",
+      "title": "多文档基线 17-a",
+      "text": "# 多文档 17-a\nkigm17shared 的 a 侧合成事实是 multi-17-a。"
+    },
+    {
+      "id": "multi-doc-17-b",
+      "title": "多文档基线 17-b",
+      "text": "# 多文档 17-b\nkigm17shared 的 b 侧合成事实是 multi-17-b。"
+    },
+    {
+      "id": "multi-doc-18-a",
+      "title": "多文档基线 18-a",
+      "text": "# 多文档 18-a\nkigm18shared 的 a 侧合成事实是 multi-18-a。"
+    },
+    {
+      "id": "multi-doc-18-b",
+      "title": "多文档基线 18-b",
+      "text": "# 多文档 18-b\nkigm18shared 的 b 侧合成事实是 multi-18-b。"
+    },
+    {
+      "id": "multi-doc-19-a",
+      "title": "多文档基线 19-a",
+      "text": "# 多文档 19-a\nkigm19shared 的 a 侧合成事实是 multi-19-a。"
+    },
+    {
+      "id": "multi-doc-19-b",
+      "title": "多文档基线 19-b",
+      "text": "# 多文档 19-b\nkigm19shared 的 b 侧合成事实是 multi-19-b。"
+    },
+    {
+      "id": "multi-doc-20-a",
+      "title": "多文档基线 20-a",
+      "text": "# 多文档 20-a\nkigm20shared 的 a 侧合成事实是 multi-20-a。"
+    },
+    {
+      "id": "multi-doc-20-b",
+      "title": "多文档基线 20-b",
+      "text": "# 多文档 20-b\nkigm20shared 的 b 侧合成事实是 multi-20-b。"
+    },
+    {
+      "id": "cross-doc-01",
+      "title": "跨域知识基线 01",
+      "text": "# 跨域知识 01\nkigx01shared 的资料侧结论是 cross-knowledge-01。"
+    },
+    {
+      "id": "cross-doc-02",
+      "title": "跨域知识基线 02",
+      "text": "# 跨域知识 02\nkigx02shared 的资料侧结论是 cross-knowledge-02。"
+    },
+    {
+      "id": "cross-doc-03",
+      "title": "跨域知识基线 03",
+      "text": "# 跨域知识 03\nkigx03shared 的资料侧结论是 cross-knowledge-03。"
+    },
+    {
+      "id": "cross-doc-04",
+      "title": "跨域知识基线 04",
+      "text": "# 跨域知识 04\nkigx04shared 的资料侧结论是 cross-knowledge-04。"
+    },
+    {
+      "id": "cross-doc-05",
+      "title": "跨域知识基线 05",
+      "text": "# 跨域知识 05\nkigx05shared 的资料侧结论是 cross-knowledge-05。"
+    },
+    {
+      "id": "cross-doc-06",
+      "title": "跨域知识基线 06",
+      "text": "# 跨域知识 06\nkigx06shared 的资料侧结论是 cross-knowledge-06。"
+    },
+    {
+      "id": "cross-doc-07",
+      "title": "跨域知识基线 07",
+      "text": "# 跨域知识 07\nkigx07shared 的资料侧结论是 cross-knowledge-07。"
+    },
+    {
+      "id": "cross-doc-08",
+      "title": "跨域知识基线 08",
+      "text": "# 跨域知识 08\nkigx08shared 的资料侧结论是 cross-knowledge-08。"
+    },
+    {
+      "id": "cross-doc-09",
+      "title": "跨域知识基线 09",
+      "text": "# 跨域知识 09\nkigx09shared 的资料侧结论是 cross-knowledge-09。"
+    },
+    {
+      "id": "cross-doc-10",
+      "title": "跨域知识基线 10",
+      "text": "# 跨域知识 10\nkigx10shared 的资料侧结论是 cross-knowledge-10。"
+    },
+    {
+      "id": "cross-doc-11",
+      "title": "跨域知识基线 11",
+      "text": "# 跨域知识 11\nkigx11shared 的资料侧结论是 cross-knowledge-11。"
+    },
+    {
+      "id": "cross-doc-12",
+      "title": "跨域知识基线 12",
+      "text": "# 跨域知识 12\nkigx12shared 的资料侧结论是 cross-knowledge-12。"
+    },
+    {
+      "id": "cross-doc-13",
+      "title": "跨域知识基线 13",
+      "text": "# 跨域知识 13\nkigx13shared 的资料侧结论是 cross-knowledge-13。"
+    },
+    {
+      "id": "cross-doc-14",
+      "title": "跨域知识基线 14",
+      "text": "# 跨域知识 14\nkigx14shared 的资料侧结论是 cross-knowledge-14。"
+    },
+    {
+      "id": "cross-doc-15",
+      "title": "跨域知识基线 15",
+      "text": "# 跨域知识 15\nkigx15shared 的资料侧结论是 cross-knowledge-15。"
+    },
+    {
+      "id": "cross-doc-16",
+      "title": "跨域知识基线 16",
+      "text": "# 跨域知识 16\nkigx16shared 的资料侧结论是 cross-knowledge-16。"
+    },
+    {
+      "id": "cross-doc-17",
+      "title": "跨域知识基线 17",
+      "text": "# 跨域知识 17\nkigx17shared 的资料侧结论是 cross-knowledge-17。"
+    },
+    {
+      "id": "cross-doc-18",
+      "title": "跨域知识基线 18",
+      "text": "# 跨域知识 18\nkigx18shared 的资料侧结论是 cross-knowledge-18。"
+    },
+    {
+      "id": "cross-doc-19",
+      "title": "跨域知识基线 19",
+      "text": "# 跨域知识 19\nkigx19shared 的资料侧结论是 cross-knowledge-19。"
+    },
+    {
+      "id": "cross-doc-20",
+      "title": "跨域知识基线 20",
+      "text": "# 跨域知识 20\nkigx20shared 的资料侧结论是 cross-knowledge-20。"
+    }
+  ],
+  "memories": [
+    {
+      "id": "cross-memory-fragment-01",
+      "content": "kigx01shared 的用户记忆侧标记是 cross-memory-01。",
+      "marker": "cross-memory-01"
+    },
+    {
+      "id": "cross-memory-fragment-02",
+      "content": "kigx02shared 的用户记忆侧标记是 cross-memory-02。",
+      "marker": "cross-memory-02"
+    },
+    {
+      "id": "cross-memory-fragment-03",
+      "content": "kigx03shared 的用户记忆侧标记是 cross-memory-03。",
+      "marker": "cross-memory-03"
+    },
+    {
+      "id": "cross-memory-fragment-04",
+      "content": "kigx04shared 的用户记忆侧标记是 cross-memory-04。",
+      "marker": "cross-memory-04"
+    },
+    {
+      "id": "cross-memory-fragment-05",
+      "content": "kigx05shared 的用户记忆侧标记是 cross-memory-05。",
+      "marker": "cross-memory-05"
+    },
+    {
+      "id": "cross-memory-fragment-06",
+      "content": "kigx06shared 的用户记忆侧标记是 cross-memory-06。",
+      "marker": "cross-memory-06"
+    },
+    {
+      "id": "cross-memory-fragment-07",
+      "content": "kigx07shared 的用户记忆侧标记是 cross-memory-07。",
+      "marker": "cross-memory-07"
+    },
+    {
+      "id": "cross-memory-fragment-08",
+      "content": "kigx08shared 的用户记忆侧标记是 cross-memory-08。",
+      "marker": "cross-memory-08"
+    },
+    {
+      "id": "cross-memory-fragment-09",
+      "content": "kigx09shared 的用户记忆侧标记是 cross-memory-09。",
+      "marker": "cross-memory-09"
+    },
+    {
+      "id": "cross-memory-fragment-10",
+      "content": "kigx10shared 的用户记忆侧标记是 cross-memory-10。",
+      "marker": "cross-memory-10"
+    },
+    {
+      "id": "cross-memory-fragment-11",
+      "content": "kigx11shared 的用户记忆侧标记是 cross-memory-11。",
+      "marker": "cross-memory-11"
+    },
+    {
+      "id": "cross-memory-fragment-12",
+      "content": "kigx12shared 的用户记忆侧标记是 cross-memory-12。",
+      "marker": "cross-memory-12"
+    },
+    {
+      "id": "cross-memory-fragment-13",
+      "content": "kigx13shared 的用户记忆侧标记是 cross-memory-13。",
+      "marker": "cross-memory-13"
+    },
+    {
+      "id": "cross-memory-fragment-14",
+      "content": "kigx14shared 的用户记忆侧标记是 cross-memory-14。",
+      "marker": "cross-memory-14"
+    },
+    {
+      "id": "cross-memory-fragment-15",
+      "content": "kigx15shared 的用户记忆侧标记是 cross-memory-15。",
+      "marker": "cross-memory-15"
+    },
+    {
+      "id": "cross-memory-fragment-16",
+      "content": "kigx16shared 的用户记忆侧标记是 cross-memory-16。",
+      "marker": "cross-memory-16"
+    },
+    {
+      "id": "cross-memory-fragment-17",
+      "content": "kigx17shared 的用户记忆侧标记是 cross-memory-17。",
+      "marker": "cross-memory-17"
+    },
+    {
+      "id": "cross-memory-fragment-18",
+      "content": "kigx18shared 的用户记忆侧标记是 cross-memory-18。",
+      "marker": "cross-memory-18"
+    },
+    {
+      "id": "cross-memory-fragment-19",
+      "content": "kigx19shared 的用户记忆侧标记是 cross-memory-19。",
+      "marker": "cross-memory-19"
+    },
+    {
+      "id": "cross-memory-fragment-20",
+      "content": "kigx20shared 的用户记忆侧标记是 cross-memory-20。",
+      "marker": "cross-memory-20"
+    }
+  ],
+  "cases": [
+    {
+      "id": "single-01",
+      "category": "single_document",
+      "query": "kigs01anchor",
+      "expected_documents": [
+        "single-doc-01"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "single-02",
+      "category": "single_document",
+      "query": "kigs02anchor",
+      "expected_documents": [
+        "single-doc-02"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "single-03",
+      "category": "single_document",
+      "query": "kigs03anchor",
+      "expected_documents": [
+        "single-doc-03"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "single-04",
+      "category": "single_document",
+      "query": "kigs04anchor",
+      "expected_documents": [
+        "single-doc-04"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "single-05",
+      "category": "single_document",
+      "query": "kigs05anchor",
+      "expected_documents": [
+        "single-doc-05"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "single-06",
+      "category": "single_document",
+      "query": "kigs06anchor",
+      "expected_documents": [
+        "single-doc-06"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "single-07",
+      "category": "single_document",
+      "query": "kigs07anchor",
+      "expected_documents": [
+        "single-doc-07"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "single-08",
+      "category": "single_document",
+      "query": "kigs08anchor",
+      "expected_documents": [
+        "single-doc-08"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "single-09",
+      "category": "single_document",
+      "query": "kigs09anchor",
+      "expected_documents": [
+        "single-doc-09"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "single-10",
+      "category": "single_document",
+      "query": "kigs10anchor",
+      "expected_documents": [
+        "single-doc-10"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "single-11",
+      "category": "single_document",
+      "query": "kigs11anchor",
+      "expected_documents": [
+        "single-doc-11"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "single-12",
+      "category": "single_document",
+      "query": "kigs12anchor",
+      "expected_documents": [
+        "single-doc-12"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "single-13",
+      "category": "single_document",
+      "query": "kigs13anchor",
+      "expected_documents": [
+        "single-doc-13"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "single-14",
+      "category": "single_document",
+      "query": "kigs14anchor",
+      "expected_documents": [
+        "single-doc-14"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "single-15",
+      "category": "single_document",
+      "query": "kigs15anchor",
+      "expected_documents": [
+        "single-doc-15"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "single-16",
+      "category": "single_document",
+      "query": "kigs16anchor",
+      "expected_documents": [
+        "single-doc-16"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "single-17",
+      "category": "single_document",
+      "query": "kigs17anchor",
+      "expected_documents": [
+        "single-doc-17"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "single-18",
+      "category": "single_document",
+      "query": "kigs18anchor",
+      "expected_documents": [
+        "single-doc-18"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "single-19",
+      "category": "single_document",
+      "query": "kigs19anchor",
+      "expected_documents": [
+        "single-doc-19"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "single-20",
+      "category": "single_document",
+      "query": "kigs20anchor",
+      "expected_documents": [
+        "single-doc-20"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "multi-01",
+      "category": "multi_document",
+      "query": "kigm01shared",
+      "expected_documents": [
+        "multi-doc-01-a",
+        "multi-doc-01-b"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "multi-02",
+      "category": "multi_document",
+      "query": "kigm02shared",
+      "expected_documents": [
+        "multi-doc-02-a",
+        "multi-doc-02-b"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "multi-03",
+      "category": "multi_document",
+      "query": "kigm03shared",
+      "expected_documents": [
+        "multi-doc-03-a",
+        "multi-doc-03-b"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "multi-04",
+      "category": "multi_document",
+      "query": "kigm04shared",
+      "expected_documents": [
+        "multi-doc-04-a",
+        "multi-doc-04-b"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "multi-05",
+      "category": "multi_document",
+      "query": "kigm05shared",
+      "expected_documents": [
+        "multi-doc-05-a",
+        "multi-doc-05-b"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "multi-06",
+      "category": "multi_document",
+      "query": "kigm06shared",
+      "expected_documents": [
+        "multi-doc-06-a",
+        "multi-doc-06-b"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "multi-07",
+      "category": "multi_document",
+      "query": "kigm07shared",
+      "expected_documents": [
+        "multi-doc-07-a",
+        "multi-doc-07-b"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "multi-08",
+      "category": "multi_document",
+      "query": "kigm08shared",
+      "expected_documents": [
+        "multi-doc-08-a",
+        "multi-doc-08-b"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "multi-09",
+      "category": "multi_document",
+      "query": "kigm09shared",
+      "expected_documents": [
+        "multi-doc-09-a",
+        "multi-doc-09-b"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "multi-10",
+      "category": "multi_document",
+      "query": "kigm10shared",
+      "expected_documents": [
+        "multi-doc-10-a",
+        "multi-doc-10-b"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "multi-11",
+      "category": "multi_document",
+      "query": "kigm11shared",
+      "expected_documents": [
+        "multi-doc-11-a",
+        "multi-doc-11-b"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "multi-12",
+      "category": "multi_document",
+      "query": "kigm12shared",
+      "expected_documents": [
+        "multi-doc-12-a",
+        "multi-doc-12-b"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "multi-13",
+      "category": "multi_document",
+      "query": "kigm13shared",
+      "expected_documents": [
+        "multi-doc-13-a",
+        "multi-doc-13-b"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "multi-14",
+      "category": "multi_document",
+      "query": "kigm14shared",
+      "expected_documents": [
+        "multi-doc-14-a",
+        "multi-doc-14-b"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "multi-15",
+      "category": "multi_document",
+      "query": "kigm15shared",
+      "expected_documents": [
+        "multi-doc-15-a",
+        "multi-doc-15-b"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "multi-16",
+      "category": "multi_document",
+      "query": "kigm16shared",
+      "expected_documents": [
+        "multi-doc-16-a",
+        "multi-doc-16-b"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "multi-17",
+      "category": "multi_document",
+      "query": "kigm17shared",
+      "expected_documents": [
+        "multi-doc-17-a",
+        "multi-doc-17-b"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "multi-18",
+      "category": "multi_document",
+      "query": "kigm18shared",
+      "expected_documents": [
+        "multi-doc-18-a",
+        "multi-doc-18-b"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "multi-19",
+      "category": "multi_document",
+      "query": "kigm19shared",
+      "expected_documents": [
+        "multi-doc-19-a",
+        "multi-doc-19-b"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "multi-20",
+      "category": "multi_document",
+      "query": "kigm20shared",
+      "expected_documents": [
+        "multi-doc-20-a",
+        "multi-doc-20-b"
+      ],
+      "expected_memory_marker": null
+    },
+    {
+      "id": "cross-01",
+      "category": "knowledge_memory",
+      "query": "kigx01shared",
+      "expected_documents": [
+        "cross-doc-01"
+      ],
+      "expected_memory_marker": "cross-memory-01"
+    },
+    {
+      "id": "cross-02",
+      "category": "knowledge_memory",
+      "query": "kigx02shared",
+      "expected_documents": [
+        "cross-doc-02"
+      ],
+      "expected_memory_marker": "cross-memory-02"
+    },
+    {
+      "id": "cross-03",
+      "category": "knowledge_memory",
+      "query": "kigx03shared",
+      "expected_documents": [
+        "cross-doc-03"
+      ],
+      "expected_memory_marker": "cross-memory-03"
+    },
+    {
+      "id": "cross-04",
+      "category": "knowledge_memory",
+      "query": "kigx04shared",
+      "expected_documents": [
+        "cross-doc-04"
+      ],
+      "expected_memory_marker": "cross-memory-04"
+    },
+    {
+      "id": "cross-05",
+      "category": "knowledge_memory",
+      "query": "kigx05shared",
+      "expected_documents": [
+        "cross-doc-05"
+      ],
+      "expected_memory_marker": "cross-memory-05"
+    },
+    {
+      "id": "cross-06",
+      "category": "knowledge_memory",
+      "query": "kigx06shared",
+      "expected_documents": [
+        "cross-doc-06"
+      ],
+      "expected_memory_marker": "cross-memory-06"
+    },
+    {
+      "id": "cross-07",
+      "category": "knowledge_memory",
+      "query": "kigx07shared",
+      "expected_documents": [
+        "cross-doc-07"
+      ],
+      "expected_memory_marker": "cross-memory-07"
+    },
+    {
+      "id": "cross-08",
+      "category": "knowledge_memory",
+      "query": "kigx08shared",
+      "expected_documents": [
+        "cross-doc-08"
+      ],
+      "expected_memory_marker": "cross-memory-08"
+    },
+    {
+      "id": "cross-09",
+      "category": "knowledge_memory",
+      "query": "kigx09shared",
+      "expected_documents": [
+        "cross-doc-09"
+      ],
+      "expected_memory_marker": "cross-memory-09"
+    },
+    {
+      "id": "cross-10",
+      "category": "knowledge_memory",
+      "query": "kigx10shared",
+      "expected_documents": [
+        "cross-doc-10"
+      ],
+      "expected_memory_marker": "cross-memory-10"
+    },
+    {
+      "id": "cross-11",
+      "category": "knowledge_memory",
+      "query": "kigx11shared",
+      "expected_documents": [
+        "cross-doc-11"
+      ],
+      "expected_memory_marker": "cross-memory-11"
+    },
+    {
+      "id": "cross-12",
+      "category": "knowledge_memory",
+      "query": "kigx12shared",
+      "expected_documents": [
+        "cross-doc-12"
+      ],
+      "expected_memory_marker": "cross-memory-12"
+    },
+    {
+      "id": "cross-13",
+      "category": "knowledge_memory",
+      "query": "kigx13shared",
+      "expected_documents": [
+        "cross-doc-13"
+      ],
+      "expected_memory_marker": "cross-memory-13"
+    },
+    {
+      "id": "cross-14",
+      "category": "knowledge_memory",
+      "query": "kigx14shared",
+      "expected_documents": [
+        "cross-doc-14"
+      ],
+      "expected_memory_marker": "cross-memory-14"
+    },
+    {
+      "id": "cross-15",
+      "category": "knowledge_memory",
+      "query": "kigx15shared",
+      "expected_documents": [
+        "cross-doc-15"
+      ],
+      "expected_memory_marker": "cross-memory-15"
+    },
+    {
+      "id": "cross-16",
+      "category": "knowledge_memory",
+      "query": "kigx16shared",
+      "expected_documents": [
+        "cross-doc-16"
+      ],
+      "expected_memory_marker": "cross-memory-16"
+    },
+    {
+      "id": "cross-17",
+      "category": "knowledge_memory",
+      "query": "kigx17shared",
+      "expected_documents": [
+        "cross-doc-17"
+      ],
+      "expected_memory_marker": "cross-memory-17"
+    },
+    {
+      "id": "cross-18",
+      "category": "knowledge_memory",
+      "query": "kigx18shared",
+      "expected_documents": [
+        "cross-doc-18"
+      ],
+      "expected_memory_marker": "cross-memory-18"
+    },
+    {
+      "id": "cross-19",
+      "category": "knowledge_memory",
+      "query": "kigx19shared",
+      "expected_documents": [
+        "cross-doc-19"
+      ],
+      "expected_memory_marker": "cross-memory-19"
+    },
+    {
+      "id": "cross-20",
+      "category": "knowledge_memory",
+      "query": "kigx20shared",
+      "expected_documents": [
+        "cross-doc-20"
+      ],
+      "expected_memory_marker": "cross-memory-20"
+    }
+  ]
+}
