@@ -799,7 +799,7 @@ def test_schema_version_includes_cds2_migration_62():
         row = conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
         ).fetchone()
-        assert row[0] == "71"
+        assert row[0] == "72"
     finally:
         conn.close()
 

@@ -1055,7 +1055,7 @@ def test_runner_report_proves_shadow_ledger_and_mem_zero_write():
     assert report["safety_violation_count"] == 0
     assert report["shadow_ledger_write_count"] == 2
     assert report["mem_domain_write_count"] == 0
-    assert report["schema_version"] == 71
+    assert report["schema_version"] == 72
     assert report["stage_schema_baseline"] == 62 and report["schema_changed"] is False
     assert report["application_owner"] == "mem"
     assert report["quality_corpus_role"] == "labeled_raw_narrative_regression"

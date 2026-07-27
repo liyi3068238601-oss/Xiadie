@@ -25,7 +25,7 @@ from . import (
     episode_summary_service, episodes, knowledge, knowledge_cleanup, knowledge_context,
     knowledge_embeddings, knowledge_grants,
     knowledge_management, knowledge_parser, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search,
-    knowledge_worker, life_catchup, life_catchup_service, life_events, life_runtime, life_schedule, llm, lore, memory, memory_conflicts, memory_shadow_proposals,
+    knowledge_worker, kig_sources, life_catchup, life_catchup_service, life_events, life_runtime, life_schedule, llm, lore, memory, memory_conflicts, memory_shadow_proposals,
     personal_goals,
     saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, secret_store, self_timeline, slow_lifecycle,
@@ -1044,6 +1044,36 @@ def proactive_diagnostics(limit: int = 100) -> dict:
 def cognition_diagnostics(decision_kind: str | None = None, limit: int = 50) -> dict:
     """Read-only CDS diagnostics with a strict body-free field allowlist."""
     return cognitive_decision.diagnostics(decision_kind=decision_kind, limit=limit)
+
+
+class KIGSourceRefIn(BaseModel):
+    source_kind: str
+    source_id: str
+    revision: str
+    content_hash: str
+    status: str
+    privacy_scope: str
+    locator: str
+
+
+@app.get("/api/kig/sources/{source_kind}/{source_id}")
+def resolve_kig_source(source_kind: str, source_id: str) -> dict:
+    """Resolve body-free canonical source metadata from its owner system."""
+    try:
+        return {"source_ref": kig_sources.registry.resolve(source_kind, source_id).to_dict()}
+    except kig_sources.SourceRefError as exc:
+        raise HTTPException(404 if exc.code == "source_missing" else 422,
+                            detail={"code": exc.code, "message": str(exc)}) from exc
+
+
+@app.post("/api/kig/sources/validate")
+def validate_kig_source(body: KIGSourceRefIn) -> dict:
+    """Reject stale or forged hashes, privacy metadata and locators."""
+    try:
+        ref = kig_sources.SourceRef(**body.model_dump())
+        return {"valid": True, "source_ref": kig_sources.validate_ref(ref).to_dict()}
+    except kig_sources.SourceRefError as exc:
+        raise HTTPException(409, detail={"code": exc.code, "message": str(exc)}) from exc
 
 
 @app.get("/api/life/events")

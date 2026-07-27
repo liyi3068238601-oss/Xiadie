@@ -51,6 +51,9 @@ def evaluate_fixture(fixture: dict) -> dict:
         from app import db, knowledge, knowledge_context, knowledge_search, knowledge_worker, memory
         from app import cognitive_decision, context_assembler, specialty_contracts
 
+        # KIG.0 is a predecessor snapshot, so later KIG migrations must not
+        # silently change its executable baseline or capability inventory.
+        db.MIGRATIONS = [migration for migration in db.MIGRATIONS if migration[0] <= 71]
         db.init_db()
         document_map: dict[str, str] = {}
         for item in fixture["documents"]:

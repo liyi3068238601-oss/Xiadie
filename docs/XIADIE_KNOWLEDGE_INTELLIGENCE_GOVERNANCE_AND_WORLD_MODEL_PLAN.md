@@ -2,7 +2,7 @@
 
 - 版本：v0.3（施工基线、双里程碑、来源依赖与图谱治理补强）
 - 日期：2026-07-22
-- 状态：KIG.0 ConstructionBaseline 已完成；KIG.1 可从 Schema 72 开工
+- 状态：KIG.0～KIG.1 已完成；当前 Schema 72，KIG.2 可开工
 - 专项代号：`KIG`（Knowledge Intelligence & Governance）
 - 子系统代号：`PWM`（Personal World Model）
 - 适用范围：用户知识库、信息分类与治理、多源检索、LLM 查询规划与重排、证据与引用、冲突与版本、个人世界模型，以及与对话历史、长期记忆、生活连续性、任务和 ContextAssembler 的接口
@@ -1707,17 +1707,19 @@ KIG.0 施工记录（2026-07-27）：ConstructionBaseline 锁定 LIFE PR #3 merg
 
 目标：所有知识和派生对象可回到真实来源。
 
-- [ ] 优先建立轻量 typed `SourceRef` 信封和各系统 adapter，复用已有 ID、locator、revision/hash 与 status；只有 KIG 派生对象确需查询时才持久化最小引用。
-- [ ] 为文档、Chunk、消息、记忆、LifeEvent、ToolRun、Lore 建立适配器。
-- [ ] 来源变化触发派生对象 stale。
-- [ ] 删除和不可访问状态可传播。
-- [ ] 不复制不必要正文。
-- [ ] 不为每条既有来源强制建立平行“通用来源行”，不迁移或复制原系统正文和生命周期。
-- [ ] 建立来源定位 API 和测试。
-- [ ] 建立 `SourceAdapterRegistry` 和 `derived_dependencies`，以可执行 exists/revision/hash/privacy/locator/deletion 校验弥补多态外键缺失。
-- [ ] 增加有界 sweeper，传播 missing/stale/revoked/inaccessible；来源变化检查失败时保守降级，不自动删除权威来源。
+- [x] 优先建立轻量 typed `SourceRef` 信封和各系统 adapter，复用已有 ID、locator、revision/hash 与 status；只有 KIG 派生对象确需查询时才持久化最小引用。
+- [x] 为文档、Chunk、消息、记忆、LifeEvent、ToolRun、Lore 建立适配器。
+- [x] 来源变化触发派生对象 stale。
+- [x] 删除和不可访问状态可传播。
+- [x] 不复制不必要正文。
+- [x] 不为每条既有来源强制建立平行“通用来源行”，不迁移或复制原系统正文和生命周期。
+- [x] 建立来源定位 API 和测试。
+- [x] 建立 `SourceAdapterRegistry` 和 `derived_dependencies`，以可执行 exists/revision/hash/privacy/locator/deletion 校验弥补多态外键缺失。
+- [x] 增加有界 sweeper，传播 missing/stale/revoked/inaccessible；来源变化检查失败时保守降级，不自动删除权威来源。
 
 验收：任一引用、Claim、关系和事件都能回到原来源；伪造 locator 通过率为 0。
+
+KIG.1 施工记录（2026-07-27）：Schema 72 仅新增无正文 `derived_dependencies`，没有建立每来源一行的平行 `source_refs` 表。`SourceAdapterRegistry` 从 KnowledgeDocument/Chunk、Message、MemoryFragment、LifeEvent、ToolRun 和 Lore 原权威存储实时解析 typed `SourceRef`，统一提供 revision、SHA-256、status、privacy scope 与 owner locator；绑定前必须逐字段回查权威元数据。来源 revision/hash/privacy/locator 改变传播为 stale，删除传播 missing，撤销传播 revoked，关闭传播 inaccessible，适配器故障保守标记 unverified；有界 sweeper 单批最多 500 条，任何失败均不删除权威来源。新增只读定位与严格校验 API，测试对 7 类来源逐一伪造 locator，0 个通过。KIG.1 专项 5 项、KIG/CDS 相关回归 367 项、后端全量 `2434 passed, 1 warning`；详细证据见 `docs/reports/kig-1-source-governance.md`。
 
 建议 PR：`feat(kig): add unified provenance and source references`
 

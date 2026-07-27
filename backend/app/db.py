@@ -3276,6 +3276,41 @@ MIGRATIONS = [
             ON self_timeline_entries(source_type,source_id);
         """,
     ),
+    (
+        72,
+        """
+        -- KIG.1: minimal dependency envelopes for derived projections.
+        -- Authoritative source bodies and lifecycle remain in their owner tables.
+        CREATE TABLE derived_dependencies (
+            id TEXT PRIMARY KEY,
+            derived_kind TEXT NOT NULL,
+            derived_id TEXT NOT NULL,
+            source_kind TEXT NOT NULL CHECK(source_kind IN (
+                'knowledge_document','knowledge_chunk','message','memory_fragment',
+                'life_event','tool_run','lore_section'
+            )),
+            source_id TEXT NOT NULL,
+            source_revision TEXT NOT NULL,
+            source_hash TEXT NOT NULL CHECK(length(source_hash) = 64),
+            source_status_snapshot TEXT NOT NULL,
+            privacy_scope TEXT NOT NULL,
+            source_locator TEXT NOT NULL,
+            dependency_status TEXT NOT NULL DEFAULT 'active' CHECK(dependency_status IN (
+                'active','stale','missing','revoked','inaccessible','unverified'
+            )),
+            checked_at REAL,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            UNIQUE(derived_kind, derived_id, source_kind, source_id)
+        );
+        CREATE INDEX idx_derived_dependencies_derived
+            ON derived_dependencies(derived_kind, derived_id, dependency_status);
+        CREATE INDEX idx_derived_dependencies_source
+            ON derived_dependencies(source_kind, source_id, dependency_status);
+        CREATE INDEX idx_derived_dependencies_sweep
+            ON derived_dependencies(dependency_status, checked_at, updated_at);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
