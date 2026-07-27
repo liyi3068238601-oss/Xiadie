@@ -36,6 +36,7 @@ from . import recall_planner_shadow  # noqa: F401 - registers CDS.4 Shadow contr
 from . import context_planner_shadow  # noqa: F401 - registers CDS.7 Shadow contract
 from . import episode_saga_shadow  # noqa: F401 - registers CDS.10 Shadow contracts
 from . import life_decisions  # noqa: F401 - registers LIFE.1 Shadow contracts on CDS
+from . import information_classifier_shadow  # noqa: F401 - registers KIG.3 Shadow contract
 from . import memory_observer_service
 from .affect import observer_service as affect_observer_service
 from .proactive import presence as proactive_presence

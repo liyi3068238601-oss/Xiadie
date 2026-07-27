@@ -2,7 +2,7 @@
 
 - 版本：v0.3（施工基线、双里程碑、来源依赖与图谱治理补强）
 - 日期：2026-07-22
-- 状态：KIG.0～KIG.2 已完成；当前 Schema 73，KIG.3 可开工
+- 状态：KIG.0～KIG.3 已完成；当前 Schema 73，KIG.4 可开工
 - 专项代号：`KIG`（Knowledge Intelligence & Governance）
 - 子系统代号：`PWM`（Personal World Model）
 - 适用范围：用户知识库、信息分类与治理、多源检索、LLM 查询规划与重排、证据与引用、冲突与版本、个人世界模型，以及与对话历史、长期记忆、生活连续性、任务和 ContextAssembler 的接口
@@ -1743,14 +1743,16 @@ KIG.2 施工记录（2026-07-27）：审查确认既有 reindex 会在开工时�
 
 目标：区分 Knowledge、Memory、Conversation、Life、Lore 和 Task Result。
 
-- [ ] 定义 information-classifier-v1 Schema。
-- [ ] 高精度命令和来源类型先由程序判断。
-- [ ] LLM 只处理模糊场景。
-- [ ] 输出 destination proposal，不直接写目标库。
-- [ ] 目标系统重新验证。
-- [ ] 建立临时状态、长期偏好、观点和计划的误判集。
+- [x] 定义 information-classifier-v1 Schema。
+- [x] 高精度命令和来源类型先由程序判断。
+- [x] LLM 只处理模糊场景。
+- [x] 输出 destination proposal，不直接写目标库。
+- [x] 目标系统重新验证。
+- [x] 建立临时状态、长期偏好、观点和计划的误判集。
 
 验收：普通临时要求不会变成永久偏好；外部事实不会污染用户记忆。
+
+KIG.3 施工记录（2026-07-27）：新增 `information-classifier-v1` typed input/result 与 CDS `information_classifier` Shadow DecisionKind，不新增运行账本或迁移。程序优先识别临时指令、显式记忆偏好、计划、观点、Lore、外部 Knowledge 来源和 ToolRun；只有无高精度命中的模糊文本才允许进入模型。模型调用要求来源 revision/hash 未变、远程调用显式授权、固定 destination candidates 与严格标量 JSON；模型内容始终作为 untrusted data，任何错误走 `unknown/none` fallback。输出固定 `proposal_only=true`，目标域必须重新校验来源与开关，分类器没有写入权。误判/注入集验证临时请求持久化率 0、外部事实写 Memory 率 0、伪造 destination 通过率 0。专项/CDS 回归 `37 passed, 1 warning`。实配 DeepSeek 8 条纯合成模糊/注入 Shadow 首轮 6 条结构与安全验证通过、2 条调用错误安全回退；有效响应安全率 100%，整体含 fallback 安全收口率 100%，模型一次可用率诚实记录为 75%。详见 `docs/reports/kig-3-information-classifier.md`。
 
 建议 PR：`feat(kig): add validated information classification routing`
 
