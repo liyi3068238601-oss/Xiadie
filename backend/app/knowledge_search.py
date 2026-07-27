@@ -8,7 +8,8 @@ from collections.abc import Callable
 
 from . import db, knowledge_chunker
 
-INDEX_VERSION = "knowledge-fts-terms-v1"
+INDEX_VERSION = "knowledge-fts-terms-v2"
+COMPATIBLE_INDEX_VERSIONS = ("knowledge-fts-terms-v1", INDEX_VERSION)
 SEARCH_PROTOCOL_VERSION = "knowledge-search-v2"
 MAX_QUERY_CHARS = 256
 MAX_QUERY_TERMS = 16
@@ -146,12 +147,14 @@ def activate_rebuild_index_locked(conn, document_id: str, prepared: list[dict]) 
         conn.execute(
             "INSERT INTO knowledge_chunks(id,document_id,ordinal,content,content_sha256,"
             "heading_path_json,paragraph_start,paragraph_end,line_start,line_end,char_start,char_end,"
-            "page_start,page_end,chunker_version,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "page_start,page_end,chunker_version,chunk_kind,previous_ordinal,next_ordinal,created_at) "
+            "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 item["id"], document_id, item["ordinal"], item["content"], item["content_sha256"],
                 item["heading_path_json"], item["paragraph_start"], item["paragraph_end"],
                 item["line_start"], item["line_end"], item["char_start"], item["char_end"],
-                item["page_start"], item["page_end"], item["chunker_version"], item["created_at"],
+                item["page_start"], item["page_end"], item["chunker_version"], item["chunk_kind"],
+                item["previous_ordinal"], item["next_ordinal"], item["created_at"],
             ),
         )
         rowid = conn.execute("SELECT rowid FROM knowledge_chunks WHERE id=?", (item["id"],)).fetchone()[0]
@@ -192,10 +195,10 @@ def search(
     match_query = _match_query(value)
 
     where = [
-        "d.status='indexed'", "d.indexed_at IS NOT NULL", "d.index_version=?",
+        "d.status='indexed'", "d.indexed_at IS NOT NULL", "d.index_version IN (?,?)",
         "d.governance_status='active'", "co.status='active'",
     ]
-    params: list[object] = [match_query, INDEX_VERSION]
+    params: list[object] = [match_query, *COMPATIBLE_INDEX_VERSIONS]
     if collection_id:
         where.append("d.collection_id=?")
         params.append(collection_id)
@@ -233,11 +236,11 @@ def search(
                     " JOIN knowledge_documents d ON d.id=c.document_id"
                     " JOIN knowledge_collections co ON co.id=d.collection_id"
                     " WHERE c.document_id=? AND c.ordinal BETWEEN ? AND ?"
-                    " AND c.ordinal!=? AND d.status='indexed' AND d.index_version=?"
-                    " AND co.status='active'"
+                    " AND c.ordinal!=? AND d.status='indexed' AND d.index_version IN (?,?)"
+                    " AND d.governance_status='active' AND co.status='active'"
                     " ORDER BY c.ordinal",
                     (item["document_id"], item["ordinal"] - 1, item["ordinal"] + 1,
-                     item["ordinal"], INDEX_VERSION),
+                     item["ordinal"], *COMPATIBLE_INDEX_VERSIONS),
                 ).fetchall()
                 context_candidates.extend(
                     (dict(neighbor), "context", item["id"], None) for neighbor in neighbors

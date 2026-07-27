@@ -30,7 +30,7 @@ def _document(document_id: str) -> dict:
 def test_schema_73_adds_staging_without_replacing_authoritative_tables():
     conn = db.connect()
     try:
-        assert conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0] == "73"
+        assert conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0] == "74"
         tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         document_columns = {row["name"] for row in conn.execute("PRAGMA table_info(knowledge_documents)")}
     finally:

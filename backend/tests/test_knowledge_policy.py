@@ -91,7 +91,7 @@ def test_schema_35_is_repeatable_and_policy_events_are_body_free():
     try:
         assert conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
-        ).fetchone()[0] == "73"
+        ).fetchone()[0] == "74"
         columns = {
             row["name"] for row in conn.execute(
                 "PRAGMA table_info(knowledge_document_policy_events)"

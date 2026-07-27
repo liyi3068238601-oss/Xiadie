@@ -37,6 +37,7 @@ from . import context_planner_shadow  # noqa: F401 - registers CDS.7 Shadow cont
 from . import episode_saga_shadow  # noqa: F401 - registers CDS.10 Shadow contracts
 from . import life_decisions  # noqa: F401 - registers LIFE.1 Shadow contracts on CDS
 from . import information_classifier_shadow  # noqa: F401 - registers KIG.3 Shadow contract
+from . import knowledge_boundary_shadow  # noqa: F401 - registers KIG.4 Shadow contract
 from . import memory_observer_service
 from .affect import observer_service as affect_observer_service
 from .proactive import presence as proactive_presence
@@ -444,7 +445,7 @@ def read_knowledge_citation(citation_id: str) -> dict:
             or hashlib.sha256(source["content"].encode("utf-8")).hexdigest()
             != citation["content_sha256"]
             or source["status"] != "indexed" or source["governance_status"] != "active"
-            or source["index_version"] != knowledge_search.INDEX_VERSION
+            or source["index_version"] not in knowledge_search.COMPATIBLE_INDEX_VERSIONS
             or source["collection_status"] != "active"
         ):
             raise HTTPException(410, "原始资料已变化、停用或删除")

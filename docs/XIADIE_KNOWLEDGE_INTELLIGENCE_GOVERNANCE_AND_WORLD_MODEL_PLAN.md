@@ -2,7 +2,7 @@
 
 - 版本：v0.3（施工基线、双里程碑、来源依赖与图谱治理补强）
 - 日期：2026-07-22
-- 状态：KIG.0～KIG.3 已完成；当前 Schema 73，KIG.4 可开工
+- 状态：KIG.0～KIG.4 已完成；当前 Schema 74，KIG.5 可开工
 - 专项代号：`KIG`（Knowledge Intelligence & Governance）
 - 子系统代号：`PWM`（Personal World Model）
 - 适用范围：用户知识库、信息分类与治理、多源检索、LLM 查询规划与重排、证据与引用、冲突与版本、个人世界模型，以及与对话历史、长期记忆、生活连续性、任务和 ContextAssembler 的接口
@@ -1760,15 +1760,17 @@ KIG.3 施工记录（2026-07-27）：新增 `information-classifier-v1` typed in
 
 目标：改善章节、表格、代码和语义边界，同时保留原文真实性。
 
-- [ ] 以新 chunk/index 版本旁路建立结构优先切片器，不覆盖现有 raw_text 和当前可用 Chunk。
-- [ ] 保存 heading path、页码、邻居和 chunk kind。
-- [ ] 增加可选 LLM 边界建议。
-- [ ] 模型不得重写 raw_text。
-- [ ] 建立不同文档类型的切片质量集。
-- [ ] 模型失败回退确定性切片。
-- [ ] 新旧版本完成固定集对照和引用定位验证后原子切换，失败时继续服务旧索引。
+- [x] 以新 chunk/index 版本旁路建立结构优先切片器，不覆盖现有 raw_text 和当前可用 Chunk。
+- [x] 保存 heading path、页码、邻居和 chunk kind。
+- [x] 增加可选 LLM 边界建议。
+- [x] 模型不得重写 raw_text。
+- [x] 建立不同文档类型的切片质量集。
+- [x] 模型失败回退确定性切片。
+- [x] 新旧版本完成固定集对照和引用定位验证后原子切换，失败时继续服务旧索引。
 
 验收：定义、步骤、警告、表格和代码上下文不被明显错误切断；原文 hash 不变。
+
+KIG.4 施工记录（2026-07-27）：Schema 74 为原 `knowledge_chunks` 与 KIG.2 staging 增加 `chunk_kind`（heading/prose/list/table/code）及 previous/next ordinal；切片器升级 `knowledge-structure-chunker-v2`，先识别 fenced code、Markdown/制表表格、列表和 heading/prose 结构，再在必要时按行/句有界切分。正常尺寸代码块和表格保持单块，所有 content 必须等于 raw text 的精确 char slice，hash 逐块重算；原文件与 document content hash 永不改写。FTS 升级 v2 并兼容读取 v1，旧文档无需迁移；重建继续走 KIG.2 staging/单事务切换。新增 `knowledge_boundary_proposal` CDS Shadow，只能选择程序提供的安全 offset 子集，`rewrites_raw_text=false`，无效或模型失败回退确定性 offsets。Markdown/TXT/PDF/DOCX 既有格式集与新增标题、定义、步骤、警告、列表、表格、代码质量集回归 `198 passed, 1 warning`。详见 `docs/reports/kig-4-semantic-chunking.md`。
 
 建议 PR：`feat(knowledge): add provenance-safe semantic chunking`
 

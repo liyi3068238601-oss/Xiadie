@@ -342,6 +342,8 @@ def _chunk_run(row: dict) -> None:
             return
         now = db.now()
         target_table = "knowledge_rebuild_chunks" if row["trigger"] == "reindex" else "knowledge_chunks"
+        target_columns = {item["name"] for item in conn.execute(f"PRAGMA table_info({target_table})")}
+        has_structure_metadata = "chunk_kind" in target_columns
         if row["trigger"] == "reindex":
             conn.execute("DELETE FROM knowledge_rebuild_chunks WHERE run_id=?", (row["id"],))
         else:
@@ -369,6 +371,13 @@ def _chunk_run(row: dict) -> None:
                 chunk["line_start"], chunk["line_end"], chunk["char_start"], chunk["char_end"],
                 chunk["page_start"], chunk["page_end"], chunk["chunker_version"], now,
             )
+            if has_structure_metadata:
+                columns = columns.replace(
+                    "chunker_version,created_at",
+                    "chunker_version,chunk_kind,previous_ordinal,next_ordinal,created_at",
+                )
+                values = (*values[:-1], chunk["chunk_kind"], chunk["previous_ordinal"],
+                          chunk["next_ordinal"], values[-1])
             conn.execute(
                 f"INSERT INTO {target_table}({columns}) VALUES({','.join('?' for _ in values)})", values,
             )

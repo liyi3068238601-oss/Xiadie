@@ -73,7 +73,7 @@ def test_schema_25_adds_bounded_run_and_body_free_event_ledgers():
     try:
         assert conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
-        ).fetchone()["value"] == "73"
+        ).fetchone()["value"] == "74"
         tables = {
             row["name"] for row in conn.execute(
                 "SELECT name FROM sqlite_master WHERE type='table'"

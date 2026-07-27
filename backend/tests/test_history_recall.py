@@ -99,7 +99,7 @@ def test_schema_45_keeps_rebuildable_local_history_indexes():
         conn.close()
 
     rebuilt = history_recall.rebuild_index()
-    assert version == "73"
+    assert version == "74"
     assert session_count == 1 and message_count == 2
     assert rebuilt == {"sessions": 1, "messages": 2}
 

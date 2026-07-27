@@ -3363,6 +3363,27 @@ MIGRATIONS = [
             ON knowledge_documents(governance_status,status,updated_at);
         """,
     ),
+    (
+        74,
+        """
+        -- KIG.4: structure-aware chunk metadata; raw text remains authoritative.
+        ALTER TABLE knowledge_chunks ADD COLUMN chunk_kind TEXT NOT NULL DEFAULT 'prose'
+            CHECK(chunk_kind IN ('heading','prose','list','table','code'));
+        ALTER TABLE knowledge_chunks ADD COLUMN previous_ordinal INTEGER;
+        ALTER TABLE knowledge_chunks ADD COLUMN next_ordinal INTEGER;
+        ALTER TABLE knowledge_rebuild_chunks ADD COLUMN chunk_kind TEXT NOT NULL DEFAULT 'prose'
+            CHECK(chunk_kind IN ('heading','prose','list','table','code'));
+        ALTER TABLE knowledge_rebuild_chunks ADD COLUMN previous_ordinal INTEGER;
+        ALTER TABLE knowledge_rebuild_chunks ADD COLUMN next_ordinal INTEGER;
+        UPDATE knowledge_chunks SET
+            previous_ordinal=CASE WHEN ordinal>0 THEN ordinal-1 ELSE NULL END,
+            next_ordinal=CASE WHEN ordinal+1 < (
+                SELECT COUNT(*) FROM knowledge_chunks peer WHERE peer.document_id=knowledge_chunks.document_id
+            ) THEN ordinal+1 ELSE NULL END;
+        CREATE INDEX idx_knowledge_chunks_kind
+            ON knowledge_chunks(document_id,chunk_kind,ordinal);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，
