@@ -97,6 +97,23 @@ def test_sensitive_filter_and_provider_specific_share_authorization():
     )
 
 
+@pytest.mark.parametrize(
+    "value",
+    (
+        "卡号 6222 0200 0000 0000",
+        "证件 11010519491231002X",
+        "电话 13800138000",
+        "联系 xiadie@example.com",
+    ),
+)
+def test_sensitive_filter_recognizes_common_identifier_formats(value):
+    assert diary.classify_sensitivity("修订", value) == "sensitive"
+
+
+def test_sensitive_filter_does_not_treat_ordinary_numbers_as_identifiers():
+    assert diary.classify_sensitivity("散步", "今天走了 12345 步") == "normal"
+
+
 def test_private_and_never_are_hard_boundaries_even_with_authorization():
     for policy in ("private", "never"):
         entry = _entry(policy=policy, semantic=policy)

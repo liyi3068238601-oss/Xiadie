@@ -10,6 +10,7 @@ EVALUATION_VERSION = "life-decision-eval-v1"
 MIN_CASES_PER_KIND = 50
 MIN_ACCURACY = 0.90
 REQUIRED_PROVIDERS = 2
+MIN_PROVIDER_AGREEMENT = 0.85
 
 
 def evaluate_predictions(cases: list[dict[str, Any]],
@@ -63,10 +64,16 @@ def provider_consistency(left: list[dict[str, Any]], right: list[dict[str, Any]]
     }
 
 
-def promotion_eligible(report: dict[str, Any], *, provider_count: int) -> tuple[bool, list[str]]:
+def promotion_eligible(report: dict[str, Any], *, provider_count: int,
+                       consistency_report: dict[str, Any] | None = None) -> tuple[bool, list[str]]:
     reasons: list[str] = []
     if provider_count < REQUIRED_PROVIDERS:
         reasons.append("provider_count_insufficient")
+    else:
+        if not consistency_report or consistency_report.get("paired_cases", 0) <= 0:
+            reasons.append("provider_consistency_missing")
+        elif consistency_report.get("agreement_rate", 0.0) < MIN_PROVIDER_AGREEMENT:
+            reasons.append("provider_consistency_insufficient")
     if report.get("invalid_total") != 0:
         reasons.append("invalid_output_nonzero")
     if report.get("low_confidence_application_total") != 0:

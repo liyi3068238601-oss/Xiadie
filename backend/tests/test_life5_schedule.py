@@ -74,6 +74,17 @@ def test_create_is_idempotent_for_active_day_and_api_is_read_only():
     assert client.post("/api/life/schedules/2026-07-26", json={}).status_code == 405
 
 
+def test_create_rejects_invalid_timezone_before_persistence():
+    with pytest.raises(life_schedule.ScheduleError) as exc:
+        life_schedule.create_schedule(local_date="2026-07-26", timezone_id="Mars/Olympus")
+    assert exc.value.code == "timezone_invalid"
+    conn = db.connect()
+    try:
+        assert conn.execute("SELECT COUNT(*) FROM life_schedules").fetchone()[0] == 0
+    finally:
+        conn.close()
+
+
 def test_detail_only_creates_planned_candidate_not_diary_or_delivery():
     conn = db.connect()
     try:

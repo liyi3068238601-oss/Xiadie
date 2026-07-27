@@ -70,3 +70,28 @@ def test_provider_consistency_is_paired_and_exact():
     right[0]["selected_ids"] = []
     report = life_quality.provider_consistency(left, right)
     assert report == {"paired_cases": 60, "agreements": 59, "agreement_rate": 59 / 60}
+
+
+def test_provider_consistency_is_required_for_multi_provider_promotion():
+    report = {
+        "invalid_total": 0,
+        "low_confidence_application_total": 0,
+        "per_kind": {
+            kind: {"cases": 50, "accuracy": 1.0}
+            for kind in life_decisions.LIFE_DECISION_KINDS
+        },
+    }
+    eligible, reasons = life_quality.promotion_eligible(report, provider_count=2)
+    assert eligible is False and reasons == ["provider_consistency_missing"]
+
+    eligible, reasons = life_quality.promotion_eligible(
+        report, provider_count=2,
+        consistency_report={"paired_cases": 300, "agreement_rate": 0.84},
+    )
+    assert eligible is False and reasons == ["provider_consistency_insufficient"]
+
+    eligible, reasons = life_quality.promotion_eligible(
+        report, provider_count=2,
+        consistency_report={"paired_cases": 300, "agreement_rate": 0.85},
+    )
+    assert eligible is True and reasons == []

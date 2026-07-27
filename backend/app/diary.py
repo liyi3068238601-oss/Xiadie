@@ -7,8 +7,17 @@ from typing import Any
 from . import db
 
 SOURCE_KINDS = frozenset({"life_event", "schedule_segment", "important_date", "personal_goal"})
-SENSITIVE_HINTS = ("密码", "密钥", "身份证", "住址", "病历", "创伤", "银行卡", "api key")
+SENSITIVE_HINTS = (
+    "密码", "密钥", "身份证", "住址", "病历", "创伤", "银行卡", "api key",
+    "护照", "社保", "诊断", "手机号", "电子邮箱", "信用卡",
+)
 _HEX64 = re.compile(r"^[0-9a-f]{64}$")
+_SENSITIVE_PATTERNS = (
+    re.compile(r"(?<!\d)(?:\d[ -]?){15}\d(?!\d)"),
+    re.compile(r"(?<!\d)\d{17}[\dXx](?![0-9A-Za-z])"),
+    re.compile(r"(?<!\d)1[3-9]\d{9}(?!\d)"),
+    re.compile(r"(?<![\w.+-])[\w.+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+(?![\w.-])"),
+)
 
 
 class DiaryError(ValueError):
@@ -33,7 +42,9 @@ def deterministic_fallback_text(*, entry_date: str, source_summary: str) -> tupl
 
 def classify_sensitivity(title: str, body: str) -> str:
     lowered = f"{title} {body}".lower()
-    return "sensitive" if any(hint in lowered for hint in SENSITIVE_HINTS) else "normal"
+    keyword_match = any(hint in lowered for hint in SENSITIVE_HINTS)
+    format_match = any(pattern.search(lowered) for pattern in _SENSITIVE_PATTERNS)
+    return "sensitive" if keyword_match or format_match else "normal"
 
 
 def create_thread(*, title: str, motif_code: str, now: float | None = None) -> dict[str, Any]:

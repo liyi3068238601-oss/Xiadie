@@ -5,6 +5,7 @@ import hashlib
 from dataclasses import dataclass
 from datetime import date
 from typing import Any
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from . import db
 
@@ -79,6 +80,10 @@ def create_schedule(*, local_date: str, timezone_id: str,
     validate_segments(proposals)
     if not timezone_id:
         raise ScheduleError("timezone_invalid", "schedule timezone is required")
+    try:
+        ZoneInfo(timezone_id)
+    except (ZoneInfoNotFoundError, ValueError) as exc:
+        raise ScheduleError("timezone_invalid", "schedule timezone must be a valid IANA zone") from exc
     now = db.now() if now is None else now
     conn = db.connect()
     try:

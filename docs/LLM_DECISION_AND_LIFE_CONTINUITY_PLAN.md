@@ -1348,8 +1348,8 @@ LIFE.12 施工记录（2026-07-26）：新增统一的“陪伴与生活”产�
 - [x] 完成多年数据增长模型和压缩演练：重要 LifeEvent、日记、ImportantDate、用户确认 Goal 与共享 Episode 来源权威保留；旧日程草稿、低意义细化、失效候选、重复状态快照和运行元数据可按版本化规则压缩。
 - [x] 日级/月级摘要不得静默替代重要原始事件；压缩、导出、恢复与删除顺序遵守共享数据生命周期规范。
 - [x] 更新 `BASELINE_STATUS.md`、`CODEX_PROJECT_CONTEXT.md`、长期路线和用户说明。
-- [ ] 独立总 Review 确认 0 个未解决 P0/P1。
-- [ ] 冻结 LIFE v1，记录最终 Schema 与 CDS/EAP adapter 兼容矩阵；只有完成后才允许 KIG 从下一迁移号开工。
+- [x] 独立总 Review 确认 0 个未解决 P0/P1。
+- [x] 冻结 LIFE v1，记录最终 Schema 与 CDS/EAP adapter 兼容矩阵；只有完成后才允许 KIG 从下一迁移号开工。
 
 冻结标准：
 
@@ -1369,7 +1369,9 @@ planned → performed 误判率         = 0
 
 LIFE.13 施工记录（2026-07-27）：新增 180 个连续自然日的完整日程压力、30 天日记模板/线索、20 个 IANA 时区 × 5 个日期（100 场景）及 5 个世界层 × 20 个来源类型（100 场景）的固定验收。时区测试发现 Windows Python 缺少 IANA 数据且旧 crossings 以 UTC 日界处理，现增加 `tzdata` 运行依赖，逐条按 ImportantDate 自身时区的本地午夜换算 UTC，并拒绝无效时区。`life-retention-v1` 只压缩可重建或运行期数据：过期 rejected/materialized candidate、已完成 CatchUp 及其候选、可安全释放的旧退出快照和仅保留最近 32 条的 runtime events；LifeEvent/revision/source、日记及修订、ImportantDate/source、PersonalGoal/source 均在演练前后逐表计数不变。日/月摘要不得删除或替代这些权威记录，旧日程若仍被日记、LifeEvent 或共享 Episode 引用也不得压缩。
 
-模型预算维持日常结构化调用默认 500 output token，显式 Reasoner 认证硬上限 2048；CatchUp 每次最多 2 次模型调用而当前确定性路径为 0。真实 DeepSeek 两模型报告已完成，同一 Provider 内模型一致率 88.33%；因只有一个 Provider，跨 Provider 结论诚实保留 `provider_count_insufficient`，六类 LIFE 决策均不晋级。最终后端全量为 `2416 passed, 1 warning`，前端 `50 passed`，TypeScript/Vite（190 modules）、Electron 语法与 3 项 lifecycle contract 通过。当前代码重新生成 564,780,737-byte 未签名 NSIS，冻结/打包资源、IANA 时区和 BGE-M3 哈希通过；win-unpacked 与真实 NSIS 临时安装版均完成首启、关窗托盘保活、主进程崩溃后子后端退出及重启，卸载后专用安装目录、端口、快捷方式和卸载项均清理。休眠/唤醒不打断当前工作站，而由 Electron suspend/resume contract、LIFE 重启时间推进、system-resume guard API 和逾期投递保护的 3 项确定性测试覆盖。Windows 技术门已完成；独立 Review 与 LIFE v1 冻结仍未勾选，KIG 尚未解锁。
+模型预算维持日常结构化调用默认 500 output token，显式 Reasoner 认证硬上限 2048；CatchUp 每次最多 2 次模型调用而当前确定性路径为 0。真实 DeepSeek 两模型报告已完成，同一 Provider 内模型一致率 88.33%；因只有一个 Provider，跨 Provider 结论诚实保留 `provider_count_insufficient`，六类 LIFE 决策均不晋级。最终后端全量为 `2416 passed, 1 warning`，前端 `50 passed`，TypeScript/Vite（190 modules）、Electron 语法与 3 项 lifecycle contract 通过。当前代码重新生成 564,780,737-byte 未签名 NSIS，冻结/打包资源、IANA 时区和 BGE-M3 哈希通过；win-unpacked 与真实 NSIS 临时安装版均完成首启、关窗托盘保活、主进程崩溃后子后端退出及重启，卸载后专用安装目录、端口、快捷方式和卸载项均清理。休眠/唤醒不打断当前工作站，而由 Electron suspend/resume contract、LIFE 重启时间推进、system-resume guard API 和逾期投递保护的 3 项确定性测试覆盖。
+
+LIFE 最终独立 Review（2026-07-27）结论为 0 P0、0 P1、2 P2 与 2 个设计观察，允许冻结。冻结收口采纳 P2-1、P2-2 与 OBS-2：日记新增常见身份证件/联系方式格式识别，日程在落库前验证 IANA 时区，多 Provider 晋级强制要求至少 0.85 的成对一致率；OBS-1 按产品设计保留，persona/diary reflection 可在置信度至少 0.85 时形成遐蝶自己的生活目标，临时用户建议仍不能自动成为永久目标。收口后后端全量为 `2423 passed, 1 warning`。LIFE v1 最终冻结在 Schema 71，`life-adapter-v1` 对 CDS `specialty-adapter-contract-v1` 与 EAP `eap-decision-run-adapter-v1` 保持兼容，KIG 的首个可用迁移号为 72；KIG 正式写入施工仍须以 LIFE PR 合入 `main` 后的 merge commit 作为 predecessor。详细冻结证据见 `docs/reports/life-v1-freeze.md`。
 
 建议 PR：`feat(life): complete and freeze continuous companion life v1`
 
