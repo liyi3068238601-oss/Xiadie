@@ -1,6 +1,6 @@
 # 遐蝶 Codex 项目上下文
 
-> KIG 施工快照（2026-07-27）：KIG.0～KIG.6 已完成，当前 Schema 74；已交付来源治理、原子索引切换、信息分类提案、结构化语义切片、`query-plan-v1` 六源受控路由及 provenance-safe `RetrievalCandidate` 混合召回。各源独立失败、独立上限，Knowledge Dense 故障回退 FTS。下一阶段为 KIG.7 LLM 语义重排。
+> KIG 施工快照（2026-07-27）：KIG.0～KIG.6 已完成，KIG.7 `retrieval-rerank-v1` 核心实现完成，当前 Schema 74。重排保持 CDS Shadow、候选白名单、来源复核和确定性回退；实配模型严格输出覆盖率不足，质量门未通过且禁止 Active，KIG-R 冻结前必须补测 JSON Object 模式。KIG.8 证据与引用可继续施工。
 
 > 状态：当前执行约束  
 > 适用对象：Codex、维护者和后续参与开发的协作者  

@@ -2,7 +2,7 @@
 
 - 版本：v0.3（施工基线、双里程碑、来源依赖与图谱治理补强）
 - 日期：2026-07-22
-- 状态：KIG.0～KIG.6 已完成；当前 Schema 74，KIG.7 可开工
+- 状态：KIG.0～KIG.6 已完成；KIG.7 核心实现完成、模型质量门待补；当前 Schema 74，KIG.8 可施工
 - 专项代号：`KIG`（Knowledge Intelligence & Governance）
 - 子系统代号：`PWM`（Personal World Model）
 - 适用范围：用户知识库、信息分类与治理、多源检索、LLM 查询规划与重排、证据与引用、冲突与版本、个人世界模型，以及与对话历史、长期记忆、生活连续性、任务和 ContextAssembler 的接口
@@ -1812,15 +1812,17 @@ KIG.6 施工记录（2026-07-27）：新增无持久化的 typed `RetrievalReque
 
 目标：让模型在有限候选中判断真正相关性，不直接执行检索或写状态。
 
-- [ ] 在 CDS 通用 rerank 运行时上注册 KIG `retrieval-rerank-v1` 领域 Schema、用途枚举和质量门。
-- [ ] 只允许返回输入候选 ID。
-- [ ] 区分 direct、partial、background、conflict、outdated、duplicate、irrelevant。
-- [ ] 来源变化后拒绝旧重排结果。
-- [ ] 模型失败使用确定性融合。
-- [ ] Shadow 模式对比旧排序。
-- [ ] 晋级、盲评、模型认证和回滚遵守共享 Decision Promotion Policy；未通过对应 decision_kind 认证的模型不得 Active。
+- [x] 在 CDS 通用 rerank 运行时上注册 KIG `retrieval-rerank-v1` 领域 Schema、用途枚举和质量门。
+- [x] 只允许返回输入候选 ID。
+- [x] 区分 direct、partial、background、conflict、outdated、duplicate、irrelevant。
+- [x] 来源变化后拒绝旧重排结果。
+- [x] 模型失败使用确定性融合。
+- [x] Shadow 模式对比旧排序。
+- [~] 晋级、盲评、模型认证和回滚遵守共享 Decision Promotion Policy；未通过对应 decision_kind 认证的模型不得 Active。（Shadow/Active 硬门已完成；实配模型严格结果覆盖率不足，质量盲评未通过，禁止晋级。）
 
 验收：人工相关性显著高于旧排序；引用不存在率为 0。
+
+KIG.7 施工记录（2026-07-27）：在 CDS 共享 DecisionRun/CandidateEnvelope/structured-output/fallback 审计运行时注册 `retrieval-rerank-v1`，最大 30 个输入候选、最多选择 12 个；模型必须对输入 ID 做完整排列并逐一给出七类 relevance role、rank bucket 和 confidence，selected 只能按排序引用未排除的输入 ID。KIG.6 候选适配只携带短 excerpt、privacy scope 与 SourceRef 快照；运行前和输出验收时复核 revision/hash/status/privacy/locator，来源撤销或变化时确定性 fallback 也实时查源并丢弃旧候选，Knowledge `local_only/ask_each_time` 未获许可时整批禁止远传。失败回退保持 lexical/vector/metadata/recency 分离的确定性融合；Shadow comparison 只记录 Jaccard、位置变化和计数，不记录 query/excerpt。共享 `llm.complete_json` 新增默认关闭的 JSON Object 模式，KIG.7 显式启用，其他调用行为不变。Schema 保持 74，核心回归 `924 passed, 1 warning`，非候选选择通过率 0、Shadow `application_allowed` 0。实配模型在启用 JSON Object 前共 18 次合成调用仅 1 次严格结果、17 次安全回退，0 越界；带人工相关标签的 6 例盲评无严格有效结果，不能证明相关性提升。JSON Object 模式的远端复测因当前 Codex 外部用量额度被拒绝，故本阶段维持 Shadow，质量门 `[~]`，KIG-R 冻结前必须补测。详见 `docs/reports/kig-7-retrieval-reranker.md`。
 
 建议 PR：`feat(retrieval): add validated LLM semantic reranking`
 

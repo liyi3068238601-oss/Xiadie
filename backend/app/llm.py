@@ -119,6 +119,7 @@ async def complete_json(
     timeout_seconds: float = JSON_COMPLETION_TIMEOUT_SECONDS,
     temperature: float = 0.0,
     top_p: float | None = None,
+    json_mode: bool = False,
 ) -> dict:
     """执行受限的非流式 JSON 观察调用；不负责解析或信任模型输出。"""
     if provider is None or provider.get("id") == "mock" or not provider.get("base_url"):
@@ -137,6 +138,8 @@ async def complete_json(
     }
     if top_p is not None:
         payload["top_p"] = float(top_p)
+    if json_mode:
+        payload["response_format"] = {"type": "json_object"}
     started = time.perf_counter()
     try:
         async with httpx.AsyncClient(timeout=max(0.1, float(timeout_seconds))) as client:
