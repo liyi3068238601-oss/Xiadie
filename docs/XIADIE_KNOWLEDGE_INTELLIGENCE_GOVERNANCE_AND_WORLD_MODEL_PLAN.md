@@ -2,7 +2,7 @@
 
 - 版本：v0.3（施工基线、双里程碑、来源依赖与图谱治理补强）
 - 日期：2026-07-22
-- 状态：KIG.0～KIG.5 已完成；当前 Schema 74，KIG.6 可开工
+- 状态：KIG.0～KIG.6 已完成；当前 Schema 74，KIG.7 可开工
 - 专项代号：`KIG`（Knowledge Intelligence & Governance）
 - 子系统代号：`PWM`（Personal World Model）
 - 适用范围：用户知识库、信息分类与治理、多源检索、LLM 查询规划与重排、证据与引用、冲突与版本、个人世界模型，以及与对话历史、长期记忆、生活连续性、任务和 ContextAssembler 的接口
@@ -1795,14 +1795,16 @@ KIG.5 施工记录（2026-07-27）：新增 `query-plan-v1` typed input/result�
 
 目标：统一 FTS、Dense、Metadata 和图投影候选。
 
-- [ ] 定义 RetrievalCandidate。
-- [ ] 接入现有 FTS 和向量实现，已有能力直接复用。
-- [ ] 增加 metadata filter、日期、版本和状态过滤。
-- [ ] 建立各源独立候选上限。
-- [ ] 去重、邻居扩展和多样性选择。
-- [ ] Dense 不可用时使用 Lexical 回退。
+- [x] 定义 RetrievalCandidate。
+- [x] 接入现有 FTS 和向量实现，已有能力直接复用。
+- [x] 增加 metadata filter、日期、版本和状态过滤。
+- [x] 建立各源独立候选上限。
+- [x] 去重、邻居扩展和多样性选择。
+- [x] Dense 不可用时使用 Lexical 回退。
 
 验收：单一源故障不阻塞查询；候选均带来源、状态和 locator。
+
+KIG.6 施工记录（2026-07-27）：新增无持久化的 typed `RetrievalRequest`、`RetrievalFilters`、`RetrievalCandidate` 与 `RetrievalBatch`，统一承载 source/revision/hash/status/privacy/locator、独立 lexical/vector/metadata/recency 信号、freshness、authority、role 和短 excerpt；不把不同含义压成一个总分。六个只读 adapter 分别复用 Knowledge `hybrid_search`（FTS+Dense+RRF+邻居）、Memory FTS/LIKE、CTX History FTS、LIFE SelfTimeline 中的 LifeEvent 投影、Task/ToolRun 和 Lore 现有检索。每源默认 6、最高 20，总候选最高 60；来源分别执行、分别记录 body-free diagnostics，任一来源异常只清空该源。metadata hard filter 支持 source ID、document、tag、revision、status 与时间范围；候选进入批次前重新解析 KIG.1 SourceRef，跨源适配冒充被拒绝。源内 exact-normalized 去重后按来源轮询选择，保留跨源相同证据；Knowledge Dense 不可用时显式记录 lexical fallback，FTS 热路径继续工作。无迁移，Schema 保持 74。专项及核心 KIG/CTX/Knowledge 回归 `893 passed, 1 warning`；详见 `docs/reports/kig-6-unified-retrieval.md`。
 
 建议 PR：`feat(retrieval): unify hybrid multi-source candidates`
 

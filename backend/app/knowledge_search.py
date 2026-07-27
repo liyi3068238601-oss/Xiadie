@@ -528,5 +528,6 @@ def _public_result(item: dict, match_type: str, context_of: str | None, rank: fl
         "line_start": item["line_start"], "line_end": item["line_end"],
         "char_start": item["char_start"], "char_end": item["char_end"],
         "page_start": item["page_start"], "page_end": item["page_end"],
+        "created_at": item.get("created_at"),
         "match_type": match_type, "context_of": context_of, "rank": rank,
     }
