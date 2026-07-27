@@ -2870,6 +2870,412 @@ MIGRATIONS = [
             ON cognition_calibration_events(decision_kind,created_at);
         """,
     ),
+    (
+        64,
+        """
+        -- LIFE.2: provenance-aware LifeEvent ledger. Existing tool_logs rows are the
+        -- canonical local ToolRun evidence; LIFE does not create another tool ledger.
+        CREATE TABLE life_events (
+            id TEXT PRIMARY KEY,
+            event_kind TEXT NOT NULL CHECK(event_kind IN (
+                'state_transition','activity','agent_action','observation','date_marker'
+            )),
+            world_layer TEXT NOT NULL CHECK(world_layer IN (
+                'planned','simulated','observed','performed'
+            )),
+            lifecycle_status TEXT NOT NULL CHECK(lifecycle_status IN (
+                'active','superseded','revoked'
+            )),
+            current_revision INTEGER NOT NULL DEFAULT 1 CHECK(current_revision >= 1),
+            tool_run_id TEXT REFERENCES tool_logs(id) ON DELETE RESTRICT,
+            idempotency_key TEXT NOT NULL UNIQUE,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_life_events_timeline
+            ON life_events(world_layer,lifecycle_status,created_at,id);
+
+        CREATE TABLE life_event_revisions (
+            id TEXT PRIMARY KEY,
+            event_id TEXT NOT NULL REFERENCES life_events(id) ON DELETE CASCADE,
+            revision INTEGER NOT NULL CHECK(revision >= 1),
+            event_kind TEXT NOT NULL,
+            world_layer TEXT NOT NULL,
+            summary TEXT NOT NULL DEFAULT '',
+            attributes_json TEXT NOT NULL DEFAULT '{}',
+            change_reason_code TEXT NOT NULL,
+            created_at REAL NOT NULL,
+            UNIQUE(event_id,revision)
+        );
+
+        CREATE TABLE life_event_sources (
+            id TEXT PRIMARY KEY,
+            event_id TEXT NOT NULL REFERENCES life_events(id) ON DELETE CASCADE,
+            source_kind TEXT NOT NULL CHECK(source_kind IN (
+                'life_event','diary_entry','important_date','personal_goal','self_timeline',
+                'tool_run','user_statement','system_observation'
+            )),
+            source_id TEXT NOT NULL,
+            source_revision TEXT NOT NULL,
+            source_hash TEXT NOT NULL,
+            active INTEGER NOT NULL DEFAULT 1 CHECK(active IN (0,1)),
+            created_at REAL NOT NULL,
+            removed_at REAL,
+            UNIQUE(event_id,source_kind,source_id,source_revision)
+        );
+        CREATE INDEX idx_life_event_sources_lookup
+            ON life_event_sources(source_kind,source_id,active);
+
+        CREATE TABLE life_event_audit_events (
+            id TEXT PRIMARY KEY,
+            event_id TEXT NOT NULL REFERENCES life_events(id) ON DELETE CASCADE,
+            event_type TEXT NOT NULL CHECK(event_type IN (
+                'created','corrected','revoked','source_removed'
+            )),
+            from_status TEXT,
+            to_status TEXT NOT NULL,
+            revision INTEGER NOT NULL CHECK(revision >= 1),
+            reason_code TEXT NOT NULL,
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_life_event_audit_event
+            ON life_event_audit_events(event_id,created_at,id);
+        """,
+    ),
+    (
+        65,
+        """
+        -- LIFE.3: deterministic LifeClock/SelfState and single-materializer lease.
+        CREATE TABLE life_runtime_state (
+            id INTEGER PRIMARY KEY CHECK(id=1),
+            algorithm_version TEXT NOT NULL,
+            revision INTEGER NOT NULL DEFAULT 0 CHECK(revision >= 0),
+            logical_time REAL NOT NULL,
+            reliable_wall_time REAL NOT NULL,
+            timezone_id TEXT NOT NULL,
+            current_activity TEXT NOT NULL,
+            activity_since REAL NOT NULL,
+            energy REAL NOT NULL CHECK(energy BETWEEN 0 AND 1),
+            focus REAL NOT NULL CHECK(focus BETWEEN 0 AND 1),
+            rest_need REAL NOT NULL CHECK(rest_need BETWEEN 0 AND 1),
+            social_openness REAL NOT NULL CHECK(social_openness BETWEEN 0 AND 1),
+            conservative_mode INTEGER NOT NULL DEFAULT 0 CHECK(conservative_mode IN (0,1)),
+            anomaly_code TEXT,
+            updated_at REAL NOT NULL
+        );
+
+        CREATE TABLE life_runtime_lease (
+            id INTEGER PRIMARY KEY CHECK(id=1),
+            process_instance_id TEXT NOT NULL,
+            boot_session_id TEXT NOT NULL,
+            lease_token TEXT NOT NULL UNIQUE,
+            acquired_at REAL NOT NULL,
+            expires_at REAL NOT NULL,
+            heartbeat_at REAL NOT NULL
+        );
+
+        CREATE TABLE life_runtime_events (
+            id TEXT PRIMARY KEY,
+            from_revision INTEGER NOT NULL CHECK(from_revision >= 0),
+            to_revision INTEGER NOT NULL CHECK(to_revision > from_revision),
+            elapsed_seconds REAL NOT NULL CHECK(elapsed_seconds >= 0),
+            event_type TEXT NOT NULL CHECK(event_type IN ('advanced','conservative_hold')),
+            anomaly_code TEXT,
+            algorithm_version TEXT NOT NULL,
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_life_runtime_events_revision
+            ON life_runtime_events(to_revision,created_at);
+        """,
+    ),
+    (
+        66,
+        """
+        -- LIFE.4: bounded, deterministic startup catch-up. This is not background execution.
+        INSERT OR IGNORE INTO settings(key,value) VALUES('life_continuity_mode','continuous_simulated');
+
+        CREATE TABLE life_exit_snapshots (
+            id TEXT PRIMARY KEY,
+            exited_at REAL NOT NULL,
+            timezone_snapshot TEXT NOT NULL,
+            schedule_revision TEXT NOT NULL,
+            state_revision INTEGER NOT NULL CHECK(state_revision >= 0),
+            algorithm_version TEXT NOT NULL,
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_life_exit_snapshots_time ON life_exit_snapshots(exited_at DESC);
+
+        CREATE TABLE life_catchup_requests (
+            catchup_id TEXT PRIMARY KEY,
+            exit_snapshot_id TEXT NOT NULL REFERENCES life_exit_snapshots(id) ON DELETE RESTRICT,
+            interval_start REAL NOT NULL,
+            interval_end REAL NOT NULL CHECK(interval_end >= interval_start),
+            timezone_snapshot TEXT NOT NULL,
+            schedule_revision TEXT NOT NULL,
+            state_revision INTEGER NOT NULL CHECK(state_revision >= 0),
+            algorithm_version TEXT NOT NULL,
+            deterministic_seed TEXT NOT NULL,
+            materialization_revision INTEGER NOT NULL CHECK(materialization_revision >= 1),
+            span_strategy TEXT NOT NULL CHECK(span_strategy IN (
+                'detailed','daily','weekly','regression_transition'
+            )),
+            status TEXT NOT NULL CHECK(status IN ('queued','applied','skipped')),
+            candidate_count INTEGER NOT NULL DEFAULT 0 CHECK(candidate_count BETWEEN 0 AND 16),
+            model_call_count INTEGER NOT NULL DEFAULT 0 CHECK(model_call_count BETWEEN 0 AND 2),
+            idempotency_key TEXT NOT NULL UNIQUE,
+            created_at REAL NOT NULL,
+            completed_at REAL
+        );
+
+        CREATE TABLE life_catchup_candidates (
+            id TEXT PRIMARY KEY,
+            catchup_id TEXT NOT NULL REFERENCES life_catchup_requests(catchup_id) ON DELETE CASCADE,
+            ordinal INTEGER NOT NULL CHECK(ordinal >= 0),
+            candidate_kind TEXT NOT NULL CHECK(candidate_kind IN (
+                'continuity_transition','simulated_day','simulated_week','important_date_crossing'
+            )),
+            occurred_at REAL NOT NULL,
+            source_id TEXT,
+            source_revision TEXT,
+            world_layer TEXT NOT NULL DEFAULT 'simulated' CHECK(world_layer='simulated'),
+            created_at REAL NOT NULL,
+            UNIQUE(catchup_id,ordinal)
+        );
+        """,
+    ),
+    (
+        67,
+        """
+        -- LIFE.5: versioned daily schedules and planned LifeEvent candidates.
+        CREATE TABLE life_schedules (
+            id TEXT PRIMARY KEY,
+            local_date TEXT NOT NULL,
+            timezone_id TEXT NOT NULL,
+            revision INTEGER NOT NULL CHECK(revision >= 1),
+            status TEXT NOT NULL CHECK(status IN ('active','replaced','disabled')),
+            algorithm_version TEXT NOT NULL,
+            source_run_id TEXT REFERENCES decision_runs(id) ON DELETE SET NULL,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            UNIQUE(local_date,timezone_id,revision)
+        );
+        CREATE UNIQUE INDEX idx_life_schedule_active_date
+            ON life_schedules(local_date,timezone_id) WHERE status='active';
+
+        CREATE TABLE life_schedule_segments (
+            id TEXT PRIMARY KEY,
+            schedule_id TEXT NOT NULL REFERENCES life_schedules(id) ON DELETE CASCADE,
+            ordinal INTEGER NOT NULL CHECK(ordinal >= 0),
+            start_minute INTEGER NOT NULL CHECK(start_minute BETWEEN 0 AND 1439),
+            end_minute INTEGER NOT NULL CHECK(end_minute BETWEEN 1 AND 1440),
+            activity_code TEXT NOT NULL,
+            label TEXT NOT NULL,
+            detail_status TEXT NOT NULL CHECK(detail_status IN ('coarse','detailed','cancelled')),
+            detail_revision INTEGER NOT NULL DEFAULT 0 CHECK(detail_revision >= 0),
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            UNIQUE(schedule_id,ordinal)
+        );
+
+        CREATE TABLE life_schedule_replacements (
+            id TEXT PRIMARY KEY,
+            old_schedule_id TEXT NOT NULL REFERENCES life_schedules(id) ON DELETE RESTRICT,
+            new_schedule_id TEXT NOT NULL REFERENCES life_schedules(id) ON DELETE RESTRICT,
+            reason_code TEXT NOT NULL,
+            created_at REAL NOT NULL,
+            UNIQUE(old_schedule_id,new_schedule_id)
+        );
+
+        CREATE TABLE life_event_candidates (
+            id TEXT PRIMARY KEY,
+            source_kind TEXT NOT NULL,
+            source_id TEXT NOT NULL,
+            source_revision TEXT NOT NULL,
+            event_kind TEXT NOT NULL,
+            world_layer TEXT NOT NULL CHECK(world_layer IN ('planned','simulated')),
+            summary TEXT NOT NULL,
+            status TEXT NOT NULL CHECK(status IN ('proposed','materialized','rejected')),
+            idempotency_key TEXT NOT NULL UNIQUE,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_life_event_candidates_source
+            ON life_event_candidates(source_kind,source_id,status);
+        """,
+    ),
+    (
+        68,
+        """
+        -- LIFE.6: provenance-bound PersonalGoal FSM without tool authority.
+        CREATE TABLE personal_goals (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            status TEXT NOT NULL CHECK(status IN ('candidate','active','paused','completed','revoked')),
+            priority INTEGER NOT NULL CHECK(priority BETWEEN 1 AND 5),
+            confidence REAL NOT NULL CHECK(confidence BETWEEN 0 AND 1),
+            revision INTEGER NOT NULL DEFAULT 1 CHECK(revision >= 1),
+            target_date TEXT,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_personal_goals_status ON personal_goals(status,priority,updated_at);
+
+        CREATE TABLE personal_goal_sources (
+            id TEXT PRIMARY KEY,
+            goal_id TEXT NOT NULL REFERENCES personal_goals(id) ON DELETE CASCADE,
+            source_kind TEXT NOT NULL CHECK(source_kind IN (
+                'persona','user_explicit','important_date','diary_reflection','life_event'
+            )),
+            source_id TEXT NOT NULL,
+            source_revision TEXT NOT NULL,
+            source_hash TEXT NOT NULL,
+            explicit_confirmation INTEGER NOT NULL DEFAULT 0 CHECK(explicit_confirmation IN (0,1)),
+            created_at REAL NOT NULL,
+            UNIQUE(goal_id,source_kind,source_id,source_revision)
+        );
+
+        CREATE TABLE personal_goal_events (
+            id TEXT PRIMARY KEY,
+            goal_id TEXT NOT NULL REFERENCES personal_goals(id) ON DELETE CASCADE,
+            event_type TEXT NOT NULL,
+            from_status TEXT,
+            to_status TEXT NOT NULL,
+            revision INTEGER NOT NULL CHECK(revision >= 1),
+            reason_code TEXT NOT NULL,
+            created_at REAL NOT NULL
+        );
+        """,
+    ),
+    (
+        69,
+        """
+        -- LIFE.7: sourced solar-calendar ImportantDate candidates and boundaries.
+        CREATE TABLE important_dates (
+            id TEXT PRIMARY KEY,
+            label TEXT NOT NULL,
+            status TEXT NOT NULL CHECK(status IN ('candidate','active','revoked')),
+            recurrence TEXT NOT NULL CHECK(recurrence IN ('once','yearly_solar')),
+            date_year INTEGER,
+            date_month INTEGER CHECK(date_month IS NULL OR date_month BETWEEN 1 AND 12),
+            date_day INTEGER CHECK(date_day IS NULL OR date_day BETWEEN 1 AND 31),
+            timezone_id TEXT NOT NULL,
+            confidence REAL NOT NULL CHECK(confidence BETWEEN 0 AND 1),
+            celebration_policy TEXT NOT NULL CHECK(celebration_policy IN ('natural','day_only','none')),
+            revision INTEGER NOT NULL DEFAULT 1 CHECK(revision >= 1),
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_important_dates_status ON important_dates(status,date_month,date_day);
+
+        CREATE TABLE important_date_sources (
+            id TEXT PRIMARY KEY,
+            important_date_id TEXT NOT NULL REFERENCES important_dates(id) ON DELETE CASCADE,
+            source_kind TEXT NOT NULL CHECK(source_kind IN ('user_statement','memory','manual')),
+            source_id TEXT NOT NULL,
+            source_revision TEXT NOT NULL,
+            source_hash TEXT NOT NULL,
+            active INTEGER NOT NULL DEFAULT 1 CHECK(active IN (0,1)),
+            created_at REAL NOT NULL,
+            removed_at REAL,
+            UNIQUE(important_date_id,source_kind,source_id,source_revision)
+        );
+
+        CREATE TABLE important_date_events (
+            id TEXT PRIMARY KEY,
+            important_date_id TEXT NOT NULL REFERENCES important_dates(id) ON DELETE CASCADE,
+            event_type TEXT NOT NULL,
+            from_status TEXT,
+            to_status TEXT NOT NULL,
+            revision INTEGER NOT NULL CHECK(revision >= 1),
+            reason_code TEXT NOT NULL,
+            created_at REAL NOT NULL
+        );
+        """,
+    ),
+    (
+        70,
+        """
+        -- LIFE.8: sourced diary entries and continuity threads.
+        CREATE TABLE continuity_threads (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            motif_code TEXT NOT NULL,
+            status TEXT NOT NULL CHECK(status IN ('active','closed','revoked')),
+            revision INTEGER NOT NULL DEFAULT 1 CHECK(revision >= 1),
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+
+        CREATE TABLE diary_entries (
+            id TEXT PRIMARY KEY,
+            thread_id TEXT REFERENCES continuity_threads(id) ON DELETE SET NULL,
+            entry_date TEXT NOT NULL,
+            status TEXT NOT NULL CHECK(status IN ('active','revoked','rebuilding')),
+            sensitivity TEXT NOT NULL CHECK(sensitivity IN ('normal','sensitive')),
+            share_policy TEXT NOT NULL CHECK(share_policy IN ('private','ask','natural','never')),
+            revision INTEGER NOT NULL DEFAULT 1 CHECK(revision >= 1),
+            title TEXT NOT NULL,
+            body TEXT NOT NULL,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_diary_entries_date ON diary_entries(entry_date,status);
+
+        CREATE TABLE diary_entry_revisions (
+            id TEXT PRIMARY KEY,
+            diary_entry_id TEXT NOT NULL REFERENCES diary_entries(id) ON DELETE CASCADE,
+            revision INTEGER NOT NULL CHECK(revision >= 1),
+            title TEXT NOT NULL,
+            body TEXT NOT NULL,
+            reason_code TEXT NOT NULL,
+            created_at REAL NOT NULL,
+            UNIQUE(diary_entry_id,revision)
+        );
+
+        CREATE TABLE diary_entry_sources (
+            id TEXT PRIMARY KEY,
+            diary_entry_id TEXT NOT NULL REFERENCES diary_entries(id) ON DELETE CASCADE,
+            source_kind TEXT NOT NULL CHECK(source_kind IN (
+                'life_event','schedule_segment','important_date','personal_goal'
+            )),
+            source_id TEXT NOT NULL,
+            source_revision TEXT NOT NULL,
+            source_hash TEXT NOT NULL,
+            active INTEGER NOT NULL DEFAULT 1 CHECK(active IN (0,1)),
+            created_at REAL NOT NULL,
+            removed_at REAL,
+            UNIQUE(diary_entry_id,source_kind,source_id,source_revision)
+        );
+        """,
+    ),
+    (
+        71,
+        """
+        -- LIFE.9: provenance-aware SelfTimeline search projection.
+        CREATE TABLE self_timeline_entries (
+            id TEXT PRIMARY KEY,
+            source_type TEXT NOT NULL CHECK(source_type IN (
+                'life_event','diary_entry','schedule_segment','tool_run','proactive_delivery','personal_goal'
+            )),
+            source_id TEXT NOT NULL,
+            source_revision TEXT NOT NULL,
+            world_layer TEXT NOT NULL CHECK(world_layer IN (
+                'planned','simulated','inferred','observed','performed'
+            )),
+            source_status TEXT NOT NULL,
+            occurred_at REAL NOT NULL,
+            summary TEXT NOT NULL,
+            source_locator TEXT NOT NULL,
+            content_hash TEXT NOT NULL,
+            indexed_at REAL NOT NULL,
+            UNIQUE(source_type,source_id,source_revision)
+        );
+        CREATE INDEX idx_self_timeline_recent
+            ON self_timeline_entries(source_status,occurred_at DESC);
+        CREATE INDEX idx_self_timeline_source
+            ON self_timeline_entries(source_type,source_id);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

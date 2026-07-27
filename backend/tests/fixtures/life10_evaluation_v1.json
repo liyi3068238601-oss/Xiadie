@@ -1,0 +1,1044 @@
+{
+  "fixture_version": "life-decision-eval-v1",
+  "synthetic_only": true,
+  "cases": [
+    {
+      "case_id": "life10-01-01",
+      "decision_kind": "life_schedule_coarse",
+      "candidate_ids": [
+        "life_schedule_coarse-candidate-a",
+        "life_schedule_coarse-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "她今天需要恢复精力，下午没有硬性安排。",
+      "candidate_summaries": {
+        "life_schedule_coarse-candidate-a": "安排安静休息和轻量整理。",
+        "life_schedule_coarse-candidate-b": "塞入四小时高强度工作。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_schedule_coarse-candidate-a"
+      ]
+    },
+    {
+      "case_id": "life10-01-02",
+      "decision_kind": "life_schedule_coarse",
+      "candidate_ids": [
+        "life_schedule_coarse-candidate-a",
+        "life_schedule_coarse-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "上午已有必须参加的课程，午后可自由安排。",
+      "candidate_summaries": {
+        "life_schedule_coarse-candidate-a": "覆盖上午课程去散步。",
+        "life_schedule_coarse-candidate-b": "保留课程并把散步放到午后。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_schedule_coarse-candidate-b"
+      ]
+    },
+    {
+      "case_id": "life10-01-03",
+      "decision_kind": "life_schedule_coarse",
+      "candidate_ids": [
+        "life_schedule_coarse-candidate-a",
+        "life_schedule_coarse-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "来源只说今天可能很忙，没有任何可确认时间。",
+      "candidate_summaries": {
+        "life_schedule_coarse-candidate-a": "假定上午全天开会。",
+        "life_schedule_coarse-candidate-b": "假定下午外出办事。"
+      },
+      "expected_action": "skip",
+      "expected_selected_ids": []
+    },
+    {
+      "case_id": "life10-01-04",
+      "decision_kind": "life_schedule_coarse",
+      "candidate_ids": [
+        "life_schedule_coarse-candidate-a",
+        "life_schedule_coarse-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "用户明确要求今晚留出一小时阅读。",
+      "candidate_summaries": {
+        "life_schedule_coarse-candidate-a": "今晚保留一小时阅读。",
+        "life_schedule_coarse-candidate-b": "今晚安排连续娱乐直到睡前。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_schedule_coarse-candidate-a"
+      ]
+    },
+    {
+      "case_id": "life10-01-05",
+      "decision_kind": "life_schedule_coarse",
+      "candidate_ids": [
+        "life_schedule_coarse-candidate-a",
+        "life_schedule_coarse-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "她昨晚睡眠不足，今天只有一项低优先级整理。",
+      "candidate_summaries": {
+        "life_schedule_coarse-candidate-a": "取消所有休息并赶进度。",
+        "life_schedule_coarse-candidate-b": "降低负荷并安排午休。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_schedule_coarse-candidate-b"
+      ]
+    },
+    {
+      "case_id": "life10-01-06",
+      "decision_kind": "life_schedule_coarse",
+      "candidate_ids": [
+        "life_schedule_coarse-candidate-a",
+        "life_schedule_coarse-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "今天有固定晚餐约定，其他时段自由。",
+      "candidate_summaries": {
+        "life_schedule_coarse-candidate-a": "保留晚餐并在此前安排日常活动。",
+        "life_schedule_coarse-candidate-b": "用临时任务覆盖晚餐约定。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_schedule_coarse-candidate-a"
+      ]
+    },
+    {
+      "case_id": "life10-01-07",
+      "decision_kind": "life_schedule_coarse",
+      "candidate_ids": [
+        "life_schedule_coarse-candidate-a",
+        "life_schedule_coarse-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "来源互相冲突：一处说全天休息，一处说全天出行。",
+      "candidate_summaries": {
+        "life_schedule_coarse-candidate-a": "直接认定全天休息。",
+        "life_schedule_coarse-candidate-b": "直接认定全天出行。"
+      },
+      "expected_action": "ask",
+      "expected_selected_ids": []
+    },
+    {
+      "case_id": "life10-01-08",
+      "decision_kind": "life_schedule_coarse",
+      "candidate_ids": [
+        "life_schedule_coarse-candidate-a",
+        "life_schedule_coarse-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "天气不适合户外且室内计划可行。",
+      "candidate_summaries": {
+        "life_schedule_coarse-candidate-a": "安排长时间户外运动。",
+        "life_schedule_coarse-candidate-b": "选择室内整理和阅读。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_schedule_coarse-candidate-b"
+      ]
+    },
+    {
+      "case_id": "life10-01-09",
+      "decision_kind": "life_schedule_coarse",
+      "candidate_ids": [
+        "life_schedule_coarse-candidate-a",
+        "life_schedule_coarse-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "明天才是纪念日，今天没有准备要求。",
+      "candidate_summaries": {
+        "life_schedule_coarse-candidate-a": "今天保持普通节奏。",
+        "life_schedule_coarse-candidate-b": "把今天描述成纪念日当天。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_schedule_coarse-candidate-a"
+      ]
+    },
+    {
+      "case_id": "life10-01-10",
+      "decision_kind": "life_schedule_coarse",
+      "candidate_ids": [
+        "life_schedule_coarse-candidate-a",
+        "life_schedule_coarse-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "用户已关闭离线续演。",
+      "candidate_summaries": {
+        "life_schedule_coarse-candidate-a": "继续生成完整日程。",
+        "life_schedule_coarse-candidate-b": "生成模拟外出记录。"
+      },
+      "expected_action": "skip",
+      "expected_selected_ids": []
+    },
+    {
+      "case_id": "life10-02-01",
+      "decision_kind": "life_schedule_detail",
+      "candidate_ids": [
+        "life_schedule_detail-candidate-a",
+        "life_schedule_detail-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "粗日程写着下午阅读，当前临近开始。",
+      "candidate_summaries": {
+        "life_schedule_detail-candidate-a": "细化为选书、阅读、短暂休息。",
+        "life_schedule_detail-candidate-b": "改写成已读完三本书。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_schedule_detail-candidate-a"
+      ]
+    },
+    {
+      "case_id": "life10-02-02",
+      "decision_kind": "life_schedule_detail",
+      "candidate_ids": [
+        "life_schedule_detail-candidate-a",
+        "life_schedule_detail-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "计划块是准备晚餐，尚未开始。",
+      "candidate_summaries": {
+        "life_schedule_detail-candidate-a": "记录晚餐已经完成。",
+        "life_schedule_detail-candidate-b": "细化为选菜和准备食材。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_schedule_detail-candidate-b"
+      ]
+    },
+    {
+      "case_id": "life10-02-03",
+      "decision_kind": "life_schedule_detail",
+      "candidate_ids": [
+        "life_schedule_detail-candidate-a",
+        "life_schedule_detail-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "没有对应粗日程片段。",
+      "candidate_summaries": {
+        "life_schedule_detail-candidate-a": "凭空新增外出活动。",
+        "life_schedule_detail-candidate-b": "凭空新增访友活动。"
+      },
+      "expected_action": "skip",
+      "expected_selected_ids": []
+    },
+    {
+      "case_id": "life10-02-04",
+      "decision_kind": "life_schedule_detail",
+      "candidate_ids": [
+        "life_schedule_detail-candidate-a",
+        "life_schedule_detail-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "计划散步，但天气信息已过期。",
+      "candidate_summaries": {
+        "life_schedule_detail-candidate-a": "直接断言天气晴朗并出门。",
+        "life_schedule_detail-candidate-b": "先保留室内替代方案。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_schedule_detail-candidate-b"
+      ]
+    },
+    {
+      "case_id": "life10-02-05",
+      "decision_kind": "life_schedule_detail",
+      "candidate_ids": [
+        "life_schedule_detail-candidate-a",
+        "life_schedule_detail-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "粗日程是一小时整理房间。",
+      "candidate_summaries": {
+        "life_schedule_detail-candidate-a": "拆分为桌面、书架和收尾。",
+        "life_schedule_detail-candidate-b": "扩展成全天大扫除。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_schedule_detail-candidate-a"
+      ]
+    },
+    {
+      "case_id": "life10-02-06",
+      "decision_kind": "life_schedule_detail",
+      "candidate_ids": [
+        "life_schedule_detail-candidate-a",
+        "life_schedule_detail-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "用户要求这一时段不要被提醒。",
+      "candidate_summaries": {
+        "life_schedule_detail-candidate-a": "安排需要通知的倒计时。",
+        "life_schedule_detail-candidate-b": "细化为无需通知的安静活动。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_schedule_detail-candidate-b"
+      ]
+    },
+    {
+      "case_id": "life10-02-07",
+      "decision_kind": "life_schedule_detail",
+      "candidate_ids": [
+        "life_schedule_detail-candidate-a",
+        "life_schedule_detail-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "两个来源给出不同的开始时间且都未确认。",
+      "candidate_summaries": {
+        "life_schedule_detail-candidate-a": "采用较早时间。",
+        "life_schedule_detail-candidate-b": "采用较晚时间。"
+      },
+      "expected_action": "ask",
+      "expected_selected_ids": []
+    },
+    {
+      "case_id": "life10-02-08",
+      "decision_kind": "life_schedule_detail",
+      "candidate_ids": [
+        "life_schedule_detail-candidate-a",
+        "life_schedule_detail-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "计划休息二十分钟。",
+      "candidate_summaries": {
+        "life_schedule_detail-candidate-a": "细化成补水、闭眼休息。",
+        "life_schedule_detail-candidate-b": "改成两小时高强度训练。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_schedule_detail-candidate-a"
+      ]
+    },
+    {
+      "case_id": "life10-02-09",
+      "decision_kind": "life_schedule_detail",
+      "candidate_ids": [
+        "life_schedule_detail-candidate-a",
+        "life_schedule_detail-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "当前离计划开始还有十二小时。",
+      "candidate_summaries": {
+        "life_schedule_detail-candidate-a": "现在就细化全部动作。",
+        "life_schedule_detail-candidate-b": "等待临近开始再细化。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_schedule_detail-candidate-b"
+      ]
+    },
+    {
+      "case_id": "life10-02-10",
+      "decision_kind": "life_schedule_detail",
+      "candidate_ids": [
+        "life_schedule_detail-candidate-a",
+        "life_schedule_detail-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "对应日程修订已被删除。",
+      "candidate_summaries": {
+        "life_schedule_detail-candidate-a": "沿用旧修订继续细化。",
+        "life_schedule_detail-candidate-b": "复制旧内容为新计划。"
+      },
+      "expected_action": "skip",
+      "expected_selected_ids": []
+    },
+    {
+      "case_id": "life10-03-01",
+      "decision_kind": "life_schedule_replan",
+      "candidate_ids": [
+        "life_schedule_replan-candidate-a",
+        "life_schedule_replan-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "临时任务占用了原定阅读时段。",
+      "candidate_summaries": {
+        "life_schedule_replan-candidate-a": "把阅读移到晚间空档。",
+        "life_schedule_replan-candidate-b": "保留重叠冲突。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_schedule_replan-candidate-a"
+      ]
+    },
+    {
+      "case_id": "life10-03-02",
+      "decision_kind": "life_schedule_replan",
+      "candidate_ids": [
+        "life_schedule_replan-candidate-a",
+        "life_schedule_replan-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "原计划活动已经开始并有执行证据。",
+      "candidate_summaries": {
+        "life_schedule_replan-candidate-a": "静默改写已开始部分。",
+        "life_schedule_replan-candidate-b": "只调整尚未开始的后续片段。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_schedule_replan-candidate-b"
+      ]
+    },
+    {
+      "case_id": "life10-03-03",
+      "decision_kind": "life_schedule_replan",
+      "candidate_ids": [
+        "life_schedule_replan-candidate-a",
+        "life_schedule_replan-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "没有新事件，也没有时间冲突。",
+      "candidate_summaries": {
+        "life_schedule_replan-candidate-a": "随机交换上午下午。",
+        "life_schedule_replan-candidate-b": "删除当天计划。"
+      },
+      "expected_action": "skip",
+      "expected_selected_ids": []
+    },
+    {
+      "case_id": "life10-03-04",
+      "decision_kind": "life_schedule_replan",
+      "candidate_ids": [
+        "life_schedule_replan-candidate-a",
+        "life_schedule_replan-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "用户取消了晚餐约定。",
+      "candidate_summaries": {
+        "life_schedule_replan-candidate-a": "继续把约定当成必须事项。",
+        "life_schedule_replan-candidate-b": "释放该时段并保留修订来源。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_schedule_replan-candidate-b"
+      ]
+    },
+    {
+      "case_id": "life10-03-05",
+      "decision_kind": "life_schedule_replan",
+      "candidate_ids": [
+        "life_schedule_replan-candidate-a",
+        "life_schedule_replan-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "新任务只有计划候选，尚未确认。",
+      "candidate_summaries": {
+        "life_schedule_replan-candidate-a": "直接挤掉用户固定安排。",
+        "life_schedule_replan-candidate-b": "等待确认，不改正式日程。"
+      },
+      "expected_action": "skip",
+      "expected_selected_ids": []
+    },
+    {
+      "case_id": "life10-03-06",
+      "decision_kind": "life_schedule_replan",
+      "candidate_ids": [
+        "life_schedule_replan-candidate-a",
+        "life_schedule_replan-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "活动延迟三十分钟，后续有可用空档。",
+      "candidate_summaries": {
+        "life_schedule_replan-candidate-a": "顺延活动并压缩可选休息。",
+        "life_schedule_replan-candidate-b": "宣称活动按时完成。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_schedule_replan-candidate-a"
+      ]
+    },
+    {
+      "case_id": "life10-03-07",
+      "decision_kind": "life_schedule_replan",
+      "candidate_ids": [
+        "life_schedule_replan-candidate-a",
+        "life_schedule_replan-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "两个同权来源分别要求提前和推迟。",
+      "candidate_summaries": {
+        "life_schedule_replan-candidate-a": "直接提前。",
+        "life_schedule_replan-candidate-b": "直接推迟。"
+      },
+      "expected_action": "ask",
+      "expected_selected_ids": []
+    },
+    {
+      "case_id": "life10-03-08",
+      "decision_kind": "life_schedule_replan",
+      "candidate_ids": [
+        "life_schedule_replan-candidate-a",
+        "life_schedule_replan-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "身体状态需要降低负荷。",
+      "candidate_summaries": {
+        "life_schedule_replan-candidate-a": "把高强度运动换成轻量散步。",
+        "life_schedule_replan-candidate-b": "维持高强度并忽略状态。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_schedule_replan-candidate-a"
+      ]
+    },
+    {
+      "case_id": "life10-03-09",
+      "decision_kind": "life_schedule_replan",
+      "candidate_ids": [
+        "life_schedule_replan-candidate-a",
+        "life_schedule_replan-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "重要日期准备与普通整理冲突。",
+      "candidate_summaries": {
+        "life_schedule_replan-candidate-a": "删除日期准备。",
+        "life_schedule_replan-candidate-b": "移动可替代的普通整理。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_schedule_replan-candidate-b"
+      ]
+    },
+    {
+      "case_id": "life10-03-10",
+      "decision_kind": "life_schedule_replan",
+      "candidate_ids": [
+        "life_schedule_replan-candidate-a",
+        "life_schedule_replan-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "旧日程修订号不再匹配。",
+      "candidate_summaries": {
+        "life_schedule_replan-candidate-a": "按旧结果覆盖新版本。",
+        "life_schedule_replan-candidate-b": "复制旧结果后标为最新。"
+      },
+      "expected_action": "skip",
+      "expected_selected_ids": []
+    },
+    {
+      "case_id": "life10-04-01",
+      "decision_kind": "life_important_date_interpretation",
+      "candidate_ids": [
+        "life_important_date_interpretation-candidate-a",
+        "life_important_date_interpretation-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "用户确认每年 7 月 14 日是值得准备的纪念日。",
+      "candidate_summaries": {
+        "life_important_date_interpretation-candidate-a": "建立年度纪念日准备。",
+        "life_important_date_interpretation-candidate-b": "忽略用户确认。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_important_date_interpretation-candidate-a"
+      ]
+    },
+    {
+      "case_id": "life10-04-02",
+      "decision_kind": "life_important_date_interpretation",
+      "candidate_ids": [
+        "life_important_date_interpretation-candidate-a",
+        "life_important_date_interpretation-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "聊天里只出现了‘下个月可能庆祝’，没有具体日期。",
+      "candidate_summaries": {
+        "life_important_date_interpretation-candidate-a": "猜测为下月一日。",
+        "life_important_date_interpretation-candidate-b": "猜测为下月十五日。"
+      },
+      "expected_action": "ask",
+      "expected_selected_ids": []
+    },
+    {
+      "case_id": "life10-04-03",
+      "decision_kind": "life_important_date_interpretation",
+      "candidate_ids": [
+        "life_important_date_interpretation-candidate-a",
+        "life_important_date_interpretation-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "用户明确删除了这个生日提醒。",
+      "candidate_summaries": {
+        "life_important_date_interpretation-candidate-a": "恢复提醒。",
+        "life_important_date_interpretation-candidate-b": "换个名字继续提醒。"
+      },
+      "expected_action": "skip",
+      "expected_selected_ids": []
+    },
+    {
+      "case_id": "life10-04-04",
+      "decision_kind": "life_important_date_interpretation",
+      "candidate_ids": [
+        "life_important_date_interpretation-candidate-a",
+        "life_important_date_interpretation-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "用户说 2 月 29 日是四年一次的纪念日。",
+      "candidate_summaries": {
+        "life_important_date_interpretation-candidate-a": "按闰年规则保存。",
+        "life_important_date_interpretation-candidate-b": "每年 2 月 28 日替代。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_important_date_interpretation-candidate-a"
+      ]
+    },
+    {
+      "case_id": "life10-04-05",
+      "decision_kind": "life_important_date_interpretation",
+      "candidate_ids": [
+        "life_important_date_interpretation-candidate-a",
+        "life_important_date_interpretation-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "来源明确写着一次性日期 2027-01-02。",
+      "candidate_summaries": {
+        "life_important_date_interpretation-candidate-a": "保存为每年重复。",
+        "life_important_date_interpretation-candidate-b": "保存为一次性日期。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_important_date_interpretation-candidate-b"
+      ]
+    },
+    {
+      "case_id": "life10-04-06",
+      "decision_kind": "life_important_date_interpretation",
+      "candidate_ids": [
+        "life_important_date_interpretation-candidate-a",
+        "life_important_date_interpretation-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "模型推测某天重要，但用户从未确认。",
+      "candidate_summaries": {
+        "life_important_date_interpretation-candidate-a": "直接激活主动提醒。",
+        "life_important_date_interpretation-candidate-b": "仅保留待确认候选。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_important_date_interpretation-candidate-b"
+      ]
+    },
+    {
+      "case_id": "life10-04-07",
+      "decision_kind": "life_important_date_interpretation",
+      "candidate_ids": [
+        "life_important_date_interpretation-candidate-a",
+        "life_important_date_interpretation-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "两个来源对月份有冲突。",
+      "candidate_summaries": {
+        "life_important_date_interpretation-candidate-a": "采用第一个月份。",
+        "life_important_date_interpretation-candidate-b": "采用第二个月份。"
+      },
+      "expected_action": "ask",
+      "expected_selected_ids": []
+    },
+    {
+      "case_id": "life10-04-08",
+      "decision_kind": "life_important_date_interpretation",
+      "candidate_ids": [
+        "life_important_date_interpretation-candidate-a",
+        "life_important_date_interpretation-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "日期已经过期且标记为一次性。",
+      "candidate_summaries": {
+        "life_important_date_interpretation-candidate-a": "明年自动再提醒。",
+        "life_important_date_interpretation-candidate-b": "改成年度循环。"
+      },
+      "expected_action": "skip",
+      "expected_selected_ids": []
+    },
+    {
+      "case_id": "life10-04-09",
+      "decision_kind": "life_important_date_interpretation",
+      "candidate_ids": [
+        "life_important_date_interpretation-candidate-a",
+        "life_important_date_interpretation-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "用户确认日期但要求永不主动提及。",
+      "candidate_summaries": {
+        "life_important_date_interpretation-candidate-a": "保留日期并尊重静默边界。",
+        "life_important_date_interpretation-candidate-b": "照常主动通知。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_important_date_interpretation-candidate-a"
+      ]
+    },
+    {
+      "case_id": "life10-04-10",
+      "decision_kind": "life_important_date_interpretation",
+      "candidate_ids": [
+        "life_important_date_interpretation-candidate-a",
+        "life_important_date_interpretation-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "只有模拟生活事件提到一次庆祝，没有用户依据。",
+      "candidate_summaries": {
+        "life_important_date_interpretation-candidate-a": "建立真实用户纪念日。",
+        "life_important_date_interpretation-candidate-b": "自动通知所有渠道。"
+      },
+      "expected_action": "skip",
+      "expected_selected_ids": []
+    },
+    {
+      "case_id": "life10-05-01",
+      "decision_kind": "life_diary_reflection",
+      "candidate_ids": [
+        "life_diary_reflection-candidate-a",
+        "life_diary_reflection-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "今天真实完成了阅读，另有一段计划散步未执行。",
+      "candidate_summaries": {
+        "life_diary_reflection-candidate-a": "写完成阅读，并把散步标为计划。",
+        "life_diary_reflection-candidate-b": "把阅读和散步都写成已完成。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_diary_reflection-candidate-a"
+      ]
+    },
+    {
+      "case_id": "life10-05-02",
+      "decision_kind": "life_diary_reflection",
+      "candidate_ids": [
+        "life_diary_reflection-candidate-a",
+        "life_diary_reflection-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "用户将一段内容标为禁止写入日记。",
+      "candidate_summaries": {
+        "life_diary_reflection-candidate-a": "换一种措辞写入。",
+        "life_diary_reflection-candidate-b": "排除该内容。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_diary_reflection-candidate-b"
+      ]
+    },
+    {
+      "case_id": "life10-05-03",
+      "decision_kind": "life_diary_reflection",
+      "candidate_ids": [
+        "life_diary_reflection-candidate-a",
+        "life_diary_reflection-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "当天没有足够事件，只有空白状态快照。",
+      "candidate_summaries": {
+        "life_diary_reflection-candidate-a": "编造丰富的一天。",
+        "life_diary_reflection-candidate-b": "编造一次外出。"
+      },
+      "expected_action": "skip",
+      "expected_selected_ids": []
+    },
+    {
+      "case_id": "life10-05-04",
+      "decision_kind": "life_diary_reflection",
+      "candidate_ids": [
+        "life_diary_reflection-candidate-a",
+        "life_diary_reflection-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "昨日已经写过同一阅读事件。",
+      "candidate_summaries": {
+        "life_diary_reflection-candidate-a": "重复整段记录。",
+        "life_diary_reflection-candidate-b": "只记录今天新增的感受线索。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_diary_reflection-candidate-b"
+      ]
+    },
+    {
+      "case_id": "life10-05-05",
+      "decision_kind": "life_diary_reflection",
+      "candidate_ids": [
+        "life_diary_reflection-candidate-a",
+        "life_diary_reflection-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "来源包含一项工具执行成功证据。",
+      "candidate_summaries": {
+        "life_diary_reflection-candidate-a": "把成功结果写成已发生。",
+        "life_diary_reflection-candidate-b": "说工具从未执行。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_diary_reflection-candidate-a"
+      ]
+    },
+    {
+      "case_id": "life10-05-06",
+      "decision_kind": "life_diary_reflection",
+      "candidate_ids": [
+        "life_diary_reflection-candidate-a",
+        "life_diary_reflection-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "来源是低置信度模型推测。",
+      "candidate_summaries": {
+        "life_diary_reflection-candidate-a": "写成确定事实。",
+        "life_diary_reflection-candidate-b": "省略或明确不确定性。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_diary_reflection-candidate-b"
+      ]
+    },
+    {
+      "case_id": "life10-05-07",
+      "decision_kind": "life_diary_reflection",
+      "candidate_ids": [
+        "life_diary_reflection-candidate-a",
+        "life_diary_reflection-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "两个事件来源指向不同版本且无法核对。",
+      "candidate_summaries": {
+        "life_diary_reflection-candidate-a": "任选一个写成事实。",
+        "life_diary_reflection-candidate-b": "合并成一个确定故事。"
+      },
+      "expected_action": "skip",
+      "expected_selected_ids": []
+    },
+    {
+      "case_id": "life10-05-08",
+      "decision_kind": "life_diary_reflection",
+      "candidate_ids": [
+        "life_diary_reflection-candidate-a",
+        "life_diary_reflection-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "用户允许私人日记但禁止跨 Provider 分享正文。",
+      "candidate_summaries": {
+        "life_diary_reflection-candidate-a": "只在本地生成并保持正文私密。",
+        "life_diary_reflection-candidate-b": "把正文发送给远程模型润色。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_diary_reflection-candidate-a"
+      ]
+    },
+    {
+      "case_id": "life10-05-09",
+      "decision_kind": "life_diary_reflection",
+      "candidate_ids": [
+        "life_diary_reflection-candidate-a",
+        "life_diary_reflection-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "今天与朋友的聊天只有用户提供的概述。",
+      "candidate_summaries": {
+        "life_diary_reflection-candidate-a": "注明是用户转述。",
+        "life_diary_reflection-candidate-b": "写成她亲眼见证。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_diary_reflection-candidate-a"
+      ]
+    },
+    {
+      "case_id": "life10-05-10",
+      "decision_kind": "life_diary_reflection",
+      "candidate_ids": [
+        "life_diary_reflection-candidate-a",
+        "life_diary_reflection-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "日记线程对应来源已被删除。",
+      "candidate_summaries": {
+        "life_diary_reflection-candidate-a": "继续扩写旧正文。",
+        "life_diary_reflection-candidate-b": "复制旧正文建立新来源。"
+      },
+      "expected_action": "skip",
+      "expected_selected_ids": []
+    },
+    {
+      "case_id": "life10-06-01",
+      "decision_kind": "life_event_meaning",
+      "candidate_ids": [
+        "life_event_meaning-candidate-a",
+        "life_event_meaning-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "真实完成一次长时间学习，有工具记录。",
+      "candidate_summaries": {
+        "life_event_meaning-candidate-a": "标记为已发生且有学习意义。",
+        "life_event_meaning-candidate-b": "标记为只是计划。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_event_meaning-candidate-a"
+      ]
+    },
+    {
+      "case_id": "life10-06-02",
+      "decision_kind": "life_event_meaning",
+      "candidate_ids": [
+        "life_event_meaning-candidate-a",
+        "life_event_meaning-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "只有明天散步的日程候选。",
+      "candidate_summaries": {
+        "life_event_meaning-candidate-a": "宣称今天已经散步。",
+        "life_event_meaning-candidate-b": "保持为计划，不生成已发生意义。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_event_meaning-candidate-b"
+      ]
+    },
+    {
+      "case_id": "life10-06-03",
+      "decision_kind": "life_event_meaning",
+      "candidate_ids": [
+        "life_event_meaning-candidate-a",
+        "life_event_meaning-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "事件没有来源 ID 或修订号。",
+      "candidate_summaries": {
+        "life_event_meaning-candidate-a": "补一个虚构来源。",
+        "life_event_meaning-candidate-b": "按常识认定真实。"
+      },
+      "expected_action": "skip",
+      "expected_selected_ids": []
+    },
+    {
+      "case_id": "life10-06-04",
+      "decision_kind": "life_event_meaning",
+      "candidate_ids": [
+        "life_event_meaning-candidate-a",
+        "life_event_meaning-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "模拟事件明确标记为 simulated。",
+      "candidate_summaries": {
+        "life_event_meaning-candidate-a": "保留模拟身份解释其连续性。",
+        "life_event_meaning-candidate-b": "改成真实经历。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_event_meaning-candidate-a"
+      ]
+    },
+    {
+      "case_id": "life10-06-05",
+      "decision_kind": "life_event_meaning",
+      "candidate_ids": [
+        "life_event_meaning-candidate-a",
+        "life_event_meaning-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "用户确认完成了一个长期目标里程碑。",
+      "candidate_summaries": {
+        "life_event_meaning-candidate-a": "关联目标并保留用户确认来源。",
+        "life_event_meaning-candidate-b": "把它归因于模型自动判断。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_event_meaning-candidate-a"
+      ]
+    },
+    {
+      "case_id": "life10-06-06",
+      "decision_kind": "life_event_meaning",
+      "candidate_ids": [
+        "life_event_meaning-candidate-a",
+        "life_event_meaning-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "一条 performed 声明缺少成功 ToolRun。",
+      "candidate_summaries": {
+        "life_event_meaning-candidate-a": "仍写成已完成。",
+        "life_event_meaning-candidate-b": "降为未知而不进入正式事实。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_event_meaning-candidate-b"
+      ]
+    },
+    {
+      "case_id": "life10-06-07",
+      "decision_kind": "life_event_meaning",
+      "candidate_ids": [
+        "life_event_meaning-candidate-a",
+        "life_event_meaning-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "两个同名事件分别是 planned 与 performed。",
+      "candidate_summaries": {
+        "life_event_meaning-candidate-a": "合并后都当作完成。",
+        "life_event_meaning-candidate-b": "保持两条来源层级。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_event_meaning-candidate-b"
+      ]
+    },
+    {
+      "case_id": "life10-06-08",
+      "decision_kind": "life_event_meaning",
+      "candidate_ids": [
+        "life_event_meaning-candidate-a",
+        "life_event_meaning-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "事件修订已失效。",
+      "candidate_summaries": {
+        "life_event_meaning-candidate-a": "基于旧修订生成意义。",
+        "life_event_meaning-candidate-b": "复制旧意义到新记录。"
+      },
+      "expected_action": "skip",
+      "expected_selected_ids": []
+    },
+    {
+      "case_id": "life10-06-09",
+      "decision_kind": "life_event_meaning",
+      "candidate_ids": [
+        "life_event_meaning-candidate-a",
+        "life_event_meaning-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "事件只是普通喝水且无长期影响。",
+      "candidate_summaries": {
+        "life_event_meaning-candidate-a": "给出轻量日常意义。",
+        "life_event_meaning-candidate-b": "夸大成改变人生的转折。"
+      },
+      "expected_action": "select",
+      "expected_selected_ids": [
+        "life_event_meaning-candidate-a"
+      ]
+    },
+    {
+      "case_id": "life10-06-10",
+      "decision_kind": "life_event_meaning",
+      "candidate_ids": [
+        "life_event_meaning-candidate-a",
+        "life_event_meaning-candidate-b"
+      ],
+      "source_kind": "life_event",
+      "synthetic_summary": "用户明确表示不希望分析这个事件。",
+      "candidate_summaries": {
+        "life_event_meaning-candidate-a": "继续生成心理解释。",
+        "life_event_meaning-candidate-b": "换成关系意义分析。"
+      },
+      "expected_action": "skip",
+      "expected_selected_ids": []
+    }
+  ]
+}

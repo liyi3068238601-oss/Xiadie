@@ -3348,3 +3348,43 @@ input[type="range"].xd-range::-moz-range-thumb { width: 20px; height: 20px; bord
 
 .settings-diagnostics-info { margin-top: 16px; padding: 12px; background-color: var(--glass); border: 1px solid var(--glass-border); border-radius: 6px; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; color: var(--text-dim); }
 .settings-diagnostics-info p { margin: 4px 0; }
+.life-page { padding: 28px; overflow: auto; }
+.life-page .page-header p { color: var(--text-dim); margin-top: 6px; }
+.life-header { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; }
+.life-mode-badge { flex: 0 0 auto; padding: 7px 11px; border: 1px solid var(--border); border-radius: 999px; color: var(--text-dim); font-size: 12px; }
+.life-mode-badge.continuous_simulated { border-color: color-mix(in srgb, var(--accent) 55%, transparent); color: var(--accent); }
+.life-mode-badge.paused { color: #d99b3d; }
+.life-mode-badge.disabled { opacity: .7; }
+.life-tabs { display: flex; gap: 8px; margin: 24px 0 18px; overflow-x: auto; }
+.life-tabs button, .life-actions button, .life-mode-options button, .life-add-form button { padding: 8px 13px; border: 1px solid var(--border); border-radius: 9px; background: var(--glass-soft); color: var(--text); cursor: pointer; }
+.life-tabs button.active, .life-mode-options button.active { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.life-tabs button:focus-visible, .life-actions button:focus-visible, .life-mode-options button:focus-visible, .life-add-form button:focus-visible, .life-add-form input:focus-visible, .life-private summary:focus-visible, .life-diagnostics summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.life-notice { margin-bottom: 16px; padding: 10px 13px; border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); border-radius: 10px; background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.life-grid { display: grid; grid-template-columns: minmax(220px, .7fr) minmax(420px, 1.3fr); gap: 16px; }
+.life-list, .life-settings-stack { display: grid; gap: 14px; }
+.life-card { padding: 18px; border: 1px solid var(--border); border-radius: 14px; background: var(--glass-soft); }
+.life-card h3 { margin: 0 0 8px; }
+.life-card p { color: var(--text-dim); line-height: 1.6; }
+.life-card-title, .life-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.life-card-title time, .life-card-title span { color: var(--text-dim); font-size: 12px; }
+.life-state-card strong { display: block; margin: 22px 0 10px; font-size: 20px; }
+.empty-inline { margin: 18px 0 0; }
+.life-timeline { display: grid; gap: 10px; margin-top: 18px; }
+.life-segment { display: grid; grid-template-columns: 120px 1fr auto; gap: 16px; align-items: center; padding: 14px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--glass-soft); }
+.life-segment time, .life-segment small { color: var(--text-dim); }
+.life-private { margin: 12px 0; padding: 10px 12px; border-radius: 9px; background: color-mix(in srgb, var(--glass) 65%, transparent); }
+.life-private summary, .life-diagnostics summary { cursor: pointer; color: var(--text-dim); }
+.life-actions, .life-mode-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.life-actions .danger { color: #e67b7b; }
+.life-add-form { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(150px, auto) auto; gap: 10px; }
+.life-add-form input { min-width: 0; padding: 10px 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--glass-soft); color: var(--text); }
+.life-diagnostics ul { max-height: 260px; overflow: auto; padding-left: 20px; color: var(--text-dim); font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; }
+
+@media (max-width: 800px) {
+  .life-page { padding: 20px; }
+  .life-header, .life-card-title, .life-row { align-items: stretch; flex-direction: column; }
+  .life-grid { grid-template-columns: 1fr; }
+  .life-add-form { grid-template-columns: 1fr; }
+  .life-segment { grid-template-columns: 90px 1fr; }
+  .life-segment small { grid-column: 2; }
+}

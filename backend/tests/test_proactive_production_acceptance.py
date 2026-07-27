@@ -21,7 +21,7 @@ def production_acceptance_controls():
             "proactive_delivery_events", "proactive_delivery_attempts", "proactive_deliveries",
             "expression_plans", "proactive_intensity_plans", "proactive_decisions",
             "proactive_candidate_claims", "proactive_runtime_sagas", "proactive_runtime_sources",
-            "proactive_candidates", "contact_episodes",
+            "proactive_candidates", "life_proactive_seeds", "contact_episodes",
         ):
             conn.execute(f"DELETE FROM {table}")
         conn.commit()

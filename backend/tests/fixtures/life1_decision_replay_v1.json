@@ -1,0 +1,12 @@
+{
+  "fixture_version": "life-decision-replay-v1",
+  "synthetic_only": true,
+  "cases": [
+    {"decision_kind": "life_schedule_coarse", "action": "select", "selected_ids": ["candidate-1"], "reason_codes": ["bounded_candidate_selected"], "confidence_band": "high"},
+    {"decision_kind": "life_schedule_detail", "action": "skip", "selected_ids": [], "reason_codes": ["insufficient_evidence"], "confidence_band": "low"},
+    {"decision_kind": "life_schedule_replan", "action": "ask", "selected_ids": [], "reason_codes": ["user_confirmation_required"], "confidence_band": "medium"},
+    {"decision_kind": "life_important_date_interpretation", "action": "skip", "selected_ids": [], "reason_codes": ["source_ambiguous"], "confidence_band": "low"},
+    {"decision_kind": "life_diary_reflection", "action": "select", "selected_ids": ["candidate-2"], "reason_codes": ["bounded_candidate_selected"], "confidence_band": "high"},
+    {"decision_kind": "life_event_meaning", "action": "skip", "selected_ids": [], "reason_codes": ["no_safe_candidate"], "confidence_band": "low"}
+  ]
+}

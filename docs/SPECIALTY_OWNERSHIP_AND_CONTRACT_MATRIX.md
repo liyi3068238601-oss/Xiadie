@@ -1,8 +1,8 @@
 # CDS、LIFE、KIG 专项所有权与共享施工契约
 
-- 版本：v1.0
-- 日期：2026-07-22
-- 状态：CDS 已通过最终独立 Review 并正式冻结；LIFE 协议门已解除
+- 版本：v1.1
+- 日期：2026-07-27
+- 状态：CDS 与 LIFE 已通过最终独立 Review 并正式冻结；KIG 协议门在 LIFE 合入 `main` 后解除
 - 适用顺序：`CDS → LIFE → KIG`
 - 解释优先级：冻结协议与 ADR > 本矩阵 > 专项计划 > 阶段施工记录
 
@@ -28,15 +28,27 @@ ConstructionBaseline
 | 字段 | 当前值/规则 |
 |---|---|
 | repository | `liyi3068238601-oss/Xiadie` |
-| predecessor_pr | EAP PR `#1`，已合并 |
+| predecessor_pr | CDS PR `#2`，已合并 |
 | base_branch | `main` |
-| integration state | EAP 已技术冻结并合入 `main`；CDS.0～13 已施工并通过最终独立 Review，待合入目标基线后填写 LIFE.0 ConstructionBaseline |
-| base_commit_sha | CDS ConstructionBaseline：`6b8aa47134f8a9a55131c73bb1148e6912421c4f` |
-| schema_version | ConstructionBaseline 60；CDS.1/CDS.2 为 61/62；CDS.12 当前 63；Schema 48～60 不回写 |
+| integration state | EAP 与 CDS 已正式冻结并合入 `main`；LIFE.0 ConstructionBaseline 已锁定，LIFE 施工分支从该提交创建 |
+| base_commit_sha | LIFE predecessor：`main@0d7a2d08dc07f123d016da26da117fa58f9a48a1`（CDS PR #2 merge commit） |
+| schema_version | LIFE ConstructionBaseline 63；LIFE.2～LIFE.9 使用迁移 64～71；Schema 48～63 不回写 |
 | frozen_protocols | CTX v1；EAP 六协议；CDS `cognitive-decision-v1`、`decision-kind-registry-v1`、`specialty-adapter-contract-v1`；以 Protocol Registry、ADR 和冻结报告为准 |
-| test_baseline | ConstructionBaseline：后端 `937 passed, 1 warning`；当前：后端 `2304 passed, 1 warning`、前端 `47 passed`、Vite 189 modules |
+| test_baseline | LIFE ConstructionBaseline：后端 `2304 passed, 1 warning`、前端 `47 passed`、Vite 189 modules、Electron 语法与 Windows frozen-backend smoke 通过 |
 | plan_version | CDS/LIFE/KIG v0.3；本矩阵 v1.0 |
-| recorded_at | 2026-07-22；各专项开工时重新记录 |
+| recorded_at | 2026-07-26（LIFE.0）；各后续专项开工时重新记录 |
+
+LIFE v1 冻结与 KIG 待锁定基线：
+
+| 字段 | 当前值/规则 |
+|---|---|
+| LIFE final schema | 71；Schema 48～71 均保持顺序且不回写 |
+| LIFE review | 2026-07-27 独立总 Review：0 P0、0 P1；冻结成立 |
+| frozen adapters | CDS `specialty-adapter-contract-v1`；EAP `eap-decision-run-adapter-v1`；LIFE `life-adapter-v1`，兼容关系保持 |
+| frozen LIFE tests | 后端 `2423 passed, 1 warning`；前端 `50 passed`；Vite 190 modules；Electron lifecycle contract 3 项与 Windows 安装验收通过 |
+| KIG next schema | 72；不得预占空迁移 |
+| KIG predecessor | 待 LIFE PR 合入 `main` 后记录不可变 merge commit；此前只允许审计和计划复核 |
+| recorded_at | 2026-07-27（LIFE v1 freeze） |
 
 正式开工只允许两种方式：
 
@@ -74,7 +86,7 @@ ConstructionBaseline
 | LIFE | `life-adapter-v1` | event/state/schedule revision/hash | LIFE 确定性 reducer | 不生成长期 LifeEvent、Goal、Date、Diary | 日记/生活数据单独授权 | LIFE |
 | KIG | `source-ref-v1` | adapter registry 返回的 revision/hash | 原系统继续工作 | 不抽取 Claim/Entity/Relation/PWM | 逐来源隐私与授权 | KIG |
 
-迁移号严格串行：CDS 最终冻结 Schema 为 63；LIFE 可在锁定已合并 predecessor commit 和 LIFE.0 ConstructionBaseline 后使用首个确有必要的 Schema 64；KIG 使用 LIFE 最终版本 + 1。没有实际字段缺口不得为了“占号”创建空迁移。
+迁移号严格串行：CDS 最终冻结 Schema 为 63；LIFE 最终冻结 Schema 为 71；KIG 在 LIFE PR 合入 `main` 并锁定 merge commit 后可使用首个确有必要的 Schema 72。没有实际字段缺口不得为了“占号”创建空迁移。
 
 ## 4. DecisionKindRegistry 规范
 
@@ -109,6 +121,17 @@ candidate_snapshot_hash
 ```
 
 原始模型输出默认不落库。
+
+LIFE.1 已在同一 Registry 注册以下 Shadow 白名单，统一使用 `life-decision-input-v1`、`life-decision-result-v1`、`life-decision-validator-v1` 与 `life-decision-skip-v1`：
+
+- `life_schedule_coarse`
+- `life_schedule_detail`
+- `life_schedule_replan`
+- `life_important_date_interpretation`
+- `life_diary_reflection`
+- `life_event_meaning`
+
+这些任务只生成 LIFE 候选建议。`application_owner` 与 `fallback_owner` 均为 LIFE，但当前 Registry 上限为 Shadow；CDS 仍拥有 `decision_runs`、结构化解析、一次修复、诊断与幂等运行时，LIFE 不拥有第二套通用运行账本。
 
 ## 5. Decision Promotion Policy
 

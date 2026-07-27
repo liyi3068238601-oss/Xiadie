@@ -8,6 +8,7 @@ import { TasksPage } from "./components/TasksPage";
 import { MemoriesPage } from "./components/MemoriesPage";
 import { FilesPage } from "./components/FilesPage";
 import { ToolLogsPage } from "./components/ToolLogsPage";
+import { LifePage } from "./components/LifePage";
 
 const MODE_LABEL: Record<Mode, string> = {
   companion: "陪伴",
@@ -19,6 +20,7 @@ const MODE_LABEL: Record<Mode, string> = {
 const NAV: { view: View; ico: string; label: string }[] = [
   { view: "chat", ico: "◈", label: "陪伴 · 对话" },
   { view: "tasks", ico: "◷", label: "今日任务" },
+  { view: "life", ico: "☾", label: "今日生活" },
   { view: "memories", ico: "❋", label: "记忆与关系" },
   { view: "files", ico: "▤", label: "文件与知识" },
   { view: "tools", ico: "⚙", label: "工具记录" },
@@ -268,6 +270,7 @@ export default function App() {
             <SettingsPage onModelChanged={refreshModel} currentSessionId={activeSession} />
           )}
           {view === "tasks" && <TasksPage />}
+          {view === "life" && <LifePage />}
           {view === "memories" && <MemoriesPage onOpenSource={openMemorySource} />}
           {view === "files" && <FilesPage />}
           {view === "tools" && <ToolLogsPage />}

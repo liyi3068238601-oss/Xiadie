@@ -1,0 +1,188 @@
+{
+  "report_version": "life-construction-baseline-v1",
+  "construction_baseline": {
+    "repository": "liyi3068238601-oss/Xiadie",
+    "predecessor_pr": 2,
+    "base_branch": "main",
+    "base_commit_sha": "0d7a2d08dc07f123d016da26da117fa58f9a48a1",
+    "schema_version": 63,
+    "frozen_protocols": [
+      "cognitive-decision-v1",
+      "decision-kind-registry-v1",
+      "specialty-adapter-contract-v1",
+      "conversation-presence-v2",
+      "user-affect-observation-v1",
+      "relationship-meaning-v1",
+      "proactive-decision-v2",
+      "expression-plan-v1",
+      "proactive-feedback-v1",
+      "context-package-v1"
+    ],
+    "test_baseline": {
+      "backend": "2304 passed, 1 warning",
+      "frontend": "47 passed",
+      "vite_modules": 189
+    },
+    "plan_version": "LIFE v0.3",
+    "recorded_at": "2026-07-26"
+  },
+  "fixture_sha256": "8e0cf6e5a18e0ebe95bb2778953f20490f6e36aea01eb8bea1ca3b95962e7e7e",
+  "environment": {
+    "python": "3.12.13",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "scenario_counts": {
+    "decision": 15,
+    "diary": 15,
+    "important_date": 15,
+    "offline": 15
+  },
+  "scenario_coverage": {
+    "implemented": 0,
+    "partial_adjacent_guards": 15,
+    "missing_life_domain": 45
+  },
+  "affect_relationship_baseline": [
+    {
+      "hours": 1,
+      "contact_need": 0.056774,
+      "guardedness": 0.625,
+      "valence": 0.05,
+      "arousal": -0.12,
+      "immersion": 0,
+      "bond": 0.12,
+      "trust": 0.25
+    },
+    {
+      "hours": 8,
+      "contact_need": 0.107526,
+      "guardedness": 0.625,
+      "valence": 0.05,
+      "arousal": -0.12,
+      "immersion": 0,
+      "bond": 0.12,
+      "trust": 0.25
+    },
+    {
+      "hours": 24,
+      "contact_need": 0.234945,
+      "guardedness": 0.625,
+      "valence": 0.05,
+      "arousal": -0.12,
+      "immersion": 0,
+      "bond": 0.12,
+      "trust": 0.25
+    },
+    {
+      "hours": 72,
+      "contact_need": 0.737965,
+      "guardedness": 0.62575,
+      "valence": 0.049705,
+      "arousal": -0.118,
+      "immersion": 0,
+      "bond": 0.12,
+      "trust": 0.25
+    },
+    {
+      "hours": 168,
+      "contact_need": 1,
+      "guardedness": 0.62425,
+      "valence": 0.048911,
+      "arousal": -0.118,
+      "immersion": 0,
+      "bond": 0.12,
+      "trust": 0.25
+    }
+  ],
+  "current_capability_matrix": [
+    {
+      "capability": "affect_relationship",
+      "state": "implemented",
+      "owner": "EAP/Affect"
+    },
+    {
+      "capability": "context_assembler",
+      "state": "implemented",
+      "owner": "CTX"
+    },
+    {
+      "capability": "memory_episode_saga",
+      "state": "implemented",
+      "owner": "MEM"
+    },
+    {
+      "capability": "life_proactive_seed_adapter",
+      "state": "partial",
+      "owner": "EAP"
+    },
+    {
+      "capability": "life_clock_self_state",
+      "state": "missing",
+      "owner": "LIFE"
+    },
+    {
+      "capability": "life_event_ledger",
+      "state": "missing",
+      "owner": "LIFE"
+    },
+    {
+      "capability": "daily_schedule_goal",
+      "state": "missing",
+      "owner": "LIFE"
+    },
+    {
+      "capability": "important_date",
+      "state": "missing",
+      "owner": "LIFE"
+    },
+    {
+      "capability": "diary_continuity",
+      "state": "missing",
+      "owner": "LIFE"
+    },
+    {
+      "capability": "self_timeline",
+      "state": "missing",
+      "owner": "LIFE"
+    }
+  ],
+  "existing_workers": [
+    "conversation_summary",
+    "affect_observer",
+    "companion_cognition",
+    "proactive_orchestrator",
+    "memory_observer",
+    "episode_consolidator",
+    "saga_consolidator",
+    "archivist",
+    "knowledge",
+    "knowledge_recall"
+  ],
+  "existing_llm_decision_points": [
+    "affect_observer",
+    "companion_cognition",
+    "cognitive_runtime",
+    "conversation_summary",
+    "episode_summary",
+    "memory_observer",
+    "saga_summary"
+  ],
+  "fixed_algorithms": [
+    "affect-v1.2",
+    "context-package-v1",
+    "context-budget-v1",
+    "conversation-presence-v2 fallback",
+    "proactive deterministic policy",
+    "archivist retention policy",
+    "episode grouping",
+    "saga grouping",
+    "knowledge recall gate",
+    "history recall gate"
+  ],
+  "privacy": {
+    "synthetic_only": true,
+    "contains_user_data": false,
+    "raw_model_output_persisted": false,
+    "fixture_inputs_in_report": false
+  }
+}

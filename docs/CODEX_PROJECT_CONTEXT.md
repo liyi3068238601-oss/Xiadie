@@ -4,7 +4,7 @@
 > 适用对象：Codex、维护者和后续参与开发的协作者  
 > 项目根目录：`E:\Xiadie\Xiadie`  
 > 当前产品基线：v0.1.0  
-> 最后更新：2026-07-16
+> 最后更新：2026-07-27
 
 ## 1. 使用方式
 
@@ -74,6 +74,7 @@
 - 对话上下文 CTX.0～CTX.7：`docs/CONVERSATION_CONTEXT_AND_SUMMARY_PLAN.md`。该计划已完成总验收并通过独立 strict review；
   schema 45 与上下文 v1 已冻结，普通自动历史召回继续 shadow。
 - 已关闭专项：`docs/EMOTION_RELATIONSHIP_AND_PROACTIVE_COMPANION_PLAN.md` 第 9.B 节 EAP.R0～EAP.R6。Schema 48～60 与六个 EAP 协议已通过独立 strict review 并正式冻结；不得另建重复情绪、关系或主动投递源。
+- 已关闭专项：`docs/LLM_DECISION_AND_LIFE_CONTINUITY_PLAN.md`。LIFE.0～13、Windows 安装版验收与独立总 Review 已完成；LIFE v1 冻结于 Schema 71，0 个未解决 P0/P1。KIG 可在 LIFE PR 合入 `main` 并锁定 merge commit 后从 Schema 72 开工。
 
 ---
 
@@ -372,10 +373,10 @@ node --check preload.js
 
 ## 14. 当前专项入口
 
-知识库 F.1～F.8、优化 K.0～K.9、上下文 CTX.0～CTX.7 与 EAP.R0～R6 均已完成并技术冻结。下一专项施工入口为：
+知识库 F.1～F.8、优化 K.0～K.9、上下文 CTX.0～CTX.7、EAP.R0～R6、CDS.0～13 与 LIFE.0～13 均已完成并冻结。下一专项入口为：
 
-`docs/LLM_COGNITIVE_DECISION_REFACTOR_PLAN.md`
+`docs/XIADIE_KNOWLEDGE_INTELLIGENCE_GOVERNANCE_AND_WORLD_MODEL_PLAN.md`
 
 EAP Schema 48～60 不回写；真实输出继续受后端最终授权复核、系统恢复保护窗与 at-most-once 状态机约束，Level 5 外部渠道保持硬禁用。三份 v0.3 权威计划与 `docs/SPECIALTY_OWNERSHIP_AND_CONTRACT_MATRIX.md` 已纳入仓库，固定顺序为 `CDS → LIFE → KIG`。
 
-EAP PR #1 已于 2026-07-22 合并，CDS ConstructionBaseline 固定为 `main@6b8aa47134f8a9a55131c73bb1148e6912421c4f`、Schema 60、冻结协议和后端 `937 passed, 1 warning`。CDS.0～13 已完成施工：Schema 61/62 建立统一决策账本与模型运行时，Schema 63 增加无正文反馈/校准审计；当前 9 个 DecisionKind 全部最高为 Shadow，EAP、CTX、Knowledge 与 MEM 的 application ownership 均未转移。CDS.10 的 8 条未独立评审叙事样本 accuracy 仅 50%，CDS.12 只有一个真实 Provider 且 DeepSeek 两模型配对一致率 50%，均不具备晋级证据资格。`specialty-adapter-contract-v1` 只预留 LIFE/KIG revision/hash 与候选契约；EAP adapter v1 保持不变，diagnostic v2 独立增加错误码和延迟。CDS.13 已提供受冻结上限约束的设置、无正文诊断和一键确定性回退，后端全量 `2304 passed, 1 warning`、前端 `47 passed`、Vite 189 modules。2026-07-26 最终独立 Review 为 0 P0/P1/P2，正式冻结 `cognitive-decision-v1`、`decision-kind-registry-v1`、Schema 63 与兼容矩阵。LIFE 协议门已解除，可在锁定已合并 predecessor commit 并填写 LIFE.0 ConstructionBaseline 后使用首个必要 Schema 64；KIG 仍须等待 LIFE 冻结。
+EAP PR #1 已于 2026-07-22 合并，CDS ConstructionBaseline 固定为 `main@6b8aa47134f8a9a55131c73bb1148e6912421c4f`、Schema 60、冻结协议和后端 `937 passed, 1 warning`。CDS.0～13 已完成施工：Schema 61/62 建立统一决策账本与模型运行时，Schema 63 增加无正文反馈/校准审计；当前 9 个 CDS DecisionKind 全部最高为 Shadow，EAP、CTX、Knowledge 与 MEM 的 application ownership 均未转移。CDS PR #2 已合并为 `main@0d7a2d08dc07f123d016da26da117fa58f9a48a1`。LIFE.0～13 与最终独立 Review 已完成：Schema 64～71 建立来源事件、确定性时钟/状态、启动 CatchUp、日程、PersonalGoal、ImportantDate、日记与 SelfTimeline；6 类 LIFE 决策复用 CDS Registry 并保持 Shadow，LIFE 分享只经冻结 EAP adapter。Review 结论为 0 P0/P1，收口补强敏感格式识别、IANA 时区写入校验和多 Provider 一致性晋级门；最终基线为后端 `2423 passed, 1 warning`、前端 `50 passed`、Vite 190 modules、Electron contract 3 passed，Windows 安装验收通过。LIFE v1 冻结于 Schema 71；KIG 首个可用迁移号为 72，正式施工前必须以 LIFE PR 的 `main` merge commit 建立 KIG.0 ConstructionBaseline。

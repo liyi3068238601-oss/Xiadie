@@ -64,7 +64,7 @@ def test_schema_63_keeps_shared_ledger_without_parallel_run_table():
         )}
     finally:
         conn.close()
-    assert version == "63"
+    assert version == "71"
     assert {
         "policy_version", "mode", "source_snapshot_json", "snapshot_hash",
         "candidate_snapshot_hash", "candidate_count", "selected_count", "action",

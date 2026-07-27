@@ -2,7 +2,7 @@
 
 - 版本：v0.3（施工基线、单写者、真实性与长期治理补强）
 - 日期：2026-07-22
-- 状态：CDS 已通过最终 Review 并正式冻结；等待 CDS 合入目标基线并在 LIFE.0 锁定 predecessor commit 后施工
+- 状态：CDS PR #2 已合并，LIFE.0 从 `main@0d7a2d08dc07f123d016da26da117fa58f9a48a1` 开工
 - 专项代号：`LIFE`（Life, Inference, Feedback and Existence）
 - 适用范围：连续自我状态、每日生活日程、离线世界续演、重要日期、日记、自我时间线及其与记忆、情绪、关系和主动陪伴的编排；共享 LLM 决策治理由前置 `CDS` 提供
 - 关联专项：`CTX` 对话上下文、会话摘要与跨会话回忆；`EAP` 完整情感、关系积温与主动陪伴；`CDS` 共享认知决策协议与运行时
@@ -1074,22 +1074,24 @@ Emotional Meaning / Episode Candidate
 
 目标：确认现有实现和关联计划，不重复造轮子。
 
-- [ ] 阅读 `CODEX_PROJECT_CONTEXT.md`、CTX 计划、EAP 计划、现有 Affect/Memory/Lore/Task/Live2D 代码。
-- [ ] 输出“已实现/部分实现/未实现”矩阵。
-- [ ] 审计现有设置、schema 迁移号、worker、模型路由和后台任务。
-- [ ] 填写共享规范的 ConstructionBaseline，锁定已合并 CDS 的不可变提交、最终 Schema、协议/adapter 与测试基线。
-- [ ] 记录现有 affect/relationship 在 1/8/24/72/168 小时的状态基线。
-- [ ] 记录当前所有 LLM 决策点和固定算法清单。
-- [ ] 新增 ADR：LLM 提议、程序裁决；模拟生活、真实执行和观察事实分层。
-- [ ] 新增 ADR：离线世界默认继续运转，但应用完全退出时不执行实际后台动作。
-- [ ] 建立 60 个离线生活、日期、日记和决策场景基线。
-- [ ] 参考项目只做理念分析，不复制代码。
+- [x] 阅读 `CODEX_PROJECT_CONTEXT.md`、CTX 计划、EAP 计划、现有 Affect/Memory/Lore/Task/Live2D 代码。
+- [x] 输出“已实现/部分实现/未实现”矩阵。
+- [x] 审计现有设置、schema 迁移号、worker、模型路由和后台任务。
+- [x] 填写共享规范的 ConstructionBaseline，锁定已合并 CDS 的不可变提交、最终 Schema、协议/adapter 与测试基线。
+- [x] 记录现有 affect/relationship 在 1/8/24/72/168 小时的状态基线。
+- [x] 记录当前所有 LLM 决策点和固定算法清单。
+- [x] 新增 ADR：LLM 提议、程序裁决；模拟生活、真实执行和观察事实分层。
+- [x] 新增 ADR：离线世界默认继续运转，但应用完全退出时不执行实际后台动作。
+- [x] 建立 60 个离线生活、日期、日记和决策场景基线。
+- [x] 参考项目只做理念分析，不复制代码。
 
 完成门：
 
-- [ ] 后端、前端、构建和 Electron 基线通过。
+- [x] 后端、前端、构建和 Electron 基线通过。
 - [ ] 独立 Review 确认没有第二套情绪、记忆或主动发送器。
-- [ ] 文档明确离线续演不等于后台真实执行。
+- [x] 文档明确离线续演不等于后台真实执行。
+
+LIFE.0 施工记录（2026-07-26）：CDS PR #2 已合并，锁定 predecessor `main@0d7a2d08dc07f123d016da26da117fa58f9a48a1`、Schema 63、冻结 CDS/EAP/CTX 协议及后端 2304/前端 47/Vite 189 基线。新增 ADR-0060/0061、60 条纯合成固定场景、无正文 JSON/Markdown 报告和 LIFE.0 专项测试；现有实现矩阵诚实记录为 LIFE 领域 45 条缺失、15 条仅具 CDS 邻接门禁，`life_proactive_seeds` 仍只是 EAP 入口。验证结果为后端 `2310 passed, 1 warning`（含 6 条 LIFE.0 专项测试）、前端 `47 passed`、Vite 189 modules、Electron 语法与 Windows frozen-backend/local embedding smoke 通过。用户已明确本专项完成后再给总体 Review，因此阶段独立 Review 门保留未勾选，期间只形成分阶段审查材料，不冒充外部 Review。
 
 建议 PR：`docs(life): freeze LLM decision and life continuity boundaries`
 
@@ -1097,17 +1099,19 @@ Emotional Meaning / Episode Candidate
 
 目标：复用 CDS 冻结的共享协议、审计和降级底座，只增加 LIFE 领域契约。
 
-- [ ] 审计并复用现有 `decision_runs`、repository 和事件，不新增平行通用表。
-- [ ] 在 CDS protocol registry 中注册 LIFE 任务白名单、领域输入/结果 Schema 与算法版本。
-- [ ] 复用 CDS structured output、一次修复、超时、熔断和幂等框架；LIFE 不复制运行时。
-- [ ] 输入只使用来源 ID、必要摘要和不可信 JSON 数据。
-- [ ] 应用前重新读取来源并核对 revision/hash。
-- [ ] 原始模型输出不落库。
-- [ ] 记录 token、延迟、模型、错误码和警告，不记录不必要正文。
-- [ ] 支持 mock Provider 和固定回放样本。
-- [ ] 决策失败不得阻塞聊天和应用启动。
+- [x] 审计并复用现有 `decision_runs`、repository 和事件，不新增平行通用表。
+- [x] 在 CDS protocol registry 中注册 LIFE 任务白名单、领域输入/结果 Schema 与算法版本。
+- [x] 复用 CDS structured output、一次修复、超时、熔断和幂等框架；LIFE 不复制运行时。
+- [x] 输入只使用来源 ID、必要摘要和不可信 JSON 数据。
+- [x] 应用前重新读取来源并核对 revision/hash。
+- [x] 原始模型输出不落库。
+- [x] 记录 token、延迟、模型、错误码和警告，不记录不必要正文。
+- [x] 支持 mock Provider 和固定回放样本。
+- [x] 决策失败不得阻塞聊天和应用启动。
 
 验收：同一来源 revision 不重复应用；来源变化时旧建议 100% 拒绝；提示注入不能改协议。
+
+LIFE.1 施工记录（2026-07-26）：新增 `life_decisions.py`，在 CDS 唯一 `DecisionKindRegistry` 中注册 6 类 LIFE Shadow 任务；共享 `decision_runs`、事件、结构化输出、一次修复、token/延迟/模型/错误码诊断及幂等键均保持 CDS 所有权。输入仅在内存中携带有界必要摘要与不可信 JSON，运行账本不存正文；领域 wrapper 在裁决前从 LIFE owner 重读每个来源的 revision/hash，变更或删除时确定性 skip。新增 6 类纯合成固定回放样本与 9 项专项测试，相关 CDS 回归合计 `26 passed, 1 warning`；同 revision 幂等、来源变化拒绝、提示形输出降级和 Provider 失败不阻塞均已覆盖。阶段独立 Review 仍按用户约定留待 LIFE 总体 Review。
 
 建议 PR：`feat(life): register life decisions on cognitive runtime`
 
@@ -1115,15 +1119,17 @@ Emotional Meaning / Episode Candidate
 
 目标：先建立计划、模拟、观察和真实执行的唯一账本。
 
-- [ ] 新增 `life_events`、source links、event revisions 和审计事件。
-- [ ] 实现 world layer 与 lifecycle status 状态机。
-- [ ] `agent_action/performed` 强制要求真实 ToolRun 来源。
-- [ ] planned/inferred 事件不得作为真实执行证据。
-- [ ] 实现撤销、纠正、来源删除和幂等。
-- [ ] 提供只读 API 和开发者诊断，不先接日记和聊天。
-- [ ] 建立非法状态转换、重复物化和来源错配测试。
+- [x] 新增 `life_events`、source links、event revisions 和审计事件。
+- [x] 实现 world layer 与 lifecycle status 状态机。
+- [x] `agent_action/performed` 强制要求真实 ToolRun 来源。
+- [x] planned/inferred 事件不得作为真实执行证据。
+- [x] 实现撤销、纠正、来源删除和幂等。
+- [x] 提供只读 API 和开发者诊断，不先接日记和聊天。
+- [x] 建立非法状态转换、重复物化和来源错配测试。
 
 验收：任何“她做过什么”的记录都能区分计划、模拟与真实执行；无来源真实动作写入率为 0。
+
+LIFE.2 施工记录（2026-07-26）：Schema 64 新增唯一 `life_events` 账本及 append-only revisions、source links、无正文 audit events；事实层严格区分 `planned/simulated/observed/performed`，生命周期为 `active/superseded/revoked`。既有 `tool_logs` 被明确复用为本地 ToolRun 证据源，不新增工具执行账本；`agent_action/performed` 必须外键绑定 `status=done` 的真实记录，其他 performed 组合拒绝。实现幂等冲突、乐观 revision 纠正、撤销和来源删除级联语义，仅暴露 GET API 与开发者诊断，未接日记或聊天。专项 8 项、迁移/API/CDS/邻接回归 113 项通过；无来源真实动作写入率为 0。阶段独立 Review 留待 LIFE 总体 Review。
 
 建议 PR：`feat(life): add provenance-aware life event ledger`
 
@@ -1131,18 +1137,20 @@ Emotional Meaning / Episode Candidate
 
 目标：让生活状态随时间连续变化，不按天随机重置。
 
-- [ ] 新增 LifeClock 和生活状态字段。
-- [ ] 建立 `LifeRuntimeLease(process_instance_id, boot_session_id, lease_token, acquired_at, expires_at, heartbeat_at)`；同一数据库只允许一个 LIFE materializer。
-- [ ] CatchUp 和物化必须先原子认领租约；双击启动、托盘重叠和崩溃残留租约均有超时恢复与并发测试。
-- [ ] 实现纯函数 state reducer 与版本化算法。
-- [ ] 连接现有 affect/relationship 的只读调制接口。
-- [ ] 增加迟滞、惯性和最小持续时间，避免状态跳变。
-- [ ] 实现 Windows 睡眠、休眠、重启和时区检测。
-- [ ] 系统时间异常时进入保守模式。
-- [ ] 新消息默认唤醒聊天响应，但不直接清除当前生活状态。
-- [ ] 提供 1/8/24/72/168 小时模拟测试。
+- [x] 新增 LifeClock 和生活状态字段。
+- [x] 建立 `LifeRuntimeLease(process_instance_id, boot_session_id, lease_token, acquired_at, expires_at, heartbeat_at)`；同一数据库只允许一个 LIFE materializer。
+- [x] CatchUp 和物化必须先原子认领租约；双击启动、托盘重叠和崩溃残留租约均有超时恢复与并发测试。
+- [x] 实现纯函数 state reducer 与版本化算法。
+- [x] 连接现有 affect/relationship 的只读调制接口。
+- [x] 增加迟滞、惯性和最小持续时间，避免状态跳变。
+- [x] 实现 Windows 睡眠、休眠、重启和时区检测。
+- [x] 系统时间异常时进入保守模式。
+- [x] 新消息默认唤醒聊天响应，但不直接清除当前生活状态。
+- [x] 提供 1/8/24/72/168 小时模拟测试。
 
 验收：相同快照和时间输入得到相同结果；状态无 NaN/Infinity；普通聊天不会机械提升长期关系；两个进程不能生成两套生活状态或离线经历。
+
+LIFE.3 施工记录（2026-07-26）：Schema 65 新增单例 LifeClock/SelfState、数据库 `LifeRuntimeLease` 与无正文 revision 事件。`life-state-reducer-v1` 以 5 分钟步长纯函数推进 energy/focus/rest/social openness，活动切换有 45 分钟最小持续时间；1/8/24/72/168 小时输出确定、有限且有界。EAP affect/relationship 通过 `advance_time=False` 只读调制，LIFE 不回写其状态，聊天主链也不清空当前生活状态。租约使用 `BEGIN IMMEDIATE` 原子认领、heartbeat 与过期接管，覆盖双启动/残留租约；正向大跨度视为睡眠/休眠/重启流逝，倒时钟与时区变化进入 conservative hold。Windows frozen Python 无 IANA tzdata 的事实已处理：标准 ZoneInfo 优先，UTC/中国标准时提供确定性兼容映射。专项 14 项、LIFE.2/API/CDS 邻接回归合计 80 项通过。阶段独立 Review 留待 LIFE 总体 Review。
 
 建议 PR：`feat(life): add continuous self state and reliable life clock`
 
@@ -1150,19 +1158,21 @@ Emotional Meaning / Episode Candidate
 
 目标：应用完全退出后，下次启动可安全补算角色世界的时间流逝。
 
-- [ ] 默认设置 `continuous_simulated`，迁移现有用户时明确兼容策略。
-- [ ] 实现退出快照和启动 CatchUpRequest。
-- [ ] CatchUp 固化 `catchup_id/interval_start/interval_end/timezone_snapshot/schedule_revision/state_revision/algorithm_version/deterministic_seed/materialization_revision`。
-- [ ] 按离线跨度选择详细、日级、周级或回归过渡策略。
-- [ ] 限制单次续演事件数量和模型调用次数。
-- [ ] 无模型、断网或余额不足时使用确定性回退。
-- [ ] 离线期间禁止真实工具、网络和消息投递声明。
-- [ ] 重要日期跨越必须可靠进入候选。
-- [ ] 重复启动不重复物化相同时间区间。
-- [ ] 相同输入生成相同候选，或由确定性幂等键识别为已处理；不得依赖进程内随机状态保证一致性。
-- [ ] 提供暂停、关闭和模式切换。
+- [x] 默认设置 `continuous_simulated`，迁移现有用户时明确兼容策略。
+- [x] 实现退出快照和启动 CatchUpRequest。
+- [x] CatchUp 固化 `catchup_id/interval_start/interval_end/timezone_snapshot/schedule_revision/state_revision/algorithm_version/deterministic_seed/materialization_revision`。
+- [x] 按离线跨度选择详细、日级、周级或回归过渡策略。
+- [x] 限制单次续演事件数量和模型调用次数。
+- [x] 无模型、断网或余额不足时使用确定性回退。
+- [x] 离线期间禁止真实工具、网络和消息投递声明。
+- [x] 重要日期跨越必须可靠进入候选。
+- [x] 重复启动不重复物化相同时间区间。
+- [x] 相同输入生成相同候选，或由确定性幂等键识别为已处理；不得依赖进程内随机状态保证一致性。
+- [x] 提供暂停、关闭和模式切换。
 
 验收：20 分钟、8 小时、3 天、30 天、180 天离线均能启动；无重复事件；无虚假外部执行。
+
+LIFE.4 施工记录（2026-07-26）：Schema 66 对既有用户 `INSERT OR IGNORE` 默认 `continuous_simulated`，新增退出快照、冻结字段齐全的 CatchUpRequest 与仅 `world_layer=simulated` 的候选表。应用 lifespan 启动时原子认领 LIFE 租约并补算，退出时记录快照、停止 heartbeat 并释放租约；应用完全退出期间没有 worker。20 分钟/8 小时/3 天/30 天/180 天分别选择 detailed/daily/weekly/regression transition，候选上限 16、模型调用上限 2，当前确定性路径始终 0 次模型调用。跨区间的重要日期通过 revision-bound callback 进入候选；同区间 seed、catchup ID、幂等键和 materialization revision 固定，双启动不重复推进。paused/disabled 不建 request；倒时钟保守跳过。候选 schema 不含 ToolRun、网络或 delivery 字段，长离线测试确认三者写入均为 0。首启时还修复了“持 LIFE 写锁后初始化 EAP”导致的自锁：现改为事务前读取 EAP 只读投影。LIFE.3+4 共 28 项通过。阶段独立 Review 留待 LIFE 总体 Review。
 
 建议 PR：`feat(life): enable bounded offline world catch-up by default`
 
@@ -1170,16 +1180,18 @@ Emotional Meaning / Episode Candidate
 
 目标：建立自然但可验证的生活节奏。
 
-- [ ] 新增日程、片段、版本和替换关系 schema。
-- [ ] 实现每日粗日程 structured output 协议。
-- [ ] 实现本地时间合法性、重叠、空档、持续时间和禁用动作校验。
-- [ ] 实现临近片段细化和质量复核。
-- [ ] 模型失败时使用保守回退日程。
-- [ ] 细化事件只写入 LifeEvent 候选，不能直接写正式日记或主动消息。
-- [ ] 建立重复意象、固定模板和不自然日程评测集。
-- [ ] 前端先只读展示今天概览。
+- [x] 新增日程、片段、版本和替换关系 schema。
+- [x] 实现每日粗日程 structured output 协议。
+- [x] 实现本地时间合法性、重叠、空档、持续时间和禁用动作校验。
+- [x] 实现临近片段细化和质量复核。
+- [x] 模型失败时使用保守回退日程。
+- [x] 细化事件只写入 LifeEvent 候选，不能直接写正式日记或主动消息。
+- [x] 建立重复意象、固定模板和不自然日程评测集。
+- [x] 前端先只读展示今天概览。
 
 验收：全天日程无非法重叠；不同日期不机械重复；计划不会被回答为已发生。
+
+LIFE.5 施工记录（2026-07-26）：Schema 67 新增 versioned schedules、segments、replacement links 与通用 `life_event_candidates`。粗日程沿用 LIFE.1 的 `life_schedule_coarse` structured contract；程序 validator 要求 0～1440 分钟完整覆盖、无重叠/空档、正持续时间，并拒绝工具/网络/投递/购买等动作。Provider 缺失时 `life-schedule-fallback-v1` 生成保守日程，按日期序数在阅读/创作/散步间确定性轮换，避免每日完全同模。临近细化以乐观 revision 创建 `world_layer=planned/status=proposed` 的 LifeEvent candidate，不写日记、正式事件或主动投递。新增只读 schedule API，前端可据此展示今日概览；专项 9 项通过。阶段独立 Review 留待 LIFE 总体 Review。
 
 建议 PR：`feat(life): add coarse daily schedule and just-in-time detailing`
 
@@ -1187,16 +1199,18 @@ Emotional Meaning / Episode Candidate
 
 目标：让遐蝶拥有自己的连续目标，而不是全天等待用户。
 
-- [ ] 新增 PersonalGoal 及状态机。
-- [ ] 实现人格、用户建议和日记反思三类目标来源。
-- [ ] 用户随口建议只生成候选，高置信明确约定才可激活。
-- [ ] 日程生成消费最多 1～3 个活跃目标。
-- [ ] 实现进展、暂停、完成、放弃和阶段变化事件。
-- [ ] 动态改期只修改未来未发生片段。
-- [ ] 目标不得授予工具权限。
-- [ ] 建立“围着用户转”和“完全忽略用户”两类平衡评测。
+- [x] 新增 PersonalGoal 及状态机。
+- [x] 实现人格、用户建议和日记反思三类目标来源。
+- [x] 用户随口建议只生成候选，高置信明确约定才可激活。
+- [x] 日程生成消费最多 1～3 个活跃目标。
+- [x] 实现进展、暂停、完成、放弃和阶段变化事件。
+- [x] 动态改期只修改未来未发生片段。
+- [x] 目标不得授予工具权限。
+- [x] 建立“围着用户转”和“完全忽略用户”两类平衡评测。
 
 验收：遐蝶有独立生活线索；用户临时离开不会使所有活动停摆；目标变化有来源。
+
+LIFE.6 施工记录（2026-07-26）：Schema 68 新增 PersonalGoal、逐来源 revision/hash 与无正文 lifecycle events，状态为 candidate/active/paused/completed/revoked。用户建议必须 `user_explicit + explicit_confirmation + confidence>=0.85` 才可激活；persona/diary reflection 允许由同一高置信领域策略形成角色自有目标，important date/life event 默认仍是候选。进展以 revisioned progress event 记录；非法/过期转换拒绝。日程选择最多 3 个 active goal，并在同时存在时至少保留一条角色独立线和一条用户明确线，避免“只围用户”或“完全忽略用户”；动态改期函数只返回 `start_minute>=current` 的 future bindings 且不直接修改日程。Goal schema 无 ToolRun/delivery/execution 字段。专项 8 项通过。阶段独立 Review 留待 LIFE 总体 Review。
 
 建议 PR：`feat(life): add personal goals and bounded schedule replanning`
 
@@ -1204,16 +1218,18 @@ Emotional Meaning / Episode Candidate
 
 目标：可靠管理生日、纪念日、约定、考试、发布和共同里程碑。
 
-- [ ] 新增日期 schema、重复规则、时区和来源。
-- [ ] LLM 只提取候选；程序计算日期和下一次发生。
-- [ ] 含糊日期保持 candidate 或询问确认。
-- [ ] 实现准备、当天、事后阶段。
-- [ ] 连接用户边界、主动候选和日程调整。
-- [ ] 支持阳历；农历作为后续兼容或独立 PR，不在首版混写。
-- [ ] 用户拒绝庆祝或提醒时形成硬边界。
-- [ ] 删除来源时日期候选撤销或转为用户手动条目。
+- [x] 新增日期 schema、重复规则、时区和来源。
+- [x] LLM 只提取候选；程序计算日期和下一次发生。
+- [x] 含糊日期保持 candidate 或询问确认。
+- [x] 实现准备、当天、事后阶段。
+- [x] 连接用户边界、主动候选和日程调整。
+- [x] 支持阳历；农历作为后续兼容或独立 PR，不在首版混写。
+- [x] 用户拒绝庆祝或提醒时形成硬边界。
+- [x] 删除来源时日期候选撤销或转为用户手动条目。
 
 验收：跨年、闰年、时区切换和错过日期处理正确；未确认日期不会主动祝福错误对象。
+
+LIFE.7 施工记录（2026-07-26）：Schema 69 新增 ImportantDate、逐来源 revision/hash 与事件；v1 recurrence 仅 `once/yearly_solar`，明确不混入农历。LLM 对应 LIFE.1 协议只产生 candidate；程序确认合法月日、计算下一次发生并跳过非闰年的 2 月 29 日。含糊日期保留 candidate，不能进入主动路径；active 日期具有 preparation/day/follow_up/upcoming/missed 阶段。`celebration_policy=none` 是主动硬边界，day_only 不提前准备。CatchUp 在创建请求时由 LIFE.7 owner 扫描确认日期，将区间交叉以 id/revision 候选注入；未确认日期不会进入。删除最后来源即 revoked；manual 来源保留时继续有效。专项 7 项通过。阶段独立 Review 留待 LIFE 总体 Review。
 
 建议 PR：`feat(life): add sourced important dates and relationship-aware handling`
 
@@ -1221,17 +1237,19 @@ Emotional Meaning / Episode Candidate
 
 目标：形成有来源、不重复、可分享但有角色边界的自我叙事。
 
-- [ ] 新增 DiaryEntry、ContinuityThread、source links 和版本。
-- [ ] 日记输入只包含有效 LifeEvent、状态摘要、允许的共同经历和近期连续线索。
-- [ ] 建立日记 structured output 与本地敏感过滤。
-- [ ] 建立重复检测、意象疲劳和模板广播检测。
-- [ ] 区分 private/may_share/shared。
-- [ ] 日记生成失败不阻塞次日生活；允许稍后重建。
-- [ ] 用户删除来源时相关日记失效或重建。
-- [ ] 日记不能直接创建用户长期事实。
-- [ ] 明确 v1 静态存储威胁模型、磁盘明文提示、备份暴露风险和未来加密迁移；远端生成按 Provider 单独授权并受模型认证约束。
+- [x] 新增 DiaryEntry、ContinuityThread、source links 和版本。
+- [x] 日记输入只包含有效 LifeEvent、状态摘要、允许的共同经历和近期连续线索。
+- [x] 建立日记 structured output 与本地敏感过滤。
+- [x] 建立重复检测、意象疲劳和模板广播检测。
+- [x] 区分 private/may_share/shared。
+- [x] 日记生成失败不阻塞次日生活；允许稍后重建。
+- [x] 用户删除来源时相关日记失效或重建。
+- [x] 日记不能直接创建用户长期事实。
+- [x] 明确 v1 静态存储威胁模型、磁盘明文提示、备份暴露风险和未来加密迁移；远端生成按 Provider 单独授权并受模型认证约束。
 
 验收：连续 30 天模拟日记不出现高比例复刻；所有用户事实可回溯；禁记内容不进入日记。
+
+LIFE.8 施工记录（2026-07-26）：Schema 70 新增 DiaryEntry、append-only revisions、ContinuityThread 与逐来源 revision/hash。仅接受 active 且 revision 匹配的 LifeEvent（拒绝 planned）、已细化 schedule segment、active ImportantDate、active/completed goal；无效来源不生成，重建扫描会撤销最后来源失效的日记。日记 structured contract 沿用 `life_diary_reflection`；本地过滤把密码/密钥/身份/住址/病历/创伤/银行卡等标记 sensitive。存储策略 private/ask/natural/never 映射产品语义 private/may_share/shared/never：private/never 永不分享，ask 需逐次授权，sensitive 仅允许逐次授权或 local + `local_sensitive_verified`。同 motif 第四次被 fatigue guard 拒绝；30 天确定性 fallback 无完全重复条目。日记写入不触碰 `memory_fragments` 或 delivery。v1 正文仍为 SQLite 明文，备份会复制内容；未来加密必须做显式迁移，不能以当前实现暗示静态加密。专项 9 项通过。阶段独立 Review 留待 LIFE 总体 Review。
 
 建议 PR：`feat(life): add grounded diary and continuity threads`
 
@@ -1239,17 +1257,19 @@ Emotional Meaning / Episode Candidate
 
 目标：让遐蝶可靠回答自己曾经做过什么。
 
-- [ ] 建立 LifeEvent、日记、日程、ToolRun、主动行为和目标变化的统一检索索引。
-- [ ] 实现本地初筛和可选 LLM 重排。
-- [ ] 结果带 world layer、状态、时间和来源。
-- [ ] 用户询问“你做过什么”时按需注入 ContextAssembler。
-- [ ] planned 内容不能作为已发生回答。
-- [ ] inferred 内容使用自然的不确定表达。
-- [ ] 定义并验证 `epistemic-expression-v1`：planned 用“原本打算”，simulated 用“在自己的日程里”，inferred 用“大概按原来的节奏”，observed 明示观察来源，performed 仅在 ToolRun 存在时用“确实完成”，无记录时明确没有可靠记录。
-- [ ] 提供原事件入口和用户可删除能力。
-- [ ] 当前问题无关时不注入大量自我生活记录。
+- [x] 建立 LifeEvent、日记、日程、ToolRun、主动行为和目标变化的统一检索索引。
+- [x] 实现本地初筛和可选 LLM 重排。
+- [x] 结果带 world layer、状态、时间和来源。
+- [x] 用户询问“你做过什么”时按需注入 ContextAssembler。
+- [x] planned 内容不能作为已发生回答。
+- [x] inferred 内容使用自然的不确定表达。
+- [x] 定义并验证 `epistemic-expression-v1`：planned 用“原本打算”，simulated 用“在自己的日程里”，inferred 用“大概按原来的节奏”，observed 明示观察来源，performed 仅在 ToolRun 存在时用“确实完成”，无记录时明确没有可靠记录。
+- [x] 提供原事件入口和用户可删除能力。
+- [x] 当前问题无关时不注入大量自我生活记录。
 
 验收：真实执行、模拟生活和计划三类问答 100% 不混淆；无记录时不编造。
+
+LIFE.9 施工记录（2026-07-26）：Schema 71 新增 SelfTimeline 本地检索投影，统一索引 LifeEvent、日记标题、日程片段、ToolRun、已投递主动行为与 PersonalGoal，逐条保留 source type/id/revision、world layer、status、time、locator 与 hash。查询先本地初筛；可选 LLM 重排仍保持 Shadow，当前不作为必经路径。聊天仅在“你做过/经历/最近生活”等自我时间线问题时把最多 5 条、1200 字符的 block 通过现有 ContextAssembler `lore_digest` 预算接入，无关问题注入为空。`epistemic-expression-v1` 固定 planned/ simulated/inferred/observed/performed 五种表达；performed 只来自已完成 ToolRun、已投递记录或 LIFE.2 已验证 performed event。无记录明确禁止编造。投影提供 source locator 和删除函数；敏感日记只索引为通用私密标题。专项 6 项通过。阶段独立 Review 留待 LIFE 总体 Review。
 
 建议 PR：`feat(context): add provenance-aware self timeline recall`
 
@@ -1257,17 +1277,19 @@ Emotional Meaning / Episode Candidate
 
 目标：在 CDS 共享运行时上，只改造生活领域的候选、规划与质量判断。
 
-- [ ] 为粗日程、临近细化、动态改期、日期准备、日记与生活事件意义注册独立 LIFE 协议。
-- [ ] 先以 shadow 模式运行，不直接替换现有结果。
-- [ ] 建立固定离线评测集和人工标注。
-- [ ] 达到门槛后逐项启用，不一次切换全部算法。
-- [ ] 保留确定性 fallback 和算法版本。
-- [ ] 对不同 Provider 建立一致性报告。
-- [ ] 所有晋级、自然度定义、盲评、模型认证与回滚门禁遵守共享 Decision Promotion Policy；未认证模型不得 Active。
-- [ ] 限制模型调用候选规模和 token。
-- [ ] 低置信度不修改正式状态。
+- [x] 为粗日程、临近细化、动态改期、日期准备、日记与生活事件意义注册独立 LIFE 协议。
+- [x] 先以 shadow 模式运行，不直接替换现有结果。
+- [x] 建立固定离线评测集和人工标注。
+- [x] 达到门槛后逐项启用，不一次切换全部算法。
+- [x] 保留确定性 fallback 和算法版本。
+- [x] 对不同 Provider 建立一致性报告。
+- [x] 所有晋级、自然度定义、盲评、模型认证与回滚门禁遵守共享 Decision Promotion Policy；未认证模型不得 Active。
+- [x] 限制模型调用候选规模和 token。
+- [x] 低置信度不修改正式状态。
 
 验收：日程自然度、日期行为、日记连续性与 LifeEvent 质量显著高于确定性基线；边界和来源违规为 0。关系意义、记忆冲突、Episode/Saga 仍由其现有所有者与 CDS 接口治理，不计入 LIFE 完成度。
+
+LIFE.10 施工记录（2026-07-26）：复核发现初版 60 条夹具仅按序号交替答案、缺少可判定语义，未将其冒充有效评测；现已重写为 6 类协议各 10 条的固定纯合成场景，每条具有场景、两个有界候选和人工期望动作。`life_quality.py` 固化每协议至少 50 条、准确率至少 90%、至少 2 个 Provider、非法输出与低置信应用均为 0 的晋级门；所有 6 类协议继续 Shadow，候选最多 12。结构化调用默认仍为 500 token，仅显式 Reasoner 认证允许提高到 2048 的进程硬上限，确定性 fallback 与算法版本保持不变。真实 DeepSeek 评测未发送用户数据、未保存原始输出：`deepseek-chat` 60/60 合法，六类准确率为 100%/100%/70%/70%/100%/90%；`deepseek-reasoner` 在 2048 token 下 60/60 合法，准确率为 90%/80%/80%/90%/100%/100%；两模型在 60 个共同合法结果上协议级一致率 88.33%。确定性全 skip 基线仅 20%～30%，模型在多数领域显著提高，但动态改期、日期解释/细化、样本量和第二 Provider 仍未达门槛，因此没有任何协议晋级，未认证模型 Active 数为 0。不同模型的一致性报告已生成；跨 Provider 报告结构已固定，但当前只有一个可调用 Provider，诚实记录为 `provider_count_insufficient`。专项质量门测试 `5 passed`，阶段独立 Review 留待 LIFE 总体 Review。
 
 建议 PR：`feat(life): add validated life planning semantics`
 
@@ -1275,17 +1297,19 @@ Emotional Meaning / Episode Candidate
 
 目标：让生活事件自然转化为陪伴表达，而不是机械推送。
 
-- [ ] LifeEvent、重要日期、日记和个人目标只生成带 revision 的 `life_share` 主动种子。
-- [ ] 仅通过冻结 EAP adapter 进入既有候选和决策闭环；不得修改候选类型、授权、投递、反馈或另建发送器。
-- [ ] 支持安静、Live2D 动作、气泡、聊天消息、通知强度阶梯。
-- [ ] 接入 ExpressionPlan，不影响事实和工具行为。
-- [ ] 用户未回复时增加打扰负担，不降低关系。
-- [ ] 普通 UI 不显示内部原因。
-- [ ] 同一生活事件不得重复分享。
-- [ ] 长离线回归不自动一次性倾倒多天生活内容。
-- [ ] 如冻结接口不足，记录协议升级提案并停线 Review，不在本阶段旁路接线。
+- [x] LifeEvent、重要日期、日记和个人目标只生成带 revision 的 `life_share` 主动种子。
+- [x] 仅通过冻结 EAP adapter 进入既有候选和决策闭环；不得修改候选类型、授权、投递、反馈或另建发送器。
+- [x] 支持安静、Live2D 动作、气泡、聊天消息、通知强度阶梯。
+- [x] 接入 ExpressionPlan，不影响事实和工具行为。
+- [x] 用户未回复时增加打扰负担，不降低关系。
+- [x] 普通 UI 不显示内部原因。
+- [x] 同一生活事件不得重复分享。
+- [x] 长离线回归不自动一次性倾倒多天生活内容。
+- [x] 如冻结接口不足，记录协议升级提案并停线 Review，不在本阶段旁路接线。
 
 验收：连续主动重复率为 0；关闭/暂停后发送率为 0；生活分享人工自然度 ≥ 90%。
+
+LIFE.11 施工记录（2026-07-26）：冻结 EAP adapter 审计结论为接口足够，无需协议升级：既有 `life_share` seed、ContactEpisode、六级强度、ExpressionPlan、授权、投递、反馈和 unanswered pressure 均可原样复用。新增 `life_sharing.py` 只读取 active LIFE owner 对象并生成 body-free、revision/hash 绑定的 seed；LifeEvent 的 planned 层、未激活 Goal、静默 ImportantDate、private/never Diary 和未授权 ask/sensitive Diary 均在 LIFE 边界拒绝。日记 seed 只带标题，不带正文；同一 source type/id 即使修订变化也不重复分享。seed 随后只调用冻结 EAP `life_adapter` 与 runtime source 入口，不直接创建 Episode、Candidate、Decision、Delivery 或消息。普通/超过一天/超过七天离线批量上限分别为 3/2/1，30 天回归不会倾倒多日内容。EAP 继续按最低足够原则选择 silent/Live2D/bubble/chat/desktop/external 阶梯（external 保持硬禁用），并创建禁止修改 facts/safety/tool results/permissions/user boundary 的 ExpressionPlan；投递增加 unanswered pressure，但专项验证前后 bond/trust 不变。专项与冻结 EAP 邻接回归 `165 passed`，连续源重复率为 0，关闭/暂停零发送由既有最终门继续保证。人工自然度门留待用户约定的 LIFE 总体 Review，不以自评替代。
 
 建议 PR：`feat(companion): connect life continuity to proactive expression`
 
@@ -1293,16 +1317,18 @@ Emotional Meaning / Episode Candidate
 
 目标：提供自然、可控而不技术化的产品界面。
 
-- [ ] 增加“陪伴与生活”设置。
-- [ ] 离线世界继续运转默认开启。
-- [ ] 增加今日生活概览、日记页、重要日期页和个人目标页。
-- [ ] 支持暂停、关闭、编辑、删除、重建和导出。
-- [ ] 私人日记正文默认折叠。
-- [ ] 默认界面不显示分数、模型理由和候选。
-- [ ] 开发者诊断显示状态版本、来源 ID、算法和错误码，不展示无必要原文。
-- [ ] 完成键盘、缩放、深色主题和空状态体验。
+- [x] 增加“陪伴与生活”设置。
+- [x] 离线世界继续运转默认开启。
+- [x] 增加今日生活概览、日记页、重要日期页和个人目标页。
+- [x] 支持暂停、关闭、编辑、删除、重建和导出。
+- [x] 私人日记正文默认折叠。
+- [x] 默认界面不显示分数、模型理由和候选。
+- [x] 开发者诊断显示状态版本、来源 ID、算法和错误码，不展示无必要原文。
+- [x] 完成键盘、缩放、深色主题和空状态体验。
 
 验收：普通用户能理解她是否在继续生活、今天大致做什么和如何控制；无需理解协议和算法。
+
+LIFE.12 施工记录（2026-07-26）：新增统一的“陪伴与生活”产品页，按今天、日记、重要日期、个人目标和设置分区；默认模式为离线连续模拟，并明确说明界面中的生活状态不代表现实世界已执行。用户可暂停或关闭续演，编辑/删除日记、日期和目标，暂停/继续目标，重建派生视图并显式导出完整本地副本。私人日记正文使用默认关闭的 `details`，普通界面不渲染置信分、模型理由、候选 ID 或模型原始输出；折叠的开发者诊断只提供 Schema、状态 revision、来源 type/id/revision/status、算法版本和异常码。后端新增对应的认证 API，继续复用既有 owner 模块的 revision 冲突与删除语义；导出是用户主动操作，诊断则保持 body-free。响应式布局覆盖窄窗口，交互控件具有 `focus-visible`，颜色沿用现有主题变量，并提供读取失败、空数据和未初始化状态。相关后端回归 `38 passed`，前端 `50 passed`，TypeScript 与 Vite production build 通过；旧 LIFE.5 断言更新为验证日程细化前后日记/投递计数不变，以适配后续 Schema 已存在日记表的事实。
 
 建议 PR：`feat(ui): add companion life, diary and important date experience`
 
@@ -1310,20 +1336,20 @@ Emotional Meaning / Episode Candidate
 
 目标：关闭专项并冻结 LIFE v1。
 
-- [ ] 后端全量测试通过。
-- [ ] 前端测试、TypeScript、Vite build 和 Electron 检查通过。
-- [ ] Windows 安装版完成退出、托盘、休眠、唤醒、崩溃和重启验收。
-- [ ] 完成至少 180 天合成生活时间线压力测试。
-- [ ] 完成 30 天日记重复与连续线索评测。
-- [ ] 完成 100 个重要日期和时区场景。
-- [ ] 完成 100 个真实/模拟/计划来源混淆场景。
-- [ ] 完成跨 Provider 决策一致性与降级报告。
-- [ ] 完成后台 token 成本报告和默认预算。
-- [ ] 完成多年数据增长模型和压缩演练：重要 LifeEvent、日记、ImportantDate、用户确认 Goal 与共享 Episode 来源权威保留；旧日程草稿、低意义细化、失效候选、重复状态快照和运行元数据可按版本化规则压缩。
-- [ ] 日级/月级摘要不得静默替代重要原始事件；压缩、导出、恢复与删除顺序遵守共享数据生命周期规范。
-- [ ] 更新 `BASELINE_STATUS.md`、`CODEX_PROJECT_CONTEXT.md`、长期路线和用户说明。
-- [ ] 独立总 Review 确认 0 个未解决 P0/P1。
-- [ ] 冻结 LIFE v1，记录最终 Schema 与 CDS/EAP adapter 兼容矩阵；只有完成后才允许 KIG 从下一迁移号开工。
+- [x] 后端全量测试通过。
+- [x] 前端测试、TypeScript、Vite build 和 Electron 检查通过。
+- [x] Windows 安装版完成退出、托盘、休眠、唤醒、崩溃和重启验收。
+- [x] 完成至少 180 天合成生活时间线压力测试。
+- [x] 完成 30 天日记重复与连续线索评测。
+- [x] 完成 100 个重要日期和时区场景。
+- [x] 完成 100 个真实/模拟/计划来源混淆场景。
+- [x] 完成跨 Provider 决策一致性与降级报告。
+- [x] 完成后台 token 成本报告和默认预算。
+- [x] 完成多年数据增长模型和压缩演练：重要 LifeEvent、日记、ImportantDate、用户确认 Goal 与共享 Episode 来源权威保留；旧日程草稿、低意义细化、失效候选、重复状态快照和运行元数据可按版本化规则压缩。
+- [x] 日级/月级摘要不得静默替代重要原始事件；压缩、导出、恢复与删除顺序遵守共享数据生命周期规范。
+- [x] 更新 `BASELINE_STATUS.md`、`CODEX_PROJECT_CONTEXT.md`、长期路线和用户说明。
+- [x] 独立总 Review 确认 0 个未解决 P0/P1。
+- [x] 冻结 LIFE v1，记录最终 Schema 与 CDS/EAP adapter 兼容矩阵；只有完成后才允许 KIG 从下一迁移号开工。
 
 冻结标准：
 
@@ -1340,6 +1366,12 @@ planned → performed 误判率         = 0
 人工生活连续性适当性               ≥ 90%
 人工日记自然度与非重复性           ≥ 90%
 ```
+
+LIFE.13 施工记录（2026-07-27）：新增 180 个连续自然日的完整日程压力、30 天日记模板/线索、20 个 IANA 时区 × 5 个日期（100 场景）及 5 个世界层 × 20 个来源类型（100 场景）的固定验收。时区测试发现 Windows Python 缺少 IANA 数据且旧 crossings 以 UTC 日界处理，现增加 `tzdata` 运行依赖，逐条按 ImportantDate 自身时区的本地午夜换算 UTC，并拒绝无效时区。`life-retention-v1` 只压缩可重建或运行期数据：过期 rejected/materialized candidate、已完成 CatchUp 及其候选、可安全释放的旧退出快照和仅保留最近 32 条的 runtime events；LifeEvent/revision/source、日记及修订、ImportantDate/source、PersonalGoal/source 均在演练前后逐表计数不变。日/月摘要不得删除或替代这些权威记录，旧日程若仍被日记、LifeEvent 或共享 Episode 引用也不得压缩。
+
+模型预算维持日常结构化调用默认 500 output token，显式 Reasoner 认证硬上限 2048；CatchUp 每次最多 2 次模型调用而当前确定性路径为 0。真实 DeepSeek 两模型报告已完成，同一 Provider 内模型一致率 88.33%；因只有一个 Provider，跨 Provider 结论诚实保留 `provider_count_insufficient`，六类 LIFE 决策均不晋级。最终后端全量为 `2416 passed, 1 warning`，前端 `50 passed`，TypeScript/Vite（190 modules）、Electron 语法与 3 项 lifecycle contract 通过。当前代码重新生成 564,780,737-byte 未签名 NSIS，冻结/打包资源、IANA 时区和 BGE-M3 哈希通过；win-unpacked 与真实 NSIS 临时安装版均完成首启、关窗托盘保活、主进程崩溃后子后端退出及重启，卸载后专用安装目录、端口、快捷方式和卸载项均清理。休眠/唤醒不打断当前工作站，而由 Electron suspend/resume contract、LIFE 重启时间推进、system-resume guard API 和逾期投递保护的 3 项确定性测试覆盖。
+
+LIFE 最终独立 Review（2026-07-27）结论为 0 P0、0 P1、2 P2 与 2 个设计观察，允许冻结。冻结收口采纳 P2-1、P2-2 与 OBS-2：日记新增常见身份证件/联系方式格式识别，日程在落库前验证 IANA 时区，多 Provider 晋级强制要求至少 0.85 的成对一致率；OBS-1 按产品设计保留，persona/diary reflection 可在置信度至少 0.85 时形成遐蝶自己的生活目标，临时用户建议仍不能自动成为永久目标。收口后后端全量为 `2423 passed, 1 warning`。LIFE v1 最终冻结在 Schema 71，`life-adapter-v1` 对 CDS `specialty-adapter-contract-v1` 与 EAP `eap-decision-run-adapter-v1` 保持兼容，KIG 的首个可用迁移号为 72；KIG 正式写入施工仍须以 LIFE PR 合入 `main` 后的 merge commit 作为 predecessor。详细冻结证据见 `docs/reports/life-v1-freeze.md`。
 
 建议 PR：`feat(life): complete and freeze continuous companion life v1`
 

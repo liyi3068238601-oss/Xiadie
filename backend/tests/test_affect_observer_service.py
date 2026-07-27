@@ -177,5 +177,7 @@ def test_complete_json_caps_tokens(monkeypatch):
     monkeypatch.setattr(llm.httpx, "AsyncClient", Client)
     provider = {"id": "test", "base_url": "https://example.test/v1", "api_key": "key"}
     asyncio.run(llm.complete_json(provider, "small", [], max_tokens=99999))
-    assert captured["payload"]["max_tokens"] == llm.JSON_COMPLETION_MAX_TOKENS
+    assert captured["payload"]["max_tokens"] == llm.JSON_COMPLETION_HARD_MAX_TOKENS
     assert captured["payload"]["temperature"] == 0
+    asyncio.run(llm.complete_json(provider, "small", []))
+    assert captured["payload"]["max_tokens"] == llm.JSON_COMPLETION_MAX_TOKENS
