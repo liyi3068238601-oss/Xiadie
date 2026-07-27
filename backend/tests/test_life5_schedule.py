@@ -30,7 +30,7 @@ def test_schema_67_adds_versioned_schedule_and_candidate_tables():
         tables = {row["name"] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     finally:
         conn.close()
-    assert version == "72"
+    assert version == "73"
     assert {"life_schedules", "life_schedule_segments", "life_schedule_replacements", "life_event_candidates"} <= tables
 
 

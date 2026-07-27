@@ -37,7 +37,7 @@ def test_schema_65_adds_singleton_runtime_and_lease():
         tables = {row["name"] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     finally:
         conn.close()
-    assert version == "72"
+    assert version == "73"
     assert {"life_runtime_state", "life_runtime_lease", "life_runtime_events"} <= tables
 
 

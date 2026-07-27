@@ -3311,6 +3311,58 @@ MIGRATIONS = [
             ON derived_dependencies(dependency_status, checked_at, updated_at);
         """,
     ),
+    (
+        73,
+        """
+        -- KIG.2: keep the active index queryable while a rebuild is staged.
+        ALTER TABLE knowledge_documents ADD COLUMN governance_status TEXT NOT NULL DEFAULT 'active'
+            CHECK(governance_status IN ('active','archived'));
+        ALTER TABLE knowledge_documents ADD COLUMN archived_at REAL;
+        ALTER TABLE knowledge_documents ADD COLUMN rebuild_status TEXT NOT NULL DEFAULT 'idle'
+            CHECK(rebuild_status IN ('idle','building','failed'));
+        ALTER TABLE knowledge_documents ADD COLUMN rebuild_run_id TEXT;
+        ALTER TABLE knowledge_documents ADD COLUMN rebuild_error_code TEXT;
+        ALTER TABLE knowledge_documents ADD COLUMN active_index_revision INTEGER NOT NULL DEFAULT 1
+            CHECK(active_index_revision >= 1);
+
+        ALTER TABLE knowledge_import_runs ADD COLUMN staged_parser_version TEXT;
+        ALTER TABLE knowledge_import_runs ADD COLUMN staged_parsed_at REAL;
+        ALTER TABLE knowledge_import_runs ADD COLUMN staged_parse_char_count INTEGER;
+        ALTER TABLE knowledge_import_runs ADD COLUMN staged_parse_line_count INTEGER;
+        ALTER TABLE knowledge_import_runs ADD COLUMN staged_parse_heading_count INTEGER;
+        ALTER TABLE knowledge_import_runs ADD COLUMN staged_page_count INTEGER;
+        ALTER TABLE knowledge_import_runs ADD COLUMN staged_chunker_version TEXT;
+        ALTER TABLE knowledge_import_runs ADD COLUMN staged_chunked_at REAL;
+        ALTER TABLE knowledge_import_runs ADD COLUMN staged_chunk_count INTEGER;
+
+        CREATE TABLE knowledge_rebuild_chunks (
+            run_id TEXT NOT NULL REFERENCES knowledge_import_runs(id) ON DELETE CASCADE,
+            id TEXT NOT NULL,
+            document_id TEXT NOT NULL REFERENCES knowledge_documents(id) ON DELETE CASCADE,
+            ordinal INTEGER NOT NULL CHECK(ordinal >= 0),
+            content TEXT NOT NULL CHECK(length(content) > 0),
+            content_sha256 TEXT NOT NULL CHECK(length(content_sha256)=64),
+            heading_path_json TEXT NOT NULL DEFAULT '[]',
+            paragraph_start INTEGER NOT NULL,
+            paragraph_end INTEGER NOT NULL,
+            line_start INTEGER NOT NULL,
+            line_end INTEGER NOT NULL,
+            char_start INTEGER NOT NULL,
+            char_end INTEGER NOT NULL,
+            page_start INTEGER,
+            page_end INTEGER,
+            chunker_version TEXT NOT NULL,
+            created_at REAL NOT NULL,
+            PRIMARY KEY(run_id, id),
+            UNIQUE(run_id, ordinal),
+            UNIQUE(run_id, char_start, char_end)
+        );
+        CREATE INDEX idx_knowledge_rebuild_chunks_document
+            ON knowledge_rebuild_chunks(document_id,run_id,ordinal);
+        CREATE INDEX idx_knowledge_documents_governance
+            ON knowledge_documents(governance_status,status,updated_at);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

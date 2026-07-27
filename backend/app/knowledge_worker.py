@@ -155,7 +155,8 @@ def _claim_next() -> dict | None:
             " AND COALESCE(r.next_attempt_at,0)<=?))"
             " AND r.current_stage IN ('validation','copy','parsing','chunking','indexing')"
             " AND r.attempt_count<r.max_attempts"
-            " AND d.status IN ('queued','parsing')"
+            " AND ((r.trigger='import' AND d.status IN ('queued','parsing'))"
+            " OR (r.trigger='reindex' AND d.status='indexed' AND d.rebuild_run_id=r.id))"
             " ORDER BY r.created_at,r.id LIMIT 1", (now,),
         ).fetchone()
         if not row:
@@ -244,14 +245,23 @@ def _parse_run(row: dict) -> None:
                     parsed["heading_count"], parsed["page_count"], now, now,
                 ),
             )
-            conn.execute(
-                "UPDATE knowledge_documents SET parser_version=?,parsed_at=?,parse_char_count=?,"
-                "parse_line_count=?,parse_heading_count=?,page_count=?,error_code=NULL,updated_at=? WHERE id=?",
-                (
-                    parsed["parser_version"], now, parsed["char_count"], parsed["line_count"],
-                    parsed["heading_count"], parsed["page_count"], now, document["id"],
-                ),
-            )
+            if row["trigger"] == "reindex":
+                conn.execute(
+                    "UPDATE knowledge_import_runs SET staged_parser_version=?,staged_parsed_at=?,"
+                    "staged_parse_char_count=?,staged_parse_line_count=?,staged_parse_heading_count=?,"
+                    "staged_page_count=? WHERE id=?",
+                    (parsed["parser_version"], now, parsed["char_count"], parsed["line_count"],
+                     parsed["heading_count"], parsed["page_count"], row["id"]),
+                )
+            else:
+                conn.execute(
+                    "UPDATE knowledge_documents SET parser_version=?,parsed_at=?,parse_char_count=?,"
+                    "parse_line_count=?,parse_heading_count=?,page_count=?,error_code=NULL,updated_at=? WHERE id=?",
+                    (
+                        parsed["parser_version"], now, parsed["char_count"], parsed["line_count"],
+                        parsed["heading_count"], parsed["page_count"], now, document["id"],
+                    ),
+                )
             conn.execute(
                 "UPDATE knowledge_import_runs SET status='queued',current_stage='chunking',"
                 "progress=?,attempt_count=0,error_code=NULL,updated_at=?"
@@ -331,28 +341,49 @@ def _chunk_run(row: dict) -> None:
                 _finish_cancel(row["id"])
             return
         now = db.now()
-        conn.execute("DELETE FROM knowledge_chunks WHERE document_id=?", (document["id"],))
+        target_table = "knowledge_rebuild_chunks" if row["trigger"] == "reindex" else "knowledge_chunks"
+        if row["trigger"] == "reindex":
+            conn.execute("DELETE FROM knowledge_rebuild_chunks WHERE run_id=?", (row["id"],))
+        else:
+            conn.execute("DELETE FROM knowledge_chunks WHERE document_id=?", (document["id"],))
         for chunk in chunks:
-            conn.execute(
-                "INSERT INTO knowledge_chunks("
+            columns = (
+                "run_id,id,document_id,ordinal,content,content_sha256,heading_path_json,"
+                "paragraph_start,paragraph_end,line_start,line_end,char_start,char_end,"
+                "page_start,page_end,chunker_version,created_at"
+                if row["trigger"] == "reindex" else
                 "id,document_id,ordinal,content,content_sha256,heading_path_json,"
                 "paragraph_start,paragraph_end,line_start,line_end,char_start,char_end,"
-                "page_start,page_end,chunker_version,created_at)"
-                " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                (
-                    knowledge_chunker.chunk_id(document["id"], chunk), document["id"],
-                    chunk["ordinal"], chunk["content"], chunk["content_sha256"],
-                    chunk["heading_path_json"], chunk["paragraph_start"],
-                    chunk["paragraph_end"], chunk["line_start"], chunk["line_end"],
-                    chunk["char_start"], chunk["char_end"], chunk["page_start"],
-                    chunk["page_end"], chunk["chunker_version"], now,
-                ),
+                "page_start,page_end,chunker_version,created_at"
             )
-        conn.execute(
-            "UPDATE knowledge_documents SET chunker_version=?,chunked_at=?,chunk_count=?,"
-            "error_code=NULL,updated_at=? WHERE id=?",
-            (knowledge_chunker.CHUNKER_VERSION, now, len(chunks), now, document["id"]),
-        )
+            values = (
+                row["id"], knowledge_chunker.chunk_id(document["id"], chunk), document["id"],
+                chunk["ordinal"], chunk["content"], chunk["content_sha256"],
+                chunk["heading_path_json"], chunk["paragraph_start"], chunk["paragraph_end"],
+                chunk["line_start"], chunk["line_end"], chunk["char_start"], chunk["char_end"],
+                chunk["page_start"], chunk["page_end"], chunk["chunker_version"], now,
+            ) if row["trigger"] == "reindex" else (
+                knowledge_chunker.chunk_id(document["id"], chunk), document["id"],
+                chunk["ordinal"], chunk["content"], chunk["content_sha256"],
+                chunk["heading_path_json"], chunk["paragraph_start"], chunk["paragraph_end"],
+                chunk["line_start"], chunk["line_end"], chunk["char_start"], chunk["char_end"],
+                chunk["page_start"], chunk["page_end"], chunk["chunker_version"], now,
+            )
+            conn.execute(
+                f"INSERT INTO {target_table}({columns}) VALUES({','.join('?' for _ in values)})", values,
+            )
+        if row["trigger"] == "reindex":
+            conn.execute(
+                "UPDATE knowledge_import_runs SET staged_chunker_version=?,staged_chunked_at=?,"
+                "staged_chunk_count=? WHERE id=?",
+                (knowledge_chunker.CHUNKER_VERSION, now, len(chunks), row["id"]),
+            )
+        else:
+            conn.execute(
+                "UPDATE knowledge_documents SET chunker_version=?,chunked_at=?,chunk_count=?,"
+                "error_code=NULL,updated_at=? WHERE id=?",
+                (knowledge_chunker.CHUNKER_VERSION, now, len(chunks), now, document["id"]),
+            )
         conn.execute(
             "UPDATE knowledge_import_runs SET status='queued',current_stage='indexing',"
             "progress=?,attempt_count=0,error_code=NULL,updated_at=?"
@@ -370,15 +401,24 @@ def _chunk_run(row: dict) -> None:
 
 def _index_run(row: dict) -> None:
     document = _get_document(row["document_id"])
-    if not document or not document.get("chunked_at") or int(document.get("chunk_count") or 0) <= 0:
+    expected_count = (
+        int(row.get("staged_chunk_count") or 0)
+        if row["trigger"] == "reindex" else int((document or {}).get("chunk_count") or 0)
+    )
+    if not document or expected_count <= 0:
         raise knowledge.KnowledgeImportError("knowledge_chunks_missing", "稳定切片不存在")
     if _current_status(row["id"]) == "cancel_requested":
         _finish_cancel(row["id"])
         return
-    prepared = knowledge_search.prepare_document_index(
-        document["id"], should_cancel=lambda: _current_status(row["id"]) == "cancel_requested"
+    prepare = (
+        knowledge_search.prepare_rebuild_index if row["trigger"] == "reindex"
+        else knowledge_search.prepare_document_index
     )
-    if len(prepared) != int(document["chunk_count"]):
+    prepared = prepare(
+        row["id"] if row["trigger"] == "reindex" else document["id"],
+        should_cancel=lambda: _current_status(row["id"]) == "cancel_requested",
+    )
+    if len(prepared) != expected_count:
         raise knowledge.KnowledgeImportError("knowledge_chunk_count_mismatch", "知识切片数量不一致")
     if _current_status(row["id"]) == "cancel_requested":
         _finish_cancel(row["id"])
@@ -387,31 +427,59 @@ def _index_run(row: dict) -> None:
     conn = db.connect()
     try:
         conn.execute("BEGIN IMMEDIATE")
-        current = conn.execute(
-            "SELECT status,current_stage FROM knowledge_import_runs WHERE id=?", (row["id"],)
-        ).fetchone()
+        current = conn.execute("SELECT * FROM knowledge_import_runs WHERE id=?", (row["id"],)).fetchone()
         latest_document = conn.execute(
-            "SELECT status,chunk_count,chunked_at FROM knowledge_documents WHERE id=?",
+            "SELECT * FROM knowledge_documents WHERE id=?",
             (document["id"],),
         ).fetchone()
+        valid_rebuild = bool(
+            row["trigger"] == "reindex" and latest_document and current
+            and latest_document["status"] == "indexed"
+            and latest_document["rebuild_status"] == "building"
+            and latest_document["rebuild_run_id"] == row["id"]
+            and int(current["staged_chunk_count"] or 0) == len(prepared)
+        )
+        valid_import = bool(
+            row["trigger"] == "import" and latest_document
+            and latest_document["status"] == "parsing" and latest_document["chunked_at"]
+            and int(latest_document["chunk_count"]) == len(prepared)
+        )
         if (
             not current or current["status"] != "running" or current["current_stage"] != "indexing"
-            or not latest_document or latest_document["status"] != "parsing"
-            or not latest_document["chunked_at"]
-            or int(latest_document["chunk_count"]) != len(prepared)
+            or not (valid_rebuild or valid_import)
         ):
             conn.rollback()
             if current and current["status"] == "cancel_requested":
                 _finish_cancel(row["id"])
             return
-        knowledge_search.apply_document_index_locked(conn, document["id"], prepared)
         now = db.now()
-        knowledge.assert_document_transition("parsing", "indexed")
-        conn.execute(
-            "UPDATE knowledge_documents SET status='indexed',index_version=?,indexed_at=?,"
-            "error_code=NULL,updated_at=? WHERE id=? AND status='parsing'",
-            (knowledge_search.INDEX_VERSION, now, now, document["id"]),
-        )
+        if row["trigger"] == "reindex":
+            knowledge_embeddings.clear_document_locked(conn, document["id"])
+            knowledge_search.activate_rebuild_index_locked(conn, document["id"], prepared)
+            conn.execute(
+                "UPDATE knowledge_documents SET parser_version=?,parsed_at=?,parse_char_count=?,"
+                "parse_line_count=?,parse_heading_count=?,page_count=?,chunker_version=?,chunked_at=?,"
+                "chunk_count=?,index_version=?,indexed_at=?,error_code=NULL,rebuild_status='idle',"
+                "rebuild_run_id=NULL,rebuild_error_code=NULL,active_index_revision=active_index_revision+1,"
+                "updated_at=? WHERE id=? AND status='indexed' AND rebuild_run_id=?",
+                (
+                    current["staged_parser_version"], current["staged_parsed_at"],
+                    current["staged_parse_char_count"], current["staged_parse_line_count"],
+                    current["staged_parse_heading_count"], current["staged_page_count"],
+                    current["staged_chunker_version"], current["staged_chunked_at"],
+                    current["staged_chunk_count"], knowledge_search.INDEX_VERSION, now, now,
+                    document["id"], row["id"],
+                ),
+            )
+            conn.execute("DELETE FROM knowledge_rebuild_chunks WHERE run_id=?", (row["id"],))
+        else:
+            knowledge_search.apply_document_index_locked(conn, document["id"], prepared)
+            knowledge.assert_document_transition("parsing", "indexed")
+            conn.execute(
+                "UPDATE knowledge_documents SET status='indexed',index_version=?,indexed_at=?,"
+                "error_code=NULL,updated_at=? WHERE id=? AND status='parsing'",
+                (knowledge_search.INDEX_VERSION, now, now, document["id"]),
+            )
         conn.execute(
             "UPDATE knowledge_import_runs SET status='completed',current_stage='finalizing',"
             "progress=?,attempt_count=0,error_code=NULL,finished_at=?,updated_at=?"
@@ -455,9 +523,17 @@ def recover_stale_runs(*, now: float | None = None) -> int:
                 (after, error, None if exhausted else at, at if exhausted else None, at, row["id"]),
             )
             if exhausted:
-                if row["current_stage"] == "indexing":
-                    knowledge_search.clear_document_index_locked(conn, row["document_id"])
-                _set_document_terminal_locked(conn, row["document_id"], "failed", error, at)
+                if row["trigger"] == "reindex":
+                    conn.execute("DELETE FROM knowledge_rebuild_chunks WHERE run_id=?", (row["id"],))
+                    conn.execute(
+                        "UPDATE knowledge_documents SET rebuild_status='failed',rebuild_run_id=NULL,"
+                        "rebuild_error_code=?,updated_at=? WHERE id=? AND rebuild_run_id=?",
+                        (error, at, row["document_id"], row["id"]),
+                    )
+                else:
+                    if row["current_stage"] == "indexing":
+                        knowledge_search.clear_document_index_locked(conn, row["document_id"])
+                    _set_document_terminal_locked(conn, row["document_id"], "failed", error, at)
             _event(conn, row["id"], "failed" if exhausted else "recovery_scheduled",
                    "running", after, row["current_stage"], error, {}, at)
         conn.commit()
@@ -564,6 +640,22 @@ def _finish_cancel(run_id: str) -> bool:
 
 
 def _cancel_locked(conn, row, now: float) -> None:
+    if row["trigger"] == "reindex":
+        conn.execute("DELETE FROM knowledge_rebuild_chunks WHERE run_id=?", (row["id"],))
+        conn.execute("DELETE FROM knowledge_parse_artifacts WHERE document_id=?", (row["document_id"],))
+        conn.execute(
+            "UPDATE knowledge_documents SET rebuild_status='idle',rebuild_run_id=NULL,"
+            "rebuild_error_code=NULL,updated_at=? WHERE id=? AND rebuild_run_id=?",
+            (now, row["document_id"], row["id"]),
+        )
+        conn.execute(
+            "UPDATE knowledge_import_runs SET status='cancelled',error_code='user_cancelled',"
+            "next_attempt_at=NULL,finished_at=?,updated_at=? WHERE id=?",
+            (now, now, row["id"]),
+        )
+        _event(conn, row["id"], "cancelled", row["status"], "cancelled",
+               row["current_stage"], "user_cancelled", {}, now)
+        return
     knowledge_search.clear_document_index_locked(conn, row["document_id"])
     conn.execute("DELETE FROM knowledge_chunks WHERE document_id=?", (row["document_id"],))
     conn.execute(
@@ -617,11 +709,19 @@ def _mark_failure(row: dict, code: str) -> None:
             (after, code, next_at, now if exhausted else None, now, row["id"]),
         )
         if exhausted:
-            if current["current_stage"] == "indexing":
+            if current["trigger"] == "reindex":
+                conn.execute("DELETE FROM knowledge_rebuild_chunks WHERE run_id=?", (row["id"],))
+                conn.execute(
+                    "UPDATE knowledge_documents SET rebuild_status='failed',rebuild_run_id=NULL,"
+                    "rebuild_error_code=?,updated_at=? WHERE id=? AND rebuild_run_id=?",
+                    (code, now, row["document_id"], row["id"]),
+                )
+            elif current["current_stage"] == "indexing":
                 knowledge_search.clear_document_index_locked(conn, row["document_id"])
             else:
                 conn.execute("DELETE FROM knowledge_chunks WHERE document_id=?", (row["document_id"],))
-            _set_document_terminal_locked(conn, row["document_id"], "failed", code, now)
+            if current["trigger"] != "reindex":
+                _set_document_terminal_locked(conn, row["document_id"], "failed", code, now)
         _event(conn, row["id"], "failed" if exhausted else "retry_scheduled", "running",
                after, current["current_stage"], code,
                {"attempt": current["attempt_count"]}, now)

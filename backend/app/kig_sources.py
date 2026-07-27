@@ -75,11 +75,13 @@ def _document(source_id: str) -> SourceRef:
         conn.close()
     if not row:
         raise _missing("knowledge_document", source_id)
-    status = "active" if row["status"] == "indexed" and row["collection_status"] == "active" else "inaccessible"
+    status = "active" if (row["status"] == "indexed" and row["collection_status"] == "active"
+                          and row["governance_status"] == "active") else "inaccessible"
     if row["status"] in {"delete_pending", "deleted"}:
         status = "revoked"
     content_hash = row["content_sha256"] or _sha256("")
-    revision = f"{row['index_version'] or 'unindexed'}:{content_hash}:{row['policy_revision']}"
+    revision = (f"{row['index_version'] or 'unindexed'}:{row['active_index_revision']}:"
+                f"{content_hash}:{row['policy_revision']}")
     policy = row["transmission_policy"] or row["default_transmission_policy"] or "local_only"
     privacy = f"{row['sensitivity']}:{policy}"
     return SourceRef("knowledge_document", source_id, revision, content_hash, status, privacy,
@@ -90,7 +92,8 @@ def _chunk(source_id: str) -> SourceRef:
     conn = db.connect()
     try:
         row = conn.execute(
-            "SELECT k.id,k.document_id,k.content_sha256,k.chunker_version,d.status,d.sensitivity,"
+            "SELECT k.id,k.document_id,k.content_sha256,k.chunker_version,d.status,d.governance_status,"
+            "d.active_index_revision,d.sensitivity,"
             "d.transmission_policy,d.policy_revision,c.status AS collection_status,"
             "c.default_transmission_policy FROM knowledge_chunks k "
             "JOIN knowledge_documents d ON d.id=k.document_id "
@@ -100,13 +103,15 @@ def _chunk(source_id: str) -> SourceRef:
         conn.close()
     if not row:
         raise _missing("knowledge_chunk", source_id)
-    status = "active" if row["status"] == "indexed" and row["collection_status"] == "active" else "inaccessible"
+    status = "active" if (row["status"] == "indexed" and row["collection_status"] == "active"
+                          and row["governance_status"] == "active") else "inaccessible"
     if row["status"] in {"delete_pending", "deleted"}:
         status = "revoked"
     policy = row["transmission_policy"] or row["default_transmission_policy"] or "local_only"
     return SourceRef(
         "knowledge_chunk", source_id,
-        f"{row['chunker_version'] or 'unknown'}:{row['content_sha256']}:{row['policy_revision']}",
+        f"{row['chunker_version'] or 'unknown'}:{row['active_index_revision']}:"
+        f"{row['content_sha256']}:{row['policy_revision']}",
         row["content_sha256"], status, f"{row['sensitivity']}:{policy}",
         f"knowledge://chunks/{source_id}",
     )

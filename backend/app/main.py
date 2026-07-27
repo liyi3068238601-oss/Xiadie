@@ -431,7 +431,8 @@ def read_knowledge_citation(citation_id: str) -> dict:
         if not citation:
             raise HTTPException(404, "引用不存在")
         source = conn.execute(
-            "SELECT c.content,c.content_sha256,d.status,d.index_version,co.status collection_status "
+            "SELECT c.content,c.content_sha256,d.status,d.governance_status,d.index_version,"
+            "co.status collection_status "
             "FROM knowledge_chunks c JOIN knowledge_documents d ON d.id=c.document_id "
             "JOIN knowledge_collections co ON co.id=d.collection_id "
             "WHERE c.id=? AND c.document_id=?",
@@ -441,7 +442,8 @@ def read_knowledge_citation(citation_id: str) -> dict:
             not source or source["content_sha256"] != citation["content_sha256"]
             or hashlib.sha256(source["content"].encode("utf-8")).hexdigest()
             != citation["content_sha256"]
-            or source["status"] != "indexed" or source["index_version"] != knowledge_search.INDEX_VERSION
+            or source["status"] != "indexed" or source["governance_status"] != "active"
+            or source["index_version"] != knowledge_search.INDEX_VERSION
             or source["collection_status"] != "active"
         ):
             raise HTTPException(410, "原始资料已变化、停用或删除")
@@ -1586,6 +1588,32 @@ def reindex_knowledge_document(document_id: str) -> dict:
     if not result:
         raise HTTPException(404, "知识文档不存在")
     return _public_knowledge_run(result)
+
+
+class KnowledgeArchiveIn(BaseModel):
+    archived: bool
+
+
+@app.patch("/api/knowledge/documents/{document_id}/archive")
+def archive_knowledge_document(document_id: str, body: KnowledgeArchiveIn) -> dict:
+    try:
+        result = knowledge_management.set_archived(document_id, archived=body.archived)
+    except knowledge.KnowledgeImportError as error:
+        raise HTTPException(409, detail={"code": error.code, "message": str(error)}) from error
+    if not result:
+        raise HTTPException(404, "knowledge document does not exist")
+    return result
+
+
+@app.get("/api/knowledge/documents/{document_id}/impact-preview")
+def preview_knowledge_document_impact(document_id: str, action: str) -> dict:
+    try:
+        result = knowledge_management.impact_preview(document_id, action=action)
+    except knowledge.KnowledgeImportError as error:
+        raise HTTPException(400, detail={"code": error.code, "message": str(error)}) from error
+    if not result:
+        raise HTTPException(404, "knowledge document does not exist")
+    return result
 
 
 @app.delete("/api/knowledge/documents/{document_id}", status_code=202)

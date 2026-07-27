@@ -64,7 +64,7 @@ def test_schema_33_deletion_ledger_has_no_filename_path_or_body():
         event_columns = {row["name"] for row in conn.execute("PRAGMA table_info(knowledge_deletion_events)")}
         assert {"document_id", "content_sha256", "status", "error_code"} <= columns
         assert not ({"filename", "path", "content", "query"} & (columns | event_columns))
-        assert conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0] == "72"
+        assert conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0] == "73"
     finally:
         conn.close()
 
@@ -80,14 +80,14 @@ def test_tags_are_bounded_deduplicated_and_searchable_by_literal_filename():
         knowledge_management.update_tags(first["id"], ["x" * 41])
 
 
-def test_reindex_exits_retrieval_then_rebuilds_from_managed_original():
+def test_reindex_keeps_active_retrieval_then_atomically_rebuilds_from_managed_original():
     imported = _index()
     document_id = imported["document"]["id"]
     source = knowledge.storage_path_for(_document(document_id))
     original = source.read_bytes()
     run = knowledge_management.enqueue_reindex(document_id)
     assert run["trigger"] == "reindex" and run["status"] == "queued"
-    assert knowledge_search.search("星空")["results"] == []
+    assert knowledge_search.search("星空")["result_count"] == 1
     assert asyncio.run(knowledge_worker.process_due(limit=3)) == 3
     rebuilt = _document(document_id)
     assert rebuilt["status"] == "indexed" and rebuilt["index_version"] == knowledge_search.INDEX_VERSION

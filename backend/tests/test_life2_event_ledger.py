@@ -56,7 +56,7 @@ def test_schema_64_adds_one_provenance_ledger_and_reuses_tool_logs():
         foreign_keys = conn.execute("PRAGMA foreign_key_list(life_events)").fetchall()
     finally:
         conn.close()
-    assert version == "72"
+    assert version == "73"
     assert {"life_events", "life_event_revisions", "life_event_sources", "life_event_audit_events"} <= tables
     assert not ({"life_event_runs", "life_tool_runs"} & tables)
     assert any(row["table"] == "tool_logs" and row["from"] == "tool_run_id" for row in foreign_keys)

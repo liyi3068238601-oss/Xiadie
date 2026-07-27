@@ -204,7 +204,8 @@ def search(query: str, *, collection_id: str | None = None,
     tag_filters = [str(tag).strip() for tag in dict.fromkeys(tags or []) if str(tag).strip()]
     where = [
         "d.status='indexed'", "d.embedding_version=?", "d.embedding_indexed_at IS NOT NULL",
-        "d.index_version='knowledge-fts-terms-v1'", "co.status='active'", "e.embedding_version=?",
+        "d.index_version='knowledge-fts-terms-v1'", "d.governance_status='active'",
+        "co.status='active'", "e.embedding_version=?",
         "e.dimension=?",
     ]
     params: list[object] = [EMBEDDING_VERSION, EMBEDDING_VERSION, DIMENSION]

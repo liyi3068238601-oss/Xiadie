@@ -2,7 +2,7 @@
 
 - 版本：v0.3（施工基线、双里程碑、来源依赖与图谱治理补强）
 - 日期：2026-07-22
-- 状态：KIG.0～KIG.1 已完成；当前 Schema 72，KIG.2 可开工
+- 状态：KIG.0～KIG.2 已完成；当前 Schema 73，KIG.3 可开工
 - 专项代号：`KIG`（Knowledge Intelligence & Governance）
 - 子系统代号：`PWM`（Personal World Model）
 - 适用范围：用户知识库、信息分类与治理、多源检索、LLM 查询规划与重排、证据与引用、冲突与版本、个人世界模型，以及与对话历史、长期记忆、生活连续性、任务和 ContextAssembler 的接口
@@ -1727,13 +1727,15 @@ KIG.1 施工记录（2026-07-27）：Schema 72 仅新增无正文 `derived_depen
 
 目标：统一文档、解析器、Chunk 和索引状态。
 
-- [ ] 审查并兼容现有知识表，不无条件迁移。
-- [ ] 先盘点现有解析器、Chunk、Embedding、search contract 与索引状态字段；仅对有验收缺口的最小字段新增迁移。
-- [ ] 建立原子索引切换和失败回退。
-- [ ] 支持文档重建、归档、删除和影响预览。
-- [ ] FTS 失败和 Dense 失败可独立降级。
+- [x] 审查并兼容现有知识表，不无条件迁移。
+- [x] 先盘点现有解析器、Chunk、Embedding、search contract 与索引状态字段；仅对有验收缺口的最小字段新增迁移。
+- [x] 建立原子索引切换和失败回退。
+- [x] 支持文档重建、归档、删除和影响预览。
+- [x] FTS 失败和 Dense 失败可独立降级。
 
 验收：旧索引在重建完成前可用；失败不导致文档不可查询。
+
+KIG.2 施工记录（2026-07-27）：审查确认既有 reindex 会在开工时立即清除 Chunk/FTS/Dense 并将文档退出 indexed，违反旧索引持续可用门槛。Schema 73 在原表旁新增按 run 隔离的 `knowledge_rebuild_chunks` 与最小 staged metadata；重建期间原 `knowledge_documents/knowledge_chunks/FTS/embedding` 保持 active，解析与切片只写 staging，最终在一个 SQLite 事务内校验候选、替换 Chunk/FTS、递增 `active_index_revision` 并切回 idle。任何解析、切片、索引、取消或陈旧恢复失败均只清理 staging/标记 rebuild failed，旧索引和文档仍为 indexed。新增 governance archive/restore 与删除/重建/归档影响预览；归档只退出检索，不删原文。Dense 在切换后可独立重建，失败继续走 FTS；FTS 无词时既有 vector fallback 保留。Knowledge/KIG 专项回归 `193 passed, 1 warning`，详细证据见 `docs/reports/kig-2-atomic-index-governance.md`。
 
 建议 PR：`feat(knowledge): version documents chunks and indexes`
 

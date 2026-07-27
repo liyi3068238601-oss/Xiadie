@@ -139,15 +139,16 @@ def test_auto_search_fuses_dense_and_fts_and_falls_back_when_dense_fails(monkeyp
     assert fallback["results"][0]["document_id"] == document_id
 
 
-def test_reindex_and_delete_hide_and_remove_vectors_immediately():
+def test_reindex_keeps_active_vectors_until_switch_but_delete_removes_immediately():
     document_id = _index()
     knowledge_embeddings.process_due(limit=1)
     assert _counts(document_id)[0] > 0
 
     knowledge_management.enqueue_reindex(document_id)
-    assert _counts(document_id) == (0, 0)
-    assert knowledge_embeddings.search("flower")["results"] == []
+    assert _counts(document_id)[0] > 0
+    assert knowledge_embeddings.search("flower")["results"]
     assert asyncio.run(knowledge_worker.process_due(limit=3)) == 3
+    assert _counts(document_id)[0] == 0 and _counts(document_id)[1] > 0
     knowledge_embeddings.process_due(limit=1)
     assert _counts(document_id)[0] > 0
 

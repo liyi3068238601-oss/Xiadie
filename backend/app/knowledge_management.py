@@ -42,7 +42,7 @@ def enqueue_reindex(document_id: str) -> dict | None:
         if not row:
             conn.rollback()
             return None
-        if row["status"] in {"delete_pending", "delete_failed", "queued", "parsing"}:
+        if row["status"] != "indexed":
             raise knowledge.KnowledgeImportError("document_not_reindexable", "当前状态不能重建索引")
         active = conn.execute(
             "SELECT id FROM knowledge_import_runs WHERE document_id=? AND status IN "
@@ -50,15 +50,11 @@ def enqueue_reindex(document_id: str) -> dict | None:
         ).fetchone()
         if active:
             raise knowledge.KnowledgeImportError("knowledge_run_active", "该文档已有处理任务")
-        knowledge.assert_document_transition(row["status"], "queued")
         run_id, now = db.new_id(), db.now()
-        knowledge_search.clear_document_index_locked(conn, document_id)
-        knowledge_embeddings.clear_document_locked(conn, document_id)
-        conn.execute("DELETE FROM knowledge_chunks WHERE document_id=?", (document_id,))
         conn.execute(
-            "UPDATE knowledge_documents SET status='queued',index_version=NULL,indexed_at=NULL,"
-            "chunker_version=NULL,chunked_at=NULL,chunk_count=0,error_code=NULL,updated_at=? WHERE id=?",
-            (now, document_id),
+            "UPDATE knowledge_documents SET rebuild_status='building',rebuild_run_id=?,"
+            "rebuild_error_code=NULL,updated_at=? WHERE id=?",
+            (run_id, now, document_id),
         )
         conn.execute(
             "INSERT INTO knowledge_import_runs("
@@ -73,6 +69,71 @@ def enqueue_reindex(document_id: str) -> dict | None:
     _wake()
     from . import knowledge_worker
     return knowledge_worker.get_run(run_id)
+
+
+def set_archived(document_id: str, *, archived: bool) -> dict | None:
+    conn = db.connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute("SELECT * FROM knowledge_documents WHERE id=?", (document_id,)).fetchone()
+        if not row:
+            conn.rollback()
+            return None
+        if row["status"] in {"delete_pending", "delete_failed"}:
+            raise knowledge.KnowledgeImportError("document_deleting", "deleting documents cannot be archived")
+        now = db.now()
+        status = "archived" if archived else "active"
+        conn.execute(
+            "UPDATE knowledge_documents SET governance_status=?,archived_at=?,updated_at=? WHERE id=?",
+            (status, now if archived else None, now, document_id),
+        )
+        conn.commit()
+        updated = conn.execute("SELECT * FROM knowledge_documents WHERE id=?", (document_id,)).fetchone()
+        return knowledge.public_document(dict(updated))
+    finally:
+        conn.close()
+
+
+def impact_preview(document_id: str, *, action: str) -> dict | None:
+    if action not in {"reindex", "archive", "restore", "delete"}:
+        raise knowledge.KnowledgeImportError("impact_action_invalid", "invalid impact-preview action")
+    conn = db.connect()
+    try:
+        document = conn.execute(
+            "SELECT id,status,governance_status,chunk_count,rebuild_status FROM knowledge_documents WHERE id=?",
+            (document_id,),
+        ).fetchone()
+        if not document:
+            return None
+        citations = conn.execute(
+            "SELECT COUNT(*) FROM knowledge_message_citations WHERE document_id=?", (document_id,),
+        ).fetchone()[0]
+        dependencies = conn.execute(
+            "SELECT COUNT(*) FROM derived_dependencies WHERE source_kind IN "
+            "('knowledge_document','knowledge_chunk') AND (source_id=? OR source_id IN "
+            "(SELECT id FROM knowledge_chunks WHERE document_id=?))",
+            (document_id, document_id),
+        ).fetchone()[0]
+        embeddings = conn.execute(
+            "SELECT COUNT(*) FROM knowledge_chunk_embeddings WHERE document_id=?", (document_id,),
+        ).fetchone()[0]
+        active_run = conn.execute(
+            "SELECT id,status,current_stage FROM knowledge_import_runs WHERE document_id=? "
+            "AND status IN ('queued','running','recovery_pending','cancel_requested') "
+            "ORDER BY created_at DESC LIMIT 1", (document_id,),
+        ).fetchone()
+    finally:
+        conn.close()
+    return {
+        "document_id": document_id, "action": action,
+        "current_status": document["status"], "governance_status": document["governance_status"],
+        "chunk_count": int(document["chunk_count"]), "embedding_count": int(embeddings),
+        "citation_count": int(citations), "derived_dependency_count": int(dependencies),
+        "active_run": dict(active_run) if active_run else None,
+        "removes_from_retrieval": action in {"archive", "delete"},
+        "preserves_original_file": action != "delete",
+        "requires_async_worker": action in {"reindex", "delete"},
+    }
 
 
 def enqueue_delete(document_id: str) -> dict | None:
