@@ -44,7 +44,7 @@ def test_schema_69_adds_sourced_solar_date_tables():
         ).fetchone()[0]
     finally:
         conn.close()
-    assert version == "74"
+    assert version == "75"
     assert "yearly_solar" in recurrence_sql and "lunar" not in recurrence_sql
 
 

@@ -1,12 +1,12 @@
 # 遐蝶 Codex 项目上下文
 
-> KIG 施工快照（2026-07-27）：KIG.0～KIG.6 已完成，KIG.7 `retrieval-rerank-v1` 核心实现完成，当前 Schema 74。重排保持 CDS Shadow、候选白名单、来源复核和确定性回退；实配模型严格输出覆盖率不足，质量门未通过且禁止 Active，KIG-R 冻结前必须补测 JSON Object 模式。KIG.8 证据与引用可继续施工。
+> KIG 施工快照（2026-07-28）：KIG.0～KIG.8 已完成，当前 Schema 75。`knowledge-retrieval-bundle-v1` 已成为 KIG→CTX 的结构化接线，跨源 EvidenceLink、逐句 `claim-support-v1`、实时来源打开和轻量 UI 已完成；Knowledge K1 引用保持唯一。KIG.7 `retrieval-rerank-v1` 仍为 Shadow，实配模型质量门未通过且禁止 Active，KIG-R 冻结前必须补测 JSON Object 模式。KIG.9 可施工。
 
 > 状态：当前执行约束  
 > 适用对象：Codex、维护者和后续参与开发的协作者  
 > 项目根目录：`E:\Xiadie\Xiadie`  
 > 当前产品基线：v0.1.0  
-> 最后更新：2026-07-27
+> 最后更新：2026-07-28
 
 ## 1. 使用方式
 

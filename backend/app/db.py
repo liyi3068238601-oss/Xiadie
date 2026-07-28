@@ -3384,6 +3384,87 @@ MIGRATIONS = [
             ON knowledge_chunks(document_id,chunk_kind,ordinal);
         """,
     ),
+    (
+        75,
+        """
+        -- KIG.8: cross-source answer evidence. Knowledge citations remain in
+        -- knowledge_message_citations and are deliberately not duplicated here.
+        CREATE TABLE kig_retrieval_bundles (
+            id TEXT PRIMARY KEY,
+            request_id TEXT NOT NULL UNIQUE,
+            session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            user_message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+            assistant_message_id TEXT REFERENCES messages(id) ON DELETE CASCADE,
+            query_sha256 TEXT NOT NULL CHECK(length(query_sha256)=64),
+            protocol_version TEXT NOT NULL,
+            planner_protocol TEXT NOT NULL,
+            selected_sources_json TEXT NOT NULL,
+            candidate_counts_json TEXT NOT NULL,
+            selected_count INTEGER NOT NULL CHECK(selected_count >= 0),
+            conflict_notes_json TEXT NOT NULL DEFAULT '[]',
+            insufficiency_notes_json TEXT NOT NULL DEFAULT '[]',
+            status TEXT NOT NULL CHECK(status IN (
+                'prepared','completed','insufficient','failed','superseded'
+            )),
+            created_at REAL NOT NULL,
+            finished_at REAL
+        );
+        CREATE INDEX idx_kig_retrieval_bundles_session
+            ON kig_retrieval_bundles(session_id,created_at DESC);
+        CREATE INDEX idx_kig_retrieval_bundles_assistant
+            ON kig_retrieval_bundles(assistant_message_id);
+
+        CREATE TABLE kig_answer_claim_segments (
+            id TEXT PRIMARY KEY,
+            bundle_id TEXT NOT NULL REFERENCES kig_retrieval_bundles(id) ON DELETE CASCADE,
+            assistant_message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+            ordinal INTEGER NOT NULL CHECK(ordinal >= 0),
+            text_span TEXT NOT NULL,
+            claim_type TEXT NOT NULL CHECK(claim_type IN (
+                'factual','comparison','temporal','recommendation','opinion','other'
+            )),
+            support_state TEXT NOT NULL CHECK(support_state IN (
+                'supported','partially_supported','conflicted','insufficient','not_checkable'
+            )),
+            citation_required INTEGER NOT NULL CHECK(citation_required IN (0,1)),
+            uncertainty_consistent INTEGER NOT NULL CHECK(uncertainty_consistent IN (0,1)),
+            created_at REAL NOT NULL,
+            UNIQUE(assistant_message_id,ordinal)
+        );
+        CREATE INDEX idx_kig_claim_segments_bundle
+            ON kig_answer_claim_segments(bundle_id,ordinal);
+
+        CREATE TABLE kig_evidence_links (
+            id TEXT PRIMARY KEY,
+            answer_claim_segment_id TEXT NOT NULL
+                REFERENCES kig_answer_claim_segments(id) ON DELETE CASCADE,
+            assistant_message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+            citation_key TEXT NOT NULL,
+            source_kind TEXT NOT NULL CHECK(source_kind IN (
+                'message','memory_fragment','life_event','tool_run','lore_section'
+            )),
+            source_id TEXT NOT NULL,
+            source_revision TEXT NOT NULL,
+            source_hash TEXT NOT NULL CHECK(length(source_hash)=64),
+            relation TEXT NOT NULL CHECK(relation IN (
+                'direct_support','partial_support','background','contradiction','example','definition'
+            )),
+            excerpt_hash TEXT NOT NULL CHECK(length(excerpt_hash)=64),
+            locator_snapshot TEXT NOT NULL,
+            source_status_snapshot TEXT NOT NULL,
+            validation_status TEXT NOT NULL CHECK(validation_status IN (
+                'active','stale','missing','revoked','inaccessible','unsupported'
+            )),
+            validated_at REAL NOT NULL,
+            created_at REAL NOT NULL,
+            UNIQUE(answer_claim_segment_id,citation_key)
+        );
+        CREATE INDEX idx_kig_evidence_links_message
+            ON kig_evidence_links(assistant_message_id,citation_key);
+        CREATE INDEX idx_kig_evidence_links_source
+            ON kig_evidence_links(source_kind,source_id,validation_status);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

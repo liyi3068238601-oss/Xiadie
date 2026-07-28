@@ -25,7 +25,7 @@ from . import (
     episode_summary_service, episodes, knowledge, knowledge_cleanup, knowledge_context,
     knowledge_embeddings, knowledge_grants,
     knowledge_management, knowledge_parser, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search,
-    knowledge_worker, kig_sources, life_catchup, life_catchup_service, life_events, life_runtime, life_schedule, llm, lore, memory, memory_conflicts, memory_shadow_proposals,
+    knowledge_worker, kig_evidence, kig_sources, life_catchup, life_catchup_service, life_events, life_runtime, life_schedule, llm, lore, memory, memory_conflicts, memory_shadow_proposals,
     personal_goals,
     saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, secret_store, self_timeline, slow_lifecycle,
@@ -223,6 +223,17 @@ def list_messages(sid: str) -> list[dict]:
         for citation in citations:
             public = knowledge_context.citation_public(citation)
             by_message.setdefault(public["assistant_message_id"], []).append(public)
+        evidence_by_message: dict[str, list[dict]] = {}
+        evidence_rows = conn.execute(
+            "SELECT * FROM kig_evidence_links WHERE validation_status='active' "
+            "AND assistant_message_id IN "
+            "(SELECT id FROM messages WHERE session_id=?) "
+            "ORDER BY assistant_message_id,citation_key,id",
+            (sid,),
+        ).fetchall()
+        for evidence_row in evidence_rows:
+            public = kig_evidence.evidence_link_public(evidence_row)
+            evidence_by_message.setdefault(public["assistant_message_id"], []).append(public)
         attachments_by_message: dict[str, list[dict]] = {}
         attach_rows = conn.execute(
             "SELECT id, message_id, filename, mime_type, char_count, content_sha256, created_at"
@@ -244,6 +255,7 @@ def list_messages(sid: str) -> list[dict]:
             })
         for message in messages:
             message["knowledge_citations"] = by_message.get(message["id"], [])
+            message["evidence_links"] = evidence_by_message.get(message["id"], [])
             message["attachments"] = attachments_by_message.get(message["id"], [])
         return messages
     finally:
@@ -456,6 +468,21 @@ def read_knowledge_citation(citation_id: str) -> dict:
         return result
     finally:
         conn.close()
+
+
+@app.get("/api/kig/evidence-links/{evidence_link_id}")
+def read_kig_evidence_link(evidence_link_id: str) -> dict:
+    """Open the current owner-system source or explicitly report unavailability."""
+    conn = db.connect()
+    try:
+        row = conn.execute(
+            "SELECT * FROM kig_evidence_links WHERE id=?", (evidence_link_id,),
+        ).fetchone()
+        if not row:
+            raise HTTPException(404, "证据来源不存在")
+    finally:
+        conn.close()
+    return kig_evidence.open_evidence_link(row)
 
 
 # ---------------------------------------------------------------- 聊天（流式）
@@ -922,6 +949,9 @@ async def chat(body: ChatIn) -> StreamingResponse:
             "content": full,
             "knowledge_citations": [
                 knowledge_context.citation_public(row) for row in _message_knowledge_citations(aid)
+            ],
+            "evidence_links": [
+                kig_evidence.evidence_link_public(row) for row in _message_evidence_links(aid)
             ],
         }
         yield _sse("final", final_payload)
@@ -2975,6 +3005,19 @@ def _message_knowledge_citations(assistant_id: str) -> list:
     try:
         return conn.execute(
             "SELECT * FROM knowledge_message_citations WHERE assistant_message_id=? ORDER BY citation_key",
+            (assistant_id,),
+        ).fetchall()
+    finally:
+        conn.close()
+
+
+def _message_evidence_links(assistant_id: str) -> list:
+    conn = db.connect()
+    try:
+        return conn.execute(
+            "SELECT * FROM kig_evidence_links WHERE assistant_message_id=? "
+            "AND validation_status='active' "
+            "ORDER BY citation_key,id",
             (assistant_id,),
         ).fetchall()
     finally:

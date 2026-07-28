@@ -2,7 +2,7 @@
 
 - 版本：v0.3（施工基线、双里程碑、来源依赖与图谱治理补强）
 - 日期：2026-07-22
-- 状态：KIG.0～KIG.6 已完成；KIG.7 核心实现完成、模型质量门待补；当前 Schema 74，KIG.8 可施工
+- 状态：KIG.0～KIG.8 已完成；KIG.7 模型质量门仍待 KIG-R 补测；当前 Schema 75，KIG.9 可施工
 - 专项代号：`KIG`（Knowledge Intelligence & Governance）
 - 子系统代号：`PWM`（Personal World Model）
 - 适用范围：用户知识库、信息分类与治理、多源检索、LLM 查询规划与重排、证据与引用、冲突与版本、个人世界模型，以及与对话历史、长期记忆、生活连续性、任务和 ContextAssembler 的接口
@@ -1830,14 +1830,16 @@ KIG.7 施工记录（2026-07-27）：在 CDS 共享 DecisionRun/CandidateEnvelop
 
 目标：回答可以被来源证明，资料不足时不编造。
 
-- [ ] 审计并复用现有知识 citation/source API、locator 验证和原文打开入口，只把已证实的跨源缺口抽象为 EvidenceLink。
-- [ ] 定义 claim-support-v1。
-- [ ] 复杂问题执行支持度检查。
-- [ ] 对高风险和多来源回答建立 `AnswerClaimSegment`，执行生成后 citation 白名单、来源有效性、句子级支持度和不确定性一致性校验。
-- [ ] 冲突和不足进入 ContextBundle。
-- [ ] UI 展示轻量来源条。
+- [x] 审计并复用现有知识 citation/source API、locator 验证和原文打开入口，只把已证实的跨源缺口抽象为 EvidenceLink。
+- [x] 定义 claim-support-v1。
+- [x] 复杂问题执行支持度检查。
+- [x] 对高风险和多来源回答建立 `AnswerClaimSegment`，执行生成后 citation 白名单、来源有效性、句子级支持度和不确定性一致性校验。
+- [x] 冲突和不足进入 ContextBundle。
+- [x] UI 展示轻量来源条。
 
 验收：引用 100% 可打开或明确标记来源不可访问；资料不足时不生成伪引用。
+
+KIG.8 施工记录（2026-07-28）：Schema 75 新增 body-free `kig_retrieval_bundles`、`kig_answer_claim_segments` 与跨源 `kig_evidence_links`；现有 Knowledge `knowledge_message_citations`、K1 白名单及原文 API 保持唯一，不为知识 Chunk 复制 EvidenceLink。`knowledge-retrieval-bundle-v1` 以结构化对象进入 ContextAssembler，由 CTX 复核字段、限制 12 条并在既有知识预算内最终裁剪；`claim-support-v1` 对复杂/高风险回答执行逐句 citation 白名单、SourceRef revision/hash/status/privacy/locator 实时复核、关键产品/版本锚点和词项支持度、不确定性一致性校验。伪造、失效和同主题但不支持的引用分别明确标记，unsupported 链只保留审计且不进入 UI；跨源原文由 owner store 实时打开，变化/删除后不回放快照正文。聊天 UI 复用既有资料条样式显示轻量来源条。KIG/Knowledge/CTX/API 核心回归 `311 passed, 1 warning`，前端 `51 passed`、TypeScript/Vite 190 modules 通过。详见 `docs/reports/kig-8-grounded-evidence.md`。
 
 建议 PR：`feat(knowledge): add grounded evidence and citation support`
 

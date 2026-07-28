@@ -66,7 +66,7 @@ def test_schema_66_defaults_existing_users_to_continuous_simulated():
         tables = {row["name"] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     finally:
         conn.close()
-    assert version == "74"
+    assert version == "75"
     assert {"life_exit_snapshots", "life_catchup_requests", "life_catchup_candidates"} <= tables
 
 

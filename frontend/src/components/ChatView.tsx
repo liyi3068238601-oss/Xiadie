@@ -749,7 +749,7 @@ function MessageRow({
   highlighted?: boolean;
   onFavorite: () => void;
 }) {
-  const [source, setSource] = useState<api.KnowledgeCitation | null>(null);
+  const [source, setSource] = useState<api.KnowledgeCitation | api.EvidenceLink | null>(null);
   const [sourceError, setSourceError] = useState<string | null>(null);
   const [attachmentContent, setAttachmentContent] = useState<{
     filename: string;
@@ -764,6 +764,16 @@ function MessageRow({
     } catch (error) {
       setSource(null);
       setSourceError(error instanceof api.ApiError ? error.message : "无法读取原始资料");
+    }
+  }
+
+  async function openEvidence(link: api.EvidenceLink) {
+    try {
+      setSourceError(null);
+      setSource(await api.getEvidenceLink(link.id));
+    } catch (error) {
+      setSource(null);
+      setSourceError(error instanceof api.ApiError ? error.message : "无法读取证据来源");
     }
   }
 
@@ -842,16 +852,33 @@ function MessageRow({
             ))}
           </div>
         )}
+        {!!m.evidence_links?.length && (
+          <div className="knowledge-citations evidence-strip" aria-label="本回复的跨来源证据">
+            {m.evidence_links.map((link) => (
+              <button key={link.id} onClick={() => void openEvidence(link)}>
+                {link.citation_key} · {link.source_label} · {link.available ? link.content_fingerprint : "来源不可用"}
+              </button>
+            ))}
+          </div>
+        )}
         {(source || sourceError) && (
           <div className="knowledge-source" role="region" aria-label="资料原文">
             <button className="knowledge-source-close" onClick={() => {
               setSource(null); setSourceError(null);
             }}>×</button>
-            {source ? (
+            {source && "original_name" in source ? (
               <>
                 <strong>{source.original_name}</strong>
                 <small>{sourceLocation(source)}</small>
                 <div>{source.content}</div>
+              </>
+            ) : source ? (
+              <>
+                <strong>{source.source_label}</strong>
+                <small>{source.locator_snapshot} · {source.content_fingerprint}</small>
+                {source.available
+                  ? <div>{source.content}</div>
+                  : <div>{source.unavailable_reason || "来源当前不可访问"}</div>}
               </>
             ) : <span>{sourceError}</span>}
           </div>

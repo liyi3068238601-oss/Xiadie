@@ -63,6 +63,15 @@ test("knowledge citations are clickable and backed by the verified source endpoi
   assert.match(api, /getKnowledgeCitation|\/api\/knowledge\/citations/);
 });
 
+test("cross-source evidence uses a lightweight strip and explicit unavailable state", async () => {
+  const [chat, api] = await Promise.all([
+    readFile(new URL("../src/components/ChatView.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/api.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(chat, /evidence_links|跨来源证据|来源不可用|unavailable_reason/);
+  assert.match(api, /getEvidenceLink|\/api\/kig\/evidence-links|EvidenceLink/);
+});
+
 test("knowledge parsing progress exposes cancellation, recovery and an event timeline", async () => {
   const [page, api] = await Promise.all([
     readFile(new URL("../src/components/FilesPage.tsx", import.meta.url), "utf8"),

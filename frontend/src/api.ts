@@ -191,6 +191,7 @@ export interface Message {
   favorite: boolean;
   created_at: number;
   knowledge_citations?: KnowledgeCitation[];
+  evidence_links?: EvidenceLink[];
   attachments?: ChatAttachmentResult[];
 }
 export interface KnowledgeCitation {
@@ -211,6 +212,20 @@ export interface KnowledgeCitation {
   page_end: number | null;
   content_fingerprint: string;
   content?: string;
+}
+export interface EvidenceLink {
+  id: string;
+  citation_key: string;
+  source_kind: "message" | "memory_fragment" | "life_event" | "tool_run" | "lore_section";
+  source_id: string;
+  relation: "direct_support" | "partial_support" | "background" | "contradiction" | "example" | "definition";
+  locator_snapshot: string;
+  validation_status: "active" | "stale" | "missing" | "revoked" | "inaccessible" | "unsupported";
+  content_fingerprint: string;
+  source_label: string;
+  available: boolean;
+  content?: string;
+  unavailable_reason?: string;
 }
 export interface ObserverModelConfig {
   mode: "current" | "dedicated";
@@ -924,6 +939,8 @@ export const toggleFavorite = (mid: string) =>
   j<{ favorite: boolean }>(`/api/messages/${mid}/favorite`, { method: "POST" });
 export const getKnowledgeCitation = (id: string) =>
   j<KnowledgeCitation>(`/api/knowledge/citations/${id}`);
+export const getEvidenceLink = (id: string) =>
+  j<EvidenceLink>(`/api/kig/evidence-links/${id}`);
 
 // ---- 记忆 ----
 export const listMemories = () => j<Memory[]>("/api/memories");
@@ -1375,6 +1392,7 @@ export interface ChatCallbacks {
     message_id: string;
     content: string;
     knowledge_citations: KnowledgeCitation[];
+    evidence_links: EvidenceLink[];
   }) => void;
   onError?: (message: string, hint: string) => void;
   onDone?: (d: {
@@ -1386,6 +1404,7 @@ export interface ChatCallbacks {
     memory_observation?: { id: string; status: string } | null;
     content: string;
     knowledge_citations: KnowledgeCitation[];
+    evidence_links: EvidenceLink[];
   }) => void;
 }
 
