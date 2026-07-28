@@ -51,6 +51,20 @@ test("current final plus done payload invokes authoritative replacement once", (
   assert.equal(state.finalSeen, true);
 });
 
+test("CIE phase and cancellation events remain separate from reply text", () => {
+  const events = [];
+  let text = "partial";
+  dispatchChatSseEvent("phase", { phase: "generation" }, {
+    onPhase: (phase) => events.push(phase),
+  });
+  dispatchChatSseEvent("cancelled", { phase: "generation", persisted: false }, {
+    onCancelled: (payload) => events.push(`${payload.phase}:${payload.persisted}`),
+    onFinal: (payload) => { text = payload.content; },
+  });
+  assert.deepEqual(events, ["generation", "generation:false"]);
+  assert.equal(text, "partial");
+});
+
 test("typed runtime protocol preserves final and legacy done replacement", async () => {
   const normalized = typedProtocol
     .replace(/export interface[\s\S]*?\r?\n}\r?\n\r?\n/, "")

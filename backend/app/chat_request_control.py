@@ -9,6 +9,7 @@ from typing import Literal
 Phase = Literal["retrieval", "generation", "persistence"]
 _CANCELLABLE = frozenset({"retrieval", "generation"})
 _COMPLETED_TTL_SECONDS = 300.0
+_ACTIVE_TTL_SECONDS = 600.0
 
 
 @dataclass
@@ -18,6 +19,7 @@ class ActiveChatRequest:
     session_id: str
     phase: Phase = "retrieval"
     cancel_requested: threading.Event = field(default_factory=threading.Event)
+    started_at: float = field(default_factory=time.monotonic)
 
 
 @dataclass(frozen=True)
@@ -34,9 +36,16 @@ _completed: dict[str, CompletedChatRequest] = {}
 
 
 def _prune(now: float | None = None) -> None:
-    cutoff = (time.monotonic() if now is None else now) - _COMPLETED_TTL_SECONDS
+    current = time.monotonic() if now is None else now
+    cutoff = current - _COMPLETED_TTL_SECONDS
     for nonce in [key for key, value in _completed.items() if value.completed_at < cutoff]:
         _completed.pop(nonce, None)
+    active_cutoff = current - _ACTIVE_TTL_SECONDS
+    for token, item in list(_active_by_token.items()):
+        if item.started_at >= active_cutoff:
+            continue
+        _active_by_token.pop(token, None)
+        _active_nonce_to_token.pop(item.chat_nonce, None)
 
 
 def begin(*, chat_nonce: str, cancel_token: str, session_id: str) -> tuple[str, dict | None]:
@@ -56,7 +65,7 @@ def begin(*, chat_nonce: str, cancel_token: str, session_id: str) -> tuple[str, 
         return "started", None
 
 
-def lookup(chat_nonce: str, session_id: str) -> tuple[str, dict | None]:
+def lookup(chat_nonce: str, session_id: str, cancel_token: str | None = None) -> tuple[str, dict | None]:
     with _lock:
         _prune()
         completed = _completed.get(chat_nonce)
@@ -66,6 +75,8 @@ def lookup(chat_nonce: str, session_id: str) -> tuple[str, dict | None]:
             return "completed", dict(completed.payload)
         if chat_nonce in _active_nonce_to_token:
             return "active", None
+        if cancel_token and cancel_token in _active_by_token:
+            return "conflict", None
         return "missing", None
 
 
@@ -105,6 +116,15 @@ def complete(cancel_token: str, payload: dict) -> None:
             item.session_id, dict(payload), time.monotonic(),
         )
         _prune()
+
+
+def update_completed(chat_nonce: str, payload: dict) -> None:
+    with _lock:
+        item = _completed.get(chat_nonce)
+        if item:
+            _completed[chat_nonce] = CompletedChatRequest(
+                item.session_id, dict(payload), item.completed_at,
+            )
 
 
 def finish(cancel_token: str) -> None:

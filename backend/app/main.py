@@ -528,9 +528,10 @@ def read_cie_settings() -> dict[str, object]:
 
 @app.post("/api/chat/cancel")
 def cancel_chat(body: ChatCancelIn) -> dict:
-    if not cie_settings.is_enabled():
+    result = chat_request_control.cancel(body.cancel_token)
+    if not result["found"] and not cie_settings.is_enabled():
         raise HTTPException(409, {"code": "cie_disabled", "message": "CIE 生成打断尚未启用"})
-    return chat_request_control.cancel(body.cancel_token)
+    return result
 
 
 def _current_model() -> tuple[Optional[dict], str]:
@@ -563,15 +564,27 @@ def _context_capability(provider: dict | None, model: str):
 async def chat(body: ChatIn) -> StreamingResponse:
     if bool(body.chat_nonce) != bool(body.cancel_token):
         raise HTTPException(422, "chat_nonce 与 cancel_token 必须成对提供")
+    if body.chat_nonce and not cie_settings.is_enabled():
+        raise HTTPException(409, {"code": "cie_disabled", "message": "CIE 生成打断尚未启用"})
     if body.chat_nonce:
         request_state, replay_payload = chat_request_control.lookup(
-            body.chat_nonce, body.session_id,
+            body.chat_nonce, body.session_id, body.cancel_token,
         )
         if request_state == "conflict":
             raise HTTPException(409, {"code": "chat_nonce_conflict", "message": "请求 nonce 已属于其他会话"})
         if request_state == "active":
             raise HTTPException(409, {"code": "chat_request_active", "message": "相同请求仍在处理中"})
         if request_state == "completed" and replay_payload:
+            assistant_id = replay_payload.get("message_id")
+            if assistant_id:
+                replay_payload["knowledge_citations"] = [
+                    knowledge_context.citation_public(row)
+                    for row in _message_knowledge_citations(assistant_id)
+                ]
+                replay_payload["evidence_links"] = [
+                    kig_evidence.evidence_link_public(row)
+                    for row in _message_evidence_links(assistant_id)
+                ]
             async def replay_completed():
                 yield _sse("phase", {"phase": "completed", "replayed": True})
                 yield _sse("final", replay_payload)
@@ -926,7 +939,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
             if body.cancel_token:
                 yield _sse("phase", {"phase": "retrieval"})
                 if chat_request_control.is_cancelled(body.cancel_token):
-                    _finish_knowledge_retrieval(knowledge_retrieval, status="cancelled")
+                    _finish_knowledge_retrieval(knowledge_retrieval, status="failed")
                     yield _sse("cancelled", {"phase": "retrieval", "persisted": False})
                     chat_request_control.finish(body.cancel_token)
                     return
@@ -1033,7 +1046,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 max_tokens=context_package.output_reserve_tokens,
             ):
                 if body.cancel_token and chat_request_control.is_cancelled(body.cancel_token):
-                    _finish_knowledge_retrieval(knowledge_retrieval, status="cancelled")
+                    _finish_knowledge_retrieval(knowledge_retrieval, status="failed")
                     yield _sse("cancelled", {"phase": "generation", "persisted": False})
                     chat_request_control.finish(body.cancel_token)
                     return
@@ -1052,7 +1065,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
             yield _sse("error", {"message": "生成中断", "hint": "回复生成过程中出现意外错误，请重试。"})
             return
         if body.cancel_token and chat_request_control.is_cancelled(body.cancel_token):
-            _finish_knowledge_retrieval(knowledge_retrieval, status="cancelled")
+            _finish_knowledge_retrieval(knowledge_retrieval, status="failed")
             yield _sse("cancelled", {"phase": "generation", "persisted": False})
             chat_request_control.finish(body.cancel_token)
             return
@@ -1106,6 +1119,19 @@ async def chat(body: ChatIn) -> StreamingResponse:
             raise
         finally:
             c2.close()
+        if body.cancel_token:
+            chat_request_control.complete(body.cancel_token, {
+                "message_id": aid,
+                "content": full,
+                "knowledge_citations": [],
+                "evidence_links": [],
+                "auto_memory": None,
+                "memory_candidate": None,
+                "companion_state": None,
+                "affect_observation": None,
+                "companion_cognition": None,
+                "memory_observation": None,
+            })
         saved_companion_state = None
         affect_observation = None
         memory_observation = None
@@ -1181,8 +1207,8 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 kig_evidence.evidence_link_public(row) for row in _message_evidence_links(aid)
             ],
         }
-        if body.cancel_token:
-            chat_request_control.complete(body.cancel_token, final_payload | {
+        if body.chat_nonce:
+            chat_request_control.update_completed(body.chat_nonce, final_payload | {
                 "auto_memory": None,
                 "memory_candidate": candidate,
                 "companion_state": saved_companion_state,

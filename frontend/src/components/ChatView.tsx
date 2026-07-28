@@ -19,6 +19,14 @@ interface Props {
 
 interface Streaming {
   text: string;
+  phase?: "retrieval" | "generation" | "persistence" | "completed";
+}
+
+interface ActiveChatRequest {
+  controller: AbortController;
+  cancelToken: string;
+  chatNonce: string;
+  sessionId: string;
 }
 
 interface PendingGrant {
@@ -61,6 +69,7 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
   const memoryWatchId = useRef(0);
   const noticeTimer = useRef<number | null>(null);
   const activeSessionRef = useRef<string | null>(sessionId);
+  const activeRequestRef = useRef<ActiveChatRequest | null>(null);
   const ingressWindowId = useRef(`window_${newRequestNonce().replace(/-/g, "_")}`);
   const flushIngressHandler = useRef<(
     scope: string, entries: BufferedIngressEntry[], reason: string,
@@ -70,9 +79,14 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
     ingressBuffer.current = new TurnIngressBuffer<BufferedIngressEntry>({
       onFlush: (scope: string, entries: BufferedIngressEntry[], reason: string) =>
         flushIngressHandler.current(scope, entries, reason),
+      onPendingChange: (scope: string, count: number) => {
+        if (scope.startsWith(`${activeSessionRef.current}:`)) setIngressCount(count);
+      },
     });
   }
   const busy = streaming !== null || grantBusy || pendingGrant !== null || attachmentBusy;
+  const composerBusy = grantBusy || pendingGrant !== null || attachmentBusy
+    || (streaming !== null && !cieEnabled);
 
   useEffect(() => {
     api.getCieSettings()
@@ -88,6 +102,7 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
       void ingressBuffer.current!.flush(previousScope, "explicit_send");
       setIngressCount(0);
       setStreaming(null);
+      void stopActiveGeneration();
     }
     if (!sessionId) {
       setMessages([]);
@@ -111,6 +126,13 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
   useEffect(() => () => {
     memoryWatchId.current += 1;
     if (noticeTimer.current !== null) window.clearTimeout(noticeTimer.current);
+    ingressBuffer.current?.dispose();
+    const active = activeRequestRef.current;
+    if (active) {
+      void api.cancelChat(active.cancelToken).then((result) => {
+        if (result.accepted) active.controller.abort();
+      }).catch(() => undefined);
+    }
   }, []);
 
   useEffect(() => {
@@ -195,13 +217,17 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
   }
 
   async function send(regenerate = false, explicitBoundary = false) {
-    if (!sessionId || busy) return;
+    if (!sessionId || (busy && !(cieEnabled && streaming && !regenerate))) return;
     let content = regenerate ? lastUserContent() : input.trim();
     // 只有 ready 状态的附件参与发送；uploading 由 attachmentBusy 阻塞，error 不发送
     const readyAttachments = pendingAttachments.filter(
       (a): a is Extract<PendingAttachment, { status: "ready" }> => a.status === "ready",
     );
     if (!content && readyAttachments.length === 0) return;
+    if (!regenerate && cieEnabled && streaming) {
+      const stopped = await stopActiveGeneration();
+      if (!stopped) return;
+    }
     if (!regenerate && cieEnabled) {
       const boundary = content === "/stop"
         ? "stop"
@@ -311,6 +337,18 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
     if (!activeSessionId) return;
     const { content, requestNonce, regenerate, ingressMessages, token, skipRestricted = false } = options;
     const activeInView = () => activeSessionRef.current === activeSessionId;
+    const requestControl = cieEnabled ? {
+      controller: new AbortController(),
+      cancelToken: newRequestNonce(),
+      chatNonce: newRequestNonce(),
+      sessionId: activeSessionId,
+    } : null;
+    if (requestControl) activeRequestRef.current = requestControl;
+    const clearActiveRequest = () => {
+      if (requestControl && activeRequestRef.current?.cancelToken === requestControl.cancelToken) {
+        activeRequestRef.current = null;
+      }
+    };
     // 本地立即显示用户消息（含附件卡片），不等后端刷新。只展示 ready 的附件
     const readyForLocal = !regenerate
       ? pendingAttachments.filter(
@@ -336,13 +374,32 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
       {
         onDelta: (t) => {
           if (!activeInView()) return;
-          setStreaming((s) => (s ? { text: s.text + t } : { text: t }));
+          setStreaming((s) => (s ? { ...s, text: s.text + t } : { text: t }));
         },
         onFinal: (final) => {
           if (!activeInView()) return;
           setStreaming({ text: final.content });
         },
+        onPhase: (phase) => {
+          if (!activeInView()) return;
+          setStreaming((current) => ({ text: current?.text ?? "", phase }));
+        },
+        onCancelled: () => {
+          clearActiveRequest();
+          if (!activeInView()) return;
+          setStreaming(null);
+          onMode("companion");
+          api.desktop?.setPetState?.("idle", undefined, companionCluster);
+        },
+        onAbort: () => {
+          clearActiveRequest();
+          if (!activeInView()) return;
+          setStreaming(null);
+          onMode("companion");
+          api.desktop?.setPetState?.("idle", undefined, companionCluster);
+        },
         onError: (msg, hint) => {
+          clearActiveRequest();
           if (!activeInView()) return;
           setStreaming(null);
           const finalHint = options.regenerate
@@ -357,6 +414,7 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
           }
         },
         onDone: (d) => {
+          clearActiveRequest();
           if (activeInView()) {
             setStreaming(null);
             onMode("companion");
@@ -378,11 +436,41 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
           ? readyForLocal.map((a) => a.result.id)
           : undefined,
         ingress_messages: ingressMessages,
+        chat_nonce: requestControl?.chatNonce,
+        cancel_token: requestControl?.cancelToken,
+        signal: requestControl?.controller.signal,
       },
     );
     // 发送成功后清空附件
     if (!options.regenerate) {
       setPendingAttachments([]);
+    }
+  }
+
+  async function stopActiveGeneration(): Promise<boolean> {
+    const active = activeRequestRef.current;
+    if (!active) return true;
+    try {
+      const result = await api.cancelChat(active.cancelToken);
+      if (!result.found) {
+        setErrorCard({ msg: "暂时无法停止", hint: "请求仍在建立，请稍后再试。" });
+        return false;
+      }
+      if (!result.accepted) {
+        setErrorCard({ msg: "回复正在保存", hint: "保存完成后即可继续补充，不会删除已有回复。" });
+        return false;
+      }
+      active.controller.abort();
+      if (activeRequestRef.current?.cancelToken === active.cancelToken) {
+        activeRequestRef.current = null;
+      }
+      setStreaming(null);
+      onMode("companion");
+      api.desktop?.setPetState?.("idle", undefined, companionCluster);
+      return true;
+    } catch (error) {
+      showRequestError(error, "无法确认停止状态，原回复不会被误删。");
+      return false;
     }
   }
 
@@ -447,6 +535,22 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
         content, requestNonce, regenerate: false, activeSessionId, ingressMessages,
       });
     } catch (error) {
+      if (error instanceof api.ApiError && error.code === "cie_disabled") {
+        setCieEnabled(false);
+        const persisted = await api.listMessages(activeSessionId).catch(() => []);
+        if (activeSessionRef.current === activeSessionId) {
+          setMessages(persisted);
+          setInput(content);
+          setPendingAttachments(entries.flatMap((item) => item.attachments.map((result) => ({
+            localId: `restored-${result.id}`,
+            filename: result.filename,
+            status: "ready" as const,
+            result,
+          }))));
+        }
+        showRequestError(error, "CIE 已关闭，消息已恢复到输入框，可按旧单消息路径重新发送。");
+        return;
+      }
       showRequestError(error, "连续消息发送失败，请稍后重试。");
       throw error;
     } finally {
@@ -677,7 +781,7 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
           />
           <button
             className="attach-btn"
-            disabled={!sessionId || busy}
+            disabled={!sessionId || composerBusy}
             onClick={() => fileInputRef.current?.click()}
             title="上传文件让遐蝶阅读"
           >
@@ -688,7 +792,7 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
             rows={1}
             placeholder={sessionId ? "和遐蝶说点什么…" : "正在准备对话…"}
             value={input}
-            disabled={!sessionId || busy}
+            disabled={!sessionId || composerBusy}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
@@ -699,11 +803,14 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
           />
           <button
             className="send-btn"
-            disabled={busy || (!input.trim() && !pendingAttachments.some((a) => a.status === "ready"))}
-            onClick={() => send()}
+            disabled={composerBusy || (!input.trim() && !pendingAttachments.some((a) => a.status === "ready"))}
+            onClick={() => void send()}
           >
-            {ingressCount > 0 ? `➤ ${ingressCount}` : "➤"}
+            {streaming && cieEnabled ? "补充" : ingressCount > 0 ? `➤ ${ingressCount}` : "➤"}
           </button>
+          {streaming && cieEnabled && (
+            <button className="send-btn" onClick={() => void stopActiveGeneration()}>停止</button>
+          )}
         </div>
         <div className="msg-meta" style={{ marginTop: 8, paddingLeft: 4 }}>
           <button onClick={makeTask} disabled={!lastUserContent()}>

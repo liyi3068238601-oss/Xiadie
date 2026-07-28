@@ -1,0 +1,17 @@
+{
+  "protocol_version": "cie-cancel-control-v1",
+  "sample_count": 20,
+  "metrics": {
+    "active_generation_cancel_support_rate": 1.0,
+    "ghost_reply_rate": 0.0,
+    "duplicate_persistence_rate": 0.0,
+    "old_reply_false_delete_rate": 0.0,
+    "late_cancellation_rejection_rate": 1.0
+  },
+  "cancel_ack_latency_ms": {
+    "mean": 0.00098,
+    "p50": 0.0007,
+    "max": 0.0045,
+    "stdev": 0.000877
+  }
+}

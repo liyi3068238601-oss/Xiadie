@@ -24,10 +24,11 @@ function freezeEntry(entry) {
 }
 
 export class TurnIngressBuffer {
-  constructor({ windowMs = DEFAULT_WINDOW_MS, onFlush, setTimer = setTimeout, clearTimer = clearTimeout }) {
+  constructor({ windowMs = DEFAULT_WINDOW_MS, onFlush, onPendingChange, setTimer = setTimeout, clearTimer = clearTimeout }) {
     if (typeof onFlush !== "function") throw new TypeError("onFlush is required");
     this.windowMs = normalizeWindowMs(windowMs);
     this.onFlush = onFlush;
+    this.onPendingChange = onPendingChange;
     this.setTimer = setTimer;
     this.clearTimer = clearTimer;
     this.queues = new Map();
@@ -44,6 +45,7 @@ export class TurnIngressBuffer {
       throw new Error("duplicate client_message_id");
     }
     queue.entries.push(freezeEntry(entry));
+    this.onPendingChange?.(scope, queue.entries.length);
     if (queue.timer !== null) this.clearTimer(queue.timer);
     const immediate = entry.boundary !== "idle_timeout" || queue.entries.length >= MAX_MESSAGES;
     if (immediate) {
@@ -66,6 +68,7 @@ export class TurnIngressBuffer {
     const queue = this.queues.get(scope);
     if (!queue || queue.entries.length === 0) return false;
     this.queues.delete(scope);
+    this.onPendingChange?.(scope, 0);
     if (queue.timer !== null) this.clearTimer(queue.timer);
     try {
       await this.onFlush(scope, queue.entries, reason);
@@ -75,8 +78,16 @@ export class TurnIngressBuffer {
         ? { entries: [...queue.entries, ...pending.entries], timer: pending.timer }
         : { entries: [...queue.entries], timer: null };
       this.queues.set(scope, restored);
+      this.onPendingChange?.(scope, restored.entries.length);
       throw error;
     }
     return true;
+  }
+
+  dispose() {
+    for (const queue of this.queues.values()) {
+      if (queue.timer !== null) this.clearTimer(queue.timer);
+      queue.timer = null;
+    }
   }
 }

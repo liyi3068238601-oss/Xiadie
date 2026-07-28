@@ -18,10 +18,12 @@ export class TurnIngressBuffer<T extends BufferedIngressLike = BufferedIngressLi
   constructor(options: {
     windowMs?: number;
     onFlush: (scope: string, entries: T[], reason: string) => void | Promise<void>;
+    onPendingChange?: (scope: string, count: number) => void;
     setTimer?: typeof setTimeout;
     clearTimer?: typeof clearTimeout;
   });
   enqueue(scope: string, entry: T): number;
   pendingCount(scope: string): number;
   flush(scope: string, reason?: string): Promise<boolean>;
+  dispose(): void;
 }

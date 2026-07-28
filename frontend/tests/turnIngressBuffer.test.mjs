@@ -90,20 +90,32 @@ test("duplicate client IDs fail before flush", () => {
 
 test("failed flush restores deeply immutable entries for a safe retry", async () => {
   let attempts = 0;
+  const counts = [];
   const buffer = new TurnIngressBuffer({
     onFlush: async () => {
       attempts += 1;
       if (attempts === 1) throw new Error("preflight failed");
     },
+    onPendingChange: (_scope, count) => counts.push(count),
   });
   buffer.enqueue("scope", { ...entry(1), attachments: [{ id: "attachment-1" }] });
   await assert.rejects(buffer.flush("scope"), /preflight failed/);
   assert.equal(buffer.pendingCount("scope"), 1);
+  assert.deepEqual(counts.slice(-2), [0, 1]);
   const restored = buffer.queues.get("scope").entries[0];
   assert.throws(() => restored.attachment_ids.push("changed"));
   assert.throws(() => { restored.attachments[0].id = "changed"; });
   await buffer.flush("scope");
   assert.equal(buffer.pendingCount("scope"), 0);
+});
+
+test("dispose clears idle timers without flushing after unmount", () => {
+  const { buffer, timers, flushed } = harness();
+  buffer.enqueue("scope", entry(1));
+  assert.equal(timers.size, 1);
+  buffer.dispose();
+  assert.equal(timers.size, 0);
+  assert.equal(flushed.length, 0);
 });
 
 test("ChatView and API keep CIE behind the server gate and expose hard boundaries", async () => {
@@ -116,4 +128,8 @@ test("ChatView and API keep CIE behind the server gate and expose hard boundarie
   assert.match(chatView, /setStreaming\(null\)/);
   assert.match(api, /"\/api\/cie\/settings"/);
   assert.match(api, /ingress_messages\?: TurnIngressMessage\[\]/);
+  assert.match(chatView, /stopActiveGeneration/);
+  assert.match(chatView, />停止</);
+  assert.match(api, /signal\?: AbortSignal/);
+  assert.match(api, /"\/api\/chat\/cancel"/);
 });

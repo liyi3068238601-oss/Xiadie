@@ -2,7 +2,7 @@
 
 > 最近复核日期：2026-07-28
 >
-> 当前施工状态：KIG.0～KIG.15 已合入 main；CIE.0 已提交，CIE.1 Review 的 P1 已修复并通过阶段门，当前进入 CIE.2，Schema 仍为 80
+> 当前施工状态：KIG.0～KIG.15 已合入 main；CIE.0～CIE.2 已通过独立 Review，当前进入 CIE.3 原生图片多模态，Schema 仍为 80
 >
 > 当前版本：`v0.1.0` MVP 骨架（知识库系统 K 系列已完成）
 >
@@ -35,8 +35,8 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests -q -p no:cacheprovider` | `2575 passed, 1 warning`；当前 Schema 80 |
-| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：59 项；TypeScript 检查及 Vite 生产构建 191 modules 成功 |
+| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests -q -p no:cacheprovider` | `2583 passed, 1 warning`；当前 Schema 80 |
+| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：61 项；TypeScript 检查及 Vite 生产构建 191 modules 成功 |
 | Electron / Windows | Electron contract/语法；`scripts\test-frozen-backend.ps1 -Port 18756`；win-unpacked 与 NSIS 临时安装生命周期 smoke | 3 项 contract 及语法通过；冻结后端、IANA 时区、BGE-M3、真实安装、首启、托盘保活、崩溃清理、重启及卸载清理通过；休眠/唤醒由 contract、重启推进和 resume guard 场景验证 |
 
 CDS.12 以 Schema 63 新增三张无正文反馈/校准审计表；CDS.13 未再新增迁移。`eap-decision-run-adapter-v1` 保持兼容。LIFE.0～13 与独立总 Review 已完成：Schema 64～71 分别建立来源事件、运行时、CatchUp、日程、目标、日期、日记和 SelfTimeline；6 类模型决策因样本/Provider 门不足继续 Shadow。Review 收口补强敏感格式识别、IANA 时区写入校验与多 Provider 一致性晋级门，LIFE v1 正式冻结于 Schema 71。`life-adapter-v1` 与 CDS/EAP 冻结契约兼容；LIFE PR #3 merge `f16d80ab0d2457065dc65d7d284d3cbf3584f5ee` 已锁定为 KIG predecessor，首个可用迁移号为 72。

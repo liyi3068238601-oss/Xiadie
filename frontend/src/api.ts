@@ -1483,6 +1483,9 @@ export interface ChatCallbacks {
     knowledge_citations: KnowledgeCitation[];
     evidence_links: EvidenceLink[];
   }) => void;
+  onPhase?: (phase: "retrieval" | "generation" | "persistence" | "completed") => void;
+  onCancelled?: (d: { phase: string; persisted: boolean }) => void;
+  onAbort?: () => void;
 }
 
 export interface ChatRequestOptions {
@@ -1492,6 +1495,9 @@ export interface ChatRequestOptions {
   knowledge_skip_restricted?: boolean;
   attachment_ids?: string[];
   ingress_messages?: TurnIngressMessage[];
+  chat_nonce?: string;
+  cancel_token?: string;
+  signal?: AbortSignal;
 }
 
 export interface TurnIngressMessage {
@@ -1517,6 +1523,10 @@ export interface CieSettings {
 }
 
 export const getCieSettings = () => j<CieSettings>("/api/cie/settings");
+export const cancelChat = (cancelToken: string) =>
+  j<{ found: boolean; accepted: boolean; phase: string | null }>("/api/chat/cancel", {
+    method: "POST", body: JSON.stringify({ cancel_token: cancelToken }),
+  });
 
 // ---- 聊天附件上传 ----
 export interface ChatAttachmentResult {
@@ -1592,27 +1602,32 @@ export async function streamChat(
   // 整体 try/catch：fetch 连接被拒或流读取中断都会 reject，必须保证 onError 触发，
   // 否则调用方（ChatView）的 busy 状态永不复位、输入框卡死。
   try {
+    const { signal, ...bodyOptions } = options;
     const r = await fetch(API_BASE + "/api/chat", {
       method: "POST",
       headers: requestHeaders(),
-      body: JSON.stringify({ session_id, content, ...options }),
+      body: JSON.stringify({ session_id, content, ...bodyOptions }),
+      signal,
     });
     if (!r.ok || !r.body) {
       let message = "请求失败";
       let hint = "后端拒绝了本次请求，请检查资料授权后重试。";
+      let code: string | undefined;
       try {
         const payload = await r.json();
         const detail = payload?.detail;
         if (typeof detail === "string") message = detail;
         else if (detail?.message) message = detail.message;
+        code = detail?.code;
         if (detail?.code === "knowledge_grant_required") {
           hint = "资料需要重新确认后才能发送给当前模型。";
         }
       } catch {
         if (r.status >= 500) hint = "后端服务暂时不可用，请稍后重试。";
       }
+      const error = new ApiError(r.status, message, code);
       cb.onError?.(message, hint);
-      return;
+      throw error;
     }
     const reader = r.body.getReader();
     const decoder = new TextDecoder();
@@ -1633,7 +1648,12 @@ export async function streamChat(
         dispatchChatSseEvent(ev, data, cb, protocolState);
       }
     }
-  } catch {
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    if (error instanceof DOMException && error.name === "AbortError") {
+      cb.onAbort?.();
+      return;
+    }
     cb.onError?.("连接中断", "无法连接到后端或数据流已中断，请确认后端已启动后重试。");
   }
 }
