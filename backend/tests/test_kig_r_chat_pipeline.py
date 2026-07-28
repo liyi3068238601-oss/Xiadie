@@ -201,6 +201,73 @@ def test_remote_task_body_is_never_admitted_without_explicit_setting(monkeypatch
     assert not result.bundle.selected_evidence
 
 
+def test_remote_transfer_rejects_unknown_or_malformed_privacy_scopes():
+    unknown_message = _candidate("未知隐私消息", privacy="highly_sensitive")
+    malformed_knowledge = _candidate(
+        "错误隐私资料", source="knowledge", source_kind="knowledge_chunk",
+        privacy="normal:remote_allowed:unexpected",
+    )
+    public_lore = _candidate(
+        "公开设定", source="lore", source_kind="lore_section", privacy="public",
+    )
+    filtered = pipeline._filter_transfer(  # noqa: SLF001
+        _batch(unknown_message, malformed_knowledge, public_lore),
+        {"execution_location": "remote"},
+    )
+    assert filtered.candidates == (public_lore,)
+
+
+def test_confirmed_reverse_relation_overrides_deterministic_pair_direction():
+    from app import kig_governance
+
+    old = _candidate("星河 API 服务版本 1.0", version="1.0", occurred_at=db.now() - 100)
+    new = _candidate("星河 API 服务版本 2.0", version="2.0", occurred_at=db.now())
+    governed = (kig_governance.adapt_candidate(old), kig_governance.adapt_candidate(new))
+    deterministic = kig_governance.deterministic_relation(*governed)
+    assert deterministic is not None
+    confirmed_reverse = replace(
+        deterministic, older_id=new.candidate_id, newer_id=old.candidate_id,
+        selected_ids=(old.candidate_id,), reason_codes=("semantic_relation",),
+    )
+    combined = pipeline._deduplicate_relations(  # noqa: SLF001
+        [deterministic, confirmed_reverse],
+    )
+    assert combined == [confirmed_reverse]
+    freshness = kig_governance.assess_freshness(governed, combined)
+    assert freshness.states[new.candidate_id] == "superseded"
+    assert freshness.states[old.candidate_id] == "current"
+
+
+def test_latest_persisted_confirmation_wins_for_an_unordered_source_pair():
+    from app import kig_governance
+
+    old = _candidate("星河 API 服务版本 1.0", version="1.0", occurred_at=db.now() - 100)
+    new = _candidate("星河 API 服务版本 2.0", version="2.0", occurred_at=db.now())
+    governed = (kig_governance.adapt_candidate(old), kig_governance.adapt_candidate(new))
+    deterministic = kig_governance.deterministic_relation(*governed)
+    assert deterministic is not None
+    payload = kig_governance.VersionRelationInput(
+        candidate_ids=(old.candidate_id, new.candidate_id), request_id=db.new_id(),
+        query="版本确认", sources=governed, impact_level="medium",
+    )
+    kig_governance.persist_relation(deterministic, payload)
+    reverse_proposal = replace(
+        deterministic, older_id=new.candidate_id, newer_id=old.candidate_id,
+        selected_ids=(old.candidate_id,), reason_codes=("semantic_relation",),
+        requires_confirmation=True, proposal_only=True,
+    )
+    stored = kig_governance.persist_relation(reverse_proposal, payload)
+    kig_governance.resolve_relation(
+        stored["id"], accept=True, expected_revision=stored["relation_revision"],
+    )
+
+    persisted, proposed = pipeline._persisted_relations(governed)  # noqa: SLF001
+    combined = pipeline._deduplicate_relations([deterministic, *persisted])  # noqa: SLF001
+    assert proposed == [] and len(combined) == 1
+    assert combined[0].older_id == new.candidate_id
+    assert combined[0].newer_id == old.candidate_id
+
+
 def test_kig_never_broadens_owner_authorized_knowledge_chunks():
     allowed = _candidate(
         "已授权资料", source="knowledge", source_kind="knowledge_chunk",

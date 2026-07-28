@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+import runpy
 from dataclasses import replace
 from pathlib import Path
 import shutil
@@ -20,6 +21,8 @@ if str(BACKEND_DIR) not in sys.path:
 PROJECT_DIR = BACKEND_DIR.parent
 JSON_PATH = PROJECT_DIR / "docs" / "reports" / "kig-r-acceptance.json"
 MARKDOWN_PATH = PROJECT_DIR / "docs" / "reports" / "kig-r-acceptance.md"
+MODEL_QUALITY_PATH = PROJECT_DIR / "docs" / "reports" / "kig-7-model-quality.json"
+MODEL_EVAL_RUNNER = BACKEND_DIR / "scripts" / "run_kig7_model_eval.py"
 CASE_COUNT = 10
 
 
@@ -100,6 +103,8 @@ def build_report() -> dict:
         "unconfirmed_high_impact_relation_accepted": 0,
         "unauthorized_remote_tool_excerpt": 0,
         "unauthorized_knowledge_excerpt": 0,
+        "unknown_privacy_scope_excerpt": 0,
+        "conflicting_confirmed_pair_applied": 0,
         "conditional_false_conflict": 0,
         "recency_only_supersession": 0,
         "shadow_proposal_active": 0,
@@ -173,6 +178,36 @@ def build_report() -> dict:
         )
         counters["unauthorized_knowledge_excerpt"] += len(knowledge_filtered.candidates)
 
+        unknown_privacy = replace(base, privacy_scope="highly_sensitive")
+        privacy_filtered = kig_pipeline._filter_transfer(  # noqa: SLF001
+            _batch(unknown_privacy), {"execution_location": "remote"},
+        )
+        counters["unknown_privacy_scope_excerpt"] += len(privacy_filtered.candidates)
+
+        forward = kig_governance.VersionRelationResult(
+            action="select", selected_ids=(right.candidate_id,), relation="supersedes",
+            older_id=left.candidate_id, newer_id=right.candidate_id, scope_terms=(),
+            reason_codes=("deterministic_relation",), confidence_band="high",
+            requires_confirmation=False, proposal_only=False,
+        )
+        confirmed_reverse = replace(
+            forward, selected_ids=(left.candidate_id,), older_id=right.candidate_id,
+            newer_id=left.candidate_id, reason_codes=("semantic_relation",),
+            proposal_only=True,
+        )
+        pair_relations = kig_pipeline._deduplicate_relations(  # noqa: SLF001
+            [forward, confirmed_reverse],
+        )
+        pair_freshness = kig_governance.assess_freshness(
+            (kig_governance.adapt_candidate(left), kig_governance.adapt_candidate(right)),
+            pair_relations,
+        )
+        counters["conflicting_confirmed_pair_applied"] += int(
+            len(pair_relations) != 1
+            or pair_freshness.states[left.candidate_id] != "current"
+            or pair_freshness.states[right.candidate_id] != "superseded"
+        )
+
         morning = _message_candidate(f"项目 {index} 早上喜欢咖啡")
         evening = _message_candidate(f"项目 {index} 晚上不喜欢咖啡")
         kig_governance.upsert_source_governance(
@@ -212,6 +247,18 @@ def build_report() -> dict:
     denominators = {name: CASE_COUNT for name in counters}
     rates = {name + "_rate": counters[name] / CASE_COUNT for name in counters}
     safety_failures = [name for name, count in counters.items() if count != 0]
+    quality_report = None
+    try:
+        quality_report = json.loads(MODEL_QUALITY_PATH.read_text(encoding="utf-8"))
+        eval_namespace = runpy.run_path(str(MODEL_EVAL_RUNNER))
+        model_certified = kig_reranker.certification_matches(
+            quality_report, provider_id=str(quality_report.get("provider_id") or ""),
+            model=str(quality_report.get("model") or ""),
+            eval_dataset_hash=eval_namespace["_dataset_hash"](),
+        )
+    except (OSError, ValueError, KeyError, TypeError):
+        model_certified = False
+    safety_passed = not safety_failures
     report = {
         "protocol_version": "kig-r-acceptance-v1",
         "release_protocol": kig_pipeline.PROTOCOL_VERSION,
@@ -222,10 +269,16 @@ def build_report() -> dict:
         "denominators": denominators,
         "counts": counters,
         "rates": rates,
-        "safety_gate": "pass" if not safety_failures else "fail",
+        "safety_gate": "pass" if safety_passed else "fail",
         "safety_failures": safety_failures,
-        "model_quality_gate": "external_kig7_certification_required",
-        "release_gate": "pending_model_quality",
+        "model_quality_gate": "pass" if model_certified else "fail",
+        "model_certification_key": (
+            (quality_report or {}).get("certification", {}).get("certification_key")
+            if model_certified else None
+        ),
+        "certified_provider_id": (quality_report or {}).get("provider_id") if model_certified else None,
+        "certified_model": (quality_report or {}).get("model") if model_certified else None,
+        "release_gate": "pass" if safety_passed and model_certified else "pending_model_quality",
     }
     return report
 
@@ -234,6 +287,12 @@ def render_markdown(report: dict) -> str:
     rows = "\n".join(
         f"| {name} | {report['denominators'][name]} | {count} |"
         for name, count in report["counts"].items()
+    )
+    quality_note = (
+        f"模型指纹认证已通过：`{report['certified_provider_id']}` / "
+        f"`{report['certified_model']}` / `{report['model_certification_key']}`。"
+        if report["model_quality_gate"] == "pass" else
+        "安全门不能替代 KIG.7 实配模型盲评；当前不得晋级或声称 KIG-R 已冻结。"
     )
     return f"""# KIG-R 冻结验收报告
 
@@ -248,7 +307,7 @@ def render_markdown(report: dict) -> str:
 |---|---:|---:|
 {rows}
 
-安全门与模型质量门彼此独立。安全门通过不能替代 KIG.7 实配模型盲评；在后者有有效覆盖率与人工相关性提升证据前不得把 `retrieval-rerank-v1` 晋级或声称 KIG-R 已冻结。
+安全门与模型质量门彼此独立。{quality_note} 未匹配该 Provider、模型、协议、Prompt 或固定集指纹的其他模型仍必须保持未认证 Shadow/确定性回退。
 """
 
 

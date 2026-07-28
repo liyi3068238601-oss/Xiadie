@@ -7,7 +7,7 @@ from itertools import combinations
 
 from . import (
     db, kig_evidence, kig_governance, kig_query_planner, kig_reranker,
-    kig_retrieval, knowledge_context,
+    kig_retrieval, kig_sources, knowledge_context,
 )
 
 PROTOCOL_VERSION = "kig-retrieval-governance-v1"
@@ -187,13 +187,27 @@ def _filter_transfer(
 ) -> kig_retrieval.RetrievalBatch:
     if not provider or provider.get("execution_location") != "remote":
         return batch
-    candidates = tuple(item for item in batch.candidates if (
-        item.source_type == "knowledge_chunk"
-        or item.source_type == "lore_section"
-        or item.privacy_scope not in {"sensitive", "private_sensitive"}
-    ) and not (item.source_type == "tool_run" and db.get_setting(
-        "kig_remote_task_evidence", "0"
-    ) != "1"))
+    task_evidence_allowed = db.get_setting("kig_remote_task_evidence", "0") == "1"
+    allowed_scopes = {
+        "message": frozenset({"private"}),
+        "memory_fragment": frozenset({"normal"}),
+        "life_event": frozenset({"private"}),
+        "tool_run": frozenset({"private"}) if task_evidence_allowed else frozenset(),
+        "lore_section": frozenset({"public"}),
+    }
+
+    def allowed(item: kig_retrieval.RetrievalCandidate) -> bool:
+        if item.source_type == "knowledge_chunk":
+            try:
+                kig_sources.validate_privacy_scope(item.source_type, item.privacy_scope)
+            except kig_sources.SourceRefError:
+                return False
+            # The preceding owner-grant filter is the authority for whether a
+            # valid knowledge policy may cross this turn's remote boundary.
+            return True
+        return item.privacy_scope in allowed_scopes.get(item.source_type, frozenset())
+
+    candidates = tuple(item for item in batch.candidates if allowed(item))
     return replace(batch, candidates=candidates)
 
 
@@ -246,7 +260,9 @@ def _persisted_relations(
         conn.close()
     relations: list[kig_governance.VersionRelationResult] = []
     proposed: list[str] = []
-    for row in rows:
+    # SQL retains the newest bounded window; consume it oldest-to-newest so
+    # pair-level deduplication deterministically leaves the latest confirmation.
+    for row in reversed(rows):
         older = by_ref.get((row["older_source_kind"], row["older_source_id"],
                             row["older_source_revision"]))
         newer = by_ref.get((row["newer_source_kind"], row["newer_source_id"],
@@ -271,9 +287,12 @@ def _persisted_relations(
 def _deduplicate_relations(
     relations: list[kig_governance.VersionRelationResult],
 ) -> list[kig_governance.VersionRelationResult]:
-    result: dict[tuple[str, str], kig_governance.VersionRelationResult] = {}
+    # Relations concern an unordered evidence pair. Later entries intentionally
+    # win, so a persisted user-confirmed decision overrides a deterministic
+    # inference even when the confirmed older/newer direction is reversed.
+    result: dict[frozenset[str], kig_governance.VersionRelationResult] = {}
     for relation in relations:
-        result[(relation.older_id, relation.newer_id)] = relation
+        result[frozenset((relation.older_id, relation.newer_id))] = relation
     return list(result.values())
 
 

@@ -17,6 +17,10 @@ JSON_COMPLETION_MAX_TOKENS = 500
 # performing an explicit reasoning-model certification may request more, but
 # can never exceed this process-wide hard ceiling.
 JSON_COMPLETION_HARD_MAX_TOKENS = 2_048
+# JSON-mode reasoning models may spend much of the output budget on hidden
+# reasoning before emitting the bounded object. This larger ceiling is opt-in;
+# ordinary observers retain the 2,048 hard limit above.
+JSON_REASONING_HARD_MAX_TOKENS = 4_096
 JSON_COMPLETION_TIMEOUT_SECONDS = 20
 JSON_COMPLETION_MAX_CHARS = 12000
 
@@ -124,7 +128,8 @@ async def complete_json(
     """执行受限的非流式 JSON 观察调用；不负责解析或信任模型输出。"""
     if provider is None or provider.get("id") == "mock" or not provider.get("base_url"):
         raise LLMError("观察模型不可用", "演示模型不执行旁观观察。")
-    safe_max_tokens = max(1, min(int(max_tokens), JSON_COMPLETION_HARD_MAX_TOKENS))
+    token_ceiling = JSON_REASONING_HARD_MAX_TOKENS if json_mode else JSON_COMPLETION_HARD_MAX_TOKENS
+    safe_max_tokens = max(1, min(int(max_tokens), token_ceiling))
     url = provider["base_url"].rstrip("/") + "/chat/completions"
     headers = {"Content-Type": "application/json"}
     if provider.get("api_key"):
@@ -145,20 +150,40 @@ async def complete_json(
         async with httpx.AsyncClient(timeout=max(0.1, float(timeout_seconds))) as client:
             response = await client.post(url, headers=headers, json=payload)
         if response.status_code == 401:
-            raise LLMError("观察模型鉴权失败", "API Key 无效或已过期。")
+            raise LLMError(
+                "观察模型鉴权失败", "API Key 无效或已过期。", "observer_model_auth_failed",
+            )
         if response.status_code == 429:
-            raise LLMError("观察模型被限流", "稍后进入恢复队列重试。")
+            raise LLMError(
+                "观察模型被限流", "稍后进入恢复队列重试。", "observer_model_rate_limited",
+            )
+        if response.status_code >= 500:
+            raise LLMError(
+                f"观察模型返回错误 {response.status_code}", "稍后重试。",
+                "observer_model_server_error",
+            )
         if response.status_code >= 400:
-            raise LLMError(f"观察模型返回错误 {response.status_code}", "稍后重试。")
+            raise LLMError(
+                f"观察模型返回错误 {response.status_code}", "请检查模型兼容性。",
+                "observer_model_http_error",
+            )
         try:
             body = response.json()
             content = body["choices"][0]["message"]["content"]
         except (ValueError, KeyError, IndexError, TypeError) as exc:
-            raise LLMError("观察模型响应格式错误", "响应缺少 JSON 文本。") from exc
+            raise LLMError(
+                "观察模型响应格式错误", "响应缺少 JSON 文本。",
+                "observer_model_response_invalid",
+            ) from exc
         if not isinstance(content, str) or not content.strip():
-            raise LLMError("观察模型响应为空", "稍后重试。")
+            raise LLMError(
+                "观察模型响应为空", "稍后重试。", "observer_model_response_empty",
+            )
         if len(content) > JSON_COMPLETION_MAX_CHARS:
-            raise LLMError("观察模型响应过长", "响应超过本地安全上限。")
+            raise LLMError(
+                "观察模型响应过长", "响应超过本地安全上限。",
+                "observer_model_response_too_long",
+            )
         usage = body.get("usage") if isinstance(body, dict) else None
         usage = usage if isinstance(usage, dict) else {}
         return {
@@ -168,13 +193,17 @@ async def complete_json(
             "latency_ms": max(0, int((time.perf_counter() - started) * 1000)),
         }
     except httpx.ConnectError as exc:
-        raise LLMError("无法连接观察模型", "稍后进入恢复队列重试。") from exc
+        raise LLMError(
+            "无法连接观察模型", "稍后进入恢复队列重试。", "observer_model_connect_error",
+        ) from exc
     except httpx.TimeoutException as exc:
         raise LLMError(
             "观察模型请求超时", "稍后进入恢复队列重试。", "observer_model_timeout"
         ) from exc
     except httpx.HTTPError as exc:
-        raise LLMError("观察模型连接中断", "稍后进入恢复队列重试。") from exc
+        raise LLMError(
+            "观察模型连接中断", "稍后进入恢复队列重试。", "observer_model_transport_error",
+        ) from exc
 
 
 def _safe_token_count(value) -> int | None:

@@ -134,11 +134,62 @@ def test_valid_model_result_remains_shadow_and_records_body_free_comparison(monk
     assert result["outcome"]["fallback_used"] is False
     assert result["outcome"]["application_allowed"] is False
     assert captured["json_mode"] is True
+    assert captured["max_tokens"] == 4_096
     assert result["comparison"] == {
         "selected_jaccard": round(2 / 3, 4), "changed_positions": 2,
         "model_selected_count": 2, "fallback_selected_count": 3,
     }
     assert "星河候选" not in str(result["comparison"])
+
+
+def test_invalid_schema_gets_one_bounded_correction_without_relaxing_validation(monkeypatch):
+    payload = _payload()
+    proposed = replace(
+        reranker.deterministic_fusion(payload), reason_codes=("semantic_rerank",),
+        confidence_band="high",
+    )
+    responses = iter(("not-json", _raw(proposed)))
+    messages = []
+
+    async def complete(_provider, _model, model_messages, **_kwargs):
+        messages.append(model_messages)
+        return {"text": next(responses), "latency_ms": 1,
+                "prompt_tokens": 10, "completion_tokens": 10}
+
+    monkeypatch.setattr(reranker.llm, "complete_json", complete)
+    result = asyncio.run(reranker.propose(
+        payload, provider={"id": "deepseek", "execution_location": "remote"},
+        model="deepseek-chat", remote_authorized=True,
+    ))
+    assert result["proposal"] == proposed
+    assert result["model_request_count"] == 2
+    assert result["outcome"]["fallback_used"] is False
+    assert "json_repair_failed" in messages[1][0]["content"]
+    assert result["attempt_diagnostics"] == [{
+        "attempt": 1, "error_code": "json_repair_failed",
+        "structure": {"json_type": "invalid", "character_count": 8},
+    }]
+
+
+def test_two_invalid_schema_attempts_still_fail_closed(monkeypatch):
+    payload = _payload()
+    calls = 0
+
+    async def invalid(*_args, **_kwargs):
+        nonlocal calls
+        calls += 1
+        return {"text": "not-json", "latency_ms": 1,
+                "prompt_tokens": 1, "completion_tokens": 1}
+
+    monkeypatch.setattr(reranker.llm, "complete_json", invalid)
+    result = asyncio.run(reranker.propose(
+        payload, provider={"id": "deepseek", "execution_location": "remote"},
+        model="deepseek-chat", remote_authorized=True,
+    ))
+    assert calls == reranker.MAX_MODEL_ATTEMPTS == 2
+    assert result["proposal"] == reranker.deterministic_fusion(payload)
+    assert result["outcome"]["fallback_used"] is True
+    assert result["outcome"]["application_allowed"] is False
 
 
 def test_source_change_rejects_old_model_result_and_fallback_drops_changed_candidate():
@@ -252,7 +303,8 @@ def test_shared_json_completion_mode_is_opt_in(monkeypatch):
 
     monkeypatch.setattr(llm.httpx, "AsyncClient", Client)
     provider = {"id": "test", "base_url": "https://example.test/v1", "api_key": "key"}
-    asyncio.run(llm.complete_json(provider, "model", [], json_mode=True))
+    asyncio.run(llm.complete_json(provider, "model", [], max_tokens=99_999, json_mode=True))
     asyncio.run(llm.complete_json(provider, "model", []))
     assert captured[0]["response_format"] == {"type": "json_object"}
+    assert captured[0]["max_tokens"] == llm.JSON_REASONING_HARD_MAX_TOKENS
     assert "response_format" not in captured[1]

@@ -26,6 +26,15 @@ DEPENDENCY_STATUSES = frozenset({
     "active", "stale", "missing", "revoked", "inaccessible", "unverified",
 })
 _HEX64 = re.compile(r"^[0-9a-f]{64}$")
+_KNOWLEDGE_SENSITIVITIES = frozenset({"normal", "sensitive"})
+_KNOWLEDGE_POLICIES = frozenset({"remote_allowed", "ask_each_time", "local_only"})
+_PRIVACY_SCOPES = {
+    "message": frozenset({"private"}),
+    "memory_fragment": frozenset({"normal", "sensitive"}),
+    "life_event": frozenset({"private"}),
+    "tool_run": frozenset({"private"}),
+    "lore_section": frozenset({"public"}),
+}
 
 
 class SourceRefError(ValueError):
@@ -49,6 +58,24 @@ class SourceRef:
 
 
 Resolver = Callable[[str], SourceRef]
+
+
+def validate_privacy_scope(source_kind: str, privacy_scope: str) -> str:
+    """Validate owner adapter privacy metadata with an explicit, fail-closed grammar."""
+    if source_kind in {"knowledge_document", "knowledge_chunk"}:
+        parts = privacy_scope.split(":")
+        valid = (
+            len(parts) == 2
+            and parts[0] in _KNOWLEDGE_SENSITIVITIES
+            and parts[1] in _KNOWLEDGE_POLICIES
+        )
+    else:
+        valid = privacy_scope in _PRIVACY_SCOPES.get(source_kind, frozenset())
+    if not valid:
+        raise SourceRefError(
+            "source_privacy_invalid", "source privacy scope is not allowlisted",
+        )
+    return privacy_scope
 
 
 def _sha256(value: str) -> str:
@@ -211,7 +238,15 @@ class SourceAdapterRegistry:
     def resolve(self, source_kind: str, source_id: str) -> SourceRef:
         if not source_id or source_kind not in self._resolvers:
             raise SourceRefError("source_kind_invalid", "source kind or id is invalid")
-        return self._resolvers[source_kind](source_id)
+        source_ref = self._resolvers[source_kind](source_id)
+        if source_ref.source_kind != source_kind or source_ref.source_id != source_id:
+            raise SourceRefError(
+                "source_ref_mismatch", "adapter returned a mismatched source identity",
+            )
+        if not _HEX64.fullmatch(source_ref.content_hash):
+            raise SourceRefError("source_hash_invalid", "source hash must be lowercase sha256")
+        validate_privacy_scope(source_kind, source_ref.privacy_scope)
+        return source_ref
 
 
 registry = SourceAdapterRegistry()
@@ -228,6 +263,7 @@ def validate_ref(source_ref: SourceRef) -> SourceRef:
         raise SourceRefError("source_ref_invalid", "source identity is invalid")
     if not _HEX64.fullmatch(source_ref.content_hash):
         raise SourceRefError("source_hash_invalid", "source hash must be lowercase sha256")
+    validate_privacy_scope(source_ref.source_kind, source_ref.privacy_scope)
     current = registry.resolve(source_ref.source_kind, source_ref.source_id)
     if source_ref != current:
         raise SourceRefError("source_ref_mismatch", "source envelope does not match authoritative metadata")

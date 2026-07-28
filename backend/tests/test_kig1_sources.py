@@ -97,6 +97,23 @@ def test_all_authoritative_adapters_are_body_free_and_exactly_validated():
         assert caught.value.code == "source_ref_mismatch"
 
 
+def test_adapter_privacy_scope_is_explicitly_allowlisted_and_fail_closed():
+    registry = kig_sources.SourceAdapterRegistry()
+    registry.register("message", lambda source_id: kig_sources.SourceRef(
+        "message", source_id, "1", "a" * 64, "active", "highly_sensitive",
+        f"conversation://messages/{source_id}",
+    ))
+    with pytest.raises(kig_sources.SourceRefError) as caught:
+        registry.resolve("message", "message-1")
+    assert caught.value.code == "source_privacy_invalid"
+
+    for scope in ("normal:remote_allowed", "sensitive:ask_each_time", "normal:local_only"):
+        assert kig_sources.validate_privacy_scope("knowledge_chunk", scope) == scope
+    for scope in ("normal", "normal:remote_allowed:extra", "secret:remote_allowed"):
+        with pytest.raises(kig_sources.SourceRefError):
+            kig_sources.validate_privacy_scope("knowledge_chunk", scope)
+
+
 def test_dependency_status_propagates_stale_missing_revoked_and_unverified(monkeypatch):
     sources = _seed_sources()
     tool_ref = kig_sources.registry.resolve("tool_run", sources["tool_run"])

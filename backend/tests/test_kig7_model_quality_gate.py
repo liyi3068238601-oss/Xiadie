@@ -7,7 +7,8 @@ RUNNER = Path(__file__).resolve().parents[1] / "scripts" / "run_kig7_model_eval.
 
 def _metrics(*, strict: int, strict_sum: float, fallback_sum: float, unsafe: int = 0):
     return {
-        "cases": 6, "model_calls": 6, "strict_model_results": strict,
+        "cases": 6, "model_calls": 6, "model_requests": 6,
+        "strict_model_results": strict,
         "safe_fallbacks": 6 - strict, "unsafe_results": unsafe,
         "application_allowed": 0, "strict_precision_at_2_sum": strict_sum,
         "paired_fallback_precision_at_2_sum": fallback_sum,
@@ -49,3 +50,34 @@ def test_quality_gate_rejects_any_unsafe_result():
     )
     assert report["quality_gate"] == "fail"
     assert report["promotion_ceiling"] == "shadow_single_provider"
+
+
+def test_model_certification_is_bound_to_provider_model_protocol_prompt_and_dataset():
+    from app import kig_reranker
+
+    descriptor = kig_reranker.model_certification_descriptor(
+        provider_id="deepseek", model="deepseek-v4-pro", eval_dataset_hash="a" * 64,
+    )
+    report = {
+        "quality_gate": "pass", "certification": descriptor,
+        "thresholds": {
+            "minimum_strict_coverage": 1.0, "minimum_precision_at_2_gain": 0.15,
+            "maximum_unsafe_results": 0, "maximum_application_allowed": 0,
+        },
+        "metrics": {
+            "strict_coverage": 1.0, "precision_gain": 0.5,
+            "unsafe_results": 0, "application_allowed": 0,
+        },
+    }
+    assert kig_reranker.certification_matches(
+        report, provider_id="deepseek", model="deepseek-v4-pro",
+        eval_dataset_hash="a" * 64,
+    )
+    assert not kig_reranker.certification_matches(
+        report, provider_id="deepseek", model="deepseek-v5",
+        eval_dataset_hash="a" * 64,
+    )
+    assert not kig_reranker.certification_matches(
+        report, provider_id="deepseek", model="deepseek-v4-pro",
+        eval_dataset_hash="b" * 64,
+    )

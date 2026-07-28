@@ -2,15 +2,21 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import os
 from pathlib import Path
 import shutil
 import sqlite3
+import sys
 import tempfile
 
 
-REAL_DB = Path(__file__).resolve().parents[1] / "data" / "xiadie.db"
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
+
+REAL_DB = BACKEND_DIR / "data" / "xiadie.db"
 PROJECT_DIR = Path(__file__).resolve().parents[2]
 REPORT_PATH = PROJECT_DIR / "docs" / "reports" / "kig-7-model-quality.json"
 MIN_STRICT_COVERAGE = 1.0
@@ -70,6 +76,16 @@ CASES = (
 )
 
 
+def _dataset_hash() -> str:
+    encoded = json.dumps(CASES, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _report_slug(value: str) -> str:
+    cleaned = "".join(char.lower() if char.isalnum() else "-" for char in value)
+    return "-".join(part for part in cleaned.split("-") if part)[:80] or "unknown"
+
+
 def _payload(query: str, excerpts: tuple[str, ...], index: int):
     candidates = []
     for rank, excerpt in enumerate(excerpts):
@@ -92,6 +108,7 @@ def _precision_at_2(ranked_ids: tuple[str, ...], expected: set[str]) -> float:
 
 def build_quality_report(
     *, model: str, provider_id: str, metrics: dict, errors: dict[str, int],
+    certification: dict | None = None, structural_diagnostics: list[dict] | None = None,
 ) -> dict:
     measured = dict(metrics)
     strict_count = int(measured["strict_model_results"])
@@ -120,6 +137,7 @@ def build_quality_report(
         "provider_id": provider_id,
         "synthetic_only": True,
         "contains_user_data": False,
+        "certification": certification,
         "thresholds": {
             "minimum_strict_coverage": MIN_STRICT_COVERAGE,
             "minimum_precision_at_2_gain": MIN_PRECISION_GAIN,
@@ -128,6 +146,7 @@ def build_quality_report(
         },
         "metrics": measured,
         "errors": errors,
+        "structural_diagnostics": structural_diagnostics or [],
         "quality_gate": "pass" if gate_passed else "fail",
         "promotion_ceiling": "shadow_single_provider",
     }
@@ -137,13 +156,26 @@ async def main() -> None:
     provider, model = _configured_provider()
     temp_dir = _load_isolated_app()
     db.init_db()
+    if os.environ.get("XIADIE_KIG7_EVAL_DEBUG_RAW") == "1":
+        original_complete_json = reranker.llm.complete_json
+
+        async def debug_complete_json(*args, **kwargs):
+            completion = await original_complete_json(*args, **kwargs)
+            print(json.dumps({
+                "synthetic_debug_raw_output": completion.get("text", ""),
+            }, ensure_ascii=False))
+            return completion
+
+        reranker.llm.complete_json = debug_complete_json
     metrics = {
         "cases": len(CASES), "model_calls": 0, "strict_model_results": 0,
+        "model_requests": 0,
         "safe_fallbacks": 0, "unsafe_results": 0, "application_allowed": 0,
         "strict_precision_at_2_sum": 0.0,
         "paired_fallback_precision_at_2_sum": 0.0,
     }
     errors: dict[str, int] = {}
+    structural_diagnostics: list[dict] = []
     try:
         for index, (query, excerpts) in enumerate(CASES):
             payload = _payload(query, excerpts, index)
@@ -160,6 +192,7 @@ async def main() -> None:
             )
             metrics["unsafe_results"] += int(not safe)
             metrics["model_calls"] += int(result["model_called"])
+            metrics["model_requests"] += int(result.get("model_request_count") or 0)
             outcome = result.get("outcome") or {}
             metrics["application_allowed"] += int(bool(outcome.get("application_allowed")))
             if outcome.get("fallback_used") or result.get("error_code"):
@@ -174,15 +207,28 @@ async def main() -> None:
             if error_code:
                 code = str(error_code)
                 errors[code] = errors.get(code, 0) + 1
+            if result.get("attempt_diagnostics"):
+                structural_diagnostics.append({
+                    "case_index": index,
+                    "attempts": result["attempt_diagnostics"],
+                })
             delay = max(0.0, min(float(os.environ.get("XIADIE_KIG7_EVAL_DELAY", "0")), 30.0))
             if delay and index + 1 < len(CASES):
                 await asyncio.sleep(delay)
         report = build_quality_report(
             model=model, provider_id=provider["id"], metrics=metrics, errors=errors,
+            certification=reranker.model_certification_descriptor(
+                provider_id=provider["id"], model=model, eval_dataset_hash=_dataset_hash(),
+            ),
+            structural_diagnostics=structural_diagnostics,
         )
-        REPORT_PATH.write_text(
-            json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8",
+        encoded = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
+        REPORT_PATH.write_text(encoded, encoding="utf-8")
+        model_report_path = REPORT_PATH.with_name(
+            "kig-7-model-quality-"
+            f"{_report_slug(provider['id'])}-{_report_slug(model)}.json"
         )
+        model_report_path.write_text(encoded, encoding="utf-8")
         print(json.dumps(report, ensure_ascii=False))
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)

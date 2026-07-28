@@ -2,7 +2,7 @@
 
 - 版本：v0.3（施工基线、双里程碑、来源依赖与图谱治理补强）
 - 日期：2026-07-22
-- 状态：KIG.0～KIG.9 已完成；当前 Schema 76，进入 KIG-R 冻结门审计（KIG.7 模型质量门待补测）
+- 状态：KIG.0～KIG.9 与 KIG-R 全部技术门已通过；当前 Schema 76，等待记录不可变实现 SHA 后冻结（KIG.10 未开工）
 - 专项代号：`KIG`（Knowledge Intelligence & Governance）
 - 子系统代号：`PWM`（Personal World Model）
 - 适用范围：用户知识库、信息分类与治理、多源检索、LLM 查询规划与重排、证据与引用、冲突与版本、个人世界模型，以及与对话历史、长期记忆、生活连续性、任务和 ContextAssembler 的接口
@@ -1818,11 +1818,13 @@ KIG.6 施工记录（2026-07-27）：新增无持久化的 typed `RetrievalReque
 - [x] 来源变化后拒绝旧重排结果。
 - [x] 模型失败使用确定性融合。
 - [x] Shadow 模式对比旧排序。
-- [~] 晋级、盲评、模型认证和回滚遵守共享 Decision Promotion Policy；未通过对应 decision_kind 认证的模型不得 Active。（Shadow/Active 硬门已完成；实配模型严格结果覆盖率不足，质量盲评未通过，禁止晋级。）
+- [x] 晋级、盲评、模型认证和回滚遵守共享 Decision Promotion Policy；认证绑定 Provider、模型、协议、Prompt、固定集与推理参数，未匹配模型不得继承认证或 Active。当前 DeepSeek v4-pro 质量门通过但单 Provider 上限仍为 Shadow。
 
 验收：人工相关性显著高于旧排序；引用不存在率为 0。
 
 KIG.7 施工记录（2026-07-27）：在 CDS 共享 DecisionRun/CandidateEnvelope/structured-output/fallback 审计运行时注册 `retrieval-rerank-v1`，最大 30 个输入候选、最多选择 12 个；模型必须对输入 ID 做完整排列并逐一给出七类 relevance role、rank bucket 和 confidence，selected 只能按排序引用未排除的输入 ID。KIG.6 候选适配只携带短 excerpt、privacy scope 与 SourceRef 快照；运行前和输出验收时复核 revision/hash/status/privacy/locator，来源撤销或变化时确定性 fallback 也实时查源并丢弃旧候选，Knowledge `local_only/ask_each_time` 未获许可时整批禁止远传。失败回退保持 lexical/vector/metadata/recency 分离的确定性融合；Shadow comparison 只记录 Jaccard、位置变化和计数，不记录 query/excerpt。共享 `llm.complete_json` 新增默认关闭的 JSON Object 模式，KIG.7 显式启用，其他调用行为不变。Schema 保持 74，核心回归 `924 passed, 1 warning`，非候选选择通过率 0、Shadow `application_allowed` 0。实配模型在启用 JSON Object 前共 18 次合成调用仅 1 次严格结果、17 次安全回退，0 越界；带人工相关标签的 6 例盲评无严格有效结果，不能证明相关性提升。JSON Object 模式的远端复测因当前 Codex 外部用量额度被拒绝，故本阶段维持 Shadow，质量门 `[~]`，KIG-R 冻结前必须补测。详见 `docs/reports/kig-7-retrieval-reranker.md`。
+
+KIG.7 认证收口（2026-07-28）：保持同一 6 条纯合成固定集，修正 `exact_shape` 包装诱导与隐藏推理截断；每决策最多一次结构纠正，JSON 推理模式硬顶 4096，普通观察器预算不变。`deepseek-v4-pro` 最终 6/6 严格结果、覆盖率 1.0、Precision@2 0.8333、同样本 fallback 0.0、增益 0.8333、不安全结果与 Active 放行均为 0。证书 key `b445dd9e271d6ade6eb4be3577b11ef57a5280f7c6ba2ca7a266f3527aa5bd03` 仅匹配当前 Provider/模型/协议/Prompt/固定集与推理参数；更换模型默认回到未认证 Shadow。质量门 `[x]`，晋级上限仍为 `shadow_single_provider`。
 
 建议 PR：`feat(retrieval): add validated LLM semantic reranking`
 
@@ -1869,7 +1871,7 @@ KIG.0～KIG.9 完成后先冻结和发布 KIG-R，不等待 PWM：
 - [ ] 冻结 `kig-retrieval-governance-v1`、记录 Schema 和回滚点；KIG-P 从下一迁移号继续。
 - [ ] KIG-R 关闭后即能独立改善聊天检索；PWM 延期或关闭不得破坏 KIG-R。
 
-KIG-R 冻结审计记录（2026-07-28）：已建立 10 组纯合成、11 项非零分母零容忍验收，当前违规数均为 0；最终后端全量 `2531 passed, 1 warning`，前端 `51 passed`、TypeScript/Vite 190 modules 与桌面 JavaScript 语法检查通过。审计修复了四项冻结前问题：确认关系不再受全库最近 200 条窗口遮蔽、KIG 在排序前受本轮 Knowledge 授权 chunk 白名单约束、验收脚本导入不再污染环境、KIG.7 质量评测改为 100% 严格覆盖且同样本配对增益至少 15%。当前唯一技术阻断仍是 KIG.7 JSON Object 模式实配模型质量证据；发布门保持 `pending_model_quality`，四项冻结条件不得勾选，KIG.10 不得开工。详见 `docs/reports/kig-r-acceptance.md` 与 `docs/reports/kig-r-freeze-readiness.md`。
+KIG-R 冻结审计记录（2026-07-28）：已建立 10 组纯合成、13 项非零分母零容忍验收，违规数均为 0；Review 与模型认证修正后后端全量 `2538 passed, 2 warnings`（既有依赖弃用提示与受限环境 pytest cache 提示），前端 `51 passed`、TypeScript/Vite 190 modules 与桌面 JavaScript 语法/3 项生命周期检查通过。独立 Review 为 0 个未解决 P0/P1；DeepSeek v4-pro 同一固定集 6/6 严格覆盖、P@2 增益 0.8333、零不安全/Active，模型指纹质量门通过但保持 `shadow_single_provider`。KIG-R 主验收已验证证书与当前 Provider/模型/协议/Prompt/固定集/推理参数匹配，发布门为 `pass`。等待提交实现证据并记录不可变 rollback SHA 后勾选四项冻结条件；KIG.10 仍不得开工。详见 `docs/reports/kig-r-acceptance.md` 与 `docs/reports/kig-r-freeze-readiness.md`。
 
 ### KIG.10：Claim、Entity、Relation 与 WorldEvent
 

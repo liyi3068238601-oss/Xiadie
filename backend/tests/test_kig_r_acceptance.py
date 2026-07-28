@@ -24,8 +24,11 @@ def test_kig_r_synthetic_safety_report_has_nonempty_zero_violation_denominators(
     assert all(value == 0 for value in report["counts"].values())
     assert all(value == 0.0 for value in report["rates"].values())
     assert report["safety_gate"] == "pass" and not report["safety_failures"]
-    assert report["model_quality_gate"] == "external_kig7_certification_required"
-    assert report["release_gate"] == "pending_model_quality"
+    assert report["model_quality_gate"] == "pass"
+    assert report["model_certification_key"]
+    assert report["certified_provider_id"] == "deepseek"
+    assert report["certified_model"] == "deepseek-v4-pro"
+    assert report["release_gate"] == "pass"
 
 
 def test_kig_r_report_renderer_is_reproducible_and_does_not_overclaim_freeze():
@@ -36,4 +39,5 @@ def test_kig_r_report_renderer_is_reproducible_and_does_not_overclaim_freeze():
     assert all(item not in encoded for item in (
         "raw_model_output", "query_text", '"excerpt":', "message_content", "api_key",
     ))
-    assert "不得把 `retrieval-rerank-v1` 晋级" in MARKDOWN.read_text(encoding="utf-8")
+    assert "模型指纹认证已通过" in MARKDOWN.read_text(encoding="utf-8")
+    assert "其他模型仍必须保持未认证 Shadow" in MARKDOWN.read_text(encoding="utf-8")
