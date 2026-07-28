@@ -29,6 +29,7 @@ from . import (
     personal_goals,
     saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, secret_store, self_timeline, slow_lifecycle, turn_ingress,
+    chat_request_control,
 )
 from . import candidate_reranker_shadow  # noqa: F401
 from . import presence_thread_shadow  # noqa: F401 - registers CDS.3 Shadow contract
@@ -76,7 +77,6 @@ def cleanup_orphan_attachments(max_age_seconds: float = 3600) -> int:
         return cursor.rowcount or 0
     finally:
         conn.close()
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -505,6 +505,14 @@ class ChatIn(BaseModel):
         default_factory=list, max_length=turn_ingress.MAX_MESSAGES,
     )
     temporary_chat: bool = False
+    chat_nonce: Optional[str] = Field(default=None, min_length=16, max_length=64,
+                                     pattern=r"^[A-Za-z0-9_-]+$")
+    cancel_token: Optional[str] = Field(default=None, min_length=16, max_length=64,
+                                       pattern=r"^[A-Za-z0-9_-]+$")
+
+
+class ChatCancelIn(BaseModel):
+    cancel_token: str = Field(min_length=16, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
 
 
 @app.get("/api/cie/settings")
@@ -516,6 +524,13 @@ def read_cie_settings() -> dict[str, object]:
         "max_messages": turn_ingress.MAX_MESSAGES,
         "ingress_protocol_version": turn_ingress.PROTOCOL_VERSION,
     }
+
+
+@app.post("/api/chat/cancel")
+def cancel_chat(body: ChatCancelIn) -> dict:
+    if not cie_settings.is_enabled():
+        raise HTTPException(409, {"code": "cie_disabled", "message": "CIE 生成打断尚未启用"})
+    return chat_request_control.cancel(body.cancel_token)
 
 
 def _current_model() -> tuple[Optional[dict], str]:
@@ -546,6 +561,22 @@ def _context_capability(provider: dict | None, model: str):
 
 @app.post("/api/chat")
 async def chat(body: ChatIn) -> StreamingResponse:
+    if bool(body.chat_nonce) != bool(body.cancel_token):
+        raise HTTPException(422, "chat_nonce 与 cancel_token 必须成对提供")
+    if body.chat_nonce:
+        request_state, replay_payload = chat_request_control.lookup(
+            body.chat_nonce, body.session_id,
+        )
+        if request_state == "conflict":
+            raise HTTPException(409, {"code": "chat_nonce_conflict", "message": "请求 nonce 已属于其他会话"})
+        if request_state == "active":
+            raise HTTPException(409, {"code": "chat_request_active", "message": "相同请求仍在处理中"})
+        if request_state == "completed" and replay_payload:
+            async def replay_completed():
+                yield _sse("phase", {"phase": "completed", "replayed": True})
+                yield _sse("final", replay_payload)
+                yield _sse("done", replay_payload | {"replayed": True})
+            return StreamingResponse(replay_completed(), media_type="text/event-stream")
     # CDS.2: a real user turn preempts only not-started low-priority cognition work.
     cognition_runtime.DEFAULT_GOVERNOR.cancel_pending_for_user_message()
     ingress_envelope: turn_ingress.TurnEnvelope | None = None
@@ -829,6 +860,18 @@ async def chat(body: ChatIn) -> StreamingResponse:
     finally:
         conn.close()
 
+    if body.chat_nonce and body.cancel_token:
+        request_state, _replay_payload = chat_request_control.begin(
+            chat_nonce=body.chat_nonce,
+            cancel_token=body.cancel_token,
+            session_id=body.session_id,
+        )
+        if request_state != "started":
+            raise HTTPException(409, {
+                "code": "chat_request_race",
+                "message": "请求状态已变化，请使用新的请求标识重试",
+            })
+
     if kig_chat_result:
         try:
             kig_pipeline.persist_deterministic_relations(kig_chat_result)
@@ -880,6 +923,15 @@ async def chat(body: ChatIn) -> StreamingResponse:
         used_memories = recalled_memories
         collected: list[str] = []
         try:
+            if body.cancel_token:
+                yield _sse("phase", {"phase": "retrieval"})
+                if chat_request_control.is_cancelled(body.cancel_token):
+                    _finish_knowledge_retrieval(knowledge_retrieval, status="cancelled")
+                    yield _sse("cancelled", {"phase": "retrieval", "persisted": False})
+                    chat_request_control.finish(body.cancel_token)
+                    return
+                chat_request_control.phase(body.cancel_token, "generation")
+                yield _sse("phase", {"phase": "generation"})
             if used_memories and uid:
                 try:
                     recorded_ids = set(archivist.record_injected_memories(
@@ -980,15 +1032,29 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 provider, model, messages,
                 max_tokens=context_package.output_reserve_tokens,
             ):
+                if body.cancel_token and chat_request_control.is_cancelled(body.cancel_token):
+                    _finish_knowledge_retrieval(knowledge_retrieval, status="cancelled")
+                    yield _sse("cancelled", {"phase": "generation", "persisted": False})
+                    chat_request_control.finish(body.cancel_token)
+                    return
                 collected.append(chunk)
                 yield _sse("delta", {"text": chunk})
         except llm.LLMError as e:
             _finish_knowledge_retrieval(knowledge_retrieval, status="failed")
+            if body.cancel_token:
+                chat_request_control.finish(body.cancel_token)
             yield _sse("error", {"message": str(e), "hint": e.hint})
             return
         except Exception:  # noqa: BLE001 兜底：任何未预期异常也作为 error 事件下发，不静默截断流
             _finish_knowledge_retrieval(knowledge_retrieval, status="failed")
+            if body.cancel_token:
+                chat_request_control.finish(body.cancel_token)
             yield _sse("error", {"message": "生成中断", "hint": "回复生成过程中出现意外错误，请重试。"})
+            return
+        if body.cancel_token and chat_request_control.is_cancelled(body.cancel_token):
+            _finish_knowledge_retrieval(knowledge_retrieval, status="cancelled")
+            yield _sse("cancelled", {"phase": "generation", "persisted": False})
+            chat_request_control.finish(body.cancel_token)
             return
         full, used_citations = knowledge_context.validate_citations(
             "".join(collected), knowledge_retrieval,
@@ -1000,7 +1066,10 @@ async def chat(body: ChatIn) -> StreamingResponse:
             full, kig_chat_result.bundle if kig_chat_result else None,
         )
         full = evidence_validation.text
-        # 持久化助手回复
+        # 持久化阶段一旦开始便不可取消，避免半写入或误删旧回复。
+        if body.cancel_token:
+            chat_request_control.phase(body.cancel_token, "persistence")
+            yield _sse("phase", {"phase": "persistence"})
         c2 = db.connect()
         try:
             aid = db.new_id()
@@ -1031,6 +1100,10 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 )
             c2.execute("UPDATE sessions SET updated_at = ? WHERE id = ?", (db.now(), body.session_id))
             c2.commit()
+        except Exception:
+            if body.cancel_token:
+                chat_request_control.finish(body.cancel_token)
+            raise
         finally:
             c2.close()
         saved_companion_state = None
@@ -1108,6 +1181,15 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 kig_evidence.evidence_link_public(row) for row in _message_evidence_links(aid)
             ],
         }
+        if body.cancel_token:
+            chat_request_control.complete(body.cancel_token, final_payload | {
+                "auto_memory": None,
+                "memory_candidate": candidate,
+                "companion_state": saved_companion_state,
+                "affect_observation": affect_observation,
+                "companion_cognition": affect_observation,
+                "memory_observation": memory_observation,
+            })
         yield _sse("final", final_payload)
         yield _sse(
             "done",
