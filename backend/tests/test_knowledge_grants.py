@@ -105,7 +105,7 @@ def test_schema_38_grants_are_body_and_plaintext_token_free():
     try:
         assert conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
-        ).fetchone()[0] == "71"
+        ).fetchone()[0] == "80"
         decision_columns = {
             row["name"] for row in conn.execute("PRAGMA table_info(knowledge_recall_decisions)")
         }

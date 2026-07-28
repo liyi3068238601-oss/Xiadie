@@ -29,4 +29,4 @@
 
 ## KIG 开工门
 
-LIFE v1 的代码、Schema 和 adapter 已冻结。KIG 计划与只读审计现在可以继续；任何迁移或生产写路径必须等待 LIFE PR 合入 `main`，然后把该不可变 merge commit 写入 KIG.0 ConstructionBaseline。旧专项分支不得作为 KIG predecessor。
+LIFE v1 的代码、Schema 和 adapter 已冻结。LIFE PR #3 已合入 `main@f16d80ab0d2457065dc65d7d284d3cbf3584f5ee`，该提交是 KIG.0 ConstructionBaseline 的不可变 predecessor；KIG 首个可用迁移号为 72。旧专项分支不得作为 KIG predecessor。

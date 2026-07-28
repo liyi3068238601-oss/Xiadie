@@ -61,7 +61,7 @@ def test_schema_71_adds_unified_provenance_projection():
         sql = conn.execute("SELECT sql FROM sqlite_master WHERE name='self_timeline_entries'").fetchone()[0]
     finally:
         conn.close()
-    assert version == "71"
+    assert version == "80"
     for source_type in (
         "life_event", "diary_entry", "schedule_segment", "tool_run",
         "proactive_delivery", "personal_goal",

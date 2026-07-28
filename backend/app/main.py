@@ -25,7 +25,7 @@ from . import (
     episode_summary_service, episodes, knowledge, knowledge_cleanup, knowledge_context,
     knowledge_embeddings, knowledge_grants,
     knowledge_management, knowledge_parser, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search,
-    knowledge_worker, life_catchup, life_catchup_service, life_events, life_runtime, life_schedule, llm, lore, memory, memory_conflicts, memory_shadow_proposals,
+    knowledge_worker, kig_evidence, kig_governance, kig_maintenance, kig_pipeline, kig_sources, life_catchup, life_catchup_service, life_events, life_runtime, life_schedule, llm, lore, memory, memory_conflicts, memory_shadow_proposals,
     personal_goals,
     saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, secret_store, self_timeline, slow_lifecycle,
@@ -36,6 +36,11 @@ from . import recall_planner_shadow  # noqa: F401 - registers CDS.4 Shadow contr
 from . import context_planner_shadow  # noqa: F401 - registers CDS.7 Shadow contract
 from . import episode_saga_shadow  # noqa: F401 - registers CDS.10 Shadow contracts
 from . import life_decisions  # noqa: F401 - registers LIFE.1 Shadow contracts on CDS
+from . import information_classifier_shadow  # noqa: F401 - registers KIG.3 Shadow contract
+from . import knowledge_boundary_shadow  # noqa: F401 - registers KIG.4 Shadow contract
+from . import kig_query_planner  # noqa: F401 - registers KIG.5 Shadow contract
+from . import kig_reranker  # noqa: F401 - registers KIG.7 Shadow contract
+from . import pwm_extractor_shadow  # noqa: F401 - KIG.10 bounded Shadow extraction contract
 from . import memory_observer_service
 from .affect import observer_service as affect_observer_service
 from .proactive import presence as proactive_presence
@@ -45,6 +50,7 @@ from .proactive import orchestrator as proactive_orchestrator
 from .proactive import delivery as proactive_delivery
 from .proactive import feedback as proactive_feedback
 from .security import ALLOWED_ORIGINS, TOKEN_HEADER, local_api_guard
+from .pwm_api import router as pwm_router
 
 logger = logging.getLogger(__name__)
 
@@ -89,12 +95,14 @@ async def lifespan(app: FastAPI):
     await saga_consolidator.start_worker()
     await archivist_worker.start_worker()
     await knowledge_worker.start_worker()
+    await kig_maintenance.start_worker()
     knowledge_recall_service.start_worker()
     try:
         yield
     finally:
         await life_catchup_service.stop()
         knowledge_recall_service.stop_worker()
+        await kig_maintenance.stop_worker()
         await knowledge_worker.stop_worker()
         await archivist_worker.stop_worker()
         await saga_consolidator.stop_worker()
@@ -107,6 +115,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="遐蝶 Agent Backend", version="0.1.0", lifespan=lifespan)
+app.include_router(pwm_router)
 
 # init 也在模块导入时执行一次，保证裸 TestClient（不走 lifespan）也有表可用。
 db.init_db()
@@ -139,6 +148,7 @@ def health() -> dict:
 # ---------------------------------------------------------------- 会话
 class SessionIn(BaseModel):
     title: Optional[str] = None
+    temporary: bool = False
 
 
 @app.get("/api/sessions")
@@ -161,8 +171,8 @@ def create_session(body: SessionIn) -> dict:
         sid = db.new_id()
         t = db.now()
         conn.execute(
-            "INSERT INTO sessions(id, title, created_at, updated_at) VALUES(?,?,?,?)",
-            (sid, (body.title or "新对话").strip() or "新对话", t, t),
+            "INSERT INTO sessions(id,title,temporary,created_at,updated_at) VALUES(?,?,?,?,?)",
+            (sid, (body.title or "新对话").strip() or "新对话", int(body.temporary), t, t),
         )
         conn.commit()
         return dict(conn.execute("SELECT * FROM sessions WHERE id = ?", (sid,)).fetchone())
@@ -219,6 +229,17 @@ def list_messages(sid: str) -> list[dict]:
         for citation in citations:
             public = knowledge_context.citation_public(citation)
             by_message.setdefault(public["assistant_message_id"], []).append(public)
+        evidence_by_message: dict[str, list[dict]] = {}
+        evidence_rows = conn.execute(
+            "SELECT * FROM kig_evidence_links WHERE validation_status='active' "
+            "AND assistant_message_id IN "
+            "(SELECT id FROM messages WHERE session_id=?) "
+            "ORDER BY assistant_message_id,citation_key,id",
+            (sid,),
+        ).fetchall()
+        for evidence_row in evidence_rows:
+            public = kig_evidence.evidence_link_public(evidence_row)
+            evidence_by_message.setdefault(public["assistant_message_id"], []).append(public)
         attachments_by_message: dict[str, list[dict]] = {}
         attach_rows = conn.execute(
             "SELECT id, message_id, filename, mime_type, char_count, content_sha256, created_at"
@@ -240,6 +261,7 @@ def list_messages(sid: str) -> list[dict]:
             })
         for message in messages:
             message["knowledge_citations"] = by_message.get(message["id"], [])
+            message["evidence_links"] = evidence_by_message.get(message["id"], [])
             message["attachments"] = attachments_by_message.get(message["id"], [])
         return messages
     finally:
@@ -431,7 +453,8 @@ def read_knowledge_citation(citation_id: str) -> dict:
         if not citation:
             raise HTTPException(404, "引用不存在")
         source = conn.execute(
-            "SELECT c.content,c.content_sha256,d.status,d.index_version,co.status collection_status "
+            "SELECT c.content,c.content_sha256,d.status,d.governance_status,d.index_version,"
+            "co.status collection_status "
             "FROM knowledge_chunks c JOIN knowledge_documents d ON d.id=c.document_id "
             "JOIN knowledge_collections co ON co.id=d.collection_id "
             "WHERE c.id=? AND c.document_id=?",
@@ -441,7 +464,8 @@ def read_knowledge_citation(citation_id: str) -> dict:
             not source or source["content_sha256"] != citation["content_sha256"]
             or hashlib.sha256(source["content"].encode("utf-8")).hexdigest()
             != citation["content_sha256"]
-            or source["status"] != "indexed" or source["index_version"] != knowledge_search.INDEX_VERSION
+            or source["status"] != "indexed" or source["governance_status"] != "active"
+            or source["index_version"] not in knowledge_search.COMPATIBLE_INDEX_VERSIONS
             or source["collection_status"] != "active"
         ):
             raise HTTPException(410, "原始资料已变化、停用或删除")
@@ -450,6 +474,21 @@ def read_knowledge_citation(citation_id: str) -> dict:
         return result
     finally:
         conn.close()
+
+
+@app.get("/api/kig/evidence-links/{evidence_link_id}")
+def read_kig_evidence_link(evidence_link_id: str) -> dict:
+    """Open the current owner-system source or explicitly report unavailability."""
+    conn = db.connect()
+    try:
+        row = conn.execute(
+            "SELECT * FROM kig_evidence_links WHERE id=?", (evidence_link_id,),
+        ).fetchone()
+        if not row:
+            raise HTTPException(404, "证据来源不存在")
+    finally:
+        conn.close()
+    return kig_evidence.open_evidence_link(row)
 
 
 # ---------------------------------------------------------------- 聊天（流式）
@@ -462,6 +501,7 @@ class ChatIn(BaseModel):
     knowledge_grant_token: Optional[str] = Field(default=None, max_length=256)
     knowledge_skip_restricted: bool = False
     attachment_ids: list[str] = Field(default_factory=list)
+    temporary_chat: bool = False
 
 
 def _current_model() -> tuple[Optional[dict], str]:
@@ -500,11 +540,20 @@ async def chat(body: ChatIn) -> StreamingResponse:
     uid: str | None = None
     replace_assistant_id: str | None = None
     provider, model = _current_model()
+    kig_chat_result = None
     conn = db.connect()
     try:
         sess = conn.execute("SELECT * FROM sessions WHERE id = ?", (body.session_id,)).fetchone()
         if not sess:
             raise HTTPException(404, "会话不存在")
+        temporary_chat = bool(sess["temporary"]) or body.temporary_chat
+        if temporary_chat and not sess["temporary"]:
+            conn.execute("UPDATE sessions SET temporary=1,updated_at=? WHERE id=?",
+                         (db.now(), body.session_id))
+            # Companion-state reads use a separate SQLite connection.  Commit the
+            # one-way privacy transition before those reads to avoid retaining a
+            # write lock for the rest of chat preparation.
+            conn.commit()
 
         # 先分配/定位消息 ID，但在远传授权校验完成前不写入新消息。
         if not body.regenerate:
@@ -527,7 +576,9 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 uid = last_user["id"]
 
         # 构造上下文：人设 + 记忆摘要 + 历史
-        digest, recalled_memories = memory.build_digest(body.content)
+        digest, recalled_memories = (
+            ("", []) if temporary_chat else memory.build_digest(body.content)
+        )
         current_state = companion_state.get_state(persist_advance=False)
         next_state = (
             current_state
@@ -565,6 +616,25 @@ async def chat(body: ChatIn) -> StreamingResponse:
             raise HTTPException(
                 error.status_code, {"code": error.code, "message": str(error)},
             ) from error
+
+        if content_has_text and uid:
+            try:
+                kig_chat_result = kig_pipeline.prepare_for_chat(
+                    query=body.content, source_message_id=uid, session_id=body.session_id,
+                    provider=provider, recall_mode=recall_mode,
+                    authorized_knowledge_chunk_ids=frozenset(
+                        str(item["chunk_id"])
+                        for item in (knowledge_retrieval or {}).get("results", ())
+                        if item.get("chunk_id")
+                    ),
+                    temporary_chat=temporary_chat,
+                )
+                knowledge_retrieval = kig_pipeline.filter_knowledge_prepared(
+                    knowledge_retrieval, kig_chat_result,
+                )
+            except Exception:  # KIG degradation must never block companionship chat
+                logger.warning("kig_chat_prepare_failed session_id=%s", body.session_id, exc_info=True)
+                kig_chat_result = None
 
         if not body.regenerate:
             conn.execute(
@@ -642,10 +712,14 @@ async def chat(body: ChatIn) -> StreamingResponse:
             )
         active_summary = (
             conversation_summaries.active_revision_internal(body.session_id)
-            if context_controls.summary_injection_enabled() else None
+            if not temporary_chat and context_controls.summary_injection_enabled()
+            else None
         )
-        history_prepared = history_recall.prepare_locked(
-            conn, body.content, current_session_id=body.session_id,
+        history_prepared = (
+            {"turns": [], "retrieval_id": None}
+            if temporary_chat else history_recall.prepare_locked(
+                conn, body.content, current_session_id=body.session_id,
+            )
         )
         try:
             context_package = context_assembler.assemble(
@@ -659,6 +733,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 cross_session_recall=history_prepared["turns"],
                 current_session_id=body.session_id,
                 attachment_block=attachment_block,
+                retrieval_bundle=(kig_chat_result.bundle if kig_chat_result else None),
             )
         except context_budget.ContextBudgetError as error:
             if conn.in_transaction:
@@ -670,7 +745,13 @@ async def chat(body: ChatIn) -> StreamingResponse:
     finally:
         conn.close()
 
-    if not body.regenerate and uid and recall_mode == "explicit" and content_has_text:
+    if kig_chat_result:
+        try:
+            kig_pipeline.persist_deterministic_relations(kig_chat_result)
+        except Exception:  # derived governance persistence is non-blocking
+            logger.warning("kig_relation_persist_failed session_id=%s", body.session_id, exc_info=True)
+
+    if not body.regenerate and not temporary_chat and uid and recall_mode == "explicit" and content_has_text:
         # 只在后台记录影子判断；绝不修改本轮 messages 或 knowledge_block。
         # 纯附件无文字消息不触发知识召回，无需入队影子判断。
         knowledge_recall.enqueue(
@@ -681,7 +762,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
     # EAP v0.2 Conversation Presence v2：用户消息入库后更新 presence 状态。
     # 按 spec："新消息到达时自动使过期离开状态结束"；程序规则识别高精度表达。
     # presence 更新失败不应阻塞聊天（try/except 包裹）。
-    if not body.regenerate and uid and content_has_text:
+    if not body.regenerate and not temporary_chat and uid and content_has_text:
         try:
             proactive_orchestrator.handle_user_message(body.session_id)
         except Exception:  # noqa: BLE001 - proactive recovery must not block chat
@@ -743,6 +824,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
                         active_summary=active_summary,
                         cross_session_recall=history_prepared["turns"],
                         current_session_id=body.session_id,
+                        retrieval_bundle=(kig_chat_result.bundle if kig_chat_result else None),
                     )
                     messages = list(context_package.messages)
                     trimmed_count = context_package.trimmed_messages
@@ -822,7 +904,14 @@ async def chat(body: ChatIn) -> StreamingResponse:
             return
         full, used_citations = knowledge_context.validate_citations(
             "".join(collected), knowledge_retrieval,
+            strict_support=bool(kig_chat_result and (
+                kig_chat_result.bundle.high_risk or kig_chat_result.bundle.complex_query
+            )),
         )
+        evidence_validation = kig_evidence.validate_answer(
+            full, kig_chat_result.bundle if kig_chat_result else None,
+        )
+        full = evidence_validation.text
         # 持久化助手回复
         c2 = db.connect()
         try:
@@ -846,6 +935,12 @@ async def chat(body: ChatIn) -> StreamingResponse:
                     "finished_at=? WHERE id=?",
                     (aid, db.now(), knowledge_retrieval["id"]),
                 )
+            if kig_chat_result and uid:
+                kig_evidence.persist_validation_locked(
+                    c2, bundle=kig_chat_result.bundle, validation=evidence_validation,
+                    session_id=body.session_id, user_message_id=uid,
+                    assistant_message_id=aid,
+                )
             c2.execute("UPDATE sessions SET updated_at = ? WHERE id = ?", (db.now(), body.session_id))
             c2.commit()
         finally:
@@ -853,7 +948,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
         saved_companion_state = None
         affect_observation = None
         memory_observation = None
-        if not body.regenerate:
+        if not body.regenerate and not temporary_chat:
             saved_companion_state = companion_state.commit_interaction(
                 body.content,
                 source_session_id=body.session_id,
@@ -872,7 +967,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
                     "status": "unlogged_failure",
                     "error_code": "observer_enqueue_failed",
                 }
-        if uid:
+        if uid and not temporary_chat:
             # Regeneration creates a new source revision: the worker revokes the old
             # suggestion and evaluates the replacement without incrementing interaction_count.
             affect_observation = companion_cognition_service.enqueue_turn(
@@ -893,16 +988,18 @@ async def chat(body: ChatIn) -> StreamingResponse:
                     "proactive_source_enqueue_failed session_id=%s message_id=%s",
                     body.session_id, aid, exc_info=True,
                 )
-        try:
-            conversation_summary_service.enqueue_after_chat(
-                session_id=body.session_id, chat_provider=provider, chat_model=model,
-            )
-        except Exception:  # noqa: BLE001 - 摘要入队不能破坏已完成聊天
-            pass
+        if not temporary_chat:
+            try:
+                conversation_summary_service.enqueue_after_chat(
+                    session_id=body.session_id, chat_provider=provider, chat_model=model,
+                )
+            except Exception:  # noqa: BLE001 - 摘要入队不能破坏已完成聊天
+                pass
         # 旧关键词候选只在观察模型不可用时兜底；真实模型路径不再逐条等待确认。
         candidate = None
         if (
             not body.regenerate
+            and not temporary_chat
             and db.get_setting("memory_enabled", db.DEFAULT_MEMORY_ENABLED) == "1"
             and (memory_observation or {}).get("error_code")
             in ("observer_model_unavailable", "observer_enqueue_failed")
@@ -916,6 +1013,9 @@ async def chat(body: ChatIn) -> StreamingResponse:
             "content": full,
             "knowledge_citations": [
                 knowledge_context.citation_public(row) for row in _message_knowledge_citations(aid)
+            ],
+            "evidence_links": [
+                kig_evidence.evidence_link_public(row) for row in _message_evidence_links(aid)
             ],
         }
         yield _sse("final", final_payload)
@@ -1044,6 +1144,96 @@ def proactive_diagnostics(limit: int = 100) -> dict:
 def cognition_diagnostics(decision_kind: str | None = None, limit: int = 50) -> dict:
     """Read-only CDS diagnostics with a strict body-free field allowlist."""
     return cognitive_decision.diagnostics(decision_kind=decision_kind, limit=limit)
+
+
+class KIGSourceRefIn(BaseModel):
+    source_kind: str
+    source_id: str
+    revision: str
+    content_hash: str
+    status: str
+    privacy_scope: str
+    locator: str
+
+
+class KIGSourceGovernanceIn(BaseModel):
+    authority_level: str
+    scope: dict = Field(default_factory=dict)
+    applicable_from: float | None = None
+    applicable_to: float | None = None
+    version_label: str | None = Field(default=None, max_length=80)
+    user_confirmed: bool = False
+
+
+class KIGRelationResolveIn(BaseModel):
+    accept: bool
+    expected_revision: int = Field(ge=1)
+
+
+@app.get("/api/kig/sources/{source_kind}/{source_id}")
+def resolve_kig_source(source_kind: str, source_id: str) -> dict:
+    """Resolve body-free canonical source metadata from its owner system."""
+    try:
+        return {"source_ref": kig_sources.registry.resolve(source_kind, source_id).to_dict()}
+    except kig_sources.SourceRefError as exc:
+        raise HTTPException(404 if exc.code == "source_missing" else 422,
+                            detail={"code": exc.code, "message": str(exc)}) from exc
+
+
+@app.post("/api/kig/sources/validate")
+def validate_kig_source(body: KIGSourceRefIn) -> dict:
+    """Reject stale or forged hashes, privacy metadata and locators."""
+    try:
+        ref = kig_sources.SourceRef(**body.model_dump())
+        return {"valid": True, "source_ref": kig_sources.validate_ref(ref).to_dict()}
+    except kig_sources.SourceRefError as exc:
+        raise HTTPException(409, detail={"code": exc.code, "message": str(exc)}) from exc
+
+
+@app.put("/api/kig/governance/sources/{source_kind}/{source_id}")
+def update_kig_source_governance(
+    source_kind: str, source_id: str, body: KIGSourceGovernanceIn,
+) -> dict:
+    try:
+        ref = kig_sources.registry.resolve(source_kind, source_id)
+        return {"governance": kig_governance.upsert_source_governance(
+            ref, authority_level=body.authority_level, scope=body.scope,
+            applicable_from=body.applicable_from, applicable_to=body.applicable_to,
+            version_label=body.version_label, user_confirmed=body.user_confirmed,
+        )}
+    except kig_sources.SourceRefError as exc:
+        raise HTTPException(404 if exc.code == "source_missing" else 422,
+                            detail={"code": exc.code, "message": str(exc)}) from exc
+    except ValueError as exc:
+        raise HTTPException(409, detail={"code": str(exc), "message": str(exc)}) from exc
+
+
+@app.get("/api/kig/governance/version-relations")
+def list_kig_version_relations(status: str = "proposed", limit: int = 50) -> dict:
+    if status not in {"proposed", "confirmed", "rejected", "superseded"}:
+        raise HTTPException(422, "版本关系状态无效")
+    conn = db.connect()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM kig_version_relations WHERE status=? "
+            "ORDER BY requires_confirmation DESC,updated_at DESC,id DESC LIMIT ?",
+            (status, max(1, min(int(limit), 200))),
+        ).fetchall()
+        return {"relations": [dict(row) for row in rows]}
+    finally:
+        conn.close()
+
+
+@app.post("/api/kig/governance/version-relations/{relation_id}/resolve")
+def resolve_kig_version_relation(relation_id: str, body: KIGRelationResolveIn) -> dict:
+    try:
+        return {"relation": kig_governance.resolve_relation(
+            relation_id, accept=body.accept, expected_revision=body.expected_revision,
+        )}
+    except ValueError as exc:
+        code = str(exc)
+        raise HTTPException(404 if code == "relation_missing" else 409,
+                            detail={"code": code, "message": code}) from exc
 
 
 @app.get("/api/life/events")
@@ -1556,6 +1746,32 @@ def reindex_knowledge_document(document_id: str) -> dict:
     if not result:
         raise HTTPException(404, "知识文档不存在")
     return _public_knowledge_run(result)
+
+
+class KnowledgeArchiveIn(BaseModel):
+    archived: bool
+
+
+@app.patch("/api/knowledge/documents/{document_id}/archive")
+def archive_knowledge_document(document_id: str, body: KnowledgeArchiveIn) -> dict:
+    try:
+        result = knowledge_management.set_archived(document_id, archived=body.archived)
+    except knowledge.KnowledgeImportError as error:
+        raise HTTPException(409, detail={"code": error.code, "message": str(error)}) from error
+    if not result:
+        raise HTTPException(404, "knowledge document does not exist")
+    return result
+
+
+@app.get("/api/knowledge/documents/{document_id}/impact-preview")
+def preview_knowledge_document_impact(document_id: str, action: str) -> dict:
+    try:
+        result = knowledge_management.impact_preview(document_id, action=action)
+    except knowledge.KnowledgeImportError as error:
+        raise HTTPException(400, detail={"code": error.code, "message": str(error)}) from error
+    if not result:
+        raise HTTPException(404, "knowledge document does not exist")
+    return result
 
 
 @app.delete("/api/knowledge/documents/{document_id}", status_code=202)
@@ -2913,6 +3129,19 @@ def _message_knowledge_citations(assistant_id: str) -> list:
     try:
         return conn.execute(
             "SELECT * FROM knowledge_message_citations WHERE assistant_message_id=? ORDER BY citation_key",
+            (assistant_id,),
+        ).fetchall()
+    finally:
+        conn.close()
+
+
+def _message_evidence_links(assistant_id: str) -> list:
+    conn = db.connect()
+    try:
+        return conn.execute(
+            "SELECT * FROM kig_evidence_links WHERE assistant_message_id=? "
+            "AND validation_status='active' "
+            "ORDER BY citation_key,id",
             (assistant_id,),
         ).fetchall()
     finally:

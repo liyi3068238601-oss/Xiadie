@@ -49,6 +49,7 @@ export interface Session {
   id: string;
   title: string;
   archived: number;
+  temporary: number;
   message_count?: number;
   updated_at: number;
 }
@@ -191,6 +192,7 @@ export interface Message {
   favorite: boolean;
   created_at: number;
   knowledge_citations?: KnowledgeCitation[];
+  evidence_links?: EvidenceLink[];
   attachments?: ChatAttachmentResult[];
 }
 export interface KnowledgeCitation {
@@ -211,6 +213,20 @@ export interface KnowledgeCitation {
   page_end: number | null;
   content_fingerprint: string;
   content?: string;
+}
+export interface EvidenceLink {
+  id: string;
+  citation_key: string;
+  source_kind: "message" | "memory_fragment" | "life_event" | "tool_run" | "lore_section";
+  source_id: string;
+  relation: "direct_support" | "partial_support" | "background" | "contradiction" | "example" | "definition";
+  locator_snapshot: string;
+  validation_status: "active" | "stale" | "missing" | "revoked" | "inaccessible" | "unsupported";
+  content_fingerprint: string;
+  source_label: string;
+  available: boolean;
+  content?: string;
+  unavailable_reason?: string;
 }
 export interface ObserverModelConfig {
   mode: "current" | "dedicated";
@@ -433,6 +449,48 @@ export interface KnowledgeDocument {
   created_at: number;
   updated_at: number;
 }
+export interface PWMEntity {
+  id: string;
+  entity_type: string;
+  canonical_name: string;
+  description: string;
+  reality_scope: "reality" | "lore";
+  confidence: number;
+  status: "candidate" | "active" | "merged" | "split" | "archived" | "revoked";
+  extraction_mode: "shadow";
+  updated_at: number;
+}
+export interface PWMWorldEvent {
+  id: string;
+  event_type: string;
+  title: string;
+  summary: string;
+  start_at: number | null;
+  event_layer: string;
+  execution_state: "planned" | "materialized" | "performed" | "inferred";
+  status: string;
+  created_at: number;
+}
+export interface KIGMaintenanceCandidate {
+  id: string;
+  candidate_type: string;
+  object_kind: string;
+  object_id: string;
+  status: "proposed" | "confirmed" | "rejected" | "resolved" | "expired";
+  requires_confirmation: 1;
+  updated_at: number;
+}
+export interface PWMOverview {
+  protocol_version: string;
+  mode: "shadow";
+  counts: Record<string, number>;
+  settings: {
+    enabled: boolean;
+    shadow_extraction_enabled: boolean;
+    maintenance_frequency: "off" | "daily" | "weekly";
+    budget_policy: Record<string, number>;
+  };
+}
 export interface KnowledgeEmbeddingRun {
   id: string;
   status: "queued" | "running" | "completed" | "failed" | "skipped";
@@ -483,6 +541,16 @@ export interface KnowledgeDeletionRun {
   events?: KnowledgeDeletionEvent[];
   created_at: number;
   updated_at: number;
+}
+export interface KnowledgeImpactPreview {
+  document_id: string;
+  action: "reindex" | "archive" | "restore" | "delete";
+  chunk_count: number;
+  embedding_count: number;
+  citation_count: number;
+  derived_dependency_count: number;
+  removes_from_retrieval: boolean;
+  preserves_original_file: boolean;
 }
 export interface KnowledgeRetrievalAudit {
   id: string;
@@ -912,8 +980,8 @@ export interface ToolLog {
 
 // ---- 会话 ----
 export const listSessions = () => j<Session[]>("/api/sessions");
-export const createSession = () =>
-  j<Session>("/api/sessions", { method: "POST", body: "{}" });
+export const createSession = (temporary = false) =>
+  j<Session>("/api/sessions", { method: "POST", body: JSON.stringify({ temporary }) });
 export const renameSession = (id: string, title: string) =>
   j<Session>(`/api/sessions/${id}`, { method: "PATCH", body: JSON.stringify({ title }) });
 export const deleteSession = (id: string) =>
@@ -924,6 +992,8 @@ export const toggleFavorite = (mid: string) =>
   j<{ favorite: boolean }>(`/api/messages/${mid}/favorite`, { method: "POST" });
 export const getKnowledgeCitation = (id: string) =>
   j<KnowledgeCitation>(`/api/knowledge/citations/${id}`);
+export const getEvidenceLink = (id: string) =>
+  j<EvidenceLink>(`/api/kig/evidence-links/${id}`);
 
 // ---- 记忆 ----
 export const listMemories = () => j<Memory[]>("/api/memories");
@@ -978,6 +1048,26 @@ export const listKnowledgeDocuments = (options: {
 };
 export const listKnowledgeCollections = () =>
   j<KnowledgeCollection[]>("/api/knowledge/collections");
+export const getPWMOverview = () =>
+  j<PWMOverview>("/api/knowledge/world-model/summary");
+export const listPWMEntities = (query = "", scope: "reality" | "lore" = "reality") =>
+  j<{ items: PWMEntity[] }>(`/api/knowledge/world-model/entities?query=${encodeURIComponent(query)}&scope=${scope}`);
+export const listPWMTimeline = () =>
+  j<{ items: PWMWorldEvent[] }>("/api/knowledge/world-model/timeline");
+export const listKIGMaintenance = () =>
+  j<{ items: KIGMaintenanceCandidate[] }>("/api/knowledge/world-model/maintenance");
+export const scanKIGMaintenance = () =>
+  j<Record<string, number>>("/api/knowledge/world-model/maintenance/scan", { method: "POST" });
+export const decideKIGMaintenance = (id: string, accepted: boolean) =>
+  j<KIGMaintenanceCandidate>(`/api/knowledge/world-model/maintenance/${encodeURIComponent(id)}/decision`, {
+    method: "POST", body: JSON.stringify({ accepted }),
+  });
+export const updatePWMSettings = (body: {
+  enabled?: boolean; shadow_extraction_enabled?: boolean;
+  maintenance_frequency?: "off" | "daily" | "weekly";
+}) => j<PWMOverview["settings"]>("/api/knowledge/world-model/settings", {
+  method: "PATCH", body: JSON.stringify(body),
+});
 export const updateKnowledgeCollectionPolicy = (
   id: string, default_transmission_policy: KnowledgeDocument["transmission_policy"],
   apply_existing: boolean,
@@ -999,6 +1089,10 @@ export const reindexKnowledgeDocument = (id: string) =>
   j<KnowledgeImportRun>(`/api/knowledge/documents/${id}/reindex`, { method: "POST" });
 export const deleteKnowledgeDocument = (id: string) =>
   j<KnowledgeDeletionRun>(`/api/knowledge/documents/${id}`, { method: "DELETE" });
+export const getKnowledgeImpactPreview = (id: string, action: KnowledgeImpactPreview["action"]) =>
+  j<KnowledgeImpactPreview>(
+    `/api/knowledge/documents/${encodeURIComponent(id)}/impact-preview?action=${encodeURIComponent(action)}`,
+  );
 export const retryKnowledgeDeletion = (id: string) =>
   j<KnowledgeDeletionRun>(`/api/knowledge/deletion-runs/${id}/retry`, { method: "POST" });
 export const getKnowledgeDeletionRun = (id: string) =>
@@ -1375,6 +1469,7 @@ export interface ChatCallbacks {
     message_id: string;
     content: string;
     knowledge_citations: KnowledgeCitation[];
+    evidence_links: EvidenceLink[];
   }) => void;
   onError?: (message: string, hint: string) => void;
   onDone?: (d: {
@@ -1386,6 +1481,7 @@ export interface ChatCallbacks {
     memory_observation?: { id: string; status: string } | null;
     content: string;
     knowledge_citations: KnowledgeCitation[];
+    evidence_links: EvidenceLink[];
   }) => void;
 }
 

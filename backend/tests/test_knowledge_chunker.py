@@ -19,8 +19,9 @@ def test_markdown_heading_paths_and_locators_are_exact_and_deterministic():
 
     assert first == second
     assert [json.loads(item["heading_path_json"]) for item in first] == [
-        ["顶层"], ["顶层", "子节"], ["末章"],
+        ["顶层"], ["顶层", "子节"], ["顶层", "子节"], ["末章"],
     ]
+    assert [item["chunk_kind"] for item in first] == ["heading", "heading", "list", "heading"]
     for ordinal, chunk in enumerate(first):
         assert chunk["ordinal"] == ordinal
         assert chunk["content"] == text[chunk["char_start"]:chunk["char_end"]]

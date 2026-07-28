@@ -1,8 +1,8 @@
 # 遐蝶知识智能、信息治理与个人世界模型专项施工计划
 
-- 版本：v0.3（施工基线、双里程碑、来源依赖与图谱治理补强）
-- 日期：2026-07-22
-- 状态：计划优化完成；等待 CDS、LIFE 依次集成并锁定最终提交后施工
+- 版本：v1.0（KIG-R + KIG-P 完整施工与冻结基线）
+- 日期：2026-07-28
+- 状态：KIG.0～KIG.15 已完成；KIG-R 保持冻结于 Schema 76，KIG-P 已在 Schema 77～80 完成并通过 `kig-p-acceptance-v1`
 - 专项代号：`KIG`（Knowledge Intelligence & Governance）
 - 子系统代号：`PWM`（Personal World Model）
 - 适用范围：用户知识库、信息分类与治理、多源检索、LLM 查询规划与重排、证据与引用、冲突与版本、个人世界模型，以及与对话历史、长期记忆、生活连续性、任务和 ContextAssembler 的接口
@@ -1680,24 +1680,26 @@ embedding
 
 目标：确认真实知识库能力，不把旧设计或未接线骨架当成完成。
 
-- [ ] 以现有 Knowledge K0～K9 验收链为起点，审查知识接收、解析、切片、FTS/Dense、Embedding、检索 v2、引用、删除、传输授权、CTX 接线、UI、API、迁移和测试。
-- [ ] 审查 CTX、Fragment/Episode/Saga、LIFE、Task/ToolRun 和 Lore 的现有接口。
-- [ ] 建立 `[x]/[~]/[ ]/[→]/[-]` 能力矩阵。
-- [ ] 记录 20 个单文档、20 个多文档、20 个跨知识/记忆问题基线。
-- [ ] 记录召回率、引用准确率、延迟、token 和失败模式。
-- [ ] 新增 ADR：KIG 是治理和投影层，不是大一统正文数据库。
-- [ ] 新增 ADR：LLM 提议、程序裁决；PWM 不是事实权威。
-- [ ] 列出权威文档优先级和与 CTX/MEM/EAP/LIFE 的所有权边界。
-- [ ] 确认 CDS 与 LIFE 已冻结，记录二者最终 Schema 和 adapter 版本；任一未冻结则 KIG.0 只允许审计，不允许迁移施工。
-- [ ] 填写共享规范中的 ConstructionBaseline，锁定已合并 LIFE 的不可变提交与测试基线。
-- [ ] 新增 ADR：`memory_entities` 保持 MEM 权威领域实体，`pwm_entities` 为可重建派生实体；定义单向 proposal、删除与依赖边界。
-- [ ] 确认 `web_result` 仅为兼容位，KIG v1 不注册真实联网搜索、抓取或研究执行器。
+- [x] 以现有 Knowledge K0～K9 验收链为起点，审查知识接收、解析、切片、FTS/Dense、Embedding、检索 v2、引用、删除、传输授权、CTX 接线、UI、API、迁移和测试。
+- [x] 审查 CTX、Fragment/Episode/Saga、LIFE、Task/ToolRun 和 Lore 的现有接口。
+- [x] 建立 `[x]/[~]/[ ]/[→]/[-]` 能力矩阵。
+- [x] 记录 20 个单文档、20 个多文档、20 个跨知识/记忆问题基线。
+- [x] 记录召回率、引用准确率、延迟、token 和失败模式。
+- [x] 新增 ADR：KIG 是治理和投影层，不是大一统正文数据库。
+- [x] 新增 ADR：LLM 提议、程序裁决；PWM 不是事实权威。
+- [x] 列出权威文档优先级和与 CTX/MEM/EAP/LIFE 的所有权边界。
+- [x] 确认 CDS 与 LIFE 已冻结，记录二者最终 Schema 和 adapter 版本；任一未冻结则 KIG.0 只允许审计，不允许迁移施工。
+- [x] 填写共享规范中的 ConstructionBaseline，锁定已合并 LIFE 的不可变提交与测试基线。
+- [x] 新增 ADR：`memory_entities` 保持 MEM 权威领域实体，`pwm_entities` 为可重建派生实体；定义单向 proposal、删除与依赖边界。
+- [x] 确认 `web_result` 仅为兼容位，KIG v1 不注册真实联网搜索、抓取或研究执行器。
 
 完成门：
 
-- [ ] 后端、前端和 Electron 当前基线通过。
-- [ ] 0 个未解决的职责冲突。
-- [ ] 现有完整能力直接勾选，不重写。
+- [x] 后端、前端和 Electron 当前基线通过。
+- [x] 0 个未解决的职责冲突。
+- [x] 现有完整能力直接勾选，不重写。
+
+KIG.0 施工记录（2026-07-27）：ConstructionBaseline 锁定 LIFE PR #3 merge `main@f16d80ab0d2457065dc65d7d284d3cbf3584f5ee`、Schema 71、CDS/CTX/EAP/LIFE/Knowledge 冻结协议与测试基线。新增 60 条纯合成固定集：20 个单文档、20 个多文档、20 个 Knowledge+Memory 问题；隔离临时库实跑的 Knowledge 召回率、Knowledge+Memory 各源召回率和现有 citation allowlist 准确率均为 100%，但跨源统一 Evidence 支持率诚实记录为 0%。基线后端 `2428 passed, 1 warning`、前端 `50 passed`、Vite 190 modules、Electron 语法与 lifecycle contract 3 项通过。能力矩阵确认 Knowledge 主链完整复用，CTX/MEM/EAP/LIFE/Lore 所有权不转移；Task/tool_logs 仅部分具备来源条件，正式 ToolRegistry 仍属未来专项。ADR-0062～0064 分别冻结治理投影层、模型提议/PWM 非权威和 MEM/PWM 实体单向边界。KIG.0 未新增迁移或生产写路径，KIG.1 可在存在真实字段缺口时使用 Schema 72。证据见 `docs/reports/kig-0-construction-baseline.md` 与 `kig-0-baseline.json`。
 
 建议 PR：`docs(kig): audit and freeze knowledge governance boundaries`
 
@@ -1705,17 +1707,19 @@ embedding
 
 目标：所有知识和派生对象可回到真实来源。
 
-- [ ] 优先建立轻量 typed `SourceRef` 信封和各系统 adapter，复用已有 ID、locator、revision/hash 与 status；只有 KIG 派生对象确需查询时才持久化最小引用。
-- [ ] 为文档、Chunk、消息、记忆、LifeEvent、ToolRun、Lore 建立适配器。
-- [ ] 来源变化触发派生对象 stale。
-- [ ] 删除和不可访问状态可传播。
-- [ ] 不复制不必要正文。
-- [ ] 不为每条既有来源强制建立平行“通用来源行”，不迁移或复制原系统正文和生命周期。
-- [ ] 建立来源定位 API 和测试。
-- [ ] 建立 `SourceAdapterRegistry` 和 `derived_dependencies`，以可执行 exists/revision/hash/privacy/locator/deletion 校验弥补多态外键缺失。
-- [ ] 增加有界 sweeper，传播 missing/stale/revoked/inaccessible；来源变化检查失败时保守降级，不自动删除权威来源。
+- [x] 优先建立轻量 typed `SourceRef` 信封和各系统 adapter，复用已有 ID、locator、revision/hash 与 status；只有 KIG 派生对象确需查询时才持久化最小引用。
+- [x] 为文档、Chunk、消息、记忆、LifeEvent、ToolRun、Lore 建立适配器。
+- [x] 来源变化触发派生对象 stale。
+- [x] 删除和不可访问状态可传播。
+- [x] 不复制不必要正文。
+- [x] 不为每条既有来源强制建立平行“通用来源行”，不迁移或复制原系统正文和生命周期。
+- [x] 建立来源定位 API 和测试。
+- [x] 建立 `SourceAdapterRegistry` 和 `derived_dependencies`，以可执行 exists/revision/hash/privacy/locator/deletion 校验弥补多态外键缺失。
+- [x] 增加有界 sweeper，传播 missing/stale/revoked/inaccessible；来源变化检查失败时保守降级，不自动删除权威来源。
 
 验收：任一引用、Claim、关系和事件都能回到原来源；伪造 locator 通过率为 0。
+
+KIG.1 施工记录（2026-07-27）：Schema 72 仅新增无正文 `derived_dependencies`，没有建立每来源一行的平行 `source_refs` 表。`SourceAdapterRegistry` 从 KnowledgeDocument/Chunk、Message、MemoryFragment、LifeEvent、ToolRun 和 Lore 原权威存储实时解析 typed `SourceRef`，统一提供 revision、SHA-256、status、privacy scope 与 owner locator；绑定前必须逐字段回查权威元数据。来源 revision/hash/privacy/locator 改变传播为 stale，删除传播 missing，撤销传播 revoked，关闭传播 inaccessible，适配器故障保守标记 unverified；有界 sweeper 单批最多 500 条，任何失败均不删除权威来源。新增只读定位与严格校验 API，测试对 7 类来源逐一伪造 locator，0 个通过。KIG.1 专项 5 项、KIG/CDS 相关回归 367 项、后端全量 `2434 passed, 1 warning`；详细证据见 `docs/reports/kig-1-source-governance.md`。
 
 建议 PR：`feat(kig): add unified provenance and source references`
 
@@ -1723,13 +1727,15 @@ embedding
 
 目标：统一文档、解析器、Chunk 和索引状态。
 
-- [ ] 审查并兼容现有知识表，不无条件迁移。
-- [ ] 先盘点现有解析器、Chunk、Embedding、search contract 与索引状态字段；仅对有验收缺口的最小字段新增迁移。
-- [ ] 建立原子索引切换和失败回退。
-- [ ] 支持文档重建、归档、删除和影响预览。
-- [ ] FTS 失败和 Dense 失败可独立降级。
+- [x] 审查并兼容现有知识表，不无条件迁移。
+- [x] 先盘点现有解析器、Chunk、Embedding、search contract 与索引状态字段；仅对有验收缺口的最小字段新增迁移。
+- [x] 建立原子索引切换和失败回退。
+- [x] 支持文档重建、归档、删除和影响预览。
+- [x] FTS 失败和 Dense 失败可独立降级。
 
 验收：旧索引在重建完成前可用；失败不导致文档不可查询。
+
+KIG.2 施工记录（2026-07-27）：审查确认既有 reindex 会在开工时立即清除 Chunk/FTS/Dense 并将文档退出 indexed，违反旧索引持续可用门槛。Schema 73 在原表旁新增按 run 隔离的 `knowledge_rebuild_chunks` 与最小 staged metadata；重建期间原 `knowledge_documents/knowledge_chunks/FTS/embedding` 保持 active，解析与切片只写 staging，最终在一个 SQLite 事务内校验候选、替换 Chunk/FTS、递增 `active_index_revision` 并切回 idle。任何解析、切片、索引、取消或陈旧恢复失败均只清理 staging/标记 rebuild failed，旧索引和文档仍为 indexed。新增 governance archive/restore 与删除/重建/归档影响预览；归档只退出检索，不删原文。Dense 在切换后可独立重建，失败继续走 FTS；FTS 无词时既有 vector fallback 保留。Knowledge/KIG 专项回归 `193 passed, 1 warning`，详细证据见 `docs/reports/kig-2-atomic-index-governance.md`。
 
 建议 PR：`feat(knowledge): version documents chunks and indexes`
 
@@ -1737,14 +1743,16 @@ embedding
 
 目标：区分 Knowledge、Memory、Conversation、Life、Lore 和 Task Result。
 
-- [ ] 定义 information-classifier-v1 Schema。
-- [ ] 高精度命令和来源类型先由程序判断。
-- [ ] LLM 只处理模糊场景。
-- [ ] 输出 destination proposal，不直接写目标库。
-- [ ] 目标系统重新验证。
-- [ ] 建立临时状态、长期偏好、观点和计划的误判集。
+- [x] 定义 information-classifier-v1 Schema。
+- [x] 高精度命令和来源类型先由程序判断。
+- [x] LLM 只处理模糊场景。
+- [x] 输出 destination proposal，不直接写目标库。
+- [x] 目标系统重新验证。
+- [x] 建立临时状态、长期偏好、观点和计划的误判集。
 
 验收：普通临时要求不会变成永久偏好；外部事实不会污染用户记忆。
+
+KIG.3 施工记录（2026-07-27）：新增 `information-classifier-v1` typed input/result 与 CDS `information_classifier` Shadow DecisionKind，不新增运行账本或迁移。程序优先识别临时指令、显式记忆偏好、计划、观点、Lore、外部 Knowledge 来源和 ToolRun；只有无高精度命中的模糊文本才允许进入模型。模型调用要求来源 revision/hash 未变、远程调用显式授权、固定 destination candidates 与严格标量 JSON；模型内容始终作为 untrusted data，任何错误走 `unknown/none` fallback。输出固定 `proposal_only=true`，目标域必须重新校验来源与开关，分类器没有写入权。误判/注入集验证临时请求持久化率 0、外部事实写 Memory 率 0、伪造 destination 通过率 0。专项/CDS 回归 `37 passed, 1 warning`。实配 DeepSeek 8 条纯合成模糊/注入 Shadow 首轮 6 条结构与安全验证通过、2 条调用错误安全回退；有效响应安全率 100%，整体含 fallback 安全收口率 100%，模型一次可用率诚实记录为 75%。详见 `docs/reports/kig-3-information-classifier.md`。
 
 建议 PR：`feat(kig): add validated information classification routing`
 
@@ -1752,15 +1760,17 @@ embedding
 
 目标：改善章节、表格、代码和语义边界，同时保留原文真实性。
 
-- [ ] 以新 chunk/index 版本旁路建立结构优先切片器，不覆盖现有 raw_text 和当前可用 Chunk。
-- [ ] 保存 heading path、页码、邻居和 chunk kind。
-- [ ] 增加可选 LLM 边界建议。
-- [ ] 模型不得重写 raw_text。
-- [ ] 建立不同文档类型的切片质量集。
-- [ ] 模型失败回退确定性切片。
-- [ ] 新旧版本完成固定集对照和引用定位验证后原子切换，失败时继续服务旧索引。
+- [x] 以新 chunk/index 版本旁路建立结构优先切片器，不覆盖现有 raw_text 和当前可用 Chunk。
+- [x] 保存 heading path、页码、邻居和 chunk kind。
+- [x] 增加可选 LLM 边界建议。
+- [x] 模型不得重写 raw_text。
+- [x] 建立不同文档类型的切片质量集。
+- [x] 模型失败回退确定性切片。
+- [x] 新旧版本完成固定集对照和引用定位验证后原子切换，失败时继续服务旧索引。
 
 验收：定义、步骤、警告、表格和代码上下文不被明显错误切断；原文 hash 不变。
+
+KIG.4 施工记录（2026-07-27）：Schema 74 为原 `knowledge_chunks` 与 KIG.2 staging 增加 `chunk_kind`（heading/prose/list/table/code）及 previous/next ordinal；切片器升级 `knowledge-structure-chunker-v2`，先识别 fenced code、Markdown/制表表格、列表和 heading/prose 结构，再在必要时按行/句有界切分。正常尺寸代码块和表格保持单块，所有 content 必须等于 raw text 的精确 char slice，hash 逐块重算；原文件与 document content hash 永不改写。FTS 升级 v2 并兼容读取 v1，旧文档无需迁移；重建继续走 KIG.2 staging/单事务切换。新增 `knowledge_boundary_proposal` CDS Shadow，只能选择程序提供的安全 offset 子集，`rewrites_raw_text=false`，无效或模型失败回退确定性 offsets。Markdown/TXT/PDF/DOCX 既有格式集与新增标题、定义、步骤、警告、列表、表格、代码质量集回归 `198 passed, 1 warning`。详见 `docs/reports/kig-4-semantic-chunking.md`。
 
 建议 PR：`feat(knowledge): add provenance-safe semantic chunking`
 
@@ -1768,14 +1778,16 @@ embedding
 
 目标：在检索前决定问题类型、来源和子查询。
 
-- [ ] 在 CDS 冻结的 DecisionRun/CandidateEnvelope 上注册 `query-plan-v1`，不自建通用模型运行、模式或审计框架。
-- [ ] 明确单文档和显式来源问题跳过 Planner。
-- [ ] 支持 Knowledge/Memory/History/Life/Task/Lore 源选择。
-- [ ] 支持时间、版本、实体、原话和冲突需求。
-- [ ] 用户关闭某源后 Planner 建议也不得放行。
-- [ ] 建立提示注入和模糊指代测试。
+- [x] 在 CDS 冻结的 DecisionRun/CandidateEnvelope 上注册 `query-plan-v1`，不自建通用模型运行、模式或审计框架。
+- [x] 明确单文档和显式来源问题跳过 Planner。
+- [x] 支持 Knowledge/Memory/History/Life/Task/Lore 源选择。
+- [x] 支持时间、版本、实体、原话和冲突需求。
+- [x] 用户关闭某源后 Planner 建议也不得放行。
+- [x] 建立提示注入和模糊指代测试。
 
 验收：跨库问题能选择正确来源；普通明确查询不增加无意义模型调用。
+
+KIG.5 施工记录（2026-07-27）：新增 `query-plan-v1` typed input/result，并在既有 CDS DecisionRun/CandidateEnvelope 注册 `kig_query_planner` Shadow DecisionKind；未新增迁移，Schema 保持 74。显式来源、单文档、普通明确查询与时间/版本/实体/原话/冲突/跨库请求由确定性规则直接规划并记录 `bypassed_model=true`，只有模糊指代进入授权模型路径。所有输出限于 Knowledge/Memory/History/Life/Task/Lore 六个候选、最多 4 个各 160 字符子查询，关闭来源在程序与 validator 两层硬拒绝；提示注入作为不可信数据处理。模型输出仅是 `proposal_only` Shadow 建议，重复 DecisionRun 不重复调用，失败或未授权退回 Knowledge（可用时）或空计划，不执行检索和写入。阶段及关联回归 `881 passed, 1 warning`。最终代码实配 `deepseek-v4-flash` 两轮共 12 条纯合成模糊/注入样例：2 条明显注入由程序旁路拒绝，10 条进入模型，其中 3 条严格结果通过、7 条安全回退；来源越权 0、`application_allowed` 0、整体安全收口率 100%。模型调用一次成功率 30%，仅作为 Shadow 观测，不作为晋级证据。详见 `docs/reports/kig-5-query-planner.md`。
 
 建议 PR：`feat(retrieval): add bounded query planning and source routing`
 
@@ -1783,14 +1795,16 @@ embedding
 
 目标：统一 FTS、Dense、Metadata 和图投影候选。
 
-- [ ] 定义 RetrievalCandidate。
-- [ ] 接入现有 FTS 和向量实现，已有能力直接复用。
-- [ ] 增加 metadata filter、日期、版本和状态过滤。
-- [ ] 建立各源独立候选上限。
-- [ ] 去重、邻居扩展和多样性选择。
-- [ ] Dense 不可用时使用 Lexical 回退。
+- [x] 定义 RetrievalCandidate。
+- [x] 接入现有 FTS 和向量实现，已有能力直接复用。
+- [x] 增加 metadata filter、日期、版本和状态过滤。
+- [x] 建立各源独立候选上限。
+- [x] 去重、邻居扩展和多样性选择。
+- [x] Dense 不可用时使用 Lexical 回退。
 
 验收：单一源故障不阻塞查询；候选均带来源、状态和 locator。
+
+KIG.6 施工记录（2026-07-27）：新增无持久化的 typed `RetrievalRequest`、`RetrievalFilters`、`RetrievalCandidate` 与 `RetrievalBatch`，统一承载 source/revision/hash/status/privacy/locator、独立 lexical/vector/metadata/recency 信号、freshness、authority、role 和短 excerpt；不把不同含义压成一个总分。六个只读 adapter 分别复用 Knowledge `hybrid_search`（FTS+Dense+RRF+邻居）、Memory FTS/LIKE、CTX History FTS、LIFE SelfTimeline 中的 LifeEvent 投影、Task/ToolRun 和 Lore 现有检索。每源默认 6、最高 20，总候选最高 60；来源分别执行、分别记录 body-free diagnostics，任一来源异常只清空该源。metadata hard filter 支持 source ID、document、tag、revision、status 与时间范围；候选进入批次前重新解析 KIG.1 SourceRef，跨源适配冒充被拒绝。源内 exact-normalized 去重后按来源轮询选择，保留跨源相同证据；Knowledge Dense 不可用时显式记录 lexical fallback，FTS 热路径继续工作。无迁移，Schema 保持 74。专项及核心 KIG/CTX/Knowledge 回归 `893 passed, 1 warning`；详见 `docs/reports/kig-6-unified-retrieval.md`。
 
 建议 PR：`feat(retrieval): unify hybrid multi-source candidates`
 
@@ -1798,15 +1812,19 @@ embedding
 
 目标：让模型在有限候选中判断真正相关性，不直接执行检索或写状态。
 
-- [ ] 在 CDS 通用 rerank 运行时上注册 KIG `retrieval-rerank-v1` 领域 Schema、用途枚举和质量门。
-- [ ] 只允许返回输入候选 ID。
-- [ ] 区分 direct、partial、background、conflict、outdated、duplicate、irrelevant。
-- [ ] 来源变化后拒绝旧重排结果。
-- [ ] 模型失败使用确定性融合。
-- [ ] Shadow 模式对比旧排序。
-- [ ] 晋级、盲评、模型认证和回滚遵守共享 Decision Promotion Policy；未通过对应 decision_kind 认证的模型不得 Active。
+- [x] 在 CDS 通用 rerank 运行时上注册 KIG `retrieval-rerank-v1` 领域 Schema、用途枚举和质量门。
+- [x] 只允许返回输入候选 ID。
+- [x] 区分 direct、partial、background、conflict、outdated、duplicate、irrelevant。
+- [x] 来源变化后拒绝旧重排结果。
+- [x] 模型失败使用确定性融合。
+- [x] Shadow 模式对比旧排序。
+- [x] 晋级、盲评、模型认证和回滚遵守共享 Decision Promotion Policy；认证绑定 Provider、模型、协议、Prompt、固定集与推理参数，未匹配模型不得继承认证或 Active。当前 DeepSeek v4-pro 质量门通过但单 Provider 上限仍为 Shadow。
 
 验收：人工相关性显著高于旧排序；引用不存在率为 0。
+
+KIG.7 施工记录（2026-07-27）：在 CDS 共享 DecisionRun/CandidateEnvelope/structured-output/fallback 审计运行时注册 `retrieval-rerank-v1`，最大 30 个输入候选、最多选择 12 个；模型必须对输入 ID 做完整排列并逐一给出七类 relevance role、rank bucket 和 confidence，selected 只能按排序引用未排除的输入 ID。KIG.6 候选适配只携带短 excerpt、privacy scope 与 SourceRef 快照；运行前和输出验收时复核 revision/hash/status/privacy/locator，来源撤销或变化时确定性 fallback 也实时查源并丢弃旧候选，Knowledge `local_only/ask_each_time` 未获许可时整批禁止远传。失败回退保持 lexical/vector/metadata/recency 分离的确定性融合；Shadow comparison 只记录 Jaccard、位置变化和计数，不记录 query/excerpt。共享 `llm.complete_json` 新增默认关闭的 JSON Object 模式，KIG.7 显式启用，其他调用行为不变。Schema 保持 74，核心回归 `924 passed, 1 warning`，非候选选择通过率 0、Shadow `application_allowed` 0。实配模型在启用 JSON Object 前共 18 次合成调用仅 1 次严格结果、17 次安全回退，0 越界；带人工相关标签的 6 例盲评无严格有效结果，不能证明相关性提升。JSON Object 模式的远端复测因当前 Codex 外部用量额度被拒绝，故本阶段维持 Shadow，质量门 `[~]`，KIG-R 冻结前必须补测。详见 `docs/reports/kig-7-retrieval-reranker.md`。
+
+KIG.7 认证收口（2026-07-28）：保持同一 6 条纯合成固定集，修正 `exact_shape` 包装诱导与隐藏推理截断；每决策最多一次结构纠正，JSON 推理模式硬顶 4096，普通观察器预算不变。`deepseek-v4-pro` 最终 6/6 严格结果、覆盖率 1.0、Precision@2 0.8333、同样本 fallback 0.0、增益 0.8333、不安全结果与 Active 放行均为 0。证书 key `b445dd9e271d6ade6eb4be3577b11ef57a5280f7c6ba2ca7a266f3527aa5bd03` 仅匹配当前 Provider/模型/协议/Prompt/固定集与推理参数；更换模型默认回到未认证 Shadow。质量门 `[x]`，晋级上限仍为 `shadow_single_provider`。
 
 建议 PR：`feat(retrieval): add validated LLM semantic reranking`
 
@@ -1814,14 +1832,16 @@ embedding
 
 目标：回答可以被来源证明，资料不足时不编造。
 
-- [ ] 审计并复用现有知识 citation/source API、locator 验证和原文打开入口，只把已证实的跨源缺口抽象为 EvidenceLink。
-- [ ] 定义 claim-support-v1。
-- [ ] 复杂问题执行支持度检查。
-- [ ] 对高风险和多来源回答建立 `AnswerClaimSegment`，执行生成后 citation 白名单、来源有效性、句子级支持度和不确定性一致性校验。
-- [ ] 冲突和不足进入 ContextBundle。
-- [ ] UI 展示轻量来源条。
+- [x] 审计并复用现有知识 citation/source API、locator 验证和原文打开入口，只把已证实的跨源缺口抽象为 EvidenceLink。
+- [x] 定义 claim-support-v1。
+- [x] 复杂问题执行支持度检查。
+- [x] 对高风险和多来源回答建立 `AnswerClaimSegment`，执行生成后 citation 白名单、来源有效性、句子级支持度和不确定性一致性校验。
+- [x] 冲突和不足进入 ContextBundle。
+- [x] UI 展示轻量来源条。
 
 验收：引用 100% 可打开或明确标记来源不可访问；资料不足时不生成伪引用。
+
+KIG.8 施工记录（2026-07-28）：Schema 75 新增 body-free `kig_retrieval_bundles`、`kig_answer_claim_segments` 与跨源 `kig_evidence_links`；现有 Knowledge `knowledge_message_citations`、K1 白名单及原文 API 保持唯一，不为知识 Chunk 复制 EvidenceLink。`knowledge-retrieval-bundle-v1` 以结构化对象进入 ContextAssembler，由 CTX 复核字段、限制 12 条并在既有知识预算内最终裁剪；`claim-support-v1` 对复杂/高风险回答执行逐句 citation 白名单、SourceRef revision/hash/status/privacy/locator 实时复核、关键产品/版本锚点和词项支持度、不确定性一致性校验。伪造、失效和同主题但不支持的引用分别明确标记，unsupported 链只保留审计且不进入 UI；跨源原文由 owner store 实时打开，变化/删除后不回放快照正文。聊天 UI 复用既有资料条样式显示轻量来源条。KIG/Knowledge/CTX/API 核心回归 `311 passed, 1 warning`，前端 `51 passed`、TypeScript/Vite 190 modules 通过。详见 `docs/reports/kig-8-grounded-evidence.md`。
 
 建议 PR：`feat(knowledge): add grounded evidence and citation support`
 
@@ -1829,14 +1849,16 @@ embedding
 
 目标：处理新旧设计、软件版本、条件差异和用户纠正。
 
-- [ ] 建立 VersionRelation 和 FreshnessState。
-- [ ] 确定性 hash/date/version 规则先行。
-- [ ] LLM 只提出语义 relation。
-- [ ] 用户最新纠正和 authoritative 标记优先。
-- [ ] 高影响冲突请求确认。
-- [ ] 建立版本分支、部分替代和条件兼容测试。
+- [x] 建立 VersionRelation 和 FreshnessState。
+- [x] 确定性 hash/date/version 规则先行。
+- [x] LLM 只提出语义 relation。
+- [x] 用户最新纠正和 authoritative 标记优先。
+- [x] 高影响冲突请求确认。
+- [x] 建立版本分支、部分替代和条件兼容测试。
 
 验收：新旧文档不会无提示混合；时间条件不同不误判为冲突。
+
+KIG.9 施工记录（2026-07-28）：Schema 76 新增 body-free `kig_source_governance` 与 `kig_version_relations`，并为 VersionRelation 绑定两端 `derived_dependencies`。`freshness-state-v1` 仅在同一对象/范围已由 source id、用户 scope 或高重合主题证明后应用 hash、owner revision、semver、有效期与 authority/date 规则；版本号或时间较新本身不证明正确。不同时间/条件先判 `compatible_with_conditions`，不会误标冲突；exact duplicate/supersedes/partial/expired 分别进入可审计新鲜度。`version-relation-v1` 语义判断注册于 CDS Shadow，模型输出始终 proposal-only；用户最新纠正、用户确认 authoritative、ToolRun、官方源、导入资料、模型提案按固定优先级治理。高影响 contradict/divergent 必须 `requires_confirmation`，revision-matched API 接受/拒绝后才可进入 confirmed。KIG-R chat pipeline 仅应用确定性/已确认关系和确定性融合，未决冲突进入 RetrievalBundle 并由生成后 Validator 强制保留冲突措辞；Knowledge K1 同时补上实时来源与句子支持度检查。扩大到 KIG/Knowledge/CTX/API/CDS.9/CDS.10 的回归 `687 passed, 1 warning`。详见 `docs/reports/kig-9-conflict-version-freshness.md`。
 
 建议 PR：`feat(kig): add conflict version and freshness governance`
 
@@ -1844,24 +1866,30 @@ embedding
 
 KIG.0～KIG.9 完成后先冻结和发布 KIG-R，不等待 PWM：
 
-- [ ] Source adapters、分类、Query Planner、混合候选、LLM rerank、EvidenceLink、生成后 Citation Validator、冲突/版本/新鲜度与 CTX RetrievalBundle 全部通过验收。
-- [ ] 独立 Review 为 0 个未解决 P0/P1，零容忍来源/引用/授权指标均为 0。
-- [ ] 冻结 `kig-retrieval-governance-v1`、记录 Schema 和回滚点；KIG-P 从下一迁移号继续。
-- [ ] KIG-R 关闭后即能独立改善聊天检索；PWM 延期或关闭不得破坏 KIG-R。
+- [x] Source adapters、分类、Query Planner、混合候选、LLM rerank、EvidenceLink、生成后 Citation Validator、冲突/版本/新鲜度与 CTX RetrievalBundle 全部通过验收。
+- [x] 独立 Review 为 0 个未解决 P0/P1，零容忍来源/引用/授权指标均为 0。
+- [x] 冻结 `kig-retrieval-governance-v1`、记录 Schema 和回滚点；KIG-P 从下一迁移号继续。
+- [x] KIG-R 关闭后即能独立改善聊天检索；PWM 延期或关闭不得破坏 KIG-R。
+
+KIG-R 冻结审计记录（2026-07-28）：已建立 10 组纯合成、13 项非零分母零容忍验收，违规数均为 0；Review 与模型认证修正后后端全量 `2538 passed, 2 warnings`（既有依赖弃用提示与受限环境 pytest cache 提示），前端 `51 passed`、TypeScript/Vite 190 modules 与桌面 JavaScript 语法/3 项生命周期检查通过。独立 Review 为 0 个未解决 P0/P1；DeepSeek v4-pro 同一固定集 6/6 严格覆盖、P@2 增益 0.8333、零不安全/Active，模型指纹质量门通过但保持 `shadow_single_provider`。KIG-R 主验收已验证证书与当前 Provider/模型/协议/Prompt/固定集/推理参数匹配，发布门为 `pass`。实现证据已提交并记录不可变 rollback SHA，四项冻结条件全部勾选；KIG.10 仍未开工。详见 `docs/reports/kig-r-acceptance.md` 与 `docs/reports/kig-r-freeze-readiness.md`。
+
+KIG-R 正式冻结（2026-07-28）：不可变实现与验收 rollback point 为 `a18fd04a3759663f88d6a8041529fea14645c281`，最终 Schema 76，冻结协议 `kig-retrieval-governance-v1`。四项冻结门全部关闭；KIG-P 首个可用迁移号为 77。KIG.10/PWM 尚未开工，等待用户对本冻结结果完成 Review。
 
 ### KIG.10：Claim、Entity、Relation 与 WorldEvent
 
 目标：建立个人世界模型的来源化数据底座。
 
-- [ ] 所有新表使用 `pwm_` 前缀：`pwm_claims/pwm_entities/pwm_entity_aliases/pwm_relations/pwm_world_events/pwm_state_assertions/pwm_entity_source_links`；只保存派生投影，不复制权威事实行。
-- [ ] 使用白名单实体类型和 Predicate。
-- [ ] 先在 shadow 模式抽取。
-- [ ] 所有对象必须有 SourceRef。
-- [ ] 模型推断默认不可独立支持事实回答。
-- [ ] 敏感属性自动抽取禁用。
-- [ ] 设置硬预算：每来源最大派生 Claim、每日最大新实体、低置信候选 TTL、单实体最大 alias、单次消歧候选和维护批次上限、孤立节点归档规则。
+- [x] 所有新表使用 `pwm_` 前缀：`pwm_claims/pwm_entities/pwm_entity_aliases/pwm_relations/pwm_world_events/pwm_state_assertions/pwm_entity_source_links`；只保存派生投影，不复制权威事实行。
+- [x] 使用白名单实体类型和 Predicate。
+- [x] 先在 shadow 模式抽取。
+- [x] 所有对象必须有 SourceRef。
+- [x] 模型推断默认不可独立支持事实回答。
+- [x] 敏感属性自动抽取禁用。
+- [x] 设置硬预算：每来源最大派生 Claim、每日最大新实体、低置信候选 TTL、单实体最大 alias、单次消歧候选和维护批次上限、孤立节点归档规则。
 
 验收：无来源对象写入率为 0；普通对话不产生大量无意义节点。
+
+KIG.10 施工记录（2026-07-28）：Schema 77 建立七张 `pwm_` 来源化派生表及 body-free 预算计数；所有写入口先解析实时 SourceRef，再绑定 `derived_dependencies`，失败时撤销派生行。实体类型、Predicate、event layer、执行语义全部白名单；`pwm-extraction-shadow-v1` 只保存 candidate/model_inferred，未进入聊天事实支持链。敏感画像自动抽取 fail-closed；默认每来源 64 Claim、每日 128 实体、30 天低置信 TTL、每实体 16 alias、8 个消歧候选、100 项维护批次和 90 天孤立归档。详见 `docs/reports/kig-10-pwm-foundation.md`。
 
 建议 PR：`feat(pwm): add sourced claims entities relations and events`
 
@@ -1869,15 +1897,17 @@ KIG.0～KIG.9 完成后先冻结和发布 KIG-R，不等待 PWM：
 
 目标：识别别名，同时避免错误合并。
 
-- [ ] 规则 exact alias 和 scope 初筛。
-- [ ] LLM 同一性建议。
-- [ ] 高影响合并要求用户确认。
-- [ ] 支持拆分、关系迁移和影响预览。
-- [ ] 现实/Lore scope 分离。
-- [ ] 建立同名人物、项目简称和跨语言别名测试。
-- [ ] `memory_entities` 与 `pwm_entities` 不自动合并或双向覆盖；alias 同步只生成可审计 proposal，由目标所有者确认应用。
+- [x] 规则 exact alias 和 scope 初筛。
+- [x] LLM 同一性建议。
+- [x] 高影响合并要求用户确认。
+- [x] 支持拆分、关系迁移和影响预览。
+- [x] 现实/Lore scope 分离。
+- [x] 建立同名人物、项目简称和跨语言别名测试。
+- [x] `memory_entities` 与 `pwm_entities` 不自动合并或双向覆盖；alias 同步只生成可审计 proposal，由目标所有者确认应用。
 
 验收：错误自动合并率达到严格门槛；所有合并可回滚。
+
+KIG.11 施工记录（2026-07-28）：Schema 78 建立 resolution proposal 与不可变 operation journal。exact canonical/alias 仅允许同 type、同 reality/lore scope 的低影响实体自动合并，阈值 0.98；人物、用户、组织、所有 LLM 建议和 memory alias 同步均要求用户确认。merge 会迁移 aliases/claims/relations/source links/events/state assertions；operation journal 只保存 body-free 恢复元数据，split/rollback 从中精确恢复；100 个 exact merge + rollback 合成场景精确率与恢复率均为 100%。详见 `docs/reports/kig-11-entity-resolution.md`。
 
 建议 PR：`feat(pwm): add reversible entity resolution`
 
@@ -1885,16 +1915,18 @@ KIG.0～KIG.9 完成后先冻结和发布 KIG-R，不等待 PWM：
 
 目标：复用现有系统，不重写其内部状态机。
 
-- [ ] MemoryClassificationProposal 接口。
-- [ ] MemoryConflictProposal 接口。
-- [ ] EpisodeBoundaryProposal 和 SagaTransitionProposal 接口。
-- [ ] 仅在 LIFE v1 冻结后接入 SelfTimeline 只读召回 adapter；KIG 不写 LifeEvent、日记、日期或生活状态。
-- [ ] ToolRun 权威来源适配。
-- [ ] ContextAssembler 接收统一 RetrievalBundle。
-- [ ] 各系统的关闭、临时聊天和隐私设置生效。
-- [ ] EAP 只读来源适配不得改变冻结的候选、关系、表达、投递与反馈协议。
+- [x] MemoryClassificationProposal 接口。
+- [x] MemoryConflictProposal 接口。
+- [x] EpisodeBoundaryProposal 和 SagaTransitionProposal 接口。
+- [x] 仅在 LIFE v1 冻结后接入 SelfTimeline 只读召回 adapter；KIG 不写 LifeEvent、日记、日期或生活状态。
+- [x] ToolRun 权威来源适配。
+- [x] ContextAssembler 接收统一 RetrievalBundle。
+- [x] 各系统的关闭、临时聊天和隐私设置生效。
+- [x] EAP 只读来源适配不得改变冻结的候选、关系、表达、投递与反馈协议。
 
 验收：KIG 关闭后原有 Memory/CTX/LIFE 行为可继续；无第二套长期记忆写入器。
+
+KIG.12 施工记录（2026-07-28）：Schema 79 仅保存 KIG→owner 的 proposal envelope，不执行 MEM/Episode/Saga 写入；目标 owner 只能记录接受/拒绝，正式应用继续由原系统负责。SelfTimeline、ToolRun 与 EAP 均为只读 adapter；EAP 快照 body-free 且不触碰六条冻结状态机。`temporary_chat` 从 Memory/跨会话 History 排除，KIG/Memory/History/LIFE/Knowledge 开关在候选进入前生效；KIG 总开关关闭时原 Knowledge/MEM/CTX/LIFE 路径继续。CTX 仍是 RetrievalBundle 的唯一最终装配者。详见 `docs/reports/kig-12-owner-integrations.md`。
 
 建议 PR：`feat(kig): integrate memory life task and context governance`
 
@@ -1902,14 +1934,16 @@ KIG.0～KIG.9 完成后先冻结和发布 KIG-R，不等待 PWM：
 
 目标：长期运行后仍可发现重复、失效、冲突和重建需求。
 
-- [ ] MaintenanceCandidate 表和 worker。
-- [ ] 确定性重复检查。
-- [ ] LLM 语义重复和旧版本建议。
-- [ ] 孤立 Chunk、失效来源和索引异常检测。
-- [ ] 只生成候选，不自动删除。
-- [ ] 用户维护反馈反哺检索偏好。
+- [x] MaintenanceCandidate 表和 worker。
+- [x] 确定性重复检查。
+- [x] LLM 语义重复和旧版本建议。
+- [x] 孤立 Chunk、失效来源和索引异常检测。
+- [x] 只生成候选，不自动删除。
+- [x] 用户维护反馈反哺检索偏好。
 
 验收：后台维护不阻塞聊天；未确认删除率为 0。
+
+KIG.13 施工记录（2026-07-28）：Schema 80 建立 `kig_maintenance_candidates` 与检索反馈表；小时/日/周调度在独立 asyncio worker 中运行，异常不进入聊天路径。hash 重复、metadata、rebuild、stale source、orphan chunk 与 derived dependency 使用确定性检查；语义重复/旧版本只接受 `llm_proposal`。所有候选固定 `requires_confirmation=1`，确认只改变候选状态，不执行 owner 删除；最终验收未确认删除为 0。详见 `docs/reports/kig-13-maintenance.md`。
 
 建议 PR：`feat(kig): add non-destructive knowledge maintenance`
 
@@ -1917,15 +1951,17 @@ KIG.0～KIG.9 完成后先冻结和发布 KIG-R，不等待 PWM：
 
 目标：让用户管理来源、版本、冲突和关联，而不是管理内部算法。
 
-- [ ] 扩展现有知识库主页、集合、导入、搜索和详情体验；不得并行重建第二套知识 UI。
-- [ ] 文档详情、索引状态和版本关系。
-- [ ] 来源展开和原文入口。
-- [ ] 项目/实体页和事件时间线。
-- [ ] 删除影响预览。
-- [ ] 数据传输与模型设置。
-- [ ] 开发者检索诊断。
+- [x] 扩展现有知识库主页、集合、导入、搜索和详情体验；不得并行重建第二套知识 UI。
+- [x] 文档详情、索引状态和版本关系。
+- [x] 来源展开和原文入口。
+- [x] 项目/实体页和事件时间线。
+- [x] 删除影响预览。
+- [x] 数据传输与模型设置。
+- [x] 开发者检索诊断。
 
 验收：普通用户不需要理解 BM25、向量和图谱即可完成导入、问答、纠正、归档和删除。
+
+KIG.14 施工记录（2026-07-28）：没有创建第二导航页；在既有“文件与知识”主页内加入自然语言“项目、实体与事件”折叠区、Shadow/来源化状态、时间线、维护建议与 PWM 开关。既有文档/索引/来源/传输设置继续复用；删除前先读取真实影响预览，明确切片/向量/派生关联失效范围与不会删除的独立聊天、记忆、LIFE 和应用外原文件。新增 body-free developer diagnostics，不返回 query/source 正文。详见 `docs/reports/kig-14-world-model-ui.md`。
 
 建议 PR：`feat(ui): add knowledge governance and world model views`
 
@@ -1933,18 +1969,18 @@ KIG.0～KIG.9 完成后先冻结和发布 KIG-R，不等待 PWM：
 
 目标：完成 KIG-P（Personal World Model）并在已冻结 KIG-R 之上冻结 KIG v1。
 
-- [ ] 后端全量测试通过。
-- [ ] 前端测试、TypeScript、Vite 和 Electron 检查通过。
-- [ ] 1 万、10 万和目标规模 Chunk 压力测试。
-- [ ] 100 个单文档、100 个多文档、100 个跨库问题评测。
-- [ ] 100 个版本冲突与用户纠正场景。
-- [ ] 100 个实体消歧和合并回滚场景。
-- [ ] Provider 切换、离线、远程受限和预算不足测试。
-- [ ] 引用准确率、召回率、重排增益和延迟报告。
-- [ ] 更新所有权威文档和迁移说明。
-- [ ] 记录 KIG 最终 Schema、协议与 adapter 兼容矩阵，独立 Review 确认 0 个未解决 P0/P1 后冻结 KIG v1。
-- [ ] 0 个未解决 P0/P1。
-- [ ] 压力测试验证每来源/每日/alias/消歧/维护批次硬预算，单本大型手册不得无界生成数万 PWM 节点。
+- [x] 后端全量测试通过。
+- [x] 前端测试、TypeScript、Vite 和 Electron 检查通过。
+- [x] 1 万、10 万和目标规模 Chunk 压力测试。
+- [x] 100 个单文档、100 个多文档、100 个跨库问题评测。
+- [x] 100 个版本冲突与用户纠正场景。
+- [x] 100 个实体消歧和合并回滚场景。
+- [x] Provider 切换、离线、远程受限和预算不足测试。
+- [x] 引用准确率、召回率、重排增益和延迟报告。
+- [x] 更新所有权威文档和迁移说明。
+- [x] 记录 KIG 最终 Schema、协议与 adapter 兼容矩阵，独立 Review 确认 0 个未解决 P0/P1 后冻结 KIG v1。
+- [x] 0 个未解决 P0/P1。
+- [x] 压力测试验证每来源/每日/alias/消歧/维护批次硬预算，单本大型手册不得无界生成数万 PWM 节点。
 
 冻结标准：
 
@@ -1962,6 +1998,8 @@ LLM 重排相对旧排序人工增益              ≥ 15%
 复杂回答证据适当性                    ≥ 90%
 实体自动合并精确率                    ≥ 98%
 ```
+
+KIG.15 施工记录（2026-07-28）：`kig-p-acceptance-v1` 使用临时数据库和纯合成数据执行 100 单文档、100 多文档、100 跨库、100 版本与 100 exact entity merge/rollback；召回、引用、版本、实体精确率和恢复率均为 100%。SQLite FTS 阶梯覆盖 1 万、10 万和首版目标 25 万 Chunk，5 个探针召回均为 100%，查询固定返回不超过 5 条。每来源 Claim 在 64 条后拒绝超额写入，单实体 alias 在 16 条后拒绝超额写入；消歧结果 2 条且不超过硬上限 8，维护扫描固定截断于 100 条；每日实体/TTL/孤立归档由同一 policy 和 worker 验证。独立 Review 为 0 P0/P1、3 P2；三项 P2 全部采纳，修复 Shadow 批次失败补偿和事件 JSON 精确成员查询。后端全量 `2560 passed, 1 warning`，前端 `52 passed`、Vite 190 modules，Electron lifecycle contract `3 passed`。最终 Schema 80；不可变实现/回滚点 `96021838418d5c5d9d26b269784447a099a68cc3`；PWM 协议 `pwm-projection-v1`，跨 owner proposal `kig-system-proposal-v1`，维护 `kig-maintenance-v1`；KIG-R 继续为 `kig-retrieval-governance-v1`/Schema 76 rollback boundary。详见 `docs/reports/kig-p-acceptance.md`、`docs/reports/kig-final-review-response.md` 与 `docs/reports/kig-v1-freeze.md`。
 
 建议 PR：`feat(kig): complete and freeze knowledge intelligence v1`
 

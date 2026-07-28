@@ -417,7 +417,7 @@ def test_report_is_body_free_schema_stable_and_production_tables_unchanged():
     assert report["rule_template_count"] == 14
     assert report["safety_violation_count"] == 0
     assert report["oracle_version"] == "cds9-memory-safety-oracle-v3"
-    assert report["schema_version"] == 71
+    assert report["schema_version"] == 80
     assert report["stage_schema_baseline"] == 62 and report["schema_changed"] is False
     encoded = json.dumps(report, ensure_ascii=False)
     assert "raw_model_output" not in encoded and '"input"' not in encoded

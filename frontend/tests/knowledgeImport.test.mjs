@@ -63,6 +63,15 @@ test("knowledge citations are clickable and backed by the verified source endpoi
   assert.match(api, /getKnowledgeCitation|\/api\/knowledge\/citations/);
 });
 
+test("cross-source evidence uses a lightweight strip and explicit unavailable state", async () => {
+  const [chat, api] = await Promise.all([
+    readFile(new URL("../src/components/ChatView.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/api.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(chat, /evidence_links|跨来源证据|来源不可用|unavailable_reason/);
+  assert.match(api, /getEvidenceLink|\/api\/kig\/evidence-links|EvidenceLink/);
+});
+
 test("knowledge parsing progress exposes cancellation, recovery and an event timeline", async () => {
   const [page, api] = await Promise.all([
     readFile(new URL("../src/components/FilesPage.tsx", import.meta.url), "utf8"),
@@ -83,6 +92,18 @@ test("knowledge management exposes filters, tags, reindex, retry and verified de
   assert.match(page, /标签|重建索引|重试处理|重试删除/);
   assert.match(page, /应用外的原文件或备份不会同步删除/);
   assert.match(api, /updateKnowledgeTags|reindexKnowledgeDocument|deleteKnowledgeDocument|retryKnowledgeDeletion/);
+});
+
+test("world model extends the existing knowledge page with source-safe controls", async () => {
+  const [page, api, styles] = await Promise.all([
+    readFile(new URL("../src/components/FilesPage.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../src/api.ts", import.meta.url), "utf8"),
+    readFile(new URL("../src/styles.css", import.meta.url), "utf8"),
+  ]);
+  assert.match(page, /项目、实体与事件|Shadow · 来源化 · 可重建|后台不会自动删除资料/);
+  assert.match(page, /将失效：.*来源化关联|不会自动删除：独立聊天、长期记忆、LIFE 事件/);
+  assert.match(api, /getPWMOverview|listPWMEntities|listPWMTimeline|scanKIGMaintenance|getKnowledgeImpactPreview/);
+  assert.match(styles, /knowledge-world-model-grid|knowledge-world-row/);
 });
 
 test("knowledge retrieval audit UI states that query bodies are not stored", async () => {

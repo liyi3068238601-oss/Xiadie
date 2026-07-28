@@ -1,8 +1,8 @@
 # CDS、LIFE、KIG 专项所有权与共享施工契约
 
-- 版本：v1.1
-- 日期：2026-07-27
-- 状态：CDS 与 LIFE 已通过最终独立 Review 并正式冻结；KIG 协议门在 LIFE 合入 `main` 后解除
+- 版本：v1.2
+- 日期：2026-07-28
+- 状态：CDS、LIFE、KIG-R 与 KIG-P 已完成；KIG v1 已冻结
 - 适用顺序：`CDS → LIFE → KIG`
 - 解释优先级：冻结协议与 ADR > 本矩阵 > 专项计划 > 阶段施工记录
 
@@ -47,8 +47,33 @@ LIFE v1 冻结与 KIG 待锁定基线：
 | frozen adapters | CDS `specialty-adapter-contract-v1`；EAP `eap-decision-run-adapter-v1`；LIFE `life-adapter-v1`，兼容关系保持 |
 | frozen LIFE tests | 后端 `2423 passed, 1 warning`；前端 `50 passed`；Vite 190 modules；Electron lifecycle contract 3 项与 Windows 安装验收通过 |
 | KIG next schema | 72；不得预占空迁移 |
-| KIG predecessor | 待 LIFE PR 合入 `main` 后记录不可变 merge commit；此前只允许审计和计划复核 |
+| KIG predecessor | LIFE PR #3 merge `main@f16d80ab0d2457065dc65d7d284d3cbf3584f5ee` |
+| KIG.0 test baseline | 后端 `2428 passed, 1 warning`；前端 `50 passed`；Vite 190 modules；Electron contract 3 项 |
+| KIG.0 boundary | ADR-0062～0064；60 条合成固定集；0 个职责冲突；未新增迁移或生产写路径 |
 | recorded_at | 2026-07-27（LIFE v1 freeze） |
+
+KIG-R 冻结基线：
+
+| 字段 | 当前值/规则 |
+|---|---|
+| KIG-R implementation / rollback | `a18fd04a3759663f88d6a8041529fea14645c281` |
+| final schema | 76；KIG-P 首个可用迁移号 77 |
+| frozen protocol | `kig-retrieval-governance-v1`；KIG.7 `retrieval-rerank-v1` 保持 Shadow |
+| review / safety | 0 个未解决 P0/P1；10 组纯合成、13 项零容忍指标违规均为 0 |
+| model certification | `deepseek-v4-pro` 指纹证书；6/6 严格覆盖、P@2 增益 0.8333、零不安全/Active；不得向其他模型继承 |
+| frozen tests | 后端 `2538 passed, 2 warnings`；前端 `51 passed`；Vite 190 modules；Electron 语法与 lifecycle contract 3 项 |
+| recorded_at | 2026-07-28（KIG-R freeze） |
+
+KIG-P 冻结基线：
+
+| 字段 | 当前值/规则 |
+|---|---|
+| schema range | 77～80；不修改 48～76 |
+| final schema | 80 |
+| protocols | `pwm-projection-v1`、`pwm-extraction-shadow-v1`、`pwm-entity-resolution-v1`、`kig-system-proposal-v1`、`kig-maintenance-v1` |
+| acceptance | `kig-p-acceptance-v1`：300 检索 + 100 版本 + 100 entity；25 万 Chunk 目标规模；release gate pass |
+| authority | PWM 可重建、proposal-only；Knowledge/MEM/LIFE/EAP/Tool owner 不变 |
+| implementation / rollback | `96021838418d5c5d9d26b269784447a099a68cc3`；初始 KIG-P 实现为 `5b6054d5cc57a5d09cbe305045487a527e760071`，最终点包含独立 Review 修复；冻结证据见 `docs/reports/kig-v1-freeze.md` |
 
 正式开工只允许两种方式：
 
@@ -84,9 +109,9 @@ LIFE v1 冻结与 KIG 待锁定基线：
 | MEM | `memory-adapter-v1` | memory id/revision/hash | MEM 既有算法 | 不读写长期记忆 | 继承记忆远传策略 | MEM |
 | Knowledge | `knowledge-adapter-v1` | document/chunk revision/hash/locator | 现有 FTS/Dense 降级 | 文件逐次授权，不进入长期派生层 | transmission policy/grant | Knowledge/KIG 补差阶段 |
 | LIFE | `life-adapter-v1` | event/state/schedule revision/hash | LIFE 确定性 reducer | 不生成长期 LifeEvent、Goal、Date、Diary | 日记/生活数据单独授权 | LIFE |
-| KIG | `source-ref-v1` | adapter registry 返回的 revision/hash | 原系统继续工作 | 不抽取 Claim/Entity/Relation/PWM | 逐来源隐私与授权 | KIG |
+| KIG | `source-ref-v1` / `kig-retrieval-governance-v1` / `pwm-projection-v1` | adapter registry 返回的 revision/hash | 原系统继续工作；PWM/模型提案保持 Shadow | 临时聊天不抽取 PWM，排除 Memory/跨会话 History | 逐来源隐私与授权 | KIG；KIG-P 使用 77～80 |
 
-迁移号严格串行：CDS 最终冻结 Schema 为 63；LIFE 最终冻结 Schema 为 71；KIG 在 LIFE PR 合入 `main` 并锁定 merge commit 后可使用首个确有必要的 Schema 72。没有实际字段缺口不得为了“占号”创建空迁移。
+迁移号严格串行：CDS 最终冻结 Schema 为 63；LIFE 最终冻结 Schema 为 71；KIG-R 使用 Schema 72～76 并冻结于实现 `a18fd04a3759663f88d6a8041529fea14645c281`；KIG-P 使用 Schema 77～80。没有实际字段缺口不得为了“占号”创建空迁移。
 
 ## 4. DecisionKindRegistry 规范
 

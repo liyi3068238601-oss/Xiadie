@@ -3276,6 +3276,594 @@ MIGRATIONS = [
             ON self_timeline_entries(source_type,source_id);
         """,
     ),
+    (
+        72,
+        """
+        -- KIG.1: minimal dependency envelopes for derived projections.
+        -- Authoritative source bodies and lifecycle remain in their owner tables.
+        CREATE TABLE derived_dependencies (
+            id TEXT PRIMARY KEY,
+            derived_kind TEXT NOT NULL,
+            derived_id TEXT NOT NULL,
+            source_kind TEXT NOT NULL CHECK(source_kind IN (
+                'knowledge_document','knowledge_chunk','message','memory_fragment',
+                'life_event','tool_run','lore_section'
+            )),
+            source_id TEXT NOT NULL,
+            source_revision TEXT NOT NULL,
+            source_hash TEXT NOT NULL CHECK(length(source_hash) = 64),
+            source_status_snapshot TEXT NOT NULL,
+            privacy_scope TEXT NOT NULL,
+            source_locator TEXT NOT NULL,
+            dependency_status TEXT NOT NULL DEFAULT 'active' CHECK(dependency_status IN (
+                'active','stale','missing','revoked','inaccessible','unverified'
+            )),
+            checked_at REAL,
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            UNIQUE(derived_kind, derived_id, source_kind, source_id)
+        );
+        CREATE INDEX idx_derived_dependencies_derived
+            ON derived_dependencies(derived_kind, derived_id, dependency_status);
+        CREATE INDEX idx_derived_dependencies_source
+            ON derived_dependencies(source_kind, source_id, dependency_status);
+        CREATE INDEX idx_derived_dependencies_sweep
+            ON derived_dependencies(dependency_status, checked_at, updated_at);
+        """,
+    ),
+    (
+        73,
+        """
+        -- KIG.2: keep the active index queryable while a rebuild is staged.
+        ALTER TABLE knowledge_documents ADD COLUMN governance_status TEXT NOT NULL DEFAULT 'active'
+            CHECK(governance_status IN ('active','archived'));
+        ALTER TABLE knowledge_documents ADD COLUMN archived_at REAL;
+        ALTER TABLE knowledge_documents ADD COLUMN rebuild_status TEXT NOT NULL DEFAULT 'idle'
+            CHECK(rebuild_status IN ('idle','building','failed'));
+        ALTER TABLE knowledge_documents ADD COLUMN rebuild_run_id TEXT;
+        ALTER TABLE knowledge_documents ADD COLUMN rebuild_error_code TEXT;
+        ALTER TABLE knowledge_documents ADD COLUMN active_index_revision INTEGER NOT NULL DEFAULT 1
+            CHECK(active_index_revision >= 1);
+
+        ALTER TABLE knowledge_import_runs ADD COLUMN staged_parser_version TEXT;
+        ALTER TABLE knowledge_import_runs ADD COLUMN staged_parsed_at REAL;
+        ALTER TABLE knowledge_import_runs ADD COLUMN staged_parse_char_count INTEGER;
+        ALTER TABLE knowledge_import_runs ADD COLUMN staged_parse_line_count INTEGER;
+        ALTER TABLE knowledge_import_runs ADD COLUMN staged_parse_heading_count INTEGER;
+        ALTER TABLE knowledge_import_runs ADD COLUMN staged_page_count INTEGER;
+        ALTER TABLE knowledge_import_runs ADD COLUMN staged_chunker_version TEXT;
+        ALTER TABLE knowledge_import_runs ADD COLUMN staged_chunked_at REAL;
+        ALTER TABLE knowledge_import_runs ADD COLUMN staged_chunk_count INTEGER;
+
+        CREATE TABLE knowledge_rebuild_chunks (
+            run_id TEXT NOT NULL REFERENCES knowledge_import_runs(id) ON DELETE CASCADE,
+            id TEXT NOT NULL,
+            document_id TEXT NOT NULL REFERENCES knowledge_documents(id) ON DELETE CASCADE,
+            ordinal INTEGER NOT NULL CHECK(ordinal >= 0),
+            content TEXT NOT NULL CHECK(length(content) > 0),
+            content_sha256 TEXT NOT NULL CHECK(length(content_sha256)=64),
+            heading_path_json TEXT NOT NULL DEFAULT '[]',
+            paragraph_start INTEGER NOT NULL,
+            paragraph_end INTEGER NOT NULL,
+            line_start INTEGER NOT NULL,
+            line_end INTEGER NOT NULL,
+            char_start INTEGER NOT NULL,
+            char_end INTEGER NOT NULL,
+            page_start INTEGER,
+            page_end INTEGER,
+            chunker_version TEXT NOT NULL,
+            created_at REAL NOT NULL,
+            PRIMARY KEY(run_id, id),
+            UNIQUE(run_id, ordinal),
+            UNIQUE(run_id, char_start, char_end)
+        );
+        CREATE INDEX idx_knowledge_rebuild_chunks_document
+            ON knowledge_rebuild_chunks(document_id,run_id,ordinal);
+        CREATE INDEX idx_knowledge_documents_governance
+            ON knowledge_documents(governance_status,status,updated_at);
+        """,
+    ),
+    (
+        74,
+        """
+        -- KIG.4: structure-aware chunk metadata; raw text remains authoritative.
+        ALTER TABLE knowledge_chunks ADD COLUMN chunk_kind TEXT NOT NULL DEFAULT 'prose'
+            CHECK(chunk_kind IN ('heading','prose','list','table','code'));
+        ALTER TABLE knowledge_chunks ADD COLUMN previous_ordinal INTEGER;
+        ALTER TABLE knowledge_chunks ADD COLUMN next_ordinal INTEGER;
+        ALTER TABLE knowledge_rebuild_chunks ADD COLUMN chunk_kind TEXT NOT NULL DEFAULT 'prose'
+            CHECK(chunk_kind IN ('heading','prose','list','table','code'));
+        ALTER TABLE knowledge_rebuild_chunks ADD COLUMN previous_ordinal INTEGER;
+        ALTER TABLE knowledge_rebuild_chunks ADD COLUMN next_ordinal INTEGER;
+        UPDATE knowledge_chunks SET
+            previous_ordinal=CASE WHEN ordinal>0 THEN ordinal-1 ELSE NULL END,
+            next_ordinal=CASE WHEN ordinal+1 < (
+                SELECT COUNT(*) FROM knowledge_chunks peer WHERE peer.document_id=knowledge_chunks.document_id
+            ) THEN ordinal+1 ELSE NULL END;
+        CREATE INDEX idx_knowledge_chunks_kind
+            ON knowledge_chunks(document_id,chunk_kind,ordinal);
+        """,
+    ),
+    (
+        75,
+        """
+        -- KIG.8: cross-source answer evidence. Knowledge citations remain in
+        -- knowledge_message_citations and are deliberately not duplicated here.
+        CREATE TABLE kig_retrieval_bundles (
+            id TEXT PRIMARY KEY,
+            request_id TEXT NOT NULL UNIQUE,
+            session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            user_message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+            assistant_message_id TEXT REFERENCES messages(id) ON DELETE CASCADE,
+            query_sha256 TEXT NOT NULL CHECK(length(query_sha256)=64),
+            protocol_version TEXT NOT NULL,
+            planner_protocol TEXT NOT NULL,
+            selected_sources_json TEXT NOT NULL,
+            candidate_counts_json TEXT NOT NULL,
+            selected_count INTEGER NOT NULL CHECK(selected_count >= 0),
+            conflict_notes_json TEXT NOT NULL DEFAULT '[]',
+            insufficiency_notes_json TEXT NOT NULL DEFAULT '[]',
+            status TEXT NOT NULL CHECK(status IN (
+                'prepared','completed','insufficient','failed','superseded'
+            )),
+            created_at REAL NOT NULL,
+            finished_at REAL
+        );
+        CREATE INDEX idx_kig_retrieval_bundles_session
+            ON kig_retrieval_bundles(session_id,created_at DESC);
+        CREATE INDEX idx_kig_retrieval_bundles_assistant
+            ON kig_retrieval_bundles(assistant_message_id);
+
+        CREATE TABLE kig_answer_claim_segments (
+            id TEXT PRIMARY KEY,
+            bundle_id TEXT NOT NULL REFERENCES kig_retrieval_bundles(id) ON DELETE CASCADE,
+            assistant_message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+            ordinal INTEGER NOT NULL CHECK(ordinal >= 0),
+            text_span TEXT NOT NULL,
+            claim_type TEXT NOT NULL CHECK(claim_type IN (
+                'factual','comparison','temporal','recommendation','opinion','other'
+            )),
+            support_state TEXT NOT NULL CHECK(support_state IN (
+                'supported','partially_supported','conflicted','insufficient','not_checkable'
+            )),
+            citation_required INTEGER NOT NULL CHECK(citation_required IN (0,1)),
+            uncertainty_consistent INTEGER NOT NULL CHECK(uncertainty_consistent IN (0,1)),
+            created_at REAL NOT NULL,
+            UNIQUE(assistant_message_id,ordinal)
+        );
+        CREATE INDEX idx_kig_claim_segments_bundle
+            ON kig_answer_claim_segments(bundle_id,ordinal);
+
+        CREATE TABLE kig_evidence_links (
+            id TEXT PRIMARY KEY,
+            answer_claim_segment_id TEXT NOT NULL
+                REFERENCES kig_answer_claim_segments(id) ON DELETE CASCADE,
+            assistant_message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+            citation_key TEXT NOT NULL,
+            source_kind TEXT NOT NULL CHECK(source_kind IN (
+                'message','memory_fragment','life_event','tool_run','lore_section'
+            )),
+            source_id TEXT NOT NULL,
+            source_revision TEXT NOT NULL,
+            source_hash TEXT NOT NULL CHECK(length(source_hash)=64),
+            relation TEXT NOT NULL CHECK(relation IN (
+                'direct_support','partial_support','background','contradiction','example','definition'
+            )),
+            excerpt_hash TEXT NOT NULL CHECK(length(excerpt_hash)=64),
+            locator_snapshot TEXT NOT NULL,
+            source_status_snapshot TEXT NOT NULL,
+            validation_status TEXT NOT NULL CHECK(validation_status IN (
+                'active','stale','missing','revoked','inaccessible','unsupported'
+            )),
+            validated_at REAL NOT NULL,
+            created_at REAL NOT NULL,
+            UNIQUE(answer_claim_segment_id,citation_key)
+        );
+        CREATE INDEX idx_kig_evidence_links_message
+            ON kig_evidence_links(assistant_message_id,citation_key);
+        CREATE INDEX idx_kig_evidence_links_source
+            ON kig_evidence_links(source_kind,source_id,validation_status);
+        """,
+    ),
+    (
+        76,
+        """
+        -- KIG.9: body-free source authority, version relations and confirmation gates.
+        CREATE TABLE kig_source_governance (
+            id TEXT PRIMARY KEY,
+            source_kind TEXT NOT NULL CHECK(source_kind IN (
+                'knowledge_document','knowledge_chunk','message','memory_fragment',
+                'life_event','tool_run','lore_section'
+            )),
+            source_id TEXT NOT NULL,
+            source_revision TEXT NOT NULL,
+            source_hash TEXT NOT NULL CHECK(length(source_hash)=64),
+            authority_level TEXT NOT NULL CHECK(authority_level IN (
+                'user_correction','user_confirmed_authoritative','tool_result',
+                'official_source','imported_source','model_proposal'
+            )),
+            scope_json TEXT NOT NULL DEFAULT '{}',
+            applicable_from REAL,
+            applicable_to REAL,
+            version_label TEXT,
+            user_confirmed INTEGER NOT NULL DEFAULT 0 CHECK(user_confirmed IN (0,1)),
+            status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','superseded','revoked')),
+            governance_revision INTEGER NOT NULL DEFAULT 1 CHECK(governance_revision >= 1),
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            UNIQUE(source_kind,source_id)
+        );
+        CREATE INDEX idx_kig_source_governance_authority
+            ON kig_source_governance(authority_level,status,updated_at DESC);
+
+        CREATE TABLE kig_version_relations (
+            id TEXT PRIMARY KEY,
+            older_source_kind TEXT NOT NULL CHECK(older_source_kind IN (
+                'knowledge_document','knowledge_chunk','message','memory_fragment',
+                'life_event','tool_run','lore_section'
+            )),
+            older_source_id TEXT NOT NULL,
+            older_source_revision TEXT NOT NULL,
+            older_source_hash TEXT NOT NULL CHECK(length(older_source_hash)=64),
+            newer_source_kind TEXT NOT NULL CHECK(newer_source_kind IN (
+                'knowledge_document','knowledge_chunk','message','memory_fragment',
+                'life_event','tool_run','lore_section'
+            )),
+            newer_source_id TEXT NOT NULL,
+            newer_source_revision TEXT NOT NULL,
+            newer_source_hash TEXT NOT NULL CHECK(length(newer_source_hash)=64),
+            relation TEXT NOT NULL CHECK(relation IN (
+                'exact_duplicate','semantically_equivalent','compatible',
+                'compatible_with_conditions','extends','partially_supersedes',
+                'supersedes','contradicts','divergent_branch','unrelated','uncertain'
+            )),
+            scope_json TEXT NOT NULL DEFAULT '{}',
+            confidence REAL NOT NULL CHECK(confidence >= 0 AND confidence <= 1),
+            evidence_refs_json TEXT NOT NULL DEFAULT '[]',
+            decision_source TEXT NOT NULL CHECK(decision_source IN (
+                'deterministic','llm_proposal','user_confirmed'
+            )),
+            impact_level TEXT NOT NULL CHECK(impact_level IN ('low','medium','high')),
+            requires_confirmation INTEGER NOT NULL CHECK(requires_confirmation IN (0,1)),
+            status TEXT NOT NULL CHECK(status IN ('proposed','confirmed','rejected','superseded')),
+            relation_revision INTEGER NOT NULL DEFAULT 1 CHECK(relation_revision >= 1),
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            confirmed_at REAL,
+            UNIQUE(older_source_kind,older_source_id,older_source_revision,
+                   newer_source_kind,newer_source_id,newer_source_revision)
+        );
+        CREATE INDEX idx_kig_version_relations_older
+            ON kig_version_relations(older_source_kind,older_source_id,status);
+        CREATE INDEX idx_kig_version_relations_newer
+            ON kig_version_relations(newer_source_kind,newer_source_id,status);
+        CREATE INDEX idx_kig_version_relations_confirmation
+            ON kig_version_relations(requires_confirmation,status,impact_level,updated_at DESC);
+        """,
+    ),
+    (
+        77,
+        """
+        -- KIG.10: sourced, rebuildable Personal World Model projections.
+        ALTER TABLE sessions ADD COLUMN temporary INTEGER NOT NULL DEFAULT 0 CHECK(temporary IN (0,1));
+        DROP TRIGGER conversation_history_session_insert;
+        DROP TRIGGER conversation_history_session_title_update;
+        DROP TRIGGER conversation_history_message_insert;
+        DROP TRIGGER conversation_history_message_update;
+        DROP TRIGGER conversation_history_summary_insert;
+        DROP TRIGGER conversation_history_summary_status_update;
+        CREATE TRIGGER conversation_history_session_insert AFTER INSERT ON sessions
+        WHEN NEW.temporary=0 BEGIN
+            INSERT INTO conversation_history_sessions_fts(session_id,title,summary_text)
+            VALUES(NEW.id,NEW.title,'');
+        END;
+        CREATE TRIGGER conversation_history_session_title_update AFTER UPDATE OF title ON sessions BEGIN
+            DELETE FROM conversation_history_sessions_fts WHERE session_id=OLD.id;
+            INSERT INTO conversation_history_sessions_fts(session_id,title,summary_text)
+            SELECT NEW.id,NEW.title,COALESCE((SELECT summary_text FROM conversation_summary_revisions
+                WHERE session_id=NEW.id AND status='active' LIMIT 1),'') WHERE NEW.temporary=0;
+        END;
+        CREATE TRIGGER conversation_history_session_temporary_update AFTER UPDATE OF temporary ON sessions BEGIN
+            DELETE FROM conversation_history_sessions_fts WHERE session_id=NEW.id;
+            DELETE FROM conversation_history_messages_fts WHERE session_id=NEW.id;
+            INSERT INTO conversation_history_sessions_fts(session_id,title,summary_text)
+            SELECT NEW.id,NEW.title,COALESCE((SELECT summary_text FROM conversation_summary_revisions
+                WHERE session_id=NEW.id AND status='active' LIMIT 1),'') WHERE NEW.temporary=0;
+            INSERT INTO conversation_history_messages_fts(message_id,session_id,content)
+            SELECT id,session_id,content FROM messages WHERE session_id=NEW.id AND NEW.temporary=0;
+        END;
+        CREATE TRIGGER conversation_history_message_insert AFTER INSERT ON messages
+        WHEN EXISTS(SELECT 1 FROM sessions WHERE id=NEW.session_id AND temporary=0) BEGIN
+            INSERT INTO conversation_history_messages_fts(message_id,session_id,content)
+            VALUES(NEW.id,NEW.session_id,NEW.content);
+        END;
+        CREATE TRIGGER conversation_history_message_update AFTER UPDATE OF content ON messages BEGIN
+            DELETE FROM conversation_history_messages_fts WHERE message_id=OLD.id;
+            INSERT INTO conversation_history_messages_fts(message_id,session_id,content)
+            SELECT NEW.id,NEW.session_id,NEW.content WHERE EXISTS(
+                SELECT 1 FROM sessions WHERE id=NEW.session_id AND temporary=0
+            );
+        END;
+        CREATE TRIGGER conversation_history_summary_insert AFTER INSERT ON conversation_summary_revisions
+        WHEN NEW.status='active' BEGIN
+            DELETE FROM conversation_history_sessions_fts WHERE session_id=NEW.session_id;
+            INSERT INTO conversation_history_sessions_fts(session_id,title,summary_text)
+            SELECT s.id,s.title,NEW.summary_text FROM sessions s
+            WHERE s.id=NEW.session_id AND s.temporary=0;
+        END;
+        CREATE TRIGGER conversation_history_summary_status_update
+        AFTER UPDATE OF status ON conversation_summary_revisions BEGIN
+            DELETE FROM conversation_history_sessions_fts WHERE session_id=NEW.session_id;
+            INSERT INTO conversation_history_sessions_fts(session_id,title,summary_text)
+            SELECT s.id,s.title,COALESCE((SELECT summary_text FROM conversation_summary_revisions
+                WHERE session_id=NEW.session_id AND status='active' LIMIT 1),'')
+            FROM sessions s WHERE s.id=NEW.session_id AND s.temporary=0;
+        END;
+
+        CREATE TABLE pwm_entities (
+            id TEXT PRIMARY KEY,
+            entity_type TEXT NOT NULL CHECK(entity_type IN (
+                'user','agent','project','organization','document','repository','model',
+                'provider','tool','task','goal','person','place','concept','important_date',
+                'event','product','other'
+            )),
+            canonical_name TEXT NOT NULL,
+            description TEXT NOT NULL DEFAULT '',
+            sensitivity TEXT NOT NULL DEFAULT 'normal' CHECK(sensitivity IN ('normal','sensitive')),
+            reality_scope TEXT NOT NULL DEFAULT 'reality' CHECK(reality_scope IN ('reality','lore')),
+            confidence REAL NOT NULL CHECK(confidence >= 0 AND confidence <= 1),
+            status TEXT NOT NULL DEFAULT 'candidate' CHECK(status IN (
+                'candidate','active','merged','split','archived','revoked'
+            )),
+            extraction_mode TEXT NOT NULL DEFAULT 'shadow' CHECK(extraction_mode='shadow'),
+            expires_at REAL,
+            revision INTEGER NOT NULL DEFAULT 1 CHECK(revision >= 1),
+            protocol_version TEXT NOT NULL DEFAULT 'pwm-projection-v1',
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_pwm_entities_name ON pwm_entities(reality_scope,entity_type,canonical_name,status);
+        CREATE INDEX idx_pwm_entities_expiry ON pwm_entities(status,expires_at);
+
+        CREATE TABLE pwm_entity_aliases (
+            id TEXT PRIMARY KEY,
+            entity_id TEXT NOT NULL REFERENCES pwm_entities(id) ON DELETE CASCADE,
+            alias TEXT NOT NULL,
+            language TEXT NOT NULL DEFAULT 'und',
+            scope TEXT NOT NULL DEFAULT 'reality' CHECK(scope IN ('reality','lore')),
+            confidence REAL NOT NULL CHECK(confidence >= 0 AND confidence <= 1),
+            status TEXT NOT NULL DEFAULT 'candidate' CHECK(status IN ('candidate','active','rejected','revoked')),
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            UNIQUE(entity_id,alias,language,scope)
+        );
+        CREATE INDEX idx_pwm_alias_lookup ON pwm_entity_aliases(scope,alias,status);
+
+        CREATE TABLE pwm_claims (
+            id TEXT PRIMARY KEY,
+            statement TEXT NOT NULL,
+            claim_type TEXT NOT NULL,
+            subject_entity_id TEXT REFERENCES pwm_entities(id) ON DELETE SET NULL,
+            predicate TEXT NOT NULL CHECK(predicate IN (
+                'alias_of','owns','uses','depends_on','part_of','references','works_on','plans',
+                'prefers','created','completed','supersedes','related_to','occurred_at','involves'
+            )),
+            object_entity_id TEXT REFERENCES pwm_entities(id) ON DELETE SET NULL,
+            object_value_json TEXT,
+            qualifiers_json TEXT NOT NULL DEFAULT '{}',
+            confidence REAL NOT NULL CHECK(confidence >= 0 AND confidence <= 1),
+            support_type TEXT NOT NULL CHECK(support_type IN ('explicit','strongly_implied','model_inferred')),
+            validity_state TEXT NOT NULL DEFAULT 'candidate' CHECK(validity_state IN (
+                'candidate','active','disputed','superseded','expired','revoked'
+            )),
+            valid_from REAL,
+            valid_until REAL,
+            extraction_mode TEXT NOT NULL DEFAULT 'shadow' CHECK(extraction_mode='shadow'),
+            protocol_version TEXT NOT NULL DEFAULT 'pwm-claim-v1',
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_pwm_claims_subject ON pwm_claims(subject_entity_id,validity_state,updated_at DESC);
+
+        CREATE TABLE pwm_relations (
+            id TEXT PRIMARY KEY,
+            subject_entity_id TEXT NOT NULL REFERENCES pwm_entities(id) ON DELETE CASCADE,
+            predicate TEXT NOT NULL CHECK(predicate IN (
+                'alias_of','owns','uses','depends_on','part_of','references','works_on','plans',
+                'prefers','created','completed','supersedes','related_to','occurred_at','involves'
+            )),
+            object_entity_id TEXT REFERENCES pwm_entities(id) ON DELETE SET NULL,
+            object_value_json TEXT,
+            qualifiers_json TEXT NOT NULL DEFAULT '{}',
+            confidence REAL NOT NULL CHECK(confidence >= 0 AND confidence <= 1),
+            temporal_scope_json TEXT NOT NULL DEFAULT '{}',
+            status TEXT NOT NULL DEFAULT 'candidate' CHECK(status IN (
+                'candidate','active','disputed','superseded','revoked'
+            )),
+            extraction_mode TEXT NOT NULL DEFAULT 'shadow' CHECK(extraction_mode='shadow'),
+            protocol_version TEXT NOT NULL DEFAULT 'pwm-relation-v1',
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_pwm_relations_subject ON pwm_relations(subject_entity_id,predicate,status);
+        CREATE INDEX idx_pwm_relations_object ON pwm_relations(object_entity_id,predicate,status);
+
+        CREATE TABLE pwm_world_events (
+            id TEXT PRIMARY KEY,
+            event_type TEXT NOT NULL,
+            title TEXT NOT NULL,
+            summary TEXT NOT NULL DEFAULT '',
+            start_at REAL,
+            end_at REAL,
+            participant_entity_ids_json TEXT NOT NULL DEFAULT '[]',
+            object_entity_ids_json TEXT NOT NULL DEFAULT '[]',
+            location_entity_id TEXT REFERENCES pwm_entities(id) ON DELETE SET NULL,
+            confidence REAL NOT NULL CHECK(confidence >= 0 AND confidence <= 1),
+            event_layer TEXT NOT NULL CHECK(event_layer IN (
+                'external_world','user_life','shared_conversation','agent_simulated_life',
+                'agent_real_action','project_history'
+            )),
+            status TEXT NOT NULL DEFAULT 'candidate' CHECK(status IN (
+                'candidate','active','disputed','superseded','revoked'
+            )),
+            execution_state TEXT NOT NULL DEFAULT 'inferred' CHECK(execution_state IN (
+                'planned','materialized','performed','inferred'
+            )),
+            extraction_mode TEXT NOT NULL DEFAULT 'shadow' CHECK(extraction_mode='shadow'),
+            protocol_version TEXT NOT NULL DEFAULT 'pwm-world-event-v1',
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_pwm_events_timeline ON pwm_world_events(event_layer,start_at,status);
+
+        CREATE TABLE pwm_state_assertions (
+            id TEXT PRIMARY KEY,
+            subject_entity_id TEXT NOT NULL REFERENCES pwm_entities(id) ON DELETE CASCADE,
+            state_type TEXT NOT NULL,
+            value_json TEXT NOT NULL,
+            valid_from REAL,
+            valid_until REAL,
+            scope TEXT NOT NULL DEFAULT 'reality' CHECK(scope IN ('reality','lore')),
+            confidence REAL NOT NULL CHECK(confidence >= 0 AND confidence <= 1),
+            status TEXT NOT NULL DEFAULT 'candidate' CHECK(status IN ('candidate','active','expired','revoked')),
+            extraction_mode TEXT NOT NULL DEFAULT 'shadow' CHECK(extraction_mode='shadow'),
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_pwm_state_active ON pwm_state_assertions(subject_entity_id,state_type,status,valid_until);
+
+        CREATE TABLE pwm_entity_source_links (
+            id TEXT PRIMARY KEY,
+            entity_id TEXT NOT NULL REFERENCES pwm_entities(id) ON DELETE CASCADE,
+            owner_system TEXT NOT NULL CHECK(owner_system IN ('knowledge','memory','conversation','life','tool','lore')),
+            owner_object_kind TEXT NOT NULL,
+            owner_object_id TEXT NOT NULL,
+            link_role TEXT NOT NULL DEFAULT 'derived_from' CHECK(link_role IN (
+                'derived_from','mentions','projects','alias_proposal'
+            )),
+            status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','stale','revoked')),
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            UNIQUE(entity_id,owner_system,owner_object_kind,owner_object_id,link_role)
+        );
+
+        CREATE TABLE pwm_budget_counters (
+            budget_date TEXT NOT NULL,
+            budget_kind TEXT NOT NULL,
+            scope_key TEXT NOT NULL,
+            used_count INTEGER NOT NULL DEFAULT 0 CHECK(used_count >= 0),
+            updated_at REAL NOT NULL,
+            PRIMARY KEY(budget_date,budget_kind,scope_key)
+        );
+        INSERT OR IGNORE INTO settings(key,value) VALUES('pwm_enabled','1');
+        INSERT OR IGNORE INTO settings(key,value) VALUES('pwm_shadow_extraction_enabled','1');
+        INSERT OR IGNORE INTO settings(key,value) VALUES('kig_enabled','1');
+        INSERT OR IGNORE INTO settings(key,value) VALUES('kig_maintenance_frequency','weekly');
+        INSERT OR IGNORE INTO settings(key,value) VALUES('pwm_budget_policy','{"max_claims_per_source":64,"max_new_entities_per_day":128,"candidate_ttl_days":30,"max_aliases_per_entity":16,"max_disambiguation_candidates":8,"max_maintenance_batch":100,"orphan_archive_days":90}');
+        """,
+    ),
+    (
+        78,
+        """
+        -- KIG.11: reversible resolution proposals and operation journal.
+        CREATE TABLE pwm_entity_resolution_proposals (
+            id TEXT PRIMARY KEY,
+            left_entity_id TEXT NOT NULL REFERENCES pwm_entities(id) ON DELETE CASCADE,
+            right_entity_id TEXT NOT NULL REFERENCES pwm_entities(id) ON DELETE CASCADE,
+            proposal_type TEXT NOT NULL CHECK(proposal_type IN ('link_alias','merge','split','memory_alias_sync')),
+            scope TEXT NOT NULL CHECK(scope IN ('reality','lore')),
+            confidence REAL NOT NULL CHECK(confidence >= 0 AND confidence <= 1),
+            decision_source TEXT NOT NULL CHECK(decision_source IN ('deterministic','llm_proposal','user_confirmed')),
+            impact_level TEXT NOT NULL CHECK(impact_level IN ('low','medium','high')),
+            requires_confirmation INTEGER NOT NULL CHECK(requires_confirmation IN (0,1)),
+            rationale_codes_json TEXT NOT NULL DEFAULT '[]',
+            preview_json TEXT NOT NULL DEFAULT '{}',
+            status TEXT NOT NULL DEFAULT 'proposed' CHECK(status IN ('proposed','confirmed','rejected','applied','rolled_back')),
+            revision INTEGER NOT NULL DEFAULT 1 CHECK(revision >= 1),
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            UNIQUE(left_entity_id,right_entity_id,proposal_type,revision)
+        );
+        CREATE INDEX idx_pwm_resolution_queue ON pwm_entity_resolution_proposals(status,requires_confirmation,impact_level,updated_at DESC);
+
+        CREATE TABLE pwm_entity_operations (
+            id TEXT PRIMARY KEY,
+            proposal_id TEXT REFERENCES pwm_entity_resolution_proposals(id) ON DELETE SET NULL,
+            operation_type TEXT NOT NULL CHECK(operation_type IN ('merge','split','rollback')),
+            primary_entity_id TEXT NOT NULL,
+            secondary_entity_id TEXT NOT NULL,
+            before_json TEXT NOT NULL,
+            after_json TEXT NOT NULL,
+            actor TEXT NOT NULL CHECK(actor IN ('user','system')),
+            reversible INTEGER NOT NULL DEFAULT 1 CHECK(reversible IN (0,1)),
+            reversed_by_operation_id TEXT REFERENCES pwm_entity_operations(id) ON DELETE SET NULL,
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_pwm_operations_entity ON pwm_entity_operations(primary_entity_id,created_at DESC);
+        """,
+    ),
+    (
+        79,
+        """
+        -- KIG.12: proposal-only integration contracts; owner systems remain authoritative.
+        CREATE TABLE kig_system_proposals (
+            id TEXT PRIMARY KEY,
+            proposal_kind TEXT NOT NULL CHECK(proposal_kind IN (
+                'memory_classification','memory_conflict','episode_boundary','saga_transition','memory_alias_sync'
+            )),
+            target_system TEXT NOT NULL CHECK(target_system IN ('memory','episode','saga')),
+            source_kind TEXT NOT NULL,
+            source_id TEXT NOT NULL,
+            payload_json TEXT NOT NULL,
+            confidence REAL NOT NULL CHECK(confidence >= 0 AND confidence <= 1),
+            status TEXT NOT NULL DEFAULT 'proposed' CHECK(status IN ('proposed','accepted','rejected','expired')),
+            protocol_version TEXT NOT NULL DEFAULT 'kig-system-proposal-v1',
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL
+        );
+        CREATE INDEX idx_kig_system_proposals_target ON kig_system_proposals(target_system,proposal_kind,status,created_at DESC);
+        """,
+    ),
+    (
+        80,
+        """
+        -- KIG.13: non-destructive maintenance queue and user retrieval feedback.
+        CREATE TABLE kig_maintenance_candidates (
+            id TEXT PRIMARY KEY,
+            candidate_type TEXT NOT NULL CHECK(candidate_type IN (
+                'duplicate_document','possible_new_version','stale_document','orphan_chunk',
+                'broken_source','conflicting_claims','unused_collection','missing_metadata',
+                'entity_merge_candidate','entity_split_candidate','reindex_required'
+            )),
+            object_kind TEXT NOT NULL,
+            object_id TEXT NOT NULL,
+            related_object_ids_json TEXT NOT NULL DEFAULT '[]',
+            reason_codes_json TEXT NOT NULL DEFAULT '[]',
+            confidence REAL NOT NULL CHECK(confidence >= 0 AND confidence <= 1),
+            decision_source TEXT NOT NULL CHECK(decision_source IN ('deterministic','llm_proposal')),
+            status TEXT NOT NULL DEFAULT 'proposed' CHECK(status IN ('proposed','confirmed','rejected','resolved','expired')),
+            requires_confirmation INTEGER NOT NULL DEFAULT 1 CHECK(requires_confirmation=1),
+            protocol_version TEXT NOT NULL DEFAULT 'kig-maintenance-v1',
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            UNIQUE(candidate_type,object_kind,object_id,status)
+        );
+        CREATE INDEX idx_kig_maintenance_queue ON kig_maintenance_candidates(status,candidate_type,updated_at DESC);
+
+        CREATE TABLE kig_retrieval_feedback (
+            id TEXT PRIMARY KEY,
+            feedback_type TEXT NOT NULL CHECK(feedback_type IN (
+                'source_opened','source_irrelevant','source_outdated','source_disabled',
+                'answer_corrected','entity_selected','authoritative_version_selected'
+            )),
+            source_kind TEXT,
+            source_id TEXT,
+            retrieval_bundle_id TEXT,
+            metadata_json TEXT NOT NULL DEFAULT '{}',
+            created_at REAL NOT NULL
+        );
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

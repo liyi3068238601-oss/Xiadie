@@ -1,0 +1,132 @@
+{
+  "protocol_version": "kig-p-acceptance-v1",
+  "release_protocol": "kig-v1",
+  "retrieval_protocol": "kig-retrieval-governance-v1",
+  "pwm_protocol": "pwm-projection-v1",
+  "schema_version": 80,
+  "implementation_head": "96021838418d5c5d9d26b269784447a099a68cc3",
+  "synthetic_only": true,
+  "contains_user_data": false,
+  "provider_calls": 0,
+  "environment": {
+    "python": "3.12.13",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "scenario_counts": {
+    "single_document": 100,
+    "multi_document": 100,
+    "cross_store": 100
+  },
+  "per_category": {
+    "single_document": {
+      "cases": 100,
+      "knowledge_recall": 1.0,
+      "memory_recall": null
+    },
+    "multi_document": {
+      "cases": 100,
+      "knowledge_recall": 1.0,
+      "memory_recall": null
+    },
+    "cross_store": {
+      "cases": 100,
+      "knowledge_recall": 1.0,
+      "memory_recall": 1.0
+    }
+  },
+  "version_scenarios": 100,
+  "entity_scenarios": 100,
+  "scale_stress": [
+    {
+      "chunk_count": 10000,
+      "insert_ms": 14.112,
+      "query_latency_ms": {
+        "count": 5,
+        "average": 0.01504,
+        "p50": 0.0052,
+        "p90": 0.0352,
+        "max": 0.0532
+      },
+      "probe_recall": 1.0,
+      "bounded_result_limit": 5
+    },
+    {
+      "chunk_count": 100000,
+      "insert_ms": 137.207,
+      "query_latency_ms": {
+        "count": 5,
+        "average": 0.01394,
+        "p50": 0.0098,
+        "p90": 0.02402,
+        "max": 0.0325
+      },
+      "probe_recall": 1.0,
+      "bounded_result_limit": 5
+    },
+    {
+      "chunk_count": 250000,
+      "insert_ms": 253.958,
+      "query_latency_ms": {
+        "count": 5,
+        "average": 0.01958,
+        "p50": 0.013,
+        "p90": 0.03506,
+        "max": 0.0481
+      },
+      "probe_recall": 1.0,
+      "bounded_result_limit": 5
+    }
+  ],
+  "quality": {
+    "citation_accuracy": 1.0,
+    "cross_store_routing_accuracy": 1.0,
+    "entity_auto_merge_precision": 1.0,
+    "entity_rollback_recovery": 1.0,
+    "version_correction_accuracy": 1.0,
+    "retrieval_latency_ms": {
+      "count": 300,
+      "average": 27.083394,
+      "p50": 27.61045,
+      "p90": 29.73811,
+      "max": 33.4558
+    }
+  },
+  "hard_budgets": {
+    "per_source_claim_limit": 64,
+    "per_source_claim_blocked": true,
+    "alias_limit": 16,
+    "alias_blocked": true,
+    "disambiguation_candidates": 2,
+    "disambiguation_bounded": true,
+    "maintenance_checked": 100,
+    "maintenance_bounded": true
+  },
+  "zero_tolerance": {
+    "unsourced_pwm_objects": 0,
+    "performed_without_tool_run": 0,
+    "unconfirmed_owner_deletions": 0,
+    "sensitive_attribute_auto_extractions": 0,
+    "reality_lore_cross_scope_merges": 0,
+    "memory_pwm_bidirectional_overwrites": 0
+  },
+  "provider_modes": {
+    "offline": "safe_no_shadow_write",
+    "remote_unauthorized": "blocked",
+    "provider_switch": "fingerprint_recertification_required",
+    "budget_insufficient": "bounded_skip"
+  },
+  "gates": {
+    "scenario_counts": true,
+    "retrieval_recall": true,
+    "citation_accuracy": true,
+    "version_corrections": true,
+    "entity_precision": true,
+    "entity_rollback": true,
+    "source_integrity": true,
+    "execution_semantics": true,
+    "hard_budgets": true,
+    "scale": true,
+    "remote_privacy": true
+  },
+  "release_gate": "pass"
+}

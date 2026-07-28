@@ -8,7 +8,8 @@ from collections.abc import Callable
 
 from . import db, knowledge_chunker
 
-INDEX_VERSION = "knowledge-fts-terms-v1"
+INDEX_VERSION = "knowledge-fts-terms-v2"
+COMPATIBLE_INDEX_VERSIONS = ("knowledge-fts-terms-v1", INDEX_VERSION)
 SEARCH_PROTOCOL_VERSION = "knowledge-search-v2"
 MAX_QUERY_CHARS = 256
 MAX_QUERY_TERMS = 16
@@ -84,6 +85,34 @@ def prepare_document_index(
     return prepared
 
 
+def prepare_rebuild_index(
+    run_id: str, *, should_cancel: Callable[[], bool] | None = None,
+) -> list[dict]:
+    """Validate and tokenize staged chunks without touching the active index."""
+    conn = db.connect()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM knowledge_rebuild_chunks WHERE run_id=? ORDER BY ordinal", (run_id,),
+        ).fetchall()
+    finally:
+        conn.close()
+    prepared: list[dict] = []
+    for expected, row in enumerate(rows):
+        if should_cancel and should_cancel():
+            raise IndexingCancelled()
+        item = dict(row)
+        if (
+            item["ordinal"] != expected
+            or item["chunker_version"] != knowledge_chunker.CHUNKER_VERSION
+            or hashlib.sha256(item["content"].encode("utf-8")).hexdigest()
+            != item["content_sha256"]
+        ):
+            raise SearchError("knowledge_chunk_invalid", "知识重建切片校验失败")
+        item["terms"] = terms_for_text(item["content"])
+        prepared.append(item)
+    return prepared
+
+
 def apply_document_index_locked(conn, document_id: str, prepared: list[dict]) -> None:
     current = conn.execute(
         "SELECT rowid,id,content_sha256 FROM knowledge_chunks"
@@ -106,6 +135,36 @@ def apply_document_index_locked(conn, document_id: str, prepared: list[dict]) ->
     ).fetchone()[0]
     if indexed != len(prepared):
         raise SearchError("knowledge_index_count_mismatch", "知识索引数量不一致")
+
+
+def activate_rebuild_index_locked(conn, document_id: str, prepared: list[dict]) -> None:
+    """Atomically replace active chunks and FTS rows from a validated staging set."""
+    if not prepared or any(item["document_id"] != document_id for item in prepared):
+        raise SearchError("knowledge_rebuild_invalid", "知识重建候选为空或不属于目标文档")
+    clear_document_index_locked(conn, document_id)
+    conn.execute("DELETE FROM knowledge_chunks WHERE document_id=?", (document_id,))
+    for item in prepared:
+        conn.execute(
+            "INSERT INTO knowledge_chunks(id,document_id,ordinal,content,content_sha256,"
+            "heading_path_json,paragraph_start,paragraph_end,line_start,line_end,char_start,char_end,"
+            "page_start,page_end,chunker_version,chunk_kind,previous_ordinal,next_ordinal,created_at) "
+            "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                item["id"], document_id, item["ordinal"], item["content"], item["content_sha256"],
+                item["heading_path_json"], item["paragraph_start"], item["paragraph_end"],
+                item["line_start"], item["line_end"], item["char_start"], item["char_end"],
+                item["page_start"], item["page_end"], item["chunker_version"], item["chunk_kind"],
+                item["previous_ordinal"], item["next_ordinal"], item["created_at"],
+            ),
+        )
+        rowid = conn.execute("SELECT rowid FROM knowledge_chunks WHERE id=?", (item["id"],)).fetchone()[0]
+        conn.execute("INSERT INTO knowledge_chunks_fts(rowid,terms) VALUES(?,?)", (rowid, item["terms"]))
+    indexed = conn.execute(
+        "SELECT COUNT(*) FROM knowledge_chunks_fts f JOIN knowledge_chunks c ON c.rowid=f.rowid "
+        "WHERE c.document_id=?", (document_id,),
+    ).fetchone()[0]
+    if indexed != len(prepared):
+        raise SearchError("knowledge_index_count_mismatch", "知识重建索引数量不一致")
 
 
 def clear_document_index_locked(conn, document_id: str) -> None:
@@ -136,10 +195,10 @@ def search(
     match_query = _match_query(value)
 
     where = [
-        "d.status='indexed'", "d.indexed_at IS NOT NULL", "d.index_version=?",
-        "co.status='active'",
+        "d.status='indexed'", "d.indexed_at IS NOT NULL", "d.index_version IN (?,?)",
+        "d.governance_status='active'", "co.status='active'",
     ]
-    params: list[object] = [match_query, INDEX_VERSION]
+    params: list[object] = [match_query, *COMPATIBLE_INDEX_VERSIONS]
     if collection_id:
         where.append("d.collection_id=?")
         params.append(collection_id)
@@ -177,11 +236,11 @@ def search(
                     " JOIN knowledge_documents d ON d.id=c.document_id"
                     " JOIN knowledge_collections co ON co.id=d.collection_id"
                     " WHERE c.document_id=? AND c.ordinal BETWEEN ? AND ?"
-                    " AND c.ordinal!=? AND d.status='indexed' AND d.index_version=?"
-                    " AND co.status='active'"
+                    " AND c.ordinal!=? AND d.status='indexed' AND d.index_version IN (?,?)"
+                    " AND d.governance_status='active' AND co.status='active'"
                     " ORDER BY c.ordinal",
                     (item["document_id"], item["ordinal"] - 1, item["ordinal"] + 1,
-                     item["ordinal"], INDEX_VERSION),
+                     item["ordinal"], *COMPATIBLE_INDEX_VERSIONS),
                 ).fetchall()
                 context_candidates.extend(
                     (dict(neighbor), "context", item["id"], None) for neighbor in neighbors
@@ -469,5 +528,6 @@ def _public_result(item: dict, match_type: str, context_of: str | None, rank: fl
         "line_start": item["line_start"], "line_end": item["line_end"],
         "char_start": item["char_start"], "char_end": item["char_end"],
         "page_start": item["page_start"], "page_end": item["page_end"],
+        "created_at": item.get("created_at"),
         "match_type": match_type, "context_of": context_of, "rank": rank,
     }
