@@ -73,7 +73,7 @@ KIG-P 冻结基线：
 | protocols | `pwm-projection-v1`、`pwm-extraction-shadow-v1`、`pwm-entity-resolution-v1`、`kig-system-proposal-v1`、`kig-maintenance-v1` |
 | acceptance | `kig-p-acceptance-v1`：300 检索 + 100 版本 + 100 entity；25 万 Chunk 目标规模；release gate pass |
 | authority | PWM 可重建、proposal-only；Knowledge/MEM/LIFE/EAP/Tool owner 不变 |
-| implementation / rollback | `5b6054d5cc57a5d09cbe305045487a527e760071`；冻结证据见 `docs/reports/kig-v1-freeze.md` |
+| implementation / rollback | `96021838418d5c5d9d26b269784447a099a68cc3`；初始 KIG-P 实现为 `5b6054d5cc57a5d09cbe305045487a527e760071`，最终点包含独立 Review 修复；冻结证据见 `docs/reports/kig-v1-freeze.md` |
 
 正式开工只允许两种方式：
 

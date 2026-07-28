@@ -2,7 +2,7 @@
 
 > 最近复核日期：2026-07-28
 >
-> 当前施工状态：KIG.0～KIG.15 已完成；KIG-R 保持冻结于实现 `a18fd04a3759663f88d6a8041529fea14645c281`、Schema 76，KIG-P 实现/回滚点 `5b6054d5cc57a5d09cbe305045487a527e760071` 追加 Schema 77～80 并通过最终验收
+> 当前施工状态：KIG.0～KIG.15 已完成；KIG-R 保持冻结于实现 `a18fd04a3759663f88d6a8041529fea14645c281`、Schema 76，KIG-P 最终实现/回滚点 `96021838418d5c5d9d26b269784447a099a68cc3` 追加 Schema 77～80 并通过独立 Review 与最终验收
 >
 > 当前版本：`v0.1.0` MVP 骨架（知识库系统 K 系列已完成）
 >
@@ -35,7 +35,7 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests -q` | `2558 passed, 1 warning`；当前 Schema 80 |
+| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests -q` | `2560 passed, 1 warning`；当前 Schema 80 |
 | 前端 | `cd frontend; npm.cmd test -- --run; npm.cmd run build` | 通过：52 项；TypeScript 检查及 Vite 生产构建 190 modules 成功 |
 | Electron / Windows | Electron contract/语法；`scripts\test-frozen-backend.ps1 -Port 18756`；win-unpacked 与 NSIS 临时安装生命周期 smoke | 3 项 contract 及语法通过；冻结后端、IANA 时区、BGE-M3、真实安装、首启、托盘保活、崩溃清理、重启及卸载清理通过；休眠/唤醒由 contract、重启推进和 resume guard 场景验证 |
 
