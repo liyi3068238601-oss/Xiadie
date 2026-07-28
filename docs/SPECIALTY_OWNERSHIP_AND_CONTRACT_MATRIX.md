@@ -2,7 +2,7 @@
 
 - 版本：v1.1
 - 日期：2026-07-27
-- 状态：CDS 与 LIFE 已通过最终独立 Review并合入 `main`；KIG 协议门已解除
+- 状态：CDS、LIFE 与 KIG-R 已冻结；KIG.10/PWM 未开工
 - 适用顺序：`CDS → LIFE → KIG`
 - 解释优先级：冻结协议与 ADR > 本矩阵 > 专项计划 > 阶段施工记录
 
@@ -52,6 +52,18 @@ LIFE v1 冻结与 KIG 待锁定基线：
 | KIG.0 boundary | ADR-0062～0064；60 条合成固定集；0 个职责冲突；未新增迁移或生产写路径 |
 | recorded_at | 2026-07-27（LIFE v1 freeze） |
 
+KIG-R 冻结基线：
+
+| 字段 | 当前值/规则 |
+|---|---|
+| KIG-R implementation / rollback | `a18fd04a3759663f88d6a8041529fea14645c281` |
+| final schema | 76；KIG-P 首个可用迁移号 77 |
+| frozen protocol | `kig-retrieval-governance-v1`；KIG.7 `retrieval-rerank-v1` 保持 Shadow |
+| review / safety | 0 个未解决 P0/P1；10 组纯合成、13 项零容忍指标违规均为 0 |
+| model certification | `deepseek-v4-pro` 指纹证书；6/6 严格覆盖、P@2 增益 0.8333、零不安全/Active；不得向其他模型继承 |
+| frozen tests | 后端 `2538 passed, 2 warnings`；前端 `51 passed`；Vite 190 modules；Electron 语法与 lifecycle contract 3 项 |
+| recorded_at | 2026-07-28（KIG-R freeze） |
+
 正式开工只允许两种方式：
 
 1. 前置 PR 已合并，以 `main` 的不可变合并提交作为基线；这是默认方式。
@@ -86,9 +98,9 @@ LIFE v1 冻结与 KIG 待锁定基线：
 | MEM | `memory-adapter-v1` | memory id/revision/hash | MEM 既有算法 | 不读写长期记忆 | 继承记忆远传策略 | MEM |
 | Knowledge | `knowledge-adapter-v1` | document/chunk revision/hash/locator | 现有 FTS/Dense 降级 | 文件逐次授权，不进入长期派生层 | transmission policy/grant | Knowledge/KIG 补差阶段 |
 | LIFE | `life-adapter-v1` | event/state/schedule revision/hash | LIFE 确定性 reducer | 不生成长期 LifeEvent、Goal、Date、Diary | 日记/生活数据单独授权 | LIFE |
-| KIG | `source-ref-v1` | adapter registry 返回的 revision/hash | 原系统继续工作 | 不抽取 Claim/Entity/Relation/PWM | 逐来源隐私与授权 | KIG |
+| KIG | `source-ref-v1` / `kig-retrieval-governance-v1` | adapter registry 返回的 revision/hash | 原系统继续工作；重排确定性 fallback | 不抽取 Claim/Entity/Relation/PWM | 逐来源隐私与授权 | KIG；KIG-P 从 77 开始 |
 
-迁移号严格串行：CDS 最终冻结 Schema 为 63；LIFE 最终冻结 Schema 为 71；KIG predecessor 已锁定为 `main@f16d80ab0d2457065dc65d7d284d3cbf3584f5ee`，可使用首个确有必要的 Schema 72。没有实际字段缺口不得为了“占号”创建空迁移。
+迁移号严格串行：CDS 最终冻结 Schema 为 63；LIFE 最终冻结 Schema 为 71；KIG-R 已使用 Schema 72～76 并冻结于实现 `a18fd04a3759663f88d6a8041529fea14645c281`。KIG-P 首个确有必要的迁移号为 77；没有实际字段缺口不得为了“占号”创建空迁移。
 
 ## 4. DecisionKindRegistry 规范
 

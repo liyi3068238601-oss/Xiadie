@@ -3,8 +3,11 @@
 - 日期：2026-07-28
 - 目标协议：`kig-retrieval-governance-v1`
 - 当前 Schema：76
-- 当前结论：**全部技术门通过；等待记录不可变实现 SHA 后冻结**
+- 当前结论：**KIG-R 已冻结**
 - 下一阶段限制：KIG.10 / PWM 不得开工
+- 不可变实现 / rollback point：`a18fd04a3759663f88d6a8041529fea14645c281`
+- 冻结协议：`kig-retrieval-governance-v1`
+- 最终 Schema：76；KIG-P 首个可用迁移号：77
 
 ## 已验证门禁
 
@@ -59,6 +62,6 @@ backend\.venv\Scripts\python.exe backend\scripts\run_kig7_model_eval.py
 ## 冻结动作
 
 1. [x] 重新运行 KIG-R 验收、后端全量、前端测试/构建和桌面检查。
-2. [ ] 提交实现与证据，记录不可变 SHA、Schema 76 与回滚点。
-3. [ ] 勾选计划书 KIG-R 四项冻结条件，更新 `BASELINE_STATUS.md` 和 `CODEX_PROJECT_CONTEXT.md`。
-4. [ ] 创建 KIG-R 独立冻结声明提交；在用户 Review 通过前不启动 KIG.10。
+2. [x] 提交实现与证据，记录不可变 SHA `a18fd04a3759663f88d6a8041529fea14645c281`、Schema 76 与回滚点。
+3. [x] 勾选计划书 KIG-R 四项冻结条件，更新 `BASELINE_STATUS.md` 和 `CODEX_PROJECT_CONTEXT.md`。
+4. [x] 创建 KIG-R 独立冻结声明提交；在用户 Review 通过前不启动 KIG.10。

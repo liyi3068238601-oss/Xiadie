@@ -2,7 +2,7 @@
 
 > 最近复核日期：2026-07-28
 >
-> 当前施工状态：LIFE v1 已通过 PR #3 合入并冻结于 Schema 71；KIG.0～KIG.9 已完成，当前 Schema 76；正在执行 KIG-R 冻结门审计，KIG.7 实配模型质量门仍待补测
+> 当前施工状态：LIFE v1 已冻结于 Schema 71；KIG-R 已冻结于实现 `a18fd04a3759663f88d6a8041529fea14645c281`、Schema 76；KIG.10/PWM 未开工，等待用户 Review
 >
 > 当前版本：`v0.1.0` MVP 骨架（知识库系统 K 系列已完成）
 >
@@ -31,17 +31,19 @@
 
 ## 3. 自动验证结果
 
-以下命令最近于 2026-07-27 执行：
+以下命令最近于 2026-07-28 执行：
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests -q -p no:cacheprovider` | 通过：2434 passed，1 warning；当前 Schema 72 |
-| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：50 项；TypeScript 检查及 Vite 生产构建 190 modules 成功 |
+| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests -q` | 通过：2538 passed，2 warnings；当前 Schema 76 |
+| 前端 | `cd frontend; node --test tests/*.test.mjs; tsc -b; vite build` | 通过：51 项；TypeScript 检查及 Vite 生产构建 190 modules 成功 |
 | Electron / Windows | Electron contract/语法；`scripts\test-frozen-backend.ps1 -Port 18756`；win-unpacked 与 NSIS 临时安装生命周期 smoke | 3 项 contract 及语法通过；冻结后端、IANA 时区、BGE-M3、真实安装、首启、托盘保活、崩溃清理、重启及卸载清理通过；休眠/唤醒由 contract、重启推进和 resume guard 场景验证 |
 
 CDS.12 以 Schema 63 新增三张无正文反馈/校准审计表；CDS.13 未再新增迁移。`eap-decision-run-adapter-v1` 保持兼容。LIFE.0～13 与独立总 Review 已完成：Schema 64～71 分别建立来源事件、运行时、CatchUp、日程、目标、日期、日记和 SelfTimeline；6 类模型决策因样本/Provider 门不足继续 Shadow。Review 收口补强敏感格式识别、IANA 时区写入校验与多 Provider 一致性晋级门，LIFE v1 正式冻结于 Schema 71。`life-adapter-v1` 与 CDS/EAP 冻结契约兼容；LIFE PR #3 merge `f16d80ab0d2457065dc65d7d284d3cbf3584f5ee` 已锁定为 KIG predecessor，首个可用迁移号为 72。
 
 KIG.0 已完成现有 Knowledge/CTX/MEM/EAP/LIFE/Task/ToolRun/Lore 的代码、Schema、API、UI 与测试审计。60 条纯合成基线确认现有 Knowledge 与 Memory 各自召回及知识引用白名单可靠，同时记录统一 SourceRef、跨源 RetrievalCandidate/Evidence、QueryPlan、版本/新鲜度和 PWM 投影尚未实现。ADR-0062～0064 与 `[x]/[~]/[ ]/[→]/[-]` 能力矩阵固定 KIG 只做治理和可重建投影、不复制正文、不转移既有所有权；KIG.0 未新增迁移，Schema 72 留给 KIG.1。
+
+KIG.1～KIG.9 已完成 SourceRef/来源状态、原子索引治理、信息分类、语义切片、Query Planner、跨源检索、LLM 重排、Evidence/引用支持度和冲突/版本/新鲜度，并以 Schema 72～76 顺序迁移。KIG-R 冻结验收包含 10 组纯合成、13 项非零分母零容忍指标，违规均为 0；独立 Review 为 0 个未解决 P0/P1。`deepseek-v4-pro` 同一 6 例模型认证为 6/6 严格覆盖、Precision@2 增益 0.8333、不安全结果与 Active 放行均为 0；证书按 Provider/模型/协议/Prompt/固定集/推理参数绑定，单 Provider 上限仍为 Shadow。`kig-retrieval-governance-v1` 冻结于实现 `a18fd04a3759663f88d6a8041529fea14645c281`、Schema 76；KIG.10/PWM 尚未开工。
 
 已知但不阻断当前开发的警告：
 

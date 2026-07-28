@@ -2,7 +2,7 @@
 
 - 版本：v0.3（施工基线、双里程碑、来源依赖与图谱治理补强）
 - 日期：2026-07-22
-- 状态：KIG.0～KIG.9 与 KIG-R 全部技术门已通过；当前 Schema 76，等待记录不可变实现 SHA 后冻结（KIG.10 未开工）
+- 状态：KIG-R 已冻结于实现 `a18fd04a3759663f88d6a8041529fea14645c281`、Schema 76；KIG.10/PWM 未开工，等待用户 Review
 - 专项代号：`KIG`（Knowledge Intelligence & Governance）
 - 子系统代号：`PWM`（Personal World Model）
 - 适用范围：用户知识库、信息分类与治理、多源检索、LLM 查询规划与重排、证据与引用、冲突与版本、个人世界模型，以及与对话历史、长期记忆、生活连续性、任务和 ContextAssembler 的接口
@@ -1866,12 +1866,14 @@ KIG.9 施工记录（2026-07-28）：Schema 76 新增 body-free `kig_source_gove
 
 KIG.0～KIG.9 完成后先冻结和发布 KIG-R，不等待 PWM：
 
-- [ ] Source adapters、分类、Query Planner、混合候选、LLM rerank、EvidenceLink、生成后 Citation Validator、冲突/版本/新鲜度与 CTX RetrievalBundle 全部通过验收。
-- [ ] 独立 Review 为 0 个未解决 P0/P1，零容忍来源/引用/授权指标均为 0。
-- [ ] 冻结 `kig-retrieval-governance-v1`、记录 Schema 和回滚点；KIG-P 从下一迁移号继续。
-- [ ] KIG-R 关闭后即能独立改善聊天检索；PWM 延期或关闭不得破坏 KIG-R。
+- [x] Source adapters、分类、Query Planner、混合候选、LLM rerank、EvidenceLink、生成后 Citation Validator、冲突/版本/新鲜度与 CTX RetrievalBundle 全部通过验收。
+- [x] 独立 Review 为 0 个未解决 P0/P1，零容忍来源/引用/授权指标均为 0。
+- [x] 冻结 `kig-retrieval-governance-v1`、记录 Schema 和回滚点；KIG-P 从下一迁移号继续。
+- [x] KIG-R 关闭后即能独立改善聊天检索；PWM 延期或关闭不得破坏 KIG-R。
 
-KIG-R 冻结审计记录（2026-07-28）：已建立 10 组纯合成、13 项非零分母零容忍验收，违规数均为 0；Review 与模型认证修正后后端全量 `2538 passed, 2 warnings`（既有依赖弃用提示与受限环境 pytest cache 提示），前端 `51 passed`、TypeScript/Vite 190 modules 与桌面 JavaScript 语法/3 项生命周期检查通过。独立 Review 为 0 个未解决 P0/P1；DeepSeek v4-pro 同一固定集 6/6 严格覆盖、P@2 增益 0.8333、零不安全/Active，模型指纹质量门通过但保持 `shadow_single_provider`。KIG-R 主验收已验证证书与当前 Provider/模型/协议/Prompt/固定集/推理参数匹配，发布门为 `pass`。等待提交实现证据并记录不可变 rollback SHA 后勾选四项冻结条件；KIG.10 仍不得开工。详见 `docs/reports/kig-r-acceptance.md` 与 `docs/reports/kig-r-freeze-readiness.md`。
+KIG-R 冻结审计记录（2026-07-28）：已建立 10 组纯合成、13 项非零分母零容忍验收，违规数均为 0；Review 与模型认证修正后后端全量 `2538 passed, 2 warnings`（既有依赖弃用提示与受限环境 pytest cache 提示），前端 `51 passed`、TypeScript/Vite 190 modules 与桌面 JavaScript 语法/3 项生命周期检查通过。独立 Review 为 0 个未解决 P0/P1；DeepSeek v4-pro 同一固定集 6/6 严格覆盖、P@2 增益 0.8333、零不安全/Active，模型指纹质量门通过但保持 `shadow_single_provider`。KIG-R 主验收已验证证书与当前 Provider/模型/协议/Prompt/固定集/推理参数匹配，发布门为 `pass`。实现证据已提交并记录不可变 rollback SHA，四项冻结条件全部勾选；KIG.10 仍未开工。详见 `docs/reports/kig-r-acceptance.md` 与 `docs/reports/kig-r-freeze-readiness.md`。
+
+KIG-R 正式冻结（2026-07-28）：不可变实现与验收 rollback point 为 `a18fd04a3759663f88d6a8041529fea14645c281`，最终 Schema 76，冻结协议 `kig-retrieval-governance-v1`。四项冻结门全部关闭；KIG-P 首个可用迁移号为 77。KIG.10/PWM 尚未开工，等待用户对本冻结结果完成 Review。
 
 ### KIG.10：Claim、Entity、Relation 与 WorldEvent
 
