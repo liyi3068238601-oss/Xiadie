@@ -360,6 +360,72 @@ def test_shadow_extractor_persists_only_model_inferred_candidates():
     assert claim["validity_state"] == "candidate" and claim["extraction_mode"] == "shadow"
 
 
+def test_shadow_extractor_compensates_partial_projection_failure(monkeypatch):
+    source_id = _message("synthetic partial extraction")
+    payload = pwm_extractor_shadow.validate_payload({
+        "entities": [
+            {"key": "project", "type": "project", "name": "Compensated Project",
+             "scope": "reality", "confidence": 0.9},
+        ],
+        "claims": [
+            {"statement": "claim fails after entity", "type": "fact",
+             "subject_key": "project", "predicate": "related_to", "object_key": "",
+             "object_value": "synthetic", "confidence": 0.8},
+        ],
+        "relations": [], "events": [],
+    })
+
+    def fail_claim(**_kwargs):
+        raise pwm.PWMError("synthetic_claim_failure", "synthetic claim failure")
+
+    monkeypatch.setattr(pwm, "create_claim", fail_claim)
+    with pytest.raises(pwm.PWMError, match="synthetic claim failure"):
+        pwm_extractor_shadow.persist_payload(
+            payload, source_kind="message", source_id=source_id,
+        )
+
+    conn = db.connect()
+    try:
+        assert conn.execute(
+            "SELECT COUNT(*) AS n FROM pwm_entities WHERE canonical_name='Compensated Project'"
+        ).fetchone()["n"] == 0
+        assert conn.execute(
+            "SELECT COUNT(*) AS n FROM derived_dependencies WHERE source_kind='message' "
+            "AND source_id=? AND derived_kind LIKE 'pwm_%'", (source_id,),
+        ).fetchone()["n"] == 0
+        assert conn.execute(
+            "SELECT COALESCE(SUM(used_count),0) AS n FROM pwm_budget_counters "
+            "WHERE budget_kind='new_entity' AND scope_key=?", (f"message:{source_id}",),
+        ).fetchone()["n"] == 0
+    finally:
+        conn.close()
+
+
+def test_event_membership_queries_use_exact_json_values():
+    source_id = _message("synthetic exact JSON membership")
+    primary = _entity("Primary JSON Entity", source_id)
+    secondary = _entity("Secondary JSON Entity", source_id)
+    exact = pwm.create_world_event(
+        event_type="project_change", title="Exact event", source_kind="message",
+        source_id=source_id, event_layer="project_history",
+        participant_entity_ids=[secondary["id"]],
+    )
+    pwm.create_world_event(
+        event_type="project_change", title="Near event", source_kind="message",
+        source_id=source_id, event_layer="project_history",
+        participant_entity_ids=[f"{secondary['id']}-not-the-entity"],
+    )
+
+    assert pwm.merge_preview(primary["id"], secondary["id"])["events_affected"] == 1
+    client = TestClient(app)
+    headers = {"X-Xiadie-Token": "test-token-with-at-least-thirty-two-bytes"}
+    response = client.get(
+        f"/api/knowledge/world-model/entities/{secondary['id']}", headers=headers,
+    )
+    assert response.status_code == 200
+    assert [event["id"] for event in response.json()["events"]] == [exact["id"]]
+
+
 def test_eap_adapter_is_body_free_read_only_and_does_not_change_counts():
     conn = db.connect()
     try:

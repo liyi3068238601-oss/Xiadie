@@ -531,9 +531,11 @@ def merge_preview(primary_entity_id: str, secondary_entity_id: str) -> dict:
                 "AND validity_state!='revoked'", (secondary_entity_id, secondary_entity_id),
             ).fetchone()["n"],
             "events_affected": conn.execute(
-                "SELECT COUNT(*) AS n FROM pwm_world_events WHERE location_entity_id=? "
-                "OR participant_entity_ids_json LIKE ? OR object_entity_ids_json LIKE ?",
-                (secondary_entity_id, f'%"{secondary_entity_id}"%', f'%"{secondary_entity_id}"%'),
+                "SELECT COUNT(*) AS n FROM pwm_world_events e WHERE e.location_entity_id=? "
+                "OR EXISTS(SELECT 1 FROM json_each(COALESCE(e.participant_entity_ids_json,'[]')) p "
+                "WHERE p.value=?) OR EXISTS(SELECT 1 FROM json_each("
+                "COALESCE(e.object_entity_ids_json,'[]')) o WHERE o.value=?)",
+                (secondary_entity_id, secondary_entity_id, secondary_entity_id),
             ).fetchone()["n"],
             "states_affected": conn.execute(
                 "SELECT COUNT(*) AS n FROM pwm_state_assertions WHERE subject_entity_id=?",
@@ -607,9 +609,11 @@ def apply_merge(proposal_id: str, *, expected_revision: int, actor: str = "user"
                      (primary, db.now(), secondary))
         for event in conn.execute(
             "SELECT id,participant_entity_ids_json,object_entity_ids_json,location_entity_id "
-            "FROM pwm_world_events WHERE location_entity_id=? OR participant_entity_ids_json LIKE ? "
-            "OR object_entity_ids_json LIKE ?",
-            (secondary, f'%"{secondary}"%', f'%"{secondary}"%'),
+            "FROM pwm_world_events e WHERE e.location_entity_id=? OR EXISTS(SELECT 1 FROM "
+            "json_each(COALESCE(e.participant_entity_ids_json,'[]')) p WHERE p.value=?) OR "
+            "EXISTS(SELECT 1 FROM json_each(COALESCE(e.object_entity_ids_json,'[]')) o "
+            "WHERE o.value=?)",
+            (secondary, secondary, secondary),
         ).fetchall():
             participants = [primary if item == secondary else item for item in
                             json.loads(event["participant_entity_ids_json"])]
@@ -735,11 +739,11 @@ def _entity_operation_snapshot(conn, primary: str, secondary: str) -> dict:
         ).fetchall()],
         "events": [dict(row) for row in conn.execute(
             "SELECT id,participant_entity_ids_json,object_entity_ids_json,location_entity_id,updated_at "
-            "FROM pwm_world_events WHERE location_entity_id IN (?,?) OR "
-            "participant_entity_ids_json LIKE ? OR participant_entity_ids_json LIKE ? OR "
-            "object_entity_ids_json LIKE ? OR object_entity_ids_json LIKE ? ORDER BY id",
-            (primary, secondary, f'%"{primary}"%', f'%"{secondary}"%',
-             f'%"{primary}"%', f'%"{secondary}"%'),
+            "FROM pwm_world_events e WHERE e.location_entity_id IN (?,?) OR "
+            "EXISTS(SELECT 1 FROM json_each(COALESCE(e.participant_entity_ids_json,'[]')) p "
+            "WHERE p.value IN (?,?)) OR EXISTS(SELECT 1 FROM json_each("
+            "COALESCE(e.object_entity_ids_json,'[]')) o WHERE o.value IN (?,?)) ORDER BY id",
+            (primary, secondary, primary, secondary, primary, secondary),
         ).fetchall()],
         "states": [dict(row) for row in conn.execute(
             "SELECT id,subject_entity_id,updated_at FROM pwm_state_assertions "

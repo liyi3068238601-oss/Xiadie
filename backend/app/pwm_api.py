@@ -119,10 +119,13 @@ def entity_detail(entity_id: str) -> dict:
                 "AND status!='revoked' ORDER BY updated_at DESC LIMIT 100", (entity_id, entity_id),
             ).fetchall()]
             entity["events"] = [dict(row) for row in conn.execute(
-                "SELECT * FROM pwm_world_events WHERE status!='revoked' AND "
-                "(participant_entity_ids_json LIKE ? OR object_entity_ids_json LIKE ?) "
+                "SELECT e.* FROM pwm_world_events e WHERE e.status!='revoked' AND "
+                "(e.location_entity_id=? OR EXISTS(SELECT 1 FROM json_each("
+                "COALESCE(e.participant_entity_ids_json,'[]')) p WHERE p.value=?) OR "
+                "EXISTS(SELECT 1 FROM json_each(COALESCE(e.object_entity_ids_json,'[]')) o "
+                "WHERE o.value=?)) "
                 "ORDER BY COALESCE(start_at,created_at) DESC LIMIT 100",
-                (f'%"{entity_id}"%', f'%"{entity_id}"%'),
+                (entity_id, entity_id, entity_id),
             ).fetchall()]
             entity["states"] = [dict(row) for row in conn.execute(
                 "SELECT * FROM pwm_state_assertions WHERE subject_entity_id=? AND status!='revoked' "

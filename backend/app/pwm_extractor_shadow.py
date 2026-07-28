@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 
-from . import kig_sources, llm, pwm
+from . import db, kig_sources, llm, pwm
 
 PROTOCOL_VERSION = "pwm-extraction-shadow-v1"
 MAX_INPUT_CHARS = 8_000
@@ -158,39 +158,95 @@ def validate_payload(raw: object, *, source_kind: str | None = None) -> dict:
 def persist_payload(payload: dict, *, source_kind: str, source_id: str) -> dict:
     entity_ids: dict[str, str] = {}
     saved = {"entities": [], "claims": [], "relations": [], "events": []}
-    for item in payload["entities"]:
-        entity = pwm.create_entity(
-            entity_type=item["type"], canonical_name=item["name"], source_kind=source_kind,
-            source_id=source_id, reality_scope=item["scope"], confidence=item["confidence"],
-        )
-        entity_ids[item["key"]] = entity["id"]
-        saved["entities"].append(entity["id"])
-    for item in payload["claims"]:
-        claim = pwm.create_claim(
-            statement=item["statement"], claim_type=item["type"], predicate=item["predicate"],
-            source_kind=source_kind, source_id=source_id,
-            subject_entity_id=entity_ids[item["subject_key"]],
-            object_entity_id=entity_ids.get(item["object_key"]), object_value=item["object_value"],
-            confidence=item["confidence"], support_type="model_inferred",
-        )
-        saved["claims"].append(claim["id"])
-    for item in payload["relations"]:
-        relation = pwm.create_relation(
-            subject_entity_id=entity_ids[item["subject_key"]], predicate=item["predicate"],
-            source_kind=source_kind, source_id=source_id,
-            object_entity_id=entity_ids.get(item["object_key"]), object_value=item["object_value"],
-            confidence=item["confidence"],
-        )
-        saved["relations"].append(relation["id"])
-    for item in payload["events"]:
-        event = pwm.create_world_event(
-            event_type=item["type"], title=item["title"], source_kind=source_kind,
-            source_id=source_id, event_layer=item["layer"], execution_state=item["execution_state"],
-            participant_entity_ids=[entity_ids[key] for key in item["participant_keys"]],
-            confidence=item["confidence"],
-        )
-        saved["events"].append(event["id"])
+    try:
+        for item in payload["entities"]:
+            entity = pwm.create_entity(
+                entity_type=item["type"], canonical_name=item["name"], source_kind=source_kind,
+                source_id=source_id, reality_scope=item["scope"], confidence=item["confidence"],
+            )
+            entity_ids[item["key"]] = entity["id"]
+            saved["entities"].append(entity["id"])
+        for item in payload["claims"]:
+            claim = pwm.create_claim(
+                statement=item["statement"], claim_type=item["type"], predicate=item["predicate"],
+                source_kind=source_kind, source_id=source_id,
+                subject_entity_id=entity_ids[item["subject_key"]],
+                object_entity_id=entity_ids.get(item["object_key"]), object_value=item["object_value"],
+                confidence=item["confidence"], support_type="model_inferred",
+            )
+            saved["claims"].append(claim["id"])
+        for item in payload["relations"]:
+            relation = pwm.create_relation(
+                subject_entity_id=entity_ids[item["subject_key"]], predicate=item["predicate"],
+                source_kind=source_kind, source_id=source_id,
+                object_entity_id=entity_ids.get(item["object_key"]), object_value=item["object_value"],
+                confidence=item["confidence"],
+            )
+            saved["relations"].append(relation["id"])
+        for item in payload["events"]:
+            event = pwm.create_world_event(
+                event_type=item["type"], title=item["title"], source_kind=source_kind,
+                source_id=source_id, event_layer=item["layer"], execution_state=item["execution_state"],
+                participant_entity_ids=[entity_ids[key] for key in item["participant_keys"]],
+                confidence=item["confidence"],
+            )
+            saved["events"].append(event["id"])
+    except Exception:
+        _compensate_partial_persist(saved, source_kind=source_kind, source_id=source_id)
+        raise
     return saved
+
+
+def _compensate_partial_persist(saved: dict[str, list[str]], *, source_kind: str,
+                                source_id: str) -> None:
+    """Remove only projections created by this failed extraction attempt."""
+    conn = db.connect()
+    try:
+        entity_ids = saved["entities"]
+        link_ids: list[str] = []
+        if entity_ids:
+            placeholders = ",".join("?" for _ in entity_ids)
+            link_ids = [row["id"] for row in conn.execute(
+                f"SELECT id FROM pwm_entity_source_links WHERE entity_id IN ({placeholders})",
+                entity_ids,
+            ).fetchall()]
+        dependency_groups = (
+            ("pwm_world_event", saved["events"]),
+            ("pwm_relation", saved["relations"]),
+            ("pwm_claim", saved["claims"]),
+            ("pwm_entity_source_link", link_ids),
+            ("pwm_entity", entity_ids),
+        )
+        for derived_kind, object_ids in dependency_groups:
+            if object_ids:
+                placeholders = ",".join("?" for _ in object_ids)
+                conn.execute(
+                    f"DELETE FROM derived_dependencies WHERE derived_kind=? "
+                    f"AND derived_id IN ({placeholders})",
+                    (derived_kind, *object_ids),
+                )
+        for table, object_ids in (
+            ("pwm_world_events", saved["events"]),
+            ("pwm_relations", saved["relations"]),
+            ("pwm_claims", saved["claims"]),
+            ("pwm_entity_source_links", link_ids),
+            ("pwm_entities", entity_ids),
+        ):
+            if object_ids:
+                placeholders = ",".join("?" for _ in object_ids)
+                conn.execute(f"DELETE FROM {table} WHERE id IN ({placeholders})", object_ids)
+        if entity_ids:
+            conn.execute(
+                "UPDATE pwm_budget_counters SET used_count=MAX(0,used_count-?),updated_at=? "
+                "WHERE budget_date=? AND budget_kind='new_entity' AND scope_key=?",
+                (len(entity_ids), db.now(), pwm._day(), f"{source_kind}:{source_id}"),  # noqa: SLF001
+            )
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
 def _confidence(value: object) -> float:
