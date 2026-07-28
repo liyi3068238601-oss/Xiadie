@@ -1,0 +1,253 @@
+"""KIG-R chat orchestration without bypassing CTX or owner-system controls."""
+from __future__ import annotations
+
+import json
+from dataclasses import dataclass, replace
+from itertools import combinations
+
+from . import (
+    db, kig_evidence, kig_governance, kig_query_planner, kig_reranker,
+    kig_retrieval, knowledge_context,
+)
+
+PROTOCOL_VERSION = "kig-retrieval-governance-v1"
+MAX_GOVERNANCE_CANDIDATES = 10
+MAX_RELATION_PAIRS = 24
+
+
+@dataclass(frozen=True)
+class ChatRetrievalResult:
+    bundle: kig_evidence.KnowledgeRetrievalBundle
+    plan: kig_query_planner.QueryPlanResult
+    batch: kig_retrieval.RetrievalBatch
+    selected_candidate_ids: tuple[str, ...]
+    allowed_knowledge_chunk_ids: frozenset[str]
+    freshness: kig_governance.FreshnessAssessment
+    governed_sources: tuple[kig_governance.GovernedSource, ...]
+    deterministic_relations: tuple[kig_governance.VersionRelationResult, ...]
+    deterministic_relation_count: int
+    proposed_confirmation_count: int
+    protocol_version: str = PROTOCOL_VERSION
+
+
+def prepare_for_chat(
+    *, query: str, source_message_id: str, session_id: str,
+    provider: dict | None, recall_mode: str,
+) -> ChatRetrievalResult | None:
+    """Use deterministic KIG decisions in chat; semantic model proposals stay Shadow."""
+    if recall_mode == "off" or not str(query or "").strip() or not source_message_id:
+        return None
+    enabled = _enabled_sources(provider)
+    payload = kig_query_planner.QueryPlanInput(
+        candidate_ids=kig_query_planner.candidate_ids(), source_message_id=source_message_id,
+        text=query, enabled_sources=enabled,
+    )
+    plan = kig_query_planner.plan_programmatic(payload)
+    if plan is None:
+        # Ambiguous reference resolution remains model-Shadow. Do not apply it.
+        plan = kig_query_planner.safe_fallback(payload)
+    kig_query_planner.validate(payload, plan)
+    if not plan.selected_sources or set(plan.selected_sources) <= {"knowledge"} \
+            and not plan.version_required and not plan.conflict_required:
+        return None
+    request = kig_retrieval.RetrievalRequest(
+        query=plan.subqueries[0] if plan.subqueries else query,
+        selected_sources=plan.selected_sources,
+        per_source_limits={source: 6 for source in plan.selected_sources},
+        total_limit=24, current_session_id=session_id,
+    )
+    batch = kig_retrieval.retrieve(request)
+    batch = _filter_transfer(batch, provider)
+    if not batch.candidates:
+        bundle = kig_evidence.build_bundle(
+            query=query, request_id=f"kig-chat:{source_message_id}:{db.new_id()}",
+            selected_sources=plan.selected_sources, batch=batch,
+            planner_protocol=kig_query_planner.POLICY_VERSION,
+            query_plan_summary=_plan_summary(plan),
+        )
+        return ChatRetrievalResult(
+            bundle=bundle, plan=plan, batch=batch, selected_candidate_ids=(),
+            allowed_knowledge_chunk_ids=frozenset(),
+            freshness=kig_governance.FreshnessAssessment({}, (), (), (),
+                                                          ("no_candidates",)),
+            governed_sources=(), deterministic_relations=(),
+            deterministic_relation_count=0, proposed_confirmation_count=0,
+        )
+
+    rerank_input = kig_reranker.adapt(
+        batch, request_id=source_message_id, query=query, max_selected=12,
+    )
+    # The semantic reranker remains Shadow. Only its independently validated,
+    # deterministic fallback may determine the active CTX candidate set.
+    baseline = kig_reranker.deterministic_fusion(rerank_input)
+    candidate_by_id = {item.candidate_id: item for item in batch.candidates}
+    governed = tuple(
+        kig_governance.adapt_candidate(candidate_by_id[candidate_id])
+        for candidate_id in baseline.selected_ids[:MAX_GOVERNANCE_CANDIDATES]
+        if candidate_id in candidate_by_id
+    )
+    relations: list[kig_governance.VersionRelationResult] = []
+    for pair_index, (left, right) in enumerate(combinations(governed, 2)):
+        if pair_index >= MAX_RELATION_PAIRS:
+            break
+        relation = kig_governance.deterministic_relation(left, right, query=query)
+        if relation is None:
+            continue
+        relations.append(relation)
+    persisted, proposed_confirmations = _persisted_relations(governed)
+    combined = _deduplicate_relations([*relations, *persisted])
+    freshness = kig_governance.assess_freshness(governed, combined)
+    active_ids = tuple(
+        candidate_id for candidate_id in baseline.selected_ids
+        if freshness.states.get(candidate_id, "current") not in {"superseded", "expired"}
+    )
+    roles = dict(zip(
+        baseline.ranked_ids, baseline.relevance_roles, strict=True,
+    ))
+    for left, right in freshness.conflict_pairs:
+        roles[left] = roles[right] = "conflict"
+    bundle = kig_evidence.build_bundle(
+        query=query, request_id=f"kig-chat:{source_message_id}:{db.new_id()}",
+        selected_sources=plan.selected_sources, batch=batch, selected_ids=active_ids,
+        relevance_roles=roles, freshness_states=freshness.states,
+        planner_protocol=kig_query_planner.POLICY_VERSION,
+        query_plan_summary=_plan_summary(plan),
+    )
+    conflicts = list(bundle.conflict_notes)
+    insufficiencies = list(bundle.insufficiency_notes)
+    if freshness.conflict_pairs:
+        conflicts.append("version_conflict_unresolved")
+    if proposed_confirmations:
+        conflicts.append("high_impact_confirmation_required")
+    if plan.conflict_required and not combined:
+        insufficiencies.append("semantic_conflict_check_shadow_only")
+    bundle = replace(
+        bundle, conflict_notes=tuple(dict.fromkeys(conflicts)),
+        insufficiency_notes=tuple(dict.fromkeys(insufficiencies)),
+    )
+    allowed_knowledge = frozenset(
+        candidate_by_id[candidate_id].source_id for candidate_id in active_ids
+        if candidate_id in candidate_by_id
+        and candidate_by_id[candidate_id].source_type == "knowledge_chunk"
+    )
+    return ChatRetrievalResult(
+        bundle=bundle, plan=plan, batch=batch, selected_candidate_ids=active_ids,
+        allowed_knowledge_chunk_ids=allowed_knowledge, freshness=freshness,
+        governed_sources=governed, deterministic_relations=tuple(relations),
+        deterministic_relation_count=len(relations),
+        proposed_confirmation_count=len(proposed_confirmations),
+    )
+
+
+def persist_deterministic_relations(result: ChatRetrievalResult) -> int:
+    by_id = {item.candidate_id: item for item in result.governed_sources}
+    persisted = 0
+    for index, relation in enumerate(result.deterministic_relations):
+        if relation.relation in {"exact_duplicate", "unrelated", "uncertain"}:
+            continue
+        older, newer = by_id.get(relation.older_id), by_id.get(relation.newer_id)
+        if not older or not newer:
+            continue
+        payload = kig_governance.VersionRelationInput(
+            candidate_ids=(older.candidate_id, newer.candidate_id),
+            request_id=f"{result.bundle.request_id}:relation:{index}",
+            query="deterministic version governance", sources=(older, newer),
+            impact_level="high" if result.bundle.high_risk else "medium",
+        )
+        kig_governance.persist_relation(relation, payload)
+        persisted += 1
+    return persisted
+
+
+def filter_knowledge_prepared(
+    prepared: dict | None, result: ChatRetrievalResult | None,
+) -> dict | None:
+    if not prepared or not result or "knowledge" not in result.plan.selected_sources:
+        return prepared
+    # Never broaden the grant-authorized legacy set. If KIG found no matching
+    # knowledge candidate, retain the authorized legacy result and expose the
+    # insufficiency note rather than deleting all context accidentally.
+    if not result.allowed_knowledge_chunk_ids:
+        return prepared
+    return knowledge_context.filter_prepared(prepared, set(result.allowed_knowledge_chunk_ids))
+
+
+def _enabled_sources(provider: dict | None) -> tuple[str, ...]:
+    sources = list(kig_query_planner.SOURCES)
+    if provider and provider.get("execution_location") == "remote" \
+            and db.get_setting("kig_remote_task_evidence", "0") != "1":
+        sources.remove("task")
+    return tuple(sources)
+
+
+def _filter_transfer(
+    batch: kig_retrieval.RetrievalBatch, provider: dict | None,
+) -> kig_retrieval.RetrievalBatch:
+    if not provider or provider.get("execution_location") != "remote":
+        return batch
+    candidates = tuple(item for item in batch.candidates if (
+        item.source_type == "knowledge_chunk"
+        or item.source_type == "lore_section"
+        or item.privacy_scope not in {"sensitive", "private_sensitive"}
+    ) and not (item.source_type == "tool_run" and db.get_setting(
+        "kig_remote_task_evidence", "0"
+    ) != "1"))
+    return replace(batch, candidates=candidates)
+
+
+def _persisted_relations(
+    governed: tuple[kig_governance.GovernedSource, ...],
+) -> tuple[list[kig_governance.VersionRelationResult], list[str]]:
+    by_ref = {
+        (item.source_kind, item.source_id, item.source_revision): item for item in governed
+    }
+    if not by_ref:
+        return [], []
+    conn = db.connect()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM kig_version_relations WHERE status IN ('confirmed','proposed') "
+            "ORDER BY updated_at DESC,id DESC LIMIT 200"
+        ).fetchall()
+    finally:
+        conn.close()
+    relations: list[kig_governance.VersionRelationResult] = []
+    proposed: list[str] = []
+    for row in rows:
+        older = by_ref.get((row["older_source_kind"], row["older_source_id"],
+                            row["older_source_revision"]))
+        newer = by_ref.get((row["newer_source_kind"], row["newer_source_id"],
+                            row["newer_source_revision"]))
+        if not older or not newer:
+            continue
+        if row["status"] == "proposed":
+            if row["requires_confirmation"]:
+                proposed.append(row["id"])
+            continue
+        relations.append(kig_governance.VersionRelationResult(
+            action="select", selected_ids=(newer.candidate_id,), relation=row["relation"],
+            older_id=older.candidate_id, newer_id=newer.candidate_id,
+            scope_terms=tuple((json.loads(row["scope_json"]) or {}).get("terms", ())),
+            reason_codes=("semantic_relation",),
+            confidence_band="high" if row["confidence"] >= 0.8 else "medium",
+            requires_confirmation=bool(row["requires_confirmation"]), proposal_only=True,
+        ))
+    return relations, proposed
+
+
+def _deduplicate_relations(
+    relations: list[kig_governance.VersionRelationResult],
+) -> list[kig_governance.VersionRelationResult]:
+    result: dict[tuple[str, str], kig_governance.VersionRelationResult] = {}
+    for relation in relations:
+        result[(relation.older_id, relation.newer_id)] = relation
+    return list(result.values())
+
+
+def _plan_summary(plan: kig_query_planner.QueryPlanResult) -> dict:
+    return {
+        "reason_codes": plan.reason_codes, "selected_sources": plan.selected_sources,
+        "temporal_required": plan.temporal_required, "version_required": plan.version_required,
+        "entity_required": plan.entity_required, "exact_quote_required": plan.exact_quote_required,
+        "conflict_required": plan.conflict_required, "bypassed_model": plan.bypassed_model,
+    }

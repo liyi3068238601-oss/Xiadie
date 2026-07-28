@@ -49,7 +49,7 @@ def test_schema_27_relation_audit_has_no_memory_body():
     try:
         assert conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
-        ).fetchone()["value"] == "75"
+        ).fetchone()["value"] == "76"
         relation_columns = {
             row["name"] for row in conn.execute("PRAGMA table_info(memory_fragment_relations)")
         }

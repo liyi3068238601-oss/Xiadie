@@ -2,7 +2,7 @@
 
 - 版本：v0.3（施工基线、双里程碑、来源依赖与图谱治理补强）
 - 日期：2026-07-22
-- 状态：KIG.0～KIG.8 已完成；KIG.7 模型质量门仍待 KIG-R 补测；当前 Schema 75，KIG.9 可施工
+- 状态：KIG.0～KIG.9 已完成；当前 Schema 76，进入 KIG-R 冻结门审计（KIG.7 模型质量门待补测）
 - 专项代号：`KIG`（Knowledge Intelligence & Governance）
 - 子系统代号：`PWM`（Personal World Model）
 - 适用范围：用户知识库、信息分类与治理、多源检索、LLM 查询规划与重排、证据与引用、冲突与版本、个人世界模型，以及与对话历史、长期记忆、生活连续性、任务和 ContextAssembler 的接口
@@ -1847,14 +1847,16 @@ KIG.8 施工记录（2026-07-28）：Schema 75 新增 body-free `kig_retrieval_b
 
 目标：处理新旧设计、软件版本、条件差异和用户纠正。
 
-- [ ] 建立 VersionRelation 和 FreshnessState。
-- [ ] 确定性 hash/date/version 规则先行。
-- [ ] LLM 只提出语义 relation。
-- [ ] 用户最新纠正和 authoritative 标记优先。
-- [ ] 高影响冲突请求确认。
-- [ ] 建立版本分支、部分替代和条件兼容测试。
+- [x] 建立 VersionRelation 和 FreshnessState。
+- [x] 确定性 hash/date/version 规则先行。
+- [x] LLM 只提出语义 relation。
+- [x] 用户最新纠正和 authoritative 标记优先。
+- [x] 高影响冲突请求确认。
+- [x] 建立版本分支、部分替代和条件兼容测试。
 
 验收：新旧文档不会无提示混合；时间条件不同不误判为冲突。
+
+KIG.9 施工记录（2026-07-28）：Schema 76 新增 body-free `kig_source_governance` 与 `kig_version_relations`，并为 VersionRelation 绑定两端 `derived_dependencies`。`freshness-state-v1` 仅在同一对象/范围已由 source id、用户 scope 或高重合主题证明后应用 hash、owner revision、semver、有效期与 authority/date 规则；版本号或时间较新本身不证明正确。不同时间/条件先判 `compatible_with_conditions`，不会误标冲突；exact duplicate/supersedes/partial/expired 分别进入可审计新鲜度。`version-relation-v1` 语义判断注册于 CDS Shadow，模型输出始终 proposal-only；用户最新纠正、用户确认 authoritative、ToolRun、官方源、导入资料、模型提案按固定优先级治理。高影响 contradict/divergent 必须 `requires_confirmation`，revision-matched API 接受/拒绝后才可进入 confirmed。KIG-R chat pipeline 仅应用确定性/已确认关系和确定性融合，未决冲突进入 RetrievalBundle 并由生成后 Validator 强制保留冲突措辞；Knowledge K1 同时补上实时来源与句子支持度检查。扩大到 KIG/Knowledge/CTX/API/CDS.9/CDS.10 的回归 `687 passed, 1 warning`。详见 `docs/reports/kig-9-conflict-version-freshness.md`。
 
 建议 PR：`feat(kig): add conflict version and freshness governance`
 

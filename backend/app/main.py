@@ -25,7 +25,7 @@ from . import (
     episode_summary_service, episodes, knowledge, knowledge_cleanup, knowledge_context,
     knowledge_embeddings, knowledge_grants,
     knowledge_management, knowledge_parser, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search,
-    knowledge_worker, kig_evidence, kig_sources, life_catchup, life_catchup_service, life_events, life_runtime, life_schedule, llm, lore, memory, memory_conflicts, memory_shadow_proposals,
+    knowledge_worker, kig_evidence, kig_governance, kig_pipeline, kig_sources, life_catchup, life_catchup_service, life_events, life_runtime, life_schedule, llm, lore, memory, memory_conflicts, memory_shadow_proposals,
     personal_goals,
     saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, secret_store, self_timeline, slow_lifecycle,
@@ -533,6 +533,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
     uid: str | None = None
     replace_assistant_id: str | None = None
     provider, model = _current_model()
+    kig_chat_result = None
     conn = db.connect()
     try:
         sess = conn.execute("SELECT * FROM sessions WHERE id = ?", (body.session_id,)).fetchone()
@@ -598,6 +599,19 @@ async def chat(body: ChatIn) -> StreamingResponse:
             raise HTTPException(
                 error.status_code, {"code": error.code, "message": str(error)},
             ) from error
+
+        if content_has_text and uid:
+            try:
+                kig_chat_result = kig_pipeline.prepare_for_chat(
+                    query=body.content, source_message_id=uid, session_id=body.session_id,
+                    provider=provider, recall_mode=recall_mode,
+                )
+                knowledge_retrieval = kig_pipeline.filter_knowledge_prepared(
+                    knowledge_retrieval, kig_chat_result,
+                )
+            except Exception:  # KIG degradation must never block companionship chat
+                logger.warning("kig_chat_prepare_failed session_id=%s", body.session_id, exc_info=True)
+                kig_chat_result = None
 
         if not body.regenerate:
             conn.execute(
@@ -692,6 +706,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 cross_session_recall=history_prepared["turns"],
                 current_session_id=body.session_id,
                 attachment_block=attachment_block,
+                retrieval_bundle=(kig_chat_result.bundle if kig_chat_result else None),
             )
         except context_budget.ContextBudgetError as error:
             if conn.in_transaction:
@@ -702,6 +717,12 @@ async def chat(body: ChatIn) -> StreamingResponse:
         conn.commit()
     finally:
         conn.close()
+
+    if kig_chat_result:
+        try:
+            kig_pipeline.persist_deterministic_relations(kig_chat_result)
+        except Exception:  # derived governance persistence is non-blocking
+            logger.warning("kig_relation_persist_failed session_id=%s", body.session_id, exc_info=True)
 
     if not body.regenerate and uid and recall_mode == "explicit" and content_has_text:
         # 只在后台记录影子判断；绝不修改本轮 messages 或 knowledge_block。
@@ -776,6 +797,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
                         active_summary=active_summary,
                         cross_session_recall=history_prepared["turns"],
                         current_session_id=body.session_id,
+                        retrieval_bundle=(kig_chat_result.bundle if kig_chat_result else None),
                     )
                     messages = list(context_package.messages)
                     trimmed_count = context_package.trimmed_messages
@@ -855,7 +877,14 @@ async def chat(body: ChatIn) -> StreamingResponse:
             return
         full, used_citations = knowledge_context.validate_citations(
             "".join(collected), knowledge_retrieval,
+            strict_support=bool(kig_chat_result and (
+                kig_chat_result.bundle.high_risk or kig_chat_result.bundle.complex_query
+            )),
         )
+        evidence_validation = kig_evidence.validate_answer(
+            full, kig_chat_result.bundle if kig_chat_result else None,
+        )
+        full = evidence_validation.text
         # 持久化助手回复
         c2 = db.connect()
         try:
@@ -878,6 +907,12 @@ async def chat(body: ChatIn) -> StreamingResponse:
                     "UPDATE knowledge_chat_retrievals SET assistant_message_id=?,status='completed',"
                     "finished_at=? WHERE id=?",
                     (aid, db.now(), knowledge_retrieval["id"]),
+                )
+            if kig_chat_result and uid:
+                kig_evidence.persist_validation_locked(
+                    c2, bundle=kig_chat_result.bundle, validation=evidence_validation,
+                    session_id=body.session_id, user_message_id=uid,
+                    assistant_message_id=aid,
                 )
             c2.execute("UPDATE sessions SET updated_at = ? WHERE id = ?", (db.now(), body.session_id))
             c2.commit()
@@ -1092,6 +1127,20 @@ class KIGSourceRefIn(BaseModel):
     locator: str
 
 
+class KIGSourceGovernanceIn(BaseModel):
+    authority_level: str
+    scope: dict = Field(default_factory=dict)
+    applicable_from: float | None = None
+    applicable_to: float | None = None
+    version_label: str | None = Field(default=None, max_length=80)
+    user_confirmed: bool = False
+
+
+class KIGRelationResolveIn(BaseModel):
+    accept: bool
+    expected_revision: int = Field(ge=1)
+
+
 @app.get("/api/kig/sources/{source_kind}/{source_id}")
 def resolve_kig_source(source_kind: str, source_id: str) -> dict:
     """Resolve body-free canonical source metadata from its owner system."""
@@ -1110,6 +1159,52 @@ def validate_kig_source(body: KIGSourceRefIn) -> dict:
         return {"valid": True, "source_ref": kig_sources.validate_ref(ref).to_dict()}
     except kig_sources.SourceRefError as exc:
         raise HTTPException(409, detail={"code": exc.code, "message": str(exc)}) from exc
+
+
+@app.put("/api/kig/governance/sources/{source_kind}/{source_id}")
+def update_kig_source_governance(
+    source_kind: str, source_id: str, body: KIGSourceGovernanceIn,
+) -> dict:
+    try:
+        ref = kig_sources.registry.resolve(source_kind, source_id)
+        return {"governance": kig_governance.upsert_source_governance(
+            ref, authority_level=body.authority_level, scope=body.scope,
+            applicable_from=body.applicable_from, applicable_to=body.applicable_to,
+            version_label=body.version_label, user_confirmed=body.user_confirmed,
+        )}
+    except kig_sources.SourceRefError as exc:
+        raise HTTPException(404 if exc.code == "source_missing" else 422,
+                            detail={"code": exc.code, "message": str(exc)}) from exc
+    except ValueError as exc:
+        raise HTTPException(409, detail={"code": str(exc), "message": str(exc)}) from exc
+
+
+@app.get("/api/kig/governance/version-relations")
+def list_kig_version_relations(status: str = "proposed", limit: int = 50) -> dict:
+    if status not in {"proposed", "confirmed", "rejected", "superseded"}:
+        raise HTTPException(422, "版本关系状态无效")
+    conn = db.connect()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM kig_version_relations WHERE status=? "
+            "ORDER BY requires_confirmation DESC,updated_at DESC,id DESC LIMIT ?",
+            (status, max(1, min(int(limit), 200))),
+        ).fetchall()
+        return {"relations": [dict(row) for row in rows]}
+    finally:
+        conn.close()
+
+
+@app.post("/api/kig/governance/version-relations/{relation_id}/resolve")
+def resolve_kig_version_relation(relation_id: str, body: KIGRelationResolveIn) -> dict:
+    try:
+        return {"relation": kig_governance.resolve_relation(
+            relation_id, accept=body.accept, expected_revision=body.expected_revision,
+        )}
+    except ValueError as exc:
+        code = str(exc)
+        raise HTTPException(404 if code == "relation_missing" else 409,
+                            detail={"code": code, "message": code}) from exc
 
 
 @app.get("/api/life/events")

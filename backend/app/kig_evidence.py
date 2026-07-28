@@ -120,11 +120,12 @@ def build_bundle(
     *, query: str, request_id: str, selected_sources: tuple[str, ...],
     batch: kig_retrieval.RetrievalBatch, selected_ids: Iterable[str] | None = None,
     relevance_roles: dict[str, str] | None = None, planner_protocol: str = "query-plan-policy-v1",
-    query_plan_summary: dict | None = None,
+    query_plan_summary: dict | None = None, freshness_states: dict[str, str] | None = None,
 ) -> KnowledgeRetrievalBundle:
     """Create a bounded, live-validated CTX hand-off; bodies remain transient."""
     wanted = set(selected_ids or (item.candidate_id for item in batch.candidates))
     roles = relevance_roles or {}
+    freshness = freshness_states or {}
     selected: list[SelectedEvidence] = []
     conflict_notes: list[str] = []
     insufficiency_notes: list[str] = []
@@ -150,7 +151,8 @@ def build_bundle(
             source_hash=candidate.source_hash, source_status=candidate.source_status,
             privacy_scope=candidate.privacy_scope, locator=candidate.locator,
             excerpt=candidate.excerpt, excerpt_hash=candidate.excerpt_hash,
-            relevance_role=role, freshness_state=candidate.freshness_state,
+            relevance_role=role,
+            freshness_state=freshness.get(candidate.candidate_id, candidate.freshness_state),
             token_estimate=max(1, len(candidate.excerpt) // 4),
         ))
     if not selected and any(source != "knowledge" for source in selected_sources):
@@ -238,6 +240,12 @@ def validate_answer(text: str, bundle: KnowledgeRetrievalBundle | None) -> Citat
             and (bundle.high_risk or bundle.complex_query or keys)
         )
         state, relation = _support_state(claim_text, valid, citation_required)
+        unresolved_conflict = bool(set(bundle.conflict_notes) & {
+            "version_conflict_unresolved", "high_impact_confirmation_required",
+        }) or "semantic_conflict_check_shadow_only" in bundle.insufficiency_notes
+        if unresolved_conflict and state in {"supported", "partially_supported"} \
+                and citation_required:
+            state, relation = "conflicted", "contradiction"
         if state == "insufficient":
             insufficient += 1
         elif state == "conflicted":

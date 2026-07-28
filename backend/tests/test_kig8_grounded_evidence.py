@@ -1,10 +1,12 @@
+import asyncio
 import hashlib
 
 from fastapi.testclient import TestClient
 
 from app import (
     context_assembler, context_budget, db, kig_evidence as evidence,
-    kig_retrieval as retrieval, kig_sources, memory,
+    kig_retrieval as retrieval, kig_sources, knowledge, knowledge_context,
+    knowledge_worker, memory,
 )
 from app.main import app
 
@@ -55,7 +57,7 @@ def test_schema_75_persists_only_cross_source_provenance_not_bodies():
     try:
         assert conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
-        ).fetchone()[0] == "75"
+        ).fetchone()[0] == "76"
         link_columns = {row["name"] for row in conn.execute("PRAGMA table_info(kig_evidence_links)")}
         segment_columns = {
             row["name"] for row in conn.execute("PRAGMA table_info(kig_answer_claim_segments)")
@@ -136,6 +138,25 @@ def test_validator_rejects_invented_and_same_topic_unsupported_citations():
     assert "[来源不支持此表述]" in checked.text
     assert checked.insufficiency_count >= 1
     assert all(link.citation_key != "E99" for link in checked.links)
+
+
+def test_existing_k1_lane_gets_strict_sentence_support_without_duplicate_evidence_links():
+    marker = f"星河{db.new_id()[:8]}"
+    knowledge.import_file(
+        f"kig8-{marker}.md", "text/markdown",
+        f"# 技术决定\n{marker} 当前使用 Electron。".encode(),
+    )
+    assert asyncio.run(knowledge_worker.process_due(limit=3)) == 3
+    prepared = knowledge_context.prepare(f"根据文档 {marker} 当前使用什么")
+    assert prepared and prepared["evidence_windows"]
+    valid, used = knowledge_context.validate_citations(
+        f"{marker} 当前使用 Electron。[资料:K1]", prepared, strict_support=True,
+    )
+    assert "[资料:K1]" in valid and len(used) == 1
+    unsupported, used = knowledge_context.validate_citations(
+        f"{marker} 当前使用 Tauri。[资料:K1]", prepared, strict_support=True,
+    )
+    assert "[资料不支持此表述]" in unsupported and not used
 
 
 def test_partial_and_conflicting_support_cannot_be_rendered_as_unqualified_fact():

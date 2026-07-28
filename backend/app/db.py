@@ -3465,6 +3465,82 @@ MIGRATIONS = [
             ON kig_evidence_links(source_kind,source_id,validation_status);
         """,
     ),
+    (
+        76,
+        """
+        -- KIG.9: body-free source authority, version relations and confirmation gates.
+        CREATE TABLE kig_source_governance (
+            id TEXT PRIMARY KEY,
+            source_kind TEXT NOT NULL CHECK(source_kind IN (
+                'knowledge_document','knowledge_chunk','message','memory_fragment',
+                'life_event','tool_run','lore_section'
+            )),
+            source_id TEXT NOT NULL,
+            source_revision TEXT NOT NULL,
+            source_hash TEXT NOT NULL CHECK(length(source_hash)=64),
+            authority_level TEXT NOT NULL CHECK(authority_level IN (
+                'user_correction','user_confirmed_authoritative','tool_result',
+                'official_source','imported_source','model_proposal'
+            )),
+            scope_json TEXT NOT NULL DEFAULT '{}',
+            applicable_from REAL,
+            applicable_to REAL,
+            version_label TEXT,
+            user_confirmed INTEGER NOT NULL DEFAULT 0 CHECK(user_confirmed IN (0,1)),
+            status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','superseded','revoked')),
+            governance_revision INTEGER NOT NULL DEFAULT 1 CHECK(governance_revision >= 1),
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            UNIQUE(source_kind,source_id)
+        );
+        CREATE INDEX idx_kig_source_governance_authority
+            ON kig_source_governance(authority_level,status,updated_at DESC);
+
+        CREATE TABLE kig_version_relations (
+            id TEXT PRIMARY KEY,
+            older_source_kind TEXT NOT NULL CHECK(older_source_kind IN (
+                'knowledge_document','knowledge_chunk','message','memory_fragment',
+                'life_event','tool_run','lore_section'
+            )),
+            older_source_id TEXT NOT NULL,
+            older_source_revision TEXT NOT NULL,
+            older_source_hash TEXT NOT NULL CHECK(length(older_source_hash)=64),
+            newer_source_kind TEXT NOT NULL CHECK(newer_source_kind IN (
+                'knowledge_document','knowledge_chunk','message','memory_fragment',
+                'life_event','tool_run','lore_section'
+            )),
+            newer_source_id TEXT NOT NULL,
+            newer_source_revision TEXT NOT NULL,
+            newer_source_hash TEXT NOT NULL CHECK(length(newer_source_hash)=64),
+            relation TEXT NOT NULL CHECK(relation IN (
+                'exact_duplicate','semantically_equivalent','compatible',
+                'compatible_with_conditions','extends','partially_supersedes',
+                'supersedes','contradicts','divergent_branch','unrelated','uncertain'
+            )),
+            scope_json TEXT NOT NULL DEFAULT '{}',
+            confidence REAL NOT NULL CHECK(confidence >= 0 AND confidence <= 1),
+            evidence_refs_json TEXT NOT NULL DEFAULT '[]',
+            decision_source TEXT NOT NULL CHECK(decision_source IN (
+                'deterministic','llm_proposal','user_confirmed'
+            )),
+            impact_level TEXT NOT NULL CHECK(impact_level IN ('low','medium','high')),
+            requires_confirmation INTEGER NOT NULL CHECK(requires_confirmation IN (0,1)),
+            status TEXT NOT NULL CHECK(status IN ('proposed','confirmed','rejected','superseded')),
+            relation_revision INTEGER NOT NULL DEFAULT 1 CHECK(relation_revision >= 1),
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            confirmed_at REAL,
+            UNIQUE(older_source_kind,older_source_id,older_source_revision,
+                   newer_source_kind,newer_source_id,newer_source_revision)
+        );
+        CREATE INDEX idx_kig_version_relations_older
+            ON kig_version_relations(older_source_kind,older_source_id,status);
+        CREATE INDEX idx_kig_version_relations_newer
+            ON kig_version_relations(newer_source_kind,newer_source_id,status);
+        CREATE INDEX idx_kig_version_relations_confirmation
+            ON kig_version_relations(requires_confirmation,status,impact_level,updated_at DESC);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

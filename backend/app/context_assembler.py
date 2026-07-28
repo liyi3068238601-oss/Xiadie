@@ -288,7 +288,7 @@ def _render_retrieval_bundle(bundle: object | None) -> tuple[str, dict[str, obje
         "evidence_count": len(records), "conflict_count": len(conflicts),
         "insufficiency_count": len(insufficiencies),
     }
-    if not records:
+    if not records and not conflicts and not insufficiencies:
         return "", meta
     payload = json.dumps({
         "evidence": records,

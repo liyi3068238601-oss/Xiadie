@@ -1,6 +1,6 @@
 # 遐蝶 Codex 项目上下文
 
-> KIG 施工快照（2026-07-28）：KIG.0～KIG.8 已完成，当前 Schema 75。`knowledge-retrieval-bundle-v1` 已成为 KIG→CTX 的结构化接线，跨源 EvidenceLink、逐句 `claim-support-v1`、实时来源打开和轻量 UI 已完成；Knowledge K1 引用保持唯一。KIG.7 `retrieval-rerank-v1` 仍为 Shadow，实配模型质量门未通过且禁止 Active，KIG-R 冻结前必须补测 JSON Object 模式。KIG.9 可施工。
+> KIG 施工快照（2026-07-28）：KIG.0～KIG.9 已完成，当前 Schema 76，正在执行 KIG-R 冻结门审计。`kig-retrieval-governance-v1` 已接入聊天与 CTX：只应用确定性/用户确认关系，跨源 EvidenceLink、K1/E1 逐句校验、VersionRelation/FreshnessState、高影响确认和来源 UI 已完成。KIG.7 `retrieval-rerank-v1` 仍为 Shadow，实配模型质量门未通过且禁止 Active，冻结前必须补测 JSON Object 模式。
 
 > 状态：当前执行约束  
 > 适用对象：Codex、维护者和后续参与开发的协作者  
