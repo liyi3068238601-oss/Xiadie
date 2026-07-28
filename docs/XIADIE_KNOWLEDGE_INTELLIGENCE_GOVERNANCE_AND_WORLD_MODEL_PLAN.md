@@ -1999,7 +1999,7 @@ LLM 重排相对旧排序人工增益              ≥ 15%
 实体自动合并精确率                    ≥ 98%
 ```
 
-KIG.15 施工记录（2026-07-28）：`kig-p-acceptance-v1` 使用临时数据库和纯合成数据执行 100 单文档、100 多文档、100 跨库、100 版本与 100 exact entity merge/rollback；召回、引用、版本、实体精确率和恢复率均为 100%。SQLite FTS 阶梯覆盖 1 万、10 万和首版目标 25 万 Chunk，5 个探针召回均为 100%，查询固定返回不超过 5 条。每来源 Claim 64、alias 16、消歧 8、维护批次 100 的首个超额写入全部被拒绝；每日实体/TTL/孤立归档由同一 policy 和 worker 验证。最终 Schema 80；PWM 协议 `pwm-projection-v1`，跨 owner proposal `kig-system-proposal-v1`，维护 `kig-maintenance-v1`；KIG-R 继续为 `kig-retrieval-governance-v1`/Schema 76 rollback boundary。详见 `docs/reports/kig-p-acceptance.md` 与 `docs/reports/kig-v1-freeze.md`。
+KIG.15 施工记录（2026-07-28）：`kig-p-acceptance-v1` 使用临时数据库和纯合成数据执行 100 单文档、100 多文档、100 跨库、100 版本与 100 exact entity merge/rollback；召回、引用、版本、实体精确率和恢复率均为 100%。SQLite FTS 阶梯覆盖 1 万、10 万和首版目标 25 万 Chunk，5 个探针召回均为 100%，查询固定返回不超过 5 条。每来源 Claim 在 64 条后拒绝超额写入，单实体 alias 在 16 条后拒绝超额写入；消歧结果 2 条且不超过硬上限 8，维护扫描固定截断于 100 条；每日实体/TTL/孤立归档由同一 policy 和 worker 验证。后端全量 `2558 passed, 1 warning`，前端 `52 passed`、Vite 190 modules，Electron lifecycle contract `3 passed`。最终 Schema 80；不可变实现/回滚点 `5b6054d5cc57a5d09cbe305045487a527e760071`；PWM 协议 `pwm-projection-v1`，跨 owner proposal `kig-system-proposal-v1`，维护 `kig-maintenance-v1`；KIG-R 继续为 `kig-retrieval-governance-v1`/Schema 76 rollback boundary。详见 `docs/reports/kig-p-acceptance.md` 与 `docs/reports/kig-v1-freeze.md`。
 
 建议 PR：`feat(kig): complete and freeze knowledge intelligence v1`
 

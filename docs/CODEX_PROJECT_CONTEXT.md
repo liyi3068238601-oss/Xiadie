@@ -1,6 +1,6 @@
 # 遐蝶 Codex 项目上下文
 
-> KIG 施工快照（2026-07-28）：KIG.0～KIG.15 已完成。KIG-R 仍冻结于实现 `a18fd04a3759663f88d6a8041529fea14645c281`、Schema 76、协议 `kig-retrieval-governance-v1`；KIG-P 以 Schema 77～80 追加来源化 PWM、可逆实体解析、owner proposal、非破坏维护与现有知识 UI，`kig-p-acceptance-v1` 发布门为 pass。所有模型抽取仍为 Shadow/候选，不继承 KIG.7 的单 Provider 证书。
+> KIG 施工快照（2026-07-28）：KIG.0～KIG.15 已完成。KIG-R 仍冻结于实现 `a18fd04a3759663f88d6a8041529fea14645c281`、Schema 76、协议 `kig-retrieval-governance-v1`；KIG-P 以实现/回滚点 `5b6054d5cc57a5d09cbe305045487a527e760071` 和 Schema 77～80 追加来源化 PWM、可逆实体解析、owner proposal、非破坏维护与现有知识 UI，`kig-p-acceptance-v1` 发布门为 pass。所有模型抽取仍为 Shadow/候选，不继承 KIG.7 的单 Provider 证书。
 
 > 状态：当前执行约束  
 > 适用对象：Codex、维护者和后续参与开发的协作者  

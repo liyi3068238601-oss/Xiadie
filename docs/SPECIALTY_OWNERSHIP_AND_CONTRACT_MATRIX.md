@@ -2,7 +2,7 @@
 
 - 版本：v1.2
 - 日期：2026-07-28
-- 状态：CDS、LIFE、KIG-R 与 KIG-P 已完成；KIG v1 等待最终实现 SHA 回填
+- 状态：CDS、LIFE、KIG-R 与 KIG-P 已完成；KIG v1 已冻结
 - 适用顺序：`CDS → LIFE → KIG`
 - 解释优先级：冻结协议与 ADR > 本矩阵 > 专项计划 > 阶段施工记录
 
@@ -73,7 +73,7 @@ KIG-P 冻结基线：
 | protocols | `pwm-projection-v1`、`pwm-extraction-shadow-v1`、`pwm-entity-resolution-v1`、`kig-system-proposal-v1`、`kig-maintenance-v1` |
 | acceptance | `kig-p-acceptance-v1`：300 检索 + 100 版本 + 100 entity；25 万 Chunk 目标规模；release gate pass |
 | authority | PWM 可重建、proposal-only；Knowledge/MEM/LIFE/EAP/Tool owner 不变 |
-| implementation / rollback | 最终冻结提交前回填 `docs/reports/kig-v1-freeze.md` |
+| implementation / rollback | `5b6054d5cc57a5d09cbe305045487a527e760071`；冻结证据见 `docs/reports/kig-v1-freeze.md` |
 
 正式开工只允许两种方式：
 
