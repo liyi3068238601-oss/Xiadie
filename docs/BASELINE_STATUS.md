@@ -2,7 +2,7 @@
 
 > 最近复核日期：2026-07-28
 >
-> 当前施工状态：KIG.0～KIG.15 已完成；KIG-R 保持冻结于实现 `a18fd04a3759663f88d6a8041529fea14645c281`、Schema 76，KIG-P 最终实现/回滚点 `96021838418d5c5d9d26b269784447a099a68cc3` 追加 Schema 77～80 并通过独立 Review 与最终验收
+> 当前施工状态：KIG.0～KIG.15 已完成并由 PR #4 merge `b436e9f8876f8926ac90df3562edbeef3f085413` 合入 main；CIE.0 已完成技术施工并等待独立 Review，Schema 仍为 80
 >
 > 当前版本：`v0.1.0` MVP 骨架（知识库系统 K 系列已完成）
 >
@@ -35,7 +35,7 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests -q` | `2560 passed, 1 warning`；当前 Schema 80 |
+| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests -q -p no:cacheprovider` | `2566 passed, 1 warning`；当前 Schema 80 |
 | 前端 | `cd frontend; npm.cmd test -- --run; npm.cmd run build` | 通过：52 项；TypeScript 检查及 Vite 生产构建 190 modules 成功 |
 | Electron / Windows | Electron contract/语法；`scripts\test-frozen-backend.ps1 -Port 18756`；win-unpacked 与 NSIS 临时安装生命周期 smoke | 3 项 contract 及语法通过；冻结后端、IANA 时区、BGE-M3、真实安装、首启、托盘保活、崩溃清理、重启及卸载清理通过；休眠/唤醒由 contract、重启推进和 resume guard 场景验证 |
 
@@ -44,6 +44,8 @@ CDS.12 以 Schema 63 新增三张无正文反馈/校准审计表；CDS.13 未再
 KIG.0 已完成现有 Knowledge/CTX/MEM/EAP/LIFE/Task/ToolRun/Lore 的代码、Schema、API、UI 与测试审计。60 条纯合成基线确认现有 Knowledge 与 Memory 各自召回及知识引用白名单可靠，同时记录统一 SourceRef、跨源 RetrievalCandidate/Evidence、QueryPlan、版本/新鲜度和 PWM 投影尚未实现。ADR-0062～0064 与 `[x]/[~]/[ ]/[→]/[-]` 能力矩阵固定 KIG 只做治理和可重建投影、不复制正文、不转移既有所有权；KIG.0 未新增迁移，Schema 72 留给 KIG.1。
 
 KIG.1～KIG.9 已完成并保持 `kig-retrieval-governance-v1`/Schema 76 冻结边界。KIG.10～15 以 Schema 77～80 追加来源化 PWM、可逆实体解析、owner proposal-only 接口、非破坏维护 worker 及现有知识主页上的关联视图；没有修改 48～76 历史迁移。`kig-p-acceptance-v1` 以纯合成临时库通过 100 单文档、100 多文档、100 跨库、100 版本和 100 entity merge/rollback；1 万/10 万/25 万 Chunk FTS 探针召回均为 100%，无来源 PWM、未确认删除、敏感画像、跨 scope merge 与无 ToolRun performed 均为 0。PWM 保持 Shadow、可重建且不拥有 Knowledge/MEM/LIFE/EAP/Tool 权威写入权。
+
+CIE.0 以 KIG PR #4 merge `b436e9f8876f8926ac90df3562edbeef3f085413` 锁定 predecessor，建立 5/20/100/500 轮共 625 条连续消息及 80 条打断、附件、节奏和第三方贡献合成固定集。当前 fallback 仍为单消息、单生成、纯文本 SSE 与本地文本附件解析；`cie_enabled` 是默认关闭的唯一总门，尚未接入聊天热路径。配置的 `deepseek/deepseek-v4-flash` 三次合成短提示首 token P50/P95 为 `1165.367/3241.132 ms`。全量回归额外修复摘要敏感扫描误扫内部数字 message ID 的既有问题，当前后端 `2566 passed, 1 warning`。CIE.0 无迁移、无用户数据写入，独立 Review 通过前不进入 CIE.1。
 
 已知但不阻断当前开发的警告：
 

@@ -212,9 +212,23 @@ def _sanitize_text(text: str) -> tuple[str, int]:
 
 
 def _assert_no_sensitive(value: object) -> None:
-    serialized = json.dumps(value, ensure_ascii=False)
-    if any(pattern.search(serialized) for pattern in _SECRET_PATTERNS):
-        raise SummaryProtocolError("sensitive_content_detected", "敏感内容不得进入摘要")
+    # Evidence identifiers are opaque metadata.  Scanning the serialized
+    # object made random 16-19 digit message IDs look like payment-card text
+    # and rejected otherwise harmless summaries.  Walk only user-visible
+    # values while keeping every textual summary field protected.
+    if isinstance(value, str):
+        if any(pattern.search(value) for pattern in _SECRET_PATTERNS):
+            raise SummaryProtocolError("sensitive_content_detected", "敏感内容不得进入摘要")
+        return
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if key in {"message_ids", "supersedes_message_ids", "protocol_version"}:
+                continue
+            _assert_no_sensitive(item)
+        return
+    if isinstance(value, (list, tuple)):
+        for item in value:
+            _assert_no_sensitive(item)
 
 
 def _normalize(text: str) -> str:

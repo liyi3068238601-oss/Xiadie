@@ -95,6 +95,22 @@ def test_protocol_requires_grounded_user_decisions_and_keeps_latest_correction()
     assert result["corrections"][0]["supersedes_message_ids"] == [ids[0]]
 
 
+def test_protocol_does_not_treat_opaque_numeric_message_ids_as_sensitive():
+    messages = [{
+        "id": "1234567890123456",
+        "role": "user",
+        "content": "采用单窗口",
+    }]
+    payload = {
+        "protocol_version": protocol.PROTOCOL_VERSION,
+        "topic": {"text": "采用单窗口", "message_ids": [messages[0]["id"]]},
+        "continuity": [{"text": "采用单窗口", "message_ids": [messages[0]["id"]]}],
+        "decisions": [], "corrections": [], "open_threads": [], "entity_refs": [],
+    }
+    result = protocol.parse_and_validate(payload, messages=messages)
+    assert result["topic"]["message_ids"] == ["1234567890123456"]
+
+
 def test_prompt_injection_and_secrets_are_removed_before_model_and_cannot_enter_summary():
     messages = [{
         "id": "u1", "role": "user",

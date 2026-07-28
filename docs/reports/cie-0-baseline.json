@@ -1,0 +1,73 @@
+{
+  "report_version": "cie-construction-baseline-v1",
+  "construction_baseline": {
+    "repository": "liyi3068238601-oss/Xiadie",
+    "predecessor_pr": 4,
+    "base_branch": "main",
+    "base_commit_sha": "b436e9f8876f8926ac90df3562edbeef3f085413",
+    "schema_version": 80,
+    "next_schema_version_provisional": 81,
+    "cie0_uses_migration": false,
+    "plan_version": "CIE v0.2",
+    "recorded_at": "2026-07-28",
+    "test_baseline": {
+      "backend": "2560 passed, 1 warning",
+      "frontend": "52 passed",
+      "vite_modules": 190,
+      "electron_contracts": 3
+    }
+  },
+  "fixture_sha256": "028d97b1106ef9366e094cf2eab8d5724323c5b1c56026d9eb1a2a2a24ec811f",
+  "privacy": {
+    "synthetic_only": true,
+    "contains_user_data": false,
+    "provider_calls": 0
+  },
+  "fixed_set": {
+    "continuous_rounds": [
+      5,
+      20,
+      100,
+      500
+    ],
+    "continuous_messages": 625,
+    "interruption_cases": 20,
+    "text_attachment_cases": 10,
+    "image_attachment_cases": 10,
+    "rhythm_cases": 20,
+    "contribution_cases": 20
+  },
+  "metrics": {
+    "serialized_fallback_send_success_rate": 1.0,
+    "first_token_latency_ms": {
+      "value": 1165.367,
+      "p50": 1165.367,
+      "p95": 3241.132,
+      "samples": 3,
+      "provider_id": "deepseek",
+      "model": "deepseek-v4-flash",
+      "scope": "direct configured provider stream; synthetic prompt; no chat persistence"
+    },
+    "active_generation_cancel_support_rate": 0.0,
+    "duplicate_reply_rate": 0.0,
+    "third_party_body_leakage_rate": 0.0,
+    "text_attachment_support_rate": 1.0,
+    "native_image_support_rate": 0.0,
+    "reply_semantic_rewrite_rate": 0.0
+  },
+  "current_capability": {
+    "turn_ingress_buffer": false,
+    "active_generation_cancel": false,
+    "native_image_transport": false,
+    "client_rhythm_state_machine": false,
+    "context_contribution_v1": false
+  },
+  "fallback_contract": {
+    "turn_mode": "single_message",
+    "generation_mode": "single_generation",
+    "transport": "text_sse",
+    "attachment_mode": "local_text_extraction",
+    "feature_flag": "cie_enabled",
+    "feature_flag_default": false
+  }
+}

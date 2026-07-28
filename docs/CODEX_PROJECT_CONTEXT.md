@@ -1,6 +1,6 @@
 # 遐蝶 Codex 项目上下文
 
-> KIG 施工快照（2026-07-28）：KIG.0～KIG.15 已完成。KIG-R 仍冻结于实现 `a18fd04a3759663f88d6a8041529fea14645c281`、Schema 76、协议 `kig-retrieval-governance-v1`；KIG-P 以最终实现/回滚点 `96021838418d5c5d9d26b269784447a099a68cc3` 和 Schema 77～80 追加来源化 PWM、可逆实体解析、owner proposal、非破坏维护与现有知识 UI，`kig-p-acceptance-v1` 发布门为 pass，独立 Review 的 3 个 P2 已全部采纳并修复。所有模型抽取仍为 Shadow/候选，不继承 KIG.7 的单 Provider 证书。
+> CIE 施工快照（2026-07-28）：KIG PR #4 已以 merge `b436e9f8876f8926ac90df3562edbeef3f085413` 合入 main；CIE.0 从该点锁定 ConstructionBaseline，完成 625 条连续消息与 80 条专项合成固定集、DeepSeek 首 token 实测、默认关闭的唯一 `cie_enabled` 总门与 ADR-0065。Schema 保持 80，聊天热路径未修改，后端 `2566 passed, 1 warning`，等待独立 Review 后才能进入 CIE.1。
 
 > 状态：当前执行约束  
 > 适用对象：Codex、维护者和后续参与开发的协作者  
@@ -382,3 +382,5 @@ node --check preload.js
 EAP Schema 48～60 不回写；真实输出继续受后端最终授权复核、系统恢复保护窗与 at-most-once 状态机约束，Level 5 外部渠道保持硬禁用。三份 v0.3 权威计划与 `docs/SPECIALTY_OWNERSHIP_AND_CONTRACT_MATRIX.md` 已纳入仓库，固定顺序为 `CDS → LIFE → KIG`。
 
 EAP PR #1、CDS PR #2 与 LIFE PR #3 已依次合并冻结；LIFE predecessor 为 `main@f16d80ab0d2457065dc65d7d284d3cbf3584f5ee`、Schema 71。KIG-R 使用 Schema 72～76，冻结实现与 rollback point 为 `a18fd04a3759663f88d6a8041529fea14645c281`。KIG-P 使用 Schema 77～80，完成来源化 PWM、可逆实体解析、owner proposal-only 接口、非破坏性维护和原知识页扩展；既有 Knowledge/MEM/LIFE/CTX/EAP 所有权均未转移。模型认证仍只覆盖 `deepseek-v4-pro` 的 KIG-R 当前指纹，PWM 抽取保持 Shadow；Provider/模型切换必须重新认证。
+
+KIG PR #4 已合并；当前唯一施工入口为 `docs/KFC_COMPANION_INTERACTION_ENHANCEMENT_PLAN.md` 的 CIE.0 Review。`agent/cie-specialty` 基于 `main@b436e9f8876f8926ac90df3562edbeef3f085413`；Schema 81 仅为后续暂定候选，Review 通过前不实现 TurnIngressBuffer。LIFE v2 的 `structured-inner-state-v1` 与 `short-memo-v1` 仅登记于长期路线基线，不属于 CIE 权限或前置。

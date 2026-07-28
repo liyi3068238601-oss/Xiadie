@@ -608,7 +608,15 @@ Artifact
 - 星图是数据的可视化入口，不替代列表、搜索、纠正和删除能力。
 - 归档和合并必须可审计、可撤销，并受模型调用预算限制。
 
-### 14A.3 本版本验收
+### 14A.3 LIFE v2 长期候选基线
+
+以下能力仅登记为未来 LIFE v2 候选，不属于当前 v0.4.2/LIFE v1 的已实现范围，也不作为 CIE 开工或验收前置。后续若立项，必须先完成独立协议、隐私威胁模型、迁移与回滚评审；CIE 只能读取 LIFE 已授权的结构化投影，不能代建或写入这些对象。
+
+- `structured-inner-state-v1` / `InnerStateEvent`：保存 emotion、expectation、open_thread、uncertainty、recovery 等有界枚举状态、强度区间、证据引用、可选用户可见摘要、过期与替代关系。只允许 LIFE 单写；不得保存、展示或要求模型输出完整内心独白或 chain-of-thought。
+- `short-memo-v1` / `ShortMemo`：保存限长、带来源快照与 1 小时～14 天 TTL 的临时备忘候选；建议上限 10 条、幂等 upsert、到期自动清理。它不是长期记忆、Goal、ImportantDate 或任务，模型只能提出候选，且不得自动晋升长期记忆。
+- 两项候选的协议版本、Schema 迁移号、产品入口和实施时间均保持未分配；必须在 CIE 冻结后由 LIFE v2 专项重新审计实际需求，不能把本节登记视为施工授权。
+
+### 14A.4 本版本验收
 
 - 状态跨重启保存、始终在合法范围内，关闭后不再进入提示。
 - 自动记忆均有来源，敏感候选不会静默永久保存。
@@ -1052,3 +1060,4 @@ v2.0 的最终成功标准：普通用户能够把一个真实、复杂、跨资
 | 2026-07-22 | CDS.3 review 通过并完成 CDS.4 RecallPlanner Shadow | CDS.3 strict review 确认 0 P0/P1，两项 P2 均采纳，Presence 固定集扩为 900 轮。新增只读 RecallPlanner 协议和 600 轮纯合成对照；任务/来源需求及必需来源召回 100%，禁止检索违规 0%。现有检索与 ContextPackage 未改，等待 CDS.4 review。 |
 | 2026-07-26 | CDS.0～10 review 后审计与定点返工 | 核实 CDS.4～9 无需推倒重做；新增失败测试发现 CDS.10 Episode/Saga 语义动作矩阵未完全闭合，已同步收紧 validator 与独立 oracle v3。CDS.6 修复 final+done 重复最终回调；后端 2284 项、前端 45 项通过。CDS.10 小样本质量仍为 50%，禁止据此晋级，未进入 CDS.11。 |
 | 2026-07-27 | LIFE.0～13 技术施工完成，等待总体 Review | Schema 64～71、生活事件/时钟/CatchUp/日程/目标/日期/日记/SelfTimeline、LIFE→EAP adapter 与产品页完成；180 天、30 天、100 时区日期、100 来源层级及保守压缩演练通过。后端 2416、前端 50、当前 Windows 构建、NSIS 临时安装、托盘/崩溃/重启/卸载和休眠唤醒保护场景通过；自然度与 0 P0/P1 总 Review 未完成，LIFE 尚未冻结，KIG 不开工。 |
+| 2026-07-28 | 登记 LIFE v2 长期候选基线 | 将 `structured-inner-state-v1` 与 `short-memo-v1` 固定为 LIFE v2 候选，明确非 CIE 前置、CIE 不得越权实现，并保留协议、迁移与排期未分配状态，便于未来专项检索与重新评审。 |

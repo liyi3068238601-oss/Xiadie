@@ -4,7 +4,7 @@
 - 版本：v0.2
 - 日期：2026-07-28
 - 参考对象：`tt-P607/kokoro_flow_chatter@d857f4f`；本地只读 ZIP 格式参考包 `E:\Xiadie\kokoro_flow_chatter-2.1.1\kokoro_flow_chatter-2.1.1.mfp`（KFC 2.1.1）
-- 状态：开工准备完成；等待 KIG Draft PR [#4](https://github.com/liyi3068238601-oss/Xiadie/pull/4) 合并后锁定 predecessor merge SHA，再进入 CIE.0；当前不得开始 CIE.1 或占用迁移号
+- 状态：KIG PR [#4](https://github.com/liyi3068238601-oss/Xiadie/pull/4) 已合并；CIE.0 已完成技术施工并停在独立 Review 门，当前不得开始 CIE.1 或占用迁移号
 - 执行规则：每阶段完成代码、测试、文档、独立 Review 和独立提交后，才能进入下一阶段
 
 ## 1. 目标
@@ -107,13 +107,13 @@ ShortMemo
 
 ### CIE.0：交互基线与固定评测集
 
-- [ ] KIG PR #4 合并后，以 `main` merge SHA 锁定 ConstructionBaseline；合并前不得填写猜测 SHA。
+- [x] KIG PR #4 合并后，以 `main@b436e9f8876f8926ac90df3562edbeef3f085413` 锁定 ConstructionBaseline。
 - [x] 预备基线：KIG-P 最终实现/回滚点 `96021838418d5c5d9d26b269784447a099a68cc3`，最终 Schema 80；CIE 首个可用迁移号暂定 81，CIE.0 不预占迁移。
 - [x] 预备测试基线：后端 `2560 passed, 1 warning`、前端 `52 passed`、Vite 190 modules、Electron lifecycle contract `3 passed`。
 - [x] 冻结 fallback：当前单消息、单生成、纯文本 SSE 路径；文本附件继续按现有本地解析路径工作，不宣称 vision。
-- [ ] 建立连续消息、打断、附件、回复节奏、第三方贡献的合成评测集。
-- [ ] 记录当前发送成功率、首 token 延迟、取消率、重复回复率和正文泄漏率。
-- [ ] 设立单一 `cie_enabled` feature flag，并验证关闭时与冻结 fallback 行为一致。
+- [x] 建立连续 5/20/100/500 轮、打断、附件、回复节奏、第三方贡献的纯合成固定评测集，共 625 条连续消息与 80 条专项用例。
+- [x] 记录当前发送成功率、首 token 延迟、取消率、重复回复率和正文泄漏率；DeepSeek 三次短提示实测 P50 `1165.367 ms`、P95 `3241.132 ms`，其余指标明确区分合成契约和未实现能力。
+- [x] 设立单一 `cie_enabled` feature flag，默认 fail-closed；CIE.0 不接入聊天热路径，验证关闭时与冻结 fallback 行为一致。
 
 ### CIE.1：消息积累窗口
 
@@ -226,4 +226,22 @@ KFC 为 AGPL-3.0。默认允许阅读源码、比较行为、学习状态机和�
 3. 建立 5/20/100/500 轮连续消息、活动生成打断、文本附件/图片授权、节奏重组和恶意 ContextContribution 的纯合成固定集。
 4. 独立 Review 确认 CIE.0 为 0 个未解决 P0/P1 后，才允许 CIE.1 占用 Schema 81（若实现确实需要持久表）。
 
-准备结论：CIE 设计与许可证边界已可开工，但执行门仍是 PR #4 合并；当前不创建 CIE 分支、不占用 Schema 81、不改聊天运行时。
+准备结论：KIG PR #4 已以 merge commit `b436e9f8876f8926ac90df3562edbeef3f085413` 合入 `main`，`agent/cie-specialty` 已从该点创建。CIE.0 已新增纯合成固定集、ConstructionBaseline、默认关闭的单一总开关与 ADR-0065；未占用 Schema 81、未改聊天运行时，等待独立 Review 后才允许进入 CIE.1。
+
+## 10. CIE.0 施工记录（2026-07-28）
+
+- ConstructionBaseline：`docs/reports/cie-0-construction-baseline.md` 与机器可读 `cie-0-baseline.json`。
+- 固定集：`cie-construction-baseline-eval-v1`；连续 5/20/100/500 轮共 625 条，另含打断、文本/图片附件、Markdown/URL/代码节奏和不可信第三方贡献各 20 条。
+- 当前真实缺口：活动生成取消、原生图片、节奏状态机和 `context-contribution-v1` 均为 0；这些结果是后续施工输入，不冒充已实现。
+- Provider 实测：配置的 `deepseek/deepseek-v4-flash` 直连 3 次合成短提示，首 token P50 `1165.367 ms`、P95 `3241.132 ms`；不创建聊天会话、不写消息、不保存回复正文或密钥。
+- 回归：CIE.0 定向 5 项通过；完整后端 `2566 passed, 1 warning`。全量首次运行发现摘要协议会把 16～19 位内部 message ID 误判为卡号，已收紧为只扫描用户可见正文，并新增回归用例。
+- 回滚：仅删除 CIE.0 新增评测、报告、`cie_settings.py`、测试和 ADR；无迁移、无生产热路径改动、无用户数据影响。
+- 阶段门：技术施工完成，停在独立 Review；0 个未解决 P0/P1 前不得开始 CIE.1。
+
+### 10.1 CIE.0 Review 处置
+
+- Review 结论：通过，0 个未解决 P0/P1；允许进入 CIE.1。
+- 采纳 P2-1：离线报告与 Provider 延迟改为同一入口 `run_cie0_baseline.py`；普通重跑保留已提交的实测值，需刷新时使用 `--measure-provider`，不会再因先跑离线步骤把报告改成 `null`。
+- 不采纳 P2-2：不使用 `*_ids` 字段名通配跳过敏感扫描。显式元数据白名单更符合 fail-closed；未来 Schema 增字段必须显式安全复审。
+- 延后 P2-3：3 次样本足以记录 CIE.0 初始基线；CIE.2 取消响应验收提升至至少 10 次，并报告标准差或同等离散度。
+- SQLite 3.40.1 观察不作为本项目阻断：权威 `backend/.venv` 已执行完整数据库回归 `2566 passed, 1 warning`；不为审查器使用的非项目解释器回写已发布迁移 31。
