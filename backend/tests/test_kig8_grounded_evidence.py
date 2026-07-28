@@ -57,7 +57,7 @@ def test_schema_75_persists_only_cross_source_provenance_not_bodies():
     try:
         assert conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
-        ).fetchone()[0] == "76"
+        ).fetchone()[0] == "80"
         link_columns = {row["name"] for row in conn.execute("PRAGMA table_info(kig_evidence_links)")}
         segment_columns = {
             row["name"] for row in conn.execute("PRAGMA table_info(kig_answer_claim_segments)")

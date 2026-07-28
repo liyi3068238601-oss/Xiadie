@@ -1,6 +1,6 @@
 # 遐蝶 Codex 项目上下文
 
-> KIG 施工快照（2026-07-28）：KIG-R 已冻结于实现 `a18fd04a3759663f88d6a8041529fea14645c281`、Schema 76、协议 `kig-retrieval-governance-v1`。KIG.0～KIG.9、13 项零容忍安全门、独立 Review 与模型指纹质量门全部通过；`retrieval-rerank-v1` 因单 Provider 上限继续 Shadow。KIG.10/PWM 未开工，等待用户 Review。
+> KIG 施工快照（2026-07-28）：KIG.0～KIG.15 已完成。KIG-R 仍冻结于实现 `a18fd04a3759663f88d6a8041529fea14645c281`、Schema 76、协议 `kig-retrieval-governance-v1`；KIG-P 以 Schema 77～80 追加来源化 PWM、可逆实体解析、owner proposal、非破坏维护与现有知识 UI，`kig-p-acceptance-v1` 发布门为 pass。所有模型抽取仍为 Shadow/候选，不继承 KIG.7 的单 Provider 证书。
 
 > 状态：当前执行约束  
 > 适用对象：Codex、维护者和后续参与开发的协作者  
@@ -375,10 +375,10 @@ node --check preload.js
 
 ## 14. 当前专项入口
 
-知识库 F.1～F.8、优化 K.0～K.9、上下文 CTX.0～CTX.7、EAP.R0～R6、CDS.0～13、LIFE.0～13 与 KIG-R（KIG.0～KIG.9）均已完成并冻结。当前 KIG.10/PWM 开工入口为：
+知识库 F.1～F.8、优化 K.0～K.9、上下文 CTX.0～CTX.7、EAP.R0～R6、CDS.0～13、LIFE.0～13 与 KIG.0～15 均已完成。KIG 权威冻结入口为：
 
 `docs/XIADIE_KNOWLEDGE_INTELLIGENCE_GOVERNANCE_AND_WORLD_MODEL_PLAN.md`
 
 EAP Schema 48～60 不回写；真实输出继续受后端最终授权复核、系统恢复保护窗与 at-most-once 状态机约束，Level 5 外部渠道保持硬禁用。三份 v0.3 权威计划与 `docs/SPECIALTY_OWNERSHIP_AND_CONTRACT_MATRIX.md` 已纳入仓库，固定顺序为 `CDS → LIFE → KIG`。
 
-EAP PR #1、CDS PR #2 与 LIFE PR #3 已依次合并冻结；LIFE predecessor 为 `main@f16d80ab0d2457065dc65d7d284d3cbf3584f5ee`、Schema 71。KIG.1～KIG.9 使用 Schema 72～76，完成 body-free SourceRef、原子索引切换、分类/切片/规划、统一检索、模型重排、Evidence 支持度与版本新鲜度；既有 Knowledge/MEM/LIFE/CTX/EAP 所有权均未转移。KIG-R 最终后端 `2538 passed, 2 warnings`、前端 `51 passed`、Vite 190 modules、桌面语法与 3 项 lifecycle 通过；10 组安全验收的 13 项违规均为 0。模型认证只覆盖 `deepseek-v4-pro` 当前指纹，6/6 严格覆盖、P@2 增益 0.8333、零不安全/Active，晋级仍限 `shadow_single_provider`。冻结实现与 rollback point 为 `a18fd04a3759663f88d6a8041529fea14645c281`；KIG-P 下一迁移号从 77 开始，用户 Review 前不得启动 KIG.10。
+EAP PR #1、CDS PR #2 与 LIFE PR #3 已依次合并冻结；LIFE predecessor 为 `main@f16d80ab0d2457065dc65d7d284d3cbf3584f5ee`、Schema 71。KIG-R 使用 Schema 72～76，冻结实现与 rollback point 为 `a18fd04a3759663f88d6a8041529fea14645c281`。KIG-P 使用 Schema 77～80，完成来源化 PWM、可逆实体解析、owner proposal-only 接口、非破坏性维护和原知识页扩展；既有 Knowledge/MEM/LIFE/CTX/EAP 所有权均未转移。模型认证仍只覆盖 `deepseek-v4-pro` 的 KIG-R 当前指纹，PWM 抽取保持 Shadow；Provider/模型切换必须重新认证。

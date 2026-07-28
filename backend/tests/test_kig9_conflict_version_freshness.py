@@ -47,7 +47,7 @@ def test_schema_76_version_governance_is_body_free_and_revisioned():
     try:
         assert conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
-        ).fetchone()[0] == "76"
+        ).fetchone()[0] == "80"
         relation_columns = {row["name"] for row in conn.execute(
             "PRAGMA table_info(kig_version_relations)"
         )}

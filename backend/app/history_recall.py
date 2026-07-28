@@ -216,11 +216,12 @@ def rebuild_index() -> dict[str, int]:
             "INSERT INTO conversation_history_sessions_fts(session_id,title,summary_text)"
             " SELECT s.id,s.title,COALESCE((SELECT r.summary_text"
             " FROM conversation_summary_revisions r WHERE r.session_id=s.id"
-            " AND r.status='active' LIMIT 1),'') FROM sessions s"
+            " AND r.status='active' LIMIT 1),'') FROM sessions s WHERE s.temporary=0"
         )
         conn.execute(
             "INSERT INTO conversation_history_messages_fts(message_id,session_id,content)"
-            " SELECT id,session_id,content FROM messages"
+            " SELECT m.id,m.session_id,m.content FROM messages m JOIN sessions s "
+            "ON s.id=m.session_id WHERE s.temporary=0"
         )
         sessions = conn.execute("SELECT COUNT(*) FROM sessions").fetchone()[0]
         messages = conn.execute("SELECT COUNT(*) FROM messages").fetchone()[0]
@@ -241,7 +242,7 @@ def _select_sessions(conn, query: str, terms: Sequence[str], current_session_id:
         "SELECT s.id,s.title,s.archived,s.updated_at,"
         " COALESCE((SELECT r.summary_text FROM conversation_summary_revisions r"
         " WHERE r.session_id=s.id AND r.status='active' LIMIT 1),'') summary_text"
-        f" FROM sessions s WHERE s.id IN ({placeholders}) AND s.id!=?",
+        f" FROM sessions s WHERE s.id IN ({placeholders}) AND s.id!=? AND s.temporary=0",
         (*candidate_ids, current_session_id),
     ).fetchall()
     query_folded = (query or "").casefold()

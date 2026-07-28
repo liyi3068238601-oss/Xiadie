@@ -70,6 +70,11 @@ export function FilesPage() {
   const [embeddingStatus, setEmbeddingStatus] = useState<api.KnowledgeEmbeddingStatus | null>(null);
   const [recallSettings, setRecallSettings] = useState<api.KnowledgeRecallSettings | null>(null);
   const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [worldModelOpen, setWorldModelOpen] = useState(false);
+  const [worldModel, setWorldModel] = useState<api.PWMOverview | null>(null);
+  const [pwmEntities, setPWMEntities] = useState<api.PWMEntity[]>([]);
+  const [pwmTimeline, setPWMTimeline] = useState<api.PWMWorldEvent[]>([]);
+  const [maintenance, setMaintenance] = useState<api.KIGMaintenanceCandidate[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [activeSource, setActiveSource] = useState<"local" | "bookmark">("local");
@@ -84,6 +89,7 @@ export function FilesPage() {
     api.listKnowledgeCollections().then(setCollections).catch(() => toast("知识库集合加载失败"));
     api.getKnowledgeEmbeddingStatus().then(setEmbeddingStatus).catch(() => {});
     api.getKnowledgeRecallSettings().then(setRecallSettings).catch(() => {});
+    api.getPWMOverview().then(setWorldModel).catch(() => {});
   }, []);
   useEffect(() => {
     const timer = window.setTimeout(() => refresh().catch(() => toast("知识文档列表加载失败")), 220);
@@ -242,8 +248,18 @@ export function FilesPage() {
   }
 
   async function deleteDocument(document: api.KnowledgeDocument) {
+    let impact: api.KnowledgeImpactPreview | null = null;
+    try {
+      impact = await api.getKnowledgeImpactPreview(document.id, "delete");
+    } catch (error: any) {
+      toast(error.message || "删除影响预览加载失败");
+      return;
+    }
     const confirmed = window.confirm(
-      `确定删除「${document.original_name}」吗？\n\n将清除遐蝶应用内的原文副本、切片、索引和解析产物，立即停止召回。应用外的原文件或备份不会同步删除。`,
+      `确定删除「${document.original_name}」吗？\n\n`
+      + `将删除：应用内原文副本、${impact.chunk_count} 个切片、${impact.embedding_count} 个向量索引。\n`
+      + `将失效：${impact.derived_dependency_count} 个来源化关联，既有 ${impact.citation_count} 条引用会明确显示来源不可访问。\n`
+      + "不会自动删除：独立聊天、长期记忆、LIFE 事件和应用外原文件。",
     );
     if (!confirmed) return;
     setActionBusy(`delete:${document.id}`);
@@ -362,6 +378,48 @@ export function FilesPage() {
         ? "已启用高置信智能召回" : "已恢复仅明确请求时召回");
     } catch (error: any) {
       toast(error.message || "召回模式修改失败");
+    } finally {
+      setActionBusy(null);
+    }
+  }
+
+  async function toggleWorldModel() {
+    if (worldModelOpen) {
+      setWorldModelOpen(false);
+      return;
+    }
+    try {
+      const [overview, entities, timeline, candidates] = await Promise.all([
+        api.getPWMOverview(), api.listPWMEntities(), api.listPWMTimeline(), api.listKIGMaintenance(),
+      ]);
+      setWorldModel(overview);
+      setPWMEntities(entities.items);
+      setPWMTimeline(timeline.items);
+      setMaintenance(candidates.items);
+      setWorldModelOpen(true);
+    } catch (error: any) {
+      toast(error.message || "关联视图加载失败");
+    }
+  }
+
+  async function changePWMEnabled(enabled: boolean) {
+    try {
+      const settings = await api.updatePWMSettings({ enabled });
+      setWorldModel((current) => current ? { ...current, settings } : current);
+      toast(enabled ? "已开启个人关联视图" : "已关闭个人关联视图，原知识检索不受影响");
+    } catch (error: any) {
+      toast(error.message || "关联视图设置失败");
+    }
+  }
+
+  async function runMaintenanceScan() {
+    setActionBusy("pwm-maintenance");
+    try {
+      const result = await api.scanKIGMaintenance();
+      setMaintenance((await api.listKIGMaintenance()).items);
+      toast(`检查完成：检查 ${result.checked || 0} 项，只生成待确认建议`);
+    } catch (error: any) {
+      toast(error.message || "维护检查失败");
     } finally {
       setActionBusy(null);
     }
@@ -580,6 +638,67 @@ export function FilesPage() {
           </div>
         </div>
       </div>
+
+      {/* KIG.14：复用知识库主页，不另建第二套知识 UI。 */}
+      <section className="knowledge-world-model glass">
+        <div className="knowledge-world-model-head">
+          <div>
+            <div className="knowledge-eyebrow">关联视图</div>
+            <strong>项目、实体与事件</strong>
+            <p>从现有资料生成可回溯的只读关联；模型建议不会单独成为事实。</p>
+          </div>
+          <div className="knowledge-world-model-actions">
+            {worldModel && <label className="settings-toggle" title="关闭后原知识检索仍可继续">
+              <input type="checkbox" checked={worldModel.settings.enabled}
+                onChange={(event) => void changePWMEnabled(event.target.checked)} />
+              <span className="settings-toggle-slider" />
+            </label>}
+            <button className="knowledge-history-button" onClick={() => void toggleWorldModel()}>
+              {worldModelOpen ? "收起关联" : "查看关联"}
+            </button>
+          </div>
+        </div>
+        {worldModel && <div className="knowledge-world-model-counts">
+          <span>{worldModel.counts.pwm_entities || 0} 个实体</span>
+          <span>{worldModel.counts.pwm_relations || 0} 条关联</span>
+          <span>{worldModel.counts.pwm_world_events || 0} 个事件</span>
+          <span>{worldModel.counts.kig_maintenance_candidates || 0} 条维护建议</span>
+          <span>Shadow · 来源化 · 可重建</span>
+        </div>}
+        {worldModelOpen && <div className="knowledge-world-model-grid">
+          <div>
+            <h3>项目与实体</h3>
+            {pwmEntities.length === 0 ? <p className="sub">还没有高价值关联对象</p> : pwmEntities.slice(0, 12).map((entity) => (
+              <div className="knowledge-world-row" key={entity.id}>
+                <span><strong>{entity.canonical_name}</strong><small>{entity.entity_type} · {entity.reality_scope === "lore" ? "角色设定" : "现实资料"}</small></span>
+                <em>{entity.status === "candidate" ? "待确认" : entity.status}</em>
+              </div>
+            ))}
+          </div>
+          <div>
+            <h3>事件时间线</h3>
+            {pwmTimeline.length === 0 ? <p className="sub">还没有来源化事件</p> : pwmTimeline.slice(0, 12).map((event) => (
+              <div className="knowledge-world-row" key={event.id}>
+                <span><strong>{event.title}</strong><small>{event.execution_state === "performed" ? "已执行" : event.execution_state === "planned" ? "计划" : "推断视图"}</small></span>
+                <time>{new Date((event.start_at || event.created_at) * 1000).toLocaleDateString("zh-CN")}</time>
+              </div>
+            ))}
+          </div>
+          <div>
+            <div className="knowledge-world-column-head">
+              <h3>维护建议</h3>
+              <button className="btn ghost" disabled={actionBusy === "pwm-maintenance"}
+                onClick={() => void runMaintenanceScan()}>检查</button>
+            </div>
+            {maintenance.length === 0 ? <p className="sub">没有待处理建议；后台不会自动删除资料</p> : maintenance.slice(0, 12).map((item) => (
+              <div className="knowledge-world-row" key={item.id}>
+                <span><strong>{item.candidate_type}</strong><small>{item.object_kind} · 必须确认</small></span>
+                <em>{item.status}</em>
+              </div>
+            ))}
+          </div>
+        </div>}
+      </section>
 
       {/* 5. 来源标签 */}
       <div className="knowledge-tabs">

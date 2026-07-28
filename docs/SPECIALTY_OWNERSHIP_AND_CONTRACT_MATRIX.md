@@ -1,8 +1,8 @@
 # CDS、LIFE、KIG 专项所有权与共享施工契约
 
-- 版本：v1.1
-- 日期：2026-07-27
-- 状态：CDS、LIFE 与 KIG-R 已冻结；KIG.10/PWM 未开工
+- 版本：v1.2
+- 日期：2026-07-28
+- 状态：CDS、LIFE、KIG-R 与 KIG-P 已完成；KIG v1 等待最终实现 SHA 回填
 - 适用顺序：`CDS → LIFE → KIG`
 - 解释优先级：冻结协议与 ADR > 本矩阵 > 专项计划 > 阶段施工记录
 
@@ -64,6 +64,17 @@ KIG-R 冻结基线：
 | frozen tests | 后端 `2538 passed, 2 warnings`；前端 `51 passed`；Vite 190 modules；Electron 语法与 lifecycle contract 3 项 |
 | recorded_at | 2026-07-28（KIG-R freeze） |
 
+KIG-P 冻结基线：
+
+| 字段 | 当前值/规则 |
+|---|---|
+| schema range | 77～80；不修改 48～76 |
+| final schema | 80 |
+| protocols | `pwm-projection-v1`、`pwm-extraction-shadow-v1`、`pwm-entity-resolution-v1`、`kig-system-proposal-v1`、`kig-maintenance-v1` |
+| acceptance | `kig-p-acceptance-v1`：300 检索 + 100 版本 + 100 entity；25 万 Chunk 目标规模；release gate pass |
+| authority | PWM 可重建、proposal-only；Knowledge/MEM/LIFE/EAP/Tool owner 不变 |
+| implementation / rollback | 最终冻结提交前回填 `docs/reports/kig-v1-freeze.md` |
+
 正式开工只允许两种方式：
 
 1. 前置 PR 已合并，以 `main` 的不可变合并提交作为基线；这是默认方式。
@@ -98,9 +109,9 @@ KIG-R 冻结基线：
 | MEM | `memory-adapter-v1` | memory id/revision/hash | MEM 既有算法 | 不读写长期记忆 | 继承记忆远传策略 | MEM |
 | Knowledge | `knowledge-adapter-v1` | document/chunk revision/hash/locator | 现有 FTS/Dense 降级 | 文件逐次授权，不进入长期派生层 | transmission policy/grant | Knowledge/KIG 补差阶段 |
 | LIFE | `life-adapter-v1` | event/state/schedule revision/hash | LIFE 确定性 reducer | 不生成长期 LifeEvent、Goal、Date、Diary | 日记/生活数据单独授权 | LIFE |
-| KIG | `source-ref-v1` / `kig-retrieval-governance-v1` | adapter registry 返回的 revision/hash | 原系统继续工作；重排确定性 fallback | 不抽取 Claim/Entity/Relation/PWM | 逐来源隐私与授权 | KIG；KIG-P 从 77 开始 |
+| KIG | `source-ref-v1` / `kig-retrieval-governance-v1` / `pwm-projection-v1` | adapter registry 返回的 revision/hash | 原系统继续工作；PWM/模型提案保持 Shadow | 临时聊天不抽取 PWM，排除 Memory/跨会话 History | 逐来源隐私与授权 | KIG；KIG-P 使用 77～80 |
 
-迁移号严格串行：CDS 最终冻结 Schema 为 63；LIFE 最终冻结 Schema 为 71；KIG-R 已使用 Schema 72～76 并冻结于实现 `a18fd04a3759663f88d6a8041529fea14645c281`。KIG-P 首个确有必要的迁移号为 77；没有实际字段缺口不得为了“占号”创建空迁移。
+迁移号严格串行：CDS 最终冻结 Schema 为 63；LIFE 最终冻结 Schema 为 71；KIG-R 使用 Schema 72～76 并冻结于实现 `a18fd04a3759663f88d6a8041529fea14645c281`；KIG-P 使用 Schema 77～80。没有实际字段缺口不得为了“占号”创建空迁移。
 
 ## 4. DecisionKindRegistry 规范
 

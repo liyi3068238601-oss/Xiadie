@@ -19,7 +19,8 @@ SOURCE_KINDS = frozenset({
 })
 DERIVED_KINDS = frozenset({
     "retrieval_bundle", "evidence_link", "information_item", "pwm_claim",
-    "pwm_entity", "pwm_relation", "pwm_world_event", "version_relation",
+    "pwm_entity", "pwm_entity_alias", "pwm_entity_source_link", "pwm_relation", "pwm_world_event",
+    "pwm_state_assertion", "version_relation", "system_proposal",
     "maintenance_candidate",
 })
 DEPENDENCY_STATUSES = frozenset({

@@ -34,11 +34,13 @@ def prepare_for_chat(
     *, query: str, source_message_id: str, session_id: str,
     provider: dict | None, recall_mode: str,
     authorized_knowledge_chunk_ids: frozenset[str] = frozenset(),
+    temporary_chat: bool = False,
 ) -> ChatRetrievalResult | None:
     """Use deterministic KIG decisions in chat; semantic model proposals stay Shadow."""
-    if recall_mode == "off" or not str(query or "").strip() or not source_message_id:
+    if db.get_setting("kig_enabled", "1") != "1" or recall_mode == "off" \
+            or not str(query or "").strip() or not source_message_id:
         return None
-    enabled = _enabled_sources(provider)
+    enabled = _enabled_sources(provider, temporary_chat=temporary_chat)
     payload = kig_query_planner.QueryPlanInput(
         candidate_ids=kig_query_planner.candidate_ids(), source_message_id=source_message_id,
         text=query, enabled_sources=enabled,
@@ -174,8 +176,17 @@ def filter_knowledge_prepared(
     return knowledge_context.filter_prepared(prepared, set(result.allowed_knowledge_chunk_ids))
 
 
-def _enabled_sources(provider: dict | None) -> tuple[str, ...]:
+def _enabled_sources(provider: dict | None, *, temporary_chat: bool = False) -> tuple[str, ...]:
     sources = list(kig_query_planner.SOURCES)
+    if temporary_chat:
+        sources = [source for source in sources if source not in {"memory", "history"}]
+    elif db.get_setting("memory_enabled", "1") != "1" and "memory" in sources:
+        sources.remove("memory")
+    if db.get_setting("conversation_history_recall_mode", "explicit_only") == "off" \
+            and "history" in sources:
+        sources.remove("history")
+    if db.get_setting("life_enabled", "1") != "1" and "life" in sources:
+        sources.remove("life")
     if provider and provider.get("execution_location") == "remote" \
             and db.get_setting("kig_remote_task_evidence", "0") != "1":
         sources.remove("task")

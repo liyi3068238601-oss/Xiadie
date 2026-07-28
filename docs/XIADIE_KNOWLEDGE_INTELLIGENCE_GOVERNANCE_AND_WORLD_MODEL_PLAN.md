@@ -1,8 +1,8 @@
 # 遐蝶知识智能、信息治理与个人世界模型专项施工计划
 
-- 版本：v0.3（施工基线、双里程碑、来源依赖与图谱治理补强）
-- 日期：2026-07-22
-- 状态：KIG-R 已冻结于实现 `a18fd04a3759663f88d6a8041529fea14645c281`、Schema 76；KIG.10/PWM 未开工，等待用户 Review
+- 版本：v1.0（KIG-R + KIG-P 完整施工与冻结基线）
+- 日期：2026-07-28
+- 状态：KIG.0～KIG.15 已完成；KIG-R 保持冻结于 Schema 76，KIG-P 已在 Schema 77～80 完成并通过 `kig-p-acceptance-v1`
 - 专项代号：`KIG`（Knowledge Intelligence & Governance）
 - 子系统代号：`PWM`（Personal World Model）
 - 适用范围：用户知识库、信息分类与治理、多源检索、LLM 查询规划与重排、证据与引用、冲突与版本、个人世界模型，以及与对话历史、长期记忆、生活连续性、任务和 ContextAssembler 的接口
@@ -1879,15 +1879,17 @@ KIG-R 正式冻结（2026-07-28）：不可变实现与验收 rollback point 为
 
 目标：建立个人世界模型的来源化数据底座。
 
-- [ ] 所有新表使用 `pwm_` 前缀：`pwm_claims/pwm_entities/pwm_entity_aliases/pwm_relations/pwm_world_events/pwm_state_assertions/pwm_entity_source_links`；只保存派生投影，不复制权威事实行。
-- [ ] 使用白名单实体类型和 Predicate。
-- [ ] 先在 shadow 模式抽取。
-- [ ] 所有对象必须有 SourceRef。
-- [ ] 模型推断默认不可独立支持事实回答。
-- [ ] 敏感属性自动抽取禁用。
-- [ ] 设置硬预算：每来源最大派生 Claim、每日最大新实体、低置信候选 TTL、单实体最大 alias、单次消歧候选和维护批次上限、孤立节点归档规则。
+- [x] 所有新表使用 `pwm_` 前缀：`pwm_claims/pwm_entities/pwm_entity_aliases/pwm_relations/pwm_world_events/pwm_state_assertions/pwm_entity_source_links`；只保存派生投影，不复制权威事实行。
+- [x] 使用白名单实体类型和 Predicate。
+- [x] 先在 shadow 模式抽取。
+- [x] 所有对象必须有 SourceRef。
+- [x] 模型推断默认不可独立支持事实回答。
+- [x] 敏感属性自动抽取禁用。
+- [x] 设置硬预算：每来源最大派生 Claim、每日最大新实体、低置信候选 TTL、单实体最大 alias、单次消歧候选和维护批次上限、孤立节点归档规则。
 
 验收：无来源对象写入率为 0；普通对话不产生大量无意义节点。
+
+KIG.10 施工记录（2026-07-28）：Schema 77 建立七张 `pwm_` 来源化派生表及 body-free 预算计数；所有写入口先解析实时 SourceRef，再绑定 `derived_dependencies`，失败时撤销派生行。实体类型、Predicate、event layer、执行语义全部白名单；`pwm-extraction-shadow-v1` 只保存 candidate/model_inferred，未进入聊天事实支持链。敏感画像自动抽取 fail-closed；默认每来源 64 Claim、每日 128 实体、30 天低置信 TTL、每实体 16 alias、8 个消歧候选、100 项维护批次和 90 天孤立归档。详见 `docs/reports/kig-10-pwm-foundation.md`。
 
 建议 PR：`feat(pwm): add sourced claims entities relations and events`
 
@@ -1895,15 +1897,17 @@ KIG-R 正式冻结（2026-07-28）：不可变实现与验收 rollback point 为
 
 目标：识别别名，同时避免错误合并。
 
-- [ ] 规则 exact alias 和 scope 初筛。
-- [ ] LLM 同一性建议。
-- [ ] 高影响合并要求用户确认。
-- [ ] 支持拆分、关系迁移和影响预览。
-- [ ] 现实/Lore scope 分离。
-- [ ] 建立同名人物、项目简称和跨语言别名测试。
-- [ ] `memory_entities` 与 `pwm_entities` 不自动合并或双向覆盖；alias 同步只生成可审计 proposal，由目标所有者确认应用。
+- [x] 规则 exact alias 和 scope 初筛。
+- [x] LLM 同一性建议。
+- [x] 高影响合并要求用户确认。
+- [x] 支持拆分、关系迁移和影响预览。
+- [x] 现实/Lore scope 分离。
+- [x] 建立同名人物、项目简称和跨语言别名测试。
+- [x] `memory_entities` 与 `pwm_entities` 不自动合并或双向覆盖；alias 同步只生成可审计 proposal，由目标所有者确认应用。
 
 验收：错误自动合并率达到严格门槛；所有合并可回滚。
+
+KIG.11 施工记录（2026-07-28）：Schema 78 建立 resolution proposal 与不可变 operation journal。exact canonical/alias 仅允许同 type、同 reality/lore scope 的低影响实体自动合并，阈值 0.98；人物、用户、组织、所有 LLM 建议和 memory alias 同步均要求用户确认。merge 会迁移 aliases/claims/relations/source links/events/state assertions；operation journal 只保存 body-free 恢复元数据，split/rollback 从中精确恢复；100 个 exact merge + rollback 合成场景精确率与恢复率均为 100%。详见 `docs/reports/kig-11-entity-resolution.md`。
 
 建议 PR：`feat(pwm): add reversible entity resolution`
 
@@ -1911,16 +1915,18 @@ KIG-R 正式冻结（2026-07-28）：不可变实现与验收 rollback point 为
 
 目标：复用现有系统，不重写其内部状态机。
 
-- [ ] MemoryClassificationProposal 接口。
-- [ ] MemoryConflictProposal 接口。
-- [ ] EpisodeBoundaryProposal 和 SagaTransitionProposal 接口。
-- [ ] 仅在 LIFE v1 冻结后接入 SelfTimeline 只读召回 adapter；KIG 不写 LifeEvent、日记、日期或生活状态。
-- [ ] ToolRun 权威来源适配。
-- [ ] ContextAssembler 接收统一 RetrievalBundle。
-- [ ] 各系统的关闭、临时聊天和隐私设置生效。
-- [ ] EAP 只读来源适配不得改变冻结的候选、关系、表达、投递与反馈协议。
+- [x] MemoryClassificationProposal 接口。
+- [x] MemoryConflictProposal 接口。
+- [x] EpisodeBoundaryProposal 和 SagaTransitionProposal 接口。
+- [x] 仅在 LIFE v1 冻结后接入 SelfTimeline 只读召回 adapter；KIG 不写 LifeEvent、日记、日期或生活状态。
+- [x] ToolRun 权威来源适配。
+- [x] ContextAssembler 接收统一 RetrievalBundle。
+- [x] 各系统的关闭、临时聊天和隐私设置生效。
+- [x] EAP 只读来源适配不得改变冻结的候选、关系、表达、投递与反馈协议。
 
 验收：KIG 关闭后原有 Memory/CTX/LIFE 行为可继续；无第二套长期记忆写入器。
+
+KIG.12 施工记录（2026-07-28）：Schema 79 仅保存 KIG→owner 的 proposal envelope，不执行 MEM/Episode/Saga 写入；目标 owner 只能记录接受/拒绝，正式应用继续由原系统负责。SelfTimeline、ToolRun 与 EAP 均为只读 adapter；EAP 快照 body-free 且不触碰六条冻结状态机。`temporary_chat` 从 Memory/跨会话 History 排除，KIG/Memory/History/LIFE/Knowledge 开关在候选进入前生效；KIG 总开关关闭时原 Knowledge/MEM/CTX/LIFE 路径继续。CTX 仍是 RetrievalBundle 的唯一最终装配者。详见 `docs/reports/kig-12-owner-integrations.md`。
 
 建议 PR：`feat(kig): integrate memory life task and context governance`
 
@@ -1928,14 +1934,16 @@ KIG-R 正式冻结（2026-07-28）：不可变实现与验收 rollback point 为
 
 目标：长期运行后仍可发现重复、失效、冲突和重建需求。
 
-- [ ] MaintenanceCandidate 表和 worker。
-- [ ] 确定性重复检查。
-- [ ] LLM 语义重复和旧版本建议。
-- [ ] 孤立 Chunk、失效来源和索引异常检测。
-- [ ] 只生成候选，不自动删除。
-- [ ] 用户维护反馈反哺检索偏好。
+- [x] MaintenanceCandidate 表和 worker。
+- [x] 确定性重复检查。
+- [x] LLM 语义重复和旧版本建议。
+- [x] 孤立 Chunk、失效来源和索引异常检测。
+- [x] 只生成候选，不自动删除。
+- [x] 用户维护反馈反哺检索偏好。
 
 验收：后台维护不阻塞聊天；未确认删除率为 0。
+
+KIG.13 施工记录（2026-07-28）：Schema 80 建立 `kig_maintenance_candidates` 与检索反馈表；小时/日/周调度在独立 asyncio worker 中运行，异常不进入聊天路径。hash 重复、metadata、rebuild、stale source、orphan chunk 与 derived dependency 使用确定性检查；语义重复/旧版本只接受 `llm_proposal`。所有候选固定 `requires_confirmation=1`，确认只改变候选状态，不执行 owner 删除；最终验收未确认删除为 0。详见 `docs/reports/kig-13-maintenance.md`。
 
 建议 PR：`feat(kig): add non-destructive knowledge maintenance`
 
@@ -1943,15 +1951,17 @@ KIG-R 正式冻结（2026-07-28）：不可变实现与验收 rollback point 为
 
 目标：让用户管理来源、版本、冲突和关联，而不是管理内部算法。
 
-- [ ] 扩展现有知识库主页、集合、导入、搜索和详情体验；不得并行重建第二套知识 UI。
-- [ ] 文档详情、索引状态和版本关系。
-- [ ] 来源展开和原文入口。
-- [ ] 项目/实体页和事件时间线。
-- [ ] 删除影响预览。
-- [ ] 数据传输与模型设置。
-- [ ] 开发者检索诊断。
+- [x] 扩展现有知识库主页、集合、导入、搜索和详情体验；不得并行重建第二套知识 UI。
+- [x] 文档详情、索引状态和版本关系。
+- [x] 来源展开和原文入口。
+- [x] 项目/实体页和事件时间线。
+- [x] 删除影响预览。
+- [x] 数据传输与模型设置。
+- [x] 开发者检索诊断。
 
 验收：普通用户不需要理解 BM25、向量和图谱即可完成导入、问答、纠正、归档和删除。
+
+KIG.14 施工记录（2026-07-28）：没有创建第二导航页；在既有“文件与知识”主页内加入自然语言“项目、实体与事件”折叠区、Shadow/来源化状态、时间线、维护建议与 PWM 开关。既有文档/索引/来源/传输设置继续复用；删除前先读取真实影响预览，明确切片/向量/派生关联失效范围与不会删除的独立聊天、记忆、LIFE 和应用外原文件。新增 body-free developer diagnostics，不返回 query/source 正文。详见 `docs/reports/kig-14-world-model-ui.md`。
 
 建议 PR：`feat(ui): add knowledge governance and world model views`
 
@@ -1959,18 +1969,18 @@ KIG-R 正式冻结（2026-07-28）：不可变实现与验收 rollback point 为
 
 目标：完成 KIG-P（Personal World Model）并在已冻结 KIG-R 之上冻结 KIG v1。
 
-- [ ] 后端全量测试通过。
-- [ ] 前端测试、TypeScript、Vite 和 Electron 检查通过。
-- [ ] 1 万、10 万和目标规模 Chunk 压力测试。
-- [ ] 100 个单文档、100 个多文档、100 个跨库问题评测。
-- [ ] 100 个版本冲突与用户纠正场景。
-- [ ] 100 个实体消歧和合并回滚场景。
-- [ ] Provider 切换、离线、远程受限和预算不足测试。
-- [ ] 引用准确率、召回率、重排增益和延迟报告。
-- [ ] 更新所有权威文档和迁移说明。
-- [ ] 记录 KIG 最终 Schema、协议与 adapter 兼容矩阵，独立 Review 确认 0 个未解决 P0/P1 后冻结 KIG v1。
-- [ ] 0 个未解决 P0/P1。
-- [ ] 压力测试验证每来源/每日/alias/消歧/维护批次硬预算，单本大型手册不得无界生成数万 PWM 节点。
+- [x] 后端全量测试通过。
+- [x] 前端测试、TypeScript、Vite 和 Electron 检查通过。
+- [x] 1 万、10 万和目标规模 Chunk 压力测试。
+- [x] 100 个单文档、100 个多文档、100 个跨库问题评测。
+- [x] 100 个版本冲突与用户纠正场景。
+- [x] 100 个实体消歧和合并回滚场景。
+- [x] Provider 切换、离线、远程受限和预算不足测试。
+- [x] 引用准确率、召回率、重排增益和延迟报告。
+- [x] 更新所有权威文档和迁移说明。
+- [x] 记录 KIG 最终 Schema、协议与 adapter 兼容矩阵，独立 Review 确认 0 个未解决 P0/P1 后冻结 KIG v1。
+- [x] 0 个未解决 P0/P1。
+- [x] 压力测试验证每来源/每日/alias/消歧/维护批次硬预算，单本大型手册不得无界生成数万 PWM 节点。
 
 冻结标准：
 
@@ -1988,6 +1998,8 @@ LLM 重排相对旧排序人工增益              ≥ 15%
 复杂回答证据适当性                    ≥ 90%
 实体自动合并精确率                    ≥ 98%
 ```
+
+KIG.15 施工记录（2026-07-28）：`kig-p-acceptance-v1` 使用临时数据库和纯合成数据执行 100 单文档、100 多文档、100 跨库、100 版本与 100 exact entity merge/rollback；召回、引用、版本、实体精确率和恢复率均为 100%。SQLite FTS 阶梯覆盖 1 万、10 万和首版目标 25 万 Chunk，5 个探针召回均为 100%，查询固定返回不超过 5 条。每来源 Claim 64、alias 16、消歧 8、维护批次 100 的首个超额写入全部被拒绝；每日实体/TTL/孤立归档由同一 policy 和 worker 验证。最终 Schema 80；PWM 协议 `pwm-projection-v1`，跨 owner proposal `kig-system-proposal-v1`，维护 `kig-maintenance-v1`；KIG-R 继续为 `kig-retrieval-governance-v1`/Schema 76 rollback boundary。详见 `docs/reports/kig-p-acceptance.md` 与 `docs/reports/kig-v1-freeze.md`。
 
 建议 PR：`feat(kig): complete and freeze knowledge intelligence v1`
 

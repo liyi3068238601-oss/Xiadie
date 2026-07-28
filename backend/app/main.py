@@ -25,7 +25,7 @@ from . import (
     episode_summary_service, episodes, knowledge, knowledge_cleanup, knowledge_context,
     knowledge_embeddings, knowledge_grants,
     knowledge_management, knowledge_parser, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search,
-    knowledge_worker, kig_evidence, kig_governance, kig_pipeline, kig_sources, life_catchup, life_catchup_service, life_events, life_runtime, life_schedule, llm, lore, memory, memory_conflicts, memory_shadow_proposals,
+    knowledge_worker, kig_evidence, kig_governance, kig_maintenance, kig_pipeline, kig_sources, life_catchup, life_catchup_service, life_events, life_runtime, life_schedule, llm, lore, memory, memory_conflicts, memory_shadow_proposals,
     personal_goals,
     saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, secret_store, self_timeline, slow_lifecycle,
@@ -40,6 +40,7 @@ from . import information_classifier_shadow  # noqa: F401 - registers KIG.3 Shad
 from . import knowledge_boundary_shadow  # noqa: F401 - registers KIG.4 Shadow contract
 from . import kig_query_planner  # noqa: F401 - registers KIG.5 Shadow contract
 from . import kig_reranker  # noqa: F401 - registers KIG.7 Shadow contract
+from . import pwm_extractor_shadow  # noqa: F401 - KIG.10 bounded Shadow extraction contract
 from . import memory_observer_service
 from .affect import observer_service as affect_observer_service
 from .proactive import presence as proactive_presence
@@ -49,6 +50,7 @@ from .proactive import orchestrator as proactive_orchestrator
 from .proactive import delivery as proactive_delivery
 from .proactive import feedback as proactive_feedback
 from .security import ALLOWED_ORIGINS, TOKEN_HEADER, local_api_guard
+from .pwm_api import router as pwm_router
 
 logger = logging.getLogger(__name__)
 
@@ -93,12 +95,14 @@ async def lifespan(app: FastAPI):
     await saga_consolidator.start_worker()
     await archivist_worker.start_worker()
     await knowledge_worker.start_worker()
+    await kig_maintenance.start_worker()
     knowledge_recall_service.start_worker()
     try:
         yield
     finally:
         await life_catchup_service.stop()
         knowledge_recall_service.stop_worker()
+        await kig_maintenance.stop_worker()
         await knowledge_worker.stop_worker()
         await archivist_worker.stop_worker()
         await saga_consolidator.stop_worker()
@@ -111,6 +115,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="遐蝶 Agent Backend", version="0.1.0", lifespan=lifespan)
+app.include_router(pwm_router)
 
 # init 也在模块导入时执行一次，保证裸 TestClient（不走 lifespan）也有表可用。
 db.init_db()
@@ -143,6 +148,7 @@ def health() -> dict:
 # ---------------------------------------------------------------- 会话
 class SessionIn(BaseModel):
     title: Optional[str] = None
+    temporary: bool = False
 
 
 @app.get("/api/sessions")
@@ -165,8 +171,8 @@ def create_session(body: SessionIn) -> dict:
         sid = db.new_id()
         t = db.now()
         conn.execute(
-            "INSERT INTO sessions(id, title, created_at, updated_at) VALUES(?,?,?,?)",
-            (sid, (body.title or "新对话").strip() or "新对话", t, t),
+            "INSERT INTO sessions(id,title,temporary,created_at,updated_at) VALUES(?,?,?,?,?)",
+            (sid, (body.title or "新对话").strip() or "新对话", int(body.temporary), t, t),
         )
         conn.commit()
         return dict(conn.execute("SELECT * FROM sessions WHERE id = ?", (sid,)).fetchone())
@@ -495,6 +501,7 @@ class ChatIn(BaseModel):
     knowledge_grant_token: Optional[str] = Field(default=None, max_length=256)
     knowledge_skip_restricted: bool = False
     attachment_ids: list[str] = Field(default_factory=list)
+    temporary_chat: bool = False
 
 
 def _current_model() -> tuple[Optional[dict], str]:
@@ -539,6 +546,14 @@ async def chat(body: ChatIn) -> StreamingResponse:
         sess = conn.execute("SELECT * FROM sessions WHERE id = ?", (body.session_id,)).fetchone()
         if not sess:
             raise HTTPException(404, "会话不存在")
+        temporary_chat = bool(sess["temporary"]) or body.temporary_chat
+        if temporary_chat and not sess["temporary"]:
+            conn.execute("UPDATE sessions SET temporary=1,updated_at=? WHERE id=?",
+                         (db.now(), body.session_id))
+            # Companion-state reads use a separate SQLite connection.  Commit the
+            # one-way privacy transition before those reads to avoid retaining a
+            # write lock for the rest of chat preparation.
+            conn.commit()
 
         # 先分配/定位消息 ID，但在远传授权校验完成前不写入新消息。
         if not body.regenerate:
@@ -561,7 +576,9 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 uid = last_user["id"]
 
         # 构造上下文：人设 + 记忆摘要 + 历史
-        digest, recalled_memories = memory.build_digest(body.content)
+        digest, recalled_memories = (
+            ("", []) if temporary_chat else memory.build_digest(body.content)
+        )
         current_state = companion_state.get_state(persist_advance=False)
         next_state = (
             current_state
@@ -610,6 +627,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
                         for item in (knowledge_retrieval or {}).get("results", ())
                         if item.get("chunk_id")
                     ),
+                    temporary_chat=temporary_chat,
                 )
                 knowledge_retrieval = kig_pipeline.filter_knowledge_prepared(
                     knowledge_retrieval, kig_chat_result,
@@ -694,10 +712,14 @@ async def chat(body: ChatIn) -> StreamingResponse:
             )
         active_summary = (
             conversation_summaries.active_revision_internal(body.session_id)
-            if context_controls.summary_injection_enabled() else None
+            if not temporary_chat and context_controls.summary_injection_enabled()
+            else None
         )
-        history_prepared = history_recall.prepare_locked(
-            conn, body.content, current_session_id=body.session_id,
+        history_prepared = (
+            {"turns": [], "retrieval_id": None}
+            if temporary_chat else history_recall.prepare_locked(
+                conn, body.content, current_session_id=body.session_id,
+            )
         )
         try:
             context_package = context_assembler.assemble(
@@ -729,7 +751,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
         except Exception:  # derived governance persistence is non-blocking
             logger.warning("kig_relation_persist_failed session_id=%s", body.session_id, exc_info=True)
 
-    if not body.regenerate and uid and recall_mode == "explicit" and content_has_text:
+    if not body.regenerate and not temporary_chat and uid and recall_mode == "explicit" and content_has_text:
         # 只在后台记录影子判断；绝不修改本轮 messages 或 knowledge_block。
         # 纯附件无文字消息不触发知识召回，无需入队影子判断。
         knowledge_recall.enqueue(
@@ -740,7 +762,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
     # EAP v0.2 Conversation Presence v2：用户消息入库后更新 presence 状态。
     # 按 spec："新消息到达时自动使过期离开状态结束"；程序规则识别高精度表达。
     # presence 更新失败不应阻塞聊天（try/except 包裹）。
-    if not body.regenerate and uid and content_has_text:
+    if not body.regenerate and not temporary_chat and uid and content_has_text:
         try:
             proactive_orchestrator.handle_user_message(body.session_id)
         except Exception:  # noqa: BLE001 - proactive recovery must not block chat
@@ -926,7 +948,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
         saved_companion_state = None
         affect_observation = None
         memory_observation = None
-        if not body.regenerate:
+        if not body.regenerate and not temporary_chat:
             saved_companion_state = companion_state.commit_interaction(
                 body.content,
                 source_session_id=body.session_id,
@@ -945,7 +967,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
                     "status": "unlogged_failure",
                     "error_code": "observer_enqueue_failed",
                 }
-        if uid:
+        if uid and not temporary_chat:
             # Regeneration creates a new source revision: the worker revokes the old
             # suggestion and evaluates the replacement without incrementing interaction_count.
             affect_observation = companion_cognition_service.enqueue_turn(
@@ -966,16 +988,18 @@ async def chat(body: ChatIn) -> StreamingResponse:
                     "proactive_source_enqueue_failed session_id=%s message_id=%s",
                     body.session_id, aid, exc_info=True,
                 )
-        try:
-            conversation_summary_service.enqueue_after_chat(
-                session_id=body.session_id, chat_provider=provider, chat_model=model,
-            )
-        except Exception:  # noqa: BLE001 - 摘要入队不能破坏已完成聊天
-            pass
+        if not temporary_chat:
+            try:
+                conversation_summary_service.enqueue_after_chat(
+                    session_id=body.session_id, chat_provider=provider, chat_model=model,
+                )
+            except Exception:  # noqa: BLE001 - 摘要入队不能破坏已完成聊天
+                pass
         # 旧关键词候选只在观察模型不可用时兜底；真实模型路径不再逐条等待确认。
         candidate = None
         if (
             not body.regenerate
+            and not temporary_chat
             and db.get_setting("memory_enabled", db.DEFAULT_MEMORY_ENABLED) == "1"
             and (memory_observation or {}).get("error_code")
             in ("observer_model_unavailable", "observer_enqueue_failed")
