@@ -1,10 +1,10 @@
 # 遐蝶 KFC 能力归属与陪伴交互增强专项计划
 
 - 计划代号：CIE（Companion Interaction Enhancement）
-- 版本：v0.1
-- 日期：2026-07-22
-- 参考对象：`tt-P607/kokoro_flow_chatter@d857f4f`；本地只读参考包 `E:\Xiadie\kokoro_flow_chatter-2.1.1\kokoro_flow_chatter-2.1.1.mfp`（KFC 2.1.1）
-- 状态：需求与所有权冻结；除 LIFE 归属项外，必须在 `CDS → LIFE → KIG` 完成后施工
+- 版本：v0.2
+- 日期：2026-07-28
+- 参考对象：`tt-P607/kokoro_flow_chatter@d857f4f`；本地只读 ZIP 格式参考包 `E:\Xiadie\kokoro_flow_chatter-2.1.1\kokoro_flow_chatter-2.1.1.mfp`（KFC 2.1.1）
+- 状态：开工准备完成；等待 KIG Draft PR [#4](https://github.com/liyi3068238601-oss/Xiadie/pull/4) 合并后锁定 predecessor merge SHA，再进入 CIE.0；当前不得开始 CIE.1 或占用迁移号
 - 执行规则：每阶段完成代码、测试、文档、独立 Review 和独立提交后，才能进入下一阶段
 
 ## 1. 目标
@@ -25,34 +25,34 @@ CIE 关注“用户如何连续地与遐蝶交互”，不重建已经冻结的 
 
 | KFC 核心能力 | 当前覆盖 | 唯一所有者 | 决策 |
 |---|---:|---|---|
-| 心理活动流 | 60% | LIFE；EAP/CDS 只提供结构化来源 | LIFE 增加结构化 InnerStateEvent；禁止保存完整内心独白或 chain-of-thought |
+| 心理活动流 | 60% | LIFE/EAP 现有状态；专用持久对象归未来 LIFE v2 | CIE 只读现有结构化来源；不新增 InnerStateEvent，不保存完整内心独白或 chain-of-thought |
 | 近期记忆压缩 | 90% | CTX | 保持 `conversation-summary-v1`；不以第一人称虚构事实 |
-| 私人备忘录 | 25% | LIFE | LIFE 增加有界 ShortMemo，TTL 1 小时～14 天、每会话/角色上限 10、可查看/删除 |
+| 私人备忘录 | 0% | LIFE v2 候选 | LIFE v1 未实现 ShortMemo；不作为 CIE 前置条件，也不得由 CIE 越权补建 |
 | 等待与超时 | 80% | EAP | 复用 Presence/open thread/due/expiry；只在发现真实缺口时提 `proactive-decision-v3` |
 | 主动发起 | 95% | EAP | 不重建；继续由最终硬门、投递和反馈状态机裁决 |
 | 消息积累窗口 | 0% | CIE | CIE 新建 TurnIngressBuffer，不改长期记忆或 EAP 候选 |
-| 生成打断 | 0% | CIE；CDS 提供取消契约 | CIE 实现前后端协同取消、合并和旧回复保留 |
+| 生成打断 | 10% | CIE；CDS 提供取消契约 | 现有 governor 只抢占未开始的低优先级认知任务；CIE 实现活动聊天请求的前后端协同取消、合并和旧回复保留 |
 | 原生图片多模态 | 10% | CIE；KIG 管跨源治理 | 独立传输授权、能力探测、大小/数量/生命周期门禁 |
 | 回复节奏 | 35% | CIE；表达协议仍归 EAP | 首版只做客户端表现；语义拆分需新 `expression-plan-v2` 和 ADR |
 | 第三方上下文注入 | 45% | CIE 接口；CTX/KIG 最终裁决 | 只接受结构化 ContextContribution，不接受自由 Prompt 拼接 |
 
-当前等价覆盖约 44%。已接近可用的摘要、等待和主动发起不重复施工。
+当前等价覆盖约 42%。已接近可用的摘要、等待和主动发起不重复施工；文本附件不等于原生图片多模态，低优先级认知任务抢占也不等于活动 LLM 生成取消。
 
 ## 3. 施工顺序
 
 ```text
-当前 CDS 完成
+CDS v1 / Schema 63 已冻结
   ↓
-LIFE 开工前纳入 InnerStateEvent + ShortMemo
+LIFE v1 / Schema 71 已冻结
   ↓
-LIFE 完成
+KIG v1 / Schema 80 已完成，Draft PR #4 待合并
   ↓
-KIG 完成跨源治理
+锁定 PR #4 merge SHA 与 main 测试基线
   ↓
 CIE.0～CIE.6 独立施工
 ```
 
-CDS 阶段只提供取消、优先级、模型/来源验证接口；不得提前实现消息缓冲、图片传输或回复节奏。LIFE 只实现归属自己的结构化心理状态和短期备忘录，不实现聊天 UI/流控制。EAP v1 与 CTX v1 保持冻结。
+CDS 只提供取消、优先级、模型/来源验证接口；CIE 不改其决策内核。LIFE v1 没有 `InnerStateEvent` 或 `ShortMemo`，二者已降为未来 LIFE v2 候选，不阻塞 CIE，也不得由 CIE 偷建平行状态。EAP v1、CTX v1、LIFE v1 与 KIG v1 均保持冻结。
 
 ## 4. 不可变安全边界
 
@@ -65,7 +65,9 @@ CDS 阶段只提供取消、优先级、模型/来源验证接口；不得提前
 7. 回复节奏不得篡改模型语义，不得让已经确认投递的文本重复发送。
 8. 任何 CIE 功能失败都回到当前单消息、单生成、纯文本流式聊天路径。
 
-## 5. LIFE 施工前补充项
+## 5. LIFE v2 候选项（不阻塞 CIE）
+
+仓库审计确认 LIFE v1 已冻结于 Schema 71，且不存在以下两个专用对象。它们保留为未来 LIFE v2 的产品候选；CIE 只能读取现有 Affect、Relationship、Episode、Saga、LifeEvent、Goal 与 Memory 接口，不能实现或写入本节对象。
 
 ### 5.1 `structured-inner-state-v1`
 
@@ -105,10 +107,13 @@ ShortMemo
 
 ### CIE.0：交互基线与固定评测集
 
-- [ ] 锁定 CDS/LIFE/KIG 最终合并 SHA、Schema、协议与测试基线。
+- [ ] KIG PR #4 合并后，以 `main` merge SHA 锁定 ConstructionBaseline；合并前不得填写猜测 SHA。
+- [x] 预备基线：KIG-P 最终实现/回滚点 `96021838418d5c5d9d26b269784447a099a68cc3`，最终 Schema 80；CIE 首个可用迁移号暂定 81，CIE.0 不预占迁移。
+- [x] 预备测试基线：后端 `2560 passed, 1 warning`、前端 `52 passed`、Vite 190 modules、Electron lifecycle contract `3 passed`。
+- [x] 冻结 fallback：当前单消息、单生成、纯文本 SSE 路径；文本附件继续按现有本地解析路径工作，不宣称 vision。
 - [ ] 建立连续消息、打断、附件、回复节奏、第三方贡献的合成评测集。
 - [ ] 记录当前发送成功率、首 token 延迟、取消率、重复回复率和正文泄漏率。
-- [ ] 冻结旧聊天路径作为 fallback，设立单一 feature flag。
+- [ ] 设立单一 `cie_enabled` feature flag，并验证关闭时与冻结 fallback 行为一致。
 
 ### CIE.1：消息积累窗口
 
@@ -183,7 +188,7 @@ ShortMemo
 
 ## 8. 本地源码参考与许可证边界
 
-KFC 2.1.1 本地包位于 `E:\Xiadie\kokoro_flow_chatter-2.1.1\kokoro_flow_chatter-2.1.1.mfp`，保留在项目目录外，仅作为只读参考，不解包或提交到遐蝶仓库。CIE 设计和施工可以重点审查其：
+KFC 2.1.1 本地包位于 `E:\Xiadie\kokoro_flow_chatter-2.1.1\kokoro_flow_chatter-2.1.1.mfp`，保留在项目目录外，仅作为只读参考，不解包或提交到遐蝶仓库。已直接读取归档内 `LICENSE` 与 `manifest.json`，二者均确认许可证为 AGPL-3.0；遐蝶 MIT 声明不覆盖该外部包。CIE 设计和施工可以重点审查其：
 
 - turn/phase 状态机、未读消息策略、打断控制器与请求视图；
 - memo、等待、主动触发、上下文来源和多模态的控制流；
@@ -192,3 +197,33 @@ KFC 2.1.1 本地包位于 `E:\Xiadie\kokoro_flow_chatter-2.1.1\kokoro_flow_chatt
 参考过程必须形成“需求或边界 → KFC 行为观察 → 遐蝶现有所有者 → 独立实现”的简短溯源记录，优先复用遐蝶已经冻结的 CTX/EAP/CDS/LIFE/KIG 协议，不能为了贴近 KFC 建立平行内核。
 
 KFC 为 AGPL-3.0。默认允许阅读源码、比较行为、学习状态机和推导自有测试场景；不得逐字复制 Prompt、资源、测试或实现代码。若未来确有必要复用源码片段，必须在写入前新增许可证 ADR，明确分发方式、网络使用义务和整个项目的许可证影响，经确认兼容后才可施工。
+
+## 9. CIE 开工准备记录（2026-07-28）
+
+### 9.1 当前代码缺口
+
+- `ChatView` 在生成期间整体 busy，`streamChat` 没有 `AbortSignal`；当前不能积累新消息或取消活动生成。
+- 后端 `/api/chat` 是单请求 SSE，只有 CDS governor 对未开始低优先级任务的抢占，没有聊天 request phase/cancellation token。
+- 现有附件是本地提取文本后注入 `attachment_block`；尚无图片字节生命周期、vision 能力实证或逐次远传授权。
+- 流式 delta 直接拼接显示；没有不改语义的客户端分段/节奏状态机。
+- CTX/KIG 已具备预算、来源、新鲜度与证据治理，但尚无第三方 `context-contribution-v1` 接入协议。
+
+### 9.2 KFC 行为观察到遐蝶独立设计的映射
+
+| KFC 只读观察 | 遐蝶现有所有者 | CIE 独立设计约束 |
+|---|---|---|
+| `phase_machine.py` 区分等待、模型、工具、提交相位 | CDS/Tool/聊天事务 | CIE.2 自建有界 request phase；不复制枚举或 KFC 状态机代码 |
+| `interrupt_controller.py` 轮询未读并取消 LLM | CDS 取消契约、CIE 流控制 | 使用前后端 AbortSignal + 服务端 cancellation token；真实用户消息优先，主动触发不能误取消 |
+| `unread_policy.py` 区分真实消息与内部主动触发 | EAP 主动来源与交付账本 | TurnIngressBuffer 保留原始消息 ID/顺序/授权；EAP 来源只能作为结构化信号 |
+| `request_view.py` 仅在发送视图加入 transient payload | CTX ContextPackage | 第三方贡献先过 KIG，再由 CTX 裁剪；不得直接修改持久消息链 |
+| `multimodal.py` 从运行期消息取图片并拼装模型内容 | CIE/KIG/Provider capability | 先验证 MIME/hash/像素/字节/TTL、模型 vision 证书和远传授权，不能仅凭存在 base64 即发送 |
+| `ContextContribution` 只有 source/owner/scope/priority/content/TTL | KIG 来源治理、CTX 预算 | 遐蝶协议必须额外包含 revision/hash、privacy、token estimate、幂等 ID 与失效语义 |
+
+### 9.3 合并后 CIE.0 第一轮动作
+
+1. 将 PR #4 merge SHA、`main` 全量测试结果和 Schema 80 写入 ConstructionBaseline。
+2. 从 `main` 创建 `agent/cie-specialty`；首阶段只新增评测、指标和 feature flag，不新增迁移或改变聊天行为。
+3. 建立 5/20/100/500 轮连续消息、活动生成打断、文本附件/图片授权、节奏重组和恶意 ContextContribution 的纯合成固定集。
+4. 独立 Review 确认 CIE.0 为 0 个未解决 P0/P1 后，才允许 CIE.1 占用 Schema 81（若实现确实需要持久表）。
+
+准备结论：CIE 设计与许可证边界已可开工，但执行门仍是 PR #4 合并；当前不创建 CIE 分支、不占用 Schema 81、不改聊天运行时。
