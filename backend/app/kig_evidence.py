@@ -422,7 +422,7 @@ def _qualify(text: str, state: str) -> str:
 def _evidence_current(item: SelectedEvidence) -> bool:
     try:
         current = kig_sources.registry.resolve(item.source_kind, item.source_id)
-    except (kig_sources.SourceRefError, Exception):
+    except Exception:
         return False
     return (
         current.status == "active" and current.revision == item.source_revision
@@ -436,7 +436,7 @@ def _row_current(item: dict) -> bool:
         return False
     try:
         current = kig_sources.registry.resolve(item["source_kind"], item["source_id"])
-    except (kig_sources.SourceRefError, Exception):
+    except Exception:
         return False
     return (
         current.status == "active" and current.revision == item["source_revision"]

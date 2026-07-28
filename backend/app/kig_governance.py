@@ -5,7 +5,6 @@ proposal-only; high-impact conflicts never become active without user confirmati
 """
 from __future__ import annotations
 
-import hashlib
 import json
 import re
 from dataclasses import dataclass
@@ -40,7 +39,6 @@ AUTHORITY_PRIORITY = {
 }
 
 _VERSION = re.compile(r"(?:\bv(?:ersion)?\s*|版本\s*)?(\d+(?:\.\d+){1,3})(?!\d)", re.I)
-_NEGATION = re.compile(r"不|不是|不能|未|没有|禁止|deprecated|removed|unsupported", re.I)
 _HIGH_IMPACT = re.compile(r"医疗|法律|财务|投资|安全|权限|删除|生产|合同|隐私")
 _SCOPE_WORD = re.compile(r"[A-Za-z][A-Za-z0-9_.+-]{1,}|[\u3400-\u9fff]{2,}")
 

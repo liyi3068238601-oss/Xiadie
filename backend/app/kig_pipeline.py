@@ -33,6 +33,7 @@ class ChatRetrievalResult:
 def prepare_for_chat(
     *, query: str, source_message_id: str, session_id: str,
     provider: dict | None, recall_mode: str,
+    authorized_knowledge_chunk_ids: frozenset[str] = frozenset(),
 ) -> ChatRetrievalResult | None:
     """Use deterministic KIG decisions in chat; semantic model proposals stay Shadow."""
     if recall_mode == "off" or not str(query or "").strip() or not source_message_id:
@@ -57,6 +58,7 @@ def prepare_for_chat(
         total_limit=24, current_session_id=session_id,
     )
     batch = kig_retrieval.retrieve(request)
+    batch = _filter_knowledge_authorization(batch, authorized_knowledge_chunk_ids)
     batch = _filter_transfer(batch, provider)
     if not batch.candidates:
         bundle = kig_evidence.build_bundle(
@@ -195,6 +197,18 @@ def _filter_transfer(
     return replace(batch, candidates=candidates)
 
 
+def _filter_knowledge_authorization(
+    batch: kig_retrieval.RetrievalBatch,
+    authorized_chunk_ids: frozenset[str],
+) -> kig_retrieval.RetrievalBatch:
+    """Keep KIG inside the owner Knowledge system's per-turn grant boundary."""
+    candidates = tuple(
+        item for item in batch.candidates
+        if item.source_type != "knowledge_chunk" or item.source_id in authorized_chunk_ids
+    )
+    return replace(batch, candidates=candidates)
+
+
 def _persisted_relations(
     governed: tuple[kig_governance.GovernedSource, ...],
 ) -> tuple[list[kig_governance.VersionRelationResult], list[str]]:
@@ -203,11 +217,30 @@ def _persisted_relations(
     }
     if not by_ref:
         return [], []
+    # Restrict before ordering/limiting. A global "latest 200" window can hide
+    # an older user-confirmed relation once unrelated projects create enough
+    # newer rows, causing the same evidence pair to be governed differently as
+    # the database grows.
+    refs = tuple(by_ref)
+    values_sql = ",".join("(?,?,?)" for _ in refs)
+    params = tuple(value for ref in refs for value in ref)
     conn = db.connect()
     try:
         rows = conn.execute(
-            "SELECT * FROM kig_version_relations WHERE status IN ('confirmed','proposed') "
-            "ORDER BY updated_at DESC,id DESC LIMIT 200"
+            f"WITH candidate_refs(source_kind,source_id,source_revision) AS "
+            f"(VALUES {values_sql}) "
+            "SELECT relation.* FROM kig_version_relations AS relation "
+            "JOIN candidate_refs AS older ON "
+            "older.source_kind=relation.older_source_kind AND "
+            "older.source_id=relation.older_source_id AND "
+            "older.source_revision=relation.older_source_revision "
+            "JOIN candidate_refs AS newer ON "
+            "newer.source_kind=relation.newer_source_kind AND "
+            "newer.source_id=relation.newer_source_id AND "
+            "newer.source_revision=relation.newer_source_revision "
+            "WHERE relation.status IN ('confirmed','proposed') "
+            "ORDER BY relation.updated_at DESC,relation.id DESC LIMIT 200",
+            params,
         ).fetchall()
     finally:
         conn.close()

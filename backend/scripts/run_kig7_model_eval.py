@@ -11,7 +11,10 @@ import tempfile
 
 
 REAL_DB = Path(__file__).resolve().parents[1] / "data" / "xiadie.db"
-TEMP_DIR = tempfile.mkdtemp(prefix="xiadie-kig7-eval-")
+PROJECT_DIR = Path(__file__).resolve().parents[2]
+REPORT_PATH = PROJECT_DIR / "docs" / "reports" / "kig-7-model-quality.json"
+MIN_STRICT_COVERAGE = 1.0
+MIN_PRECISION_GAIN = 0.15
 
 
 def _configured_provider() -> tuple[dict, str]:
@@ -29,10 +32,17 @@ def _configured_provider() -> tuple[dict, str]:
     return provider, model
 
 
-PROVIDER, MODEL = _configured_provider()
-os.environ["XIADIE_DATA_DIR"] = TEMP_DIR
-
-from app import db, kig_reranker as reranker, kig_retrieval, kig_sources, memory  # noqa: E402
+def _load_isolated_app() -> str:
+    temp_dir = tempfile.mkdtemp(prefix="xiadie-kig7-eval-")
+    os.environ["XIADIE_DATA_DIR"] = temp_dir
+    global db, reranker, kig_retrieval, kig_sources, memory  # noqa: PLW0603
+    from app import (  # noqa: PLC0415
+        db as _db, kig_reranker as _reranker, kig_retrieval as _kig_retrieval,
+        kig_sources as _kig_sources, memory as _memory,
+    )
+    db, reranker, kig_retrieval = _db, _reranker, _kig_retrieval
+    kig_sources, memory = _kig_sources, _memory
+    return temp_dir
 
 
 CASES = (
@@ -80,12 +90,58 @@ def _precision_at_2(ranked_ids: tuple[str, ...], expected: set[str]) -> float:
     return len(set(ranked_ids[:2]).intersection(expected)) / 2.0
 
 
+def build_quality_report(
+    *, model: str, provider_id: str, metrics: dict, errors: dict[str, int],
+) -> dict:
+    measured = dict(metrics)
+    strict_count = int(measured["strict_model_results"])
+    strict_sum = float(measured.pop("strict_precision_at_2_sum"))
+    paired_fallback_sum = float(measured.pop("paired_fallback_precision_at_2_sum"))
+    measured["strict_precision_at_2"] = round(
+        strict_sum / strict_count, 4,
+    ) if strict_count else None
+    measured["paired_fallback_precision_at_2"] = round(
+        paired_fallback_sum / strict_count, 4,
+    ) if strict_count else None
+    measured["strict_coverage"] = round(strict_count / int(measured["cases"]), 4)
+    measured["precision_gain"] = round(
+        measured["strict_precision_at_2"] - measured["paired_fallback_precision_at_2"], 4,
+    ) if strict_count else None
+    gate_passed = (
+        measured["strict_coverage"] >= MIN_STRICT_COVERAGE
+        and measured["precision_gain"] is not None
+        and measured["precision_gain"] >= MIN_PRECISION_GAIN
+        and measured["unsafe_results"] == 0
+        and measured["application_allowed"] == 0
+    )
+    return {
+        "protocol_version": "kig7-model-quality-v1",
+        "model": model,
+        "provider_id": provider_id,
+        "synthetic_only": True,
+        "contains_user_data": False,
+        "thresholds": {
+            "minimum_strict_coverage": MIN_STRICT_COVERAGE,
+            "minimum_precision_at_2_gain": MIN_PRECISION_GAIN,
+            "maximum_unsafe_results": 0,
+            "maximum_application_allowed": 0,
+        },
+        "metrics": measured,
+        "errors": errors,
+        "quality_gate": "pass" if gate_passed else "fail",
+        "promotion_ceiling": "shadow_single_provider",
+    }
+
+
 async def main() -> None:
+    provider, model = _configured_provider()
+    temp_dir = _load_isolated_app()
     db.init_db()
     metrics = {
         "cases": len(CASES), "model_calls": 0, "strict_model_results": 0,
         "safe_fallbacks": 0, "unsafe_results": 0, "application_allowed": 0,
-        "strict_precision_at_2_sum": 0.0, "fallback_precision_at_2_sum": 0.0,
+        "strict_precision_at_2_sum": 0.0,
+        "paired_fallback_precision_at_2_sum": 0.0,
     }
     errors: dict[str, int] = {}
     try:
@@ -93,9 +149,8 @@ async def main() -> None:
             payload = _payload(query, excerpts, index)
             expected = set(payload.candidate_ids[:2])
             fallback = reranker.deterministic_fusion(payload)
-            metrics["fallback_precision_at_2_sum"] += _precision_at_2(fallback.ranked_ids, expected)
             result = await reranker.propose(
-                payload, provider=PROVIDER, model=MODEL, remote_authorized=True,
+                payload, provider=provider, model=model, remote_authorized=True,
             )
             proposal = result["proposal"]
             safe = (
@@ -112,6 +167,9 @@ async def main() -> None:
             else:
                 metrics["strict_model_results"] += 1
                 metrics["strict_precision_at_2_sum"] += _precision_at_2(proposal.ranked_ids, expected)
+                metrics["paired_fallback_precision_at_2_sum"] += _precision_at_2(
+                    fallback.ranked_ids, expected,
+                )
             error_code = result.get("error_code") or outcome.get("error_code")
             if error_code:
                 code = str(error_code)
@@ -119,17 +177,15 @@ async def main() -> None:
             delay = max(0.0, min(float(os.environ.get("XIADIE_KIG7_EVAL_DELAY", "0")), 30.0))
             if delay and index + 1 < len(CASES):
                 await asyncio.sleep(delay)
-        strict_count = metrics["strict_model_results"]
-        strict_sum = metrics.pop("strict_precision_at_2_sum")
-        metrics["strict_precision_at_2"] = round(
-            strict_sum / strict_count, 4,
-        ) if strict_count else None
-        metrics["fallback_precision_at_2"] = round(
-            metrics.pop("fallback_precision_at_2_sum") / len(CASES), 4,
+        report = build_quality_report(
+            model=model, provider_id=provider["id"], metrics=metrics, errors=errors,
         )
-        print(json.dumps({"model": MODEL, "metrics": metrics, "errors": errors}, ensure_ascii=False))
+        REPORT_PATH.write_text(
+            json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8",
+        )
+        print(json.dumps(report, ensure_ascii=False))
     finally:
-        shutil.rmtree(TEMP_DIR, ignore_errors=True)
+        shutil.rmtree(temp_dir, ignore_errors=True)
 
 
 if __name__ == "__main__":

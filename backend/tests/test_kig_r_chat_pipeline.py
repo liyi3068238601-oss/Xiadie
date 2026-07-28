@@ -95,6 +95,52 @@ def test_pipeline_persists_body_free_deterministic_relations_after_chat_boundary
     assert not hasattr(result.bundle.selected_evidence[0], "body")
 
 
+def test_current_pair_relation_is_not_hidden_by_unrelated_newer_rows():
+    from app import kig_governance
+
+    old = _candidate("星河服务版本 1.0", version="1.0")
+    new = _candidate("星河服务版本 2.0", version="2.0")
+    governed = (kig_governance.adapt_candidate(old), kig_governance.adapt_candidate(new))
+    relation = kig_governance.deterministic_relation(*governed)
+    assert relation is not None
+    payload = kig_governance.VersionRelationInput(
+        candidate_ids=(governed[0].candidate_id, governed[1].candidate_id),
+        request_id=db.new_id(), query="deterministic version governance",
+        sources=governed, impact_level="medium",
+    )
+    stored = kig_governance.persist_relation(relation, payload)
+
+    conn = db.connect()
+    try:
+        conn.execute(
+            "UPDATE kig_version_relations SET updated_at=1 WHERE id=?", (stored["id"],),
+        )
+        for index in range(201):
+            conn.execute(
+                "INSERT INTO kig_version_relations("
+                "id,older_source_kind,older_source_id,older_source_revision,older_source_hash,"
+                "newer_source_kind,newer_source_id,newer_source_revision,newer_source_hash,"
+                "relation,scope_json,confidence,evidence_refs_json,decision_source,impact_level,"
+                "requires_confirmation,status,relation_revision,created_at,updated_at,confirmed_at"
+                ") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    db.new_id(), "message", f"unrelated-old-{index}", "1", "0" * 64,
+                    "message", f"unrelated-new-{index}", "1", "1" * 64,
+                    "supersedes", "{}", 1.0, "[]", "deterministic", "medium",
+                    0, "confirmed", 1, index + 2, index + 2, index + 2,
+                ),
+            )
+        conn.commit()
+    finally:
+        conn.close()
+
+    applied, proposed = pipeline._persisted_relations(governed)  # noqa: SLF001
+    assert proposed == []
+    assert len(applied) == 1
+    assert applied[0].older_id == governed[0].candidate_id
+    assert applied[0].newer_id == governed[1].candidate_id
+
+
 def test_distinct_conditions_remain_both_visible_and_do_not_create_conflict(monkeypatch):
     morning = _candidate("早上喜欢咖啡")
     evening = _candidate("晚上不喜欢咖啡")
@@ -153,6 +199,24 @@ def test_remote_task_body_is_never_admitted_without_explicit_setting(monkeypatch
     assert result is not None
     assert not result.batch.candidates
     assert not result.bundle.selected_evidence
+
+
+def test_kig_never_broadens_owner_authorized_knowledge_chunks():
+    allowed = _candidate(
+        "已授权资料", source="knowledge", source_kind="knowledge_chunk",
+        privacy="normal:remote_allowed",
+    )
+    denied = _candidate(
+        "仅限本机资料", source="knowledge", source_kind="knowledge_chunk",
+        privacy="normal:local_only",
+    )
+    batch = pipeline._filter_knowledge_authorization(  # noqa: SLF001
+        _batch(allowed, denied), frozenset({allowed.source_id}),
+    )
+    assert tuple(item.source_id for item in batch.candidates) == (allowed.source_id,)
+    assert not pipeline._filter_knowledge_authorization(  # noqa: SLF001
+        _batch(allowed, denied), frozenset(),
+    ).candidates
 
 
 def test_legacy_knowledge_filter_never_broadens_authorized_chunk_set():

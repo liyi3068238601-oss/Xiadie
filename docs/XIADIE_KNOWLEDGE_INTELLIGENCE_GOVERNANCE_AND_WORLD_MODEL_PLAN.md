@@ -1869,6 +1869,8 @@ KIG.0～KIG.9 完成后先冻结和发布 KIG-R，不等待 PWM：
 - [ ] 冻结 `kig-retrieval-governance-v1`、记录 Schema 和回滚点；KIG-P 从下一迁移号继续。
 - [ ] KIG-R 关闭后即能独立改善聊天检索；PWM 延期或关闭不得破坏 KIG-R。
 
+KIG-R 冻结审计记录（2026-07-28）：已建立 10 组纯合成、11 项非零分母零容忍验收，当前违规数均为 0；最终后端全量 `2531 passed, 1 warning`，前端 `51 passed`、TypeScript/Vite 190 modules 与桌面 JavaScript 语法检查通过。审计修复了四项冻结前问题：确认关系不再受全库最近 200 条窗口遮蔽、KIG 在排序前受本轮 Knowledge 授权 chunk 白名单约束、验收脚本导入不再污染环境、KIG.7 质量评测改为 100% 严格覆盖且同样本配对增益至少 15%。当前唯一技术阻断仍是 KIG.7 JSON Object 模式实配模型质量证据；发布门保持 `pending_model_quality`，四项冻结条件不得勾选，KIG.10 不得开工。详见 `docs/reports/kig-r-acceptance.md` 与 `docs/reports/kig-r-freeze-readiness.md`。
+
 ### KIG.10：Claim、Entity、Relation 与 WorldEvent
 
 目标：建立个人世界模型的来源化数据底座。

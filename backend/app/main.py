@@ -605,6 +605,11 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 kig_chat_result = kig_pipeline.prepare_for_chat(
                     query=body.content, source_message_id=uid, session_id=body.session_id,
                     provider=provider, recall_mode=recall_mode,
+                    authorized_knowledge_chunk_ids=frozenset(
+                        str(item["chunk_id"])
+                        for item in (knowledge_retrieval or {}).get("results", ())
+                        if item.get("chunk_id")
+                    ),
                 )
                 knowledge_retrieval = kig_pipeline.filter_knowledge_prepared(
                     knowledge_retrieval, kig_chat_result,

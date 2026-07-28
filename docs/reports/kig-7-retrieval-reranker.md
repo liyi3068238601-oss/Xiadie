@@ -33,4 +33,6 @@
 
 因此 Decision Promotion Policy 的质量门仍为 `[~]`：不得晋级，不得接入真实聊天排序。KIG.8 可在确定性候选基础上施工，但 KIG-R 冻结前必须补跑隔离盲评，并要求严格有效样本覆盖与人工相关性提升同时达标。
 
+KIG-R 冻结审计补强（2026-07-28）：`run_kig7_model_eval.py` 已消除模块导入时的数据目录/API token 副作用，并将质量判定改为同一批严格有效样本上的配对比较。冻结门要求 6/6 严格结果、Precision@2 相对同样本确定性 fallback 提升至少 15%、不安全结果与 Active 放行均为 0；结果写入 `docs/reports/kig-7-model-quality.json`。当前尚未取得 JSON Object 模式远端复测结果，状态不变。
+
 回滚只需移除 KIG DecisionKind/import 与 `json_mode=True` 调用；共享 JSON mode 默认关闭，Schema 与来源数据均无变化。
