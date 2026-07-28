@@ -1491,7 +1491,32 @@ export interface ChatRequestOptions {
   knowledge_grant_token?: string;
   knowledge_skip_restricted?: boolean;
   attachment_ids?: string[];
+  ingress_messages?: TurnIngressMessage[];
 }
+
+export interface TurnIngressMessage {
+  client_message_id: string;
+  window_id: string;
+  content: string;
+  attachment_ids: string[];
+  authorization_scope: "local_text_only";
+  queued_at_ms: number;
+  boundary: "idle_timeout" | "explicit_send" | "voice_end" | "stop";
+}
+
+export interface CieSettings {
+  protocol_version: string;
+  setting_key: "cie_enabled";
+  enabled: boolean;
+  default_enabled: boolean;
+  window_ms: number;
+  window_min_ms: number;
+  window_max_ms: number;
+  max_messages: number;
+  ingress_protocol_version: string;
+}
+
+export const getCieSettings = () => j<CieSettings>("/api/cie/settings");
 
 // ---- 聊天附件上传 ----
 export interface ChatAttachmentResult {

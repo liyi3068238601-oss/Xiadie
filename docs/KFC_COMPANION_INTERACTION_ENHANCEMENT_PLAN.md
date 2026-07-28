@@ -4,7 +4,7 @@
 - 版本：v0.2
 - 日期：2026-07-28
 - 参考对象：`tt-P607/kokoro_flow_chatter@d857f4f`；本地只读 ZIP 格式参考包 `E:\Xiadie\kokoro_flow_chatter-2.1.1\kokoro_flow_chatter-2.1.1.mfp`（KFC 2.1.1）
-- 状态：KIG PR [#4](https://github.com/liyi3068238601-oss/Xiadie/pull/4) 已合并；CIE.0 已完成技术施工并停在独立 Review 门，当前不得开始 CIE.1 或占用迁移号
+- 状态：KIG PR [#4](https://github.com/liyi3068238601-oss/Xiadie/pull/4) 已合并；CIE.0 已提交，CIE.1 Review 已通过并完成收口，允许进入 CIE.2
 - 执行规则：每阶段完成代码、测试、文档、独立 Review 和独立提交后，才能进入下一阶段
 
 ## 1. 目标
@@ -117,13 +117,13 @@ ShortMemo
 
 ### CIE.1：消息积累窗口
 
-- [ ] 实现 `TurnIngressBuffer`，默认窗口 300～800 ms，可配置但有上限。
-- [ ] 原始消息分别持久化，再生成仅用于本轮的有序 turn envelope。
-- [ ] 附件授权逐项保留；不同授权范围不得静默合并。
-- [ ] `/stop`、明确发送、语音结束等边界立即封口。
-- [ ] 多会话和多窗口严格隔离。
+- [x] 实现 `TurnIngressBuffer`，默认 500 ms，配置硬范围 300～800 ms，单 envelope 最多 20 条。
+- [x] 原始消息分别持久化到现有 `messages`，再生成仅用于本轮的 `turn-envelope-v1`；服务端重建并复核正文。
+- [x] 附件逐项绑定原始消息；当前只接受 `local_text_only`，未知或混合授权范围由严格 Schema 拒绝。
+- [x] `/stop`、Ctrl/Cmd+Enter、`voice_end` 协议位和 20 条硬上限立即封口。
+- [x] 以 `session_id + window_id` 严格隔离；会话切换先封口旧 scope。
 
-完成门：丢消息率 0；跨会话串流率 0；重复处理率 0。
+完成门：5/20/100/500 轮共 625 条纯合成矩阵中，丢消息率 0、跨会话/窗口串流率 0、重复处理率 0、顺序破坏率 0、附件归属丢失率 0。
 
 ### CIE.2：生成打断与重建
 
@@ -245,3 +245,20 @@ KFC 为 AGPL-3.0。默认允许阅读源码、比较行为、学习状态机和�
 - 不采纳 P2-2：不使用 `*_ids` 字段名通配跳过敏感扫描。显式元数据白名单更符合 fail-closed；未来 Schema 增字段必须显式安全复审。
 - 延后 P2-3：3 次样本足以记录 CIE.0 初始基线；CIE.2 取消响应验收提升至至少 10 次，并报告标准差或同等离散度。
 - SQLite 3.40.1 观察不作为本项目阻断：权威 `backend/.venv` 已执行完整数据库回归 `2566 passed, 1 warning`；不为审查器使用的非项目解释器回写已发布迁移 31。
+
+## 11. CIE.1 施工记录（2026-07-28）
+
+- CIE.0 独立提交：`f55a84f`（`feat(cie): establish interaction baseline`）。
+- 前端：`TurnIngressBuffer` 以 500 ms debounce 收集原始消息；按钮显示待封口数量，`/stop`、Ctrl/Cmd+Enter、语音结束协议位和 20 条上限立即封口。设置读取失败或 `cie_enabled=0` 时不进入缓冲。
+- 后端：`turn-ingress-buffer-v1` 严格校验客户端消息 ID、单窗口、顺序、附件唯一归属和 `local_text_only`；`turn-envelope-v1` 由服务端重新构建，客户端合并正文不一致则在写入前拒绝。
+- 持久化：每条原始消息分别写入既有 `messages`，每个附件绑定对应原消息；envelope 只用于当前检索与生成。冻结的单来源状态写入者只读取最后一条原始正文，避免把合并正文错误归因给单一 message ID。
+- Schema：保持 80。现有表已经完整表达权威原消息和附件，短窗口及 envelope 都是瞬态控制面，因此不占用 Schema 81；CIE.2 若证明取消/幂等状态必须持久化，再独立评审。
+- 验收：`docs/reports/cie-1-turn-ingress.md`；625 条规模矩阵五项零容忍指标均为 0。Review 收口后后端全量 `2575 passed, 1 warning`；前端 `59 passed`；Vite 191 modules。
+- 阶段门：独立 Review 的 P1 已修复，当前 0 个未解决 P0/P1；允许进入 CIE.2。
+
+### 11.1 CIE.1 Review 处置
+
+- Review 结论：有条件通过；会话切换时未清空 `streaming` 的 P1 已采纳修复，旧会话回调仍保持隔离，新会话编辑器不会被永久锁定。
+- 采纳并改写 P2-1：纯附件末条不回退到整段 envelope，而是将状态写入正文和来源 ID 成对锚定到最后一条有正文的原消息，避免错误归因。
+- 提前采纳 P2-2/P2-5：flush 前移除队列以防重入，但回调拒绝时原序恢复；附件 ID 与附件快照深冻结，为 CIE.2 重建保留可靠输入。
+- P2-3/P2-4 并入 CIE.2：组件卸载和运行时开关切换需要与活动请求、取消阶段及重试状态统一处理，避免局部 cleanup 造成新的丢消息路径。

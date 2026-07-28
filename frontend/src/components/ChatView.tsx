@@ -6,6 +6,7 @@ import {
   memoryObserverPollDelay,
   shouldContinueMemoryObserverPolling,
 } from "../observerPolling.mjs";
+import { TurnIngressBuffer, buildTurnEnvelopeContent } from "../turnIngressBuffer.mjs";
 
 interface Props {
   sessionId: string | null;
@@ -26,9 +27,16 @@ interface PendingGrant {
   requestNonce: string;
   regenerate: boolean;
   locationChanged: boolean;
+  activeSessionId: string;
+  ingressMessages?: api.TurnIngressMessage[];
 }
 
 type GrantAction = "allow_once" | "skip" | "always_allow" | "local_only";
+
+type BufferedIngressEntry = api.TurnIngressMessage & {
+  sessionId: string;
+  attachments: api.ChatAttachmentResult[];
+};
 
 export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, onCompanionState, onSessionsChanged }: Props) {
   const [messages, setMessages] = useState<api.Message[]>([]);
@@ -45,14 +53,42 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
     | { localId: string; filename: string; status: "error"; error: string };
   const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
   const [attachmentBusy, setAttachmentBusy] = useState(false);
+  const [cieEnabled, setCieEnabled] = useState(false);
+  const [ingressCount, setIngressCount] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const memoryWatchId = useRef(0);
   const noticeTimer = useRef<number | null>(null);
+  const activeSessionRef = useRef<string | null>(sessionId);
+  const ingressWindowId = useRef(`window_${newRequestNonce().replace(/-/g, "_")}`);
+  const flushIngressHandler = useRef<(
+    scope: string, entries: BufferedIngressEntry[], reason: string,
+  ) => Promise<void>>(async () => undefined);
+  const ingressBuffer = useRef<TurnIngressBuffer<BufferedIngressEntry> | null>(null);
+  if (ingressBuffer.current === null) {
+    ingressBuffer.current = new TurnIngressBuffer<BufferedIngressEntry>({
+      onFlush: (scope: string, entries: BufferedIngressEntry[], reason: string) =>
+        flushIngressHandler.current(scope, entries, reason),
+    });
+  }
   const busy = streaming !== null || grantBusy || pendingGrant !== null || attachmentBusy;
 
   useEffect(() => {
+    api.getCieSettings()
+      .then((settings) => setCieEnabled(settings.enabled))
+      .catch(() => setCieEnabled(false));
+  }, []);
+
+  useEffect(() => {
+    const previousSession = activeSessionRef.current;
+    activeSessionRef.current = sessionId;
+    if (previousSession && previousSession !== sessionId) {
+      const previousScope = `${previousSession}:${ingressWindowId.current}`;
+      void ingressBuffer.current!.flush(previousScope, "explicit_send");
+      setIngressCount(0);
+      setStreaming(null);
+    }
     if (!sessionId) {
       setMessages([]);
       return;
@@ -158,7 +194,7 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
     }
   }
 
-  async function send(regenerate = false) {
+  async function send(regenerate = false, explicitBoundary = false) {
     if (!sessionId || busy) return;
     let content = regenerate ? lastUserContent() : input.trim();
     // 只有 ready 状态的附件参与发送；uploading 由 attachmentBusy 阻塞，error 不发送
@@ -166,6 +202,13 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
       (a): a is Extract<PendingAttachment, { status: "ready" }> => a.status === "ready",
     );
     if (!content && readyAttachments.length === 0) return;
+    if (!regenerate && cieEnabled) {
+      const boundary = content === "/stop"
+        ? "stop"
+        : explicitBoundary ? "explicit_send" : "idle_timeout";
+      queueIngress(content, readyAttachments, boundary);
+      return;
+    }
     const requestNonce = newRequestNonce();
     memoryWatchId.current += 1;
     setErrorCard(null);
@@ -186,11 +229,12 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
           requestNonce,
           regenerate,
           locationChanged: rememberProviderLocation(preview.provider),
+          activeSessionId: sessionId,
         });
         return;
       }
       setGrantBusy(false);
-      await runChat({ content, requestNonce, regenerate });
+      await runChat({ content, requestNonce, regenerate, activeSessionId: sessionId });
     } catch (error) {
       showRequestError(error, "无法检查资料发送范围，请稍后重试。");
     } finally {
@@ -199,10 +243,10 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
   }
 
   async function handleGrant(action: GrantAction) {
-    if (!sessionId || !pendingGrant || grantBusy || !pendingGrant.preview.id) return;
+    if (!pendingGrant || grantBusy || !pendingGrant.preview.id) return;
     const pending = pendingGrant;
     const grantId = pending.preview.id as string;
-    const activeSessionId = sessionId;
+    const activeSessionId = pending.activeSessionId;
     setGrantBusy(true);
     setErrorCard(null);
     try {
@@ -228,6 +272,8 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
         content: pending.content,
         requestNonce: pending.requestNonce,
         regenerate: pending.regenerate,
+        activeSessionId,
+        ingressMessages: pending.ingressMessages,
         token,
         skipRestricted,
       });
@@ -256,12 +302,15 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
     content: string;
     requestNonce: string;
     regenerate: boolean;
+    activeSessionId?: string;
+    ingressMessages?: api.TurnIngressMessage[];
     token?: string;
     skipRestricted?: boolean;
   }) {
-    if (!sessionId) return;
-    const activeSessionId = sessionId;
-    const { content, requestNonce, regenerate, token, skipRestricted = false } = options;
+    const activeSessionId = options.activeSessionId ?? sessionId;
+    if (!activeSessionId) return;
+    const { content, requestNonce, regenerate, ingressMessages, token, skipRestricted = false } = options;
+    const activeInView = () => activeSessionRef.current === activeSessionId;
     // 本地立即显示用户消息（含附件卡片），不等后端刷新。只展示 ready 的附件
     const readyForLocal = !regenerate
       ? pendingAttachments.filter(
@@ -271,25 +320,30 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
     const localAttachments = readyForLocal.length > 0
       ? readyForLocal.map((a) => ({ ...a.result }))
       : undefined;
-    if (!regenerate) {
+    if (!regenerate && !ingressMessages) {
       setMessages((m) => [...m, localMsg("user", content, localAttachments)]);
       setInput("");
     }
-    setStreaming({ text: "" });
-    onMode("thinking");
-    api.desktop?.setPetState?.("thinking", "让我想想…", companionCluster);
+    if (activeInView()) {
+      setStreaming({ text: "" });
+      onMode("thinking");
+      api.desktop?.setPetState?.("thinking", "让我想想…", companionCluster);
+    }
 
     await api.streamChat(
       activeSessionId,
       content,
       {
         onDelta: (t) => {
+          if (!activeInView()) return;
           setStreaming((s) => (s ? { text: s.text + t } : { text: t }));
         },
         onFinal: (final) => {
+          if (!activeInView()) return;
           setStreaming({ text: final.content });
         },
         onError: (msg, hint) => {
+          if (!activeInView()) return;
           setStreaming(null);
           const finalHint = options.regenerate
             ? (hint ? hint + " · 旧回复已保留" : "旧回复已保留")
@@ -303,10 +357,12 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
           }
         },
         onDone: (d) => {
-          setStreaming(null);
-          onMode("companion");
-          onCompanionState(d.companion_state);
-          if (sessionId) api.listMessages(sessionId).then(setMessages);
+          if (activeInView()) {
+            setStreaming(null);
+            onMode("companion");
+            onCompanionState(d.companion_state);
+            api.listMessages(activeSessionId).then(setMessages);
+          }
           onSessionsChanged();
           if (d.memory_observation?.id && d.memory_observation.status === "queued") {
             void watchMemoryResult(d.memory_observation.id);
@@ -321,6 +377,7 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
         attachment_ids: readyForLocal.length > 0
           ? readyForLocal.map((a) => a.result.id)
           : undefined,
+        ingress_messages: ingressMessages,
       },
     );
     // 发送成功后清空附件
@@ -328,6 +385,75 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
       setPendingAttachments([]);
     }
   }
+
+  function queueIngress(
+    content: string,
+    attachments: Extract<PendingAttachment, { status: "ready" }>[],
+    boundary: api.TurnIngressMessage["boundary"],
+  ) {
+    if (!sessionId) return;
+    const apiEntry: api.TurnIngressMessage = {
+      client_message_id: `message_${newRequestNonce().replace(/-/g, "_")}`,
+      window_id: ingressWindowId.current,
+      content,
+      attachment_ids: attachments.map((item) => item.result.id),
+      authorization_scope: "local_text_only",
+      queued_at_ms: Date.now(),
+      boundary,
+    };
+    const entry: BufferedIngressEntry = {
+      ...apiEntry,
+      sessionId,
+      attachments: attachments.map((item) => ({ ...item.result })),
+    };
+    setMessages((current) => [
+      ...current,
+      localMsg("user", content, entry.attachments.length > 0 ? entry.attachments : undefined),
+    ]);
+    setInput("");
+    setPendingAttachments([]);
+    const scope = `${sessionId}:${ingressWindowId.current}`;
+    setIngressCount(ingressBuffer.current!.enqueue(scope, entry));
+  }
+
+  async function flushBufferedEntries(
+    _scope: string, entries: BufferedIngressEntry[], _reason: string,
+  ) {
+    if (entries.length === 0) return;
+    setIngressCount(0);
+    const activeSessionId = entries[0].sessionId;
+    const ingressMessages = entries.map(({ sessionId: _sessionId, attachments: _attachments, ...item }) => item);
+    const content = buildTurnEnvelopeContent(ingressMessages);
+    const attachmentIds = ingressMessages.flatMap((item) => item.attachment_ids);
+    const requestNonce = newRequestNonce();
+    memoryWatchId.current += 1;
+    setErrorCard(null);
+    setMemoryNotice(null);
+    setGrantBusy(true);
+    try {
+      const preview = await api.preflightKnowledgeTransmission(
+        activeSessionId, requestNonce, content, attachmentIds.length > 0 ? attachmentIds : undefined,
+      );
+      if (preview.status === "pending" && preview.id) {
+        setPendingGrant({
+          preview, content, requestNonce, regenerate: false,
+          locationChanged: rememberProviderLocation(preview.provider),
+          activeSessionId, ingressMessages,
+        });
+        return;
+      }
+      setGrantBusy(false);
+      await runChat({
+        content, requestNonce, regenerate: false, activeSessionId, ingressMessages,
+      });
+    } catch (error) {
+      showRequestError(error, "连续消息发送失败，请稍后重试。");
+      throw error;
+    } finally {
+      setGrantBusy(false);
+    }
+  }
+  flushIngressHandler.current = flushBufferedEntries;
 
   function showRequestError(error: unknown, fallbackHint: string) {
     const message = error instanceof api.ApiError ? error.message : "请求失败";
@@ -567,7 +693,7 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                send();
+                send(false, e.ctrlKey || e.metaKey);
               }
             }}
           />
@@ -576,14 +702,14 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
             disabled={busy || (!input.trim() && !pendingAttachments.some((a) => a.status === "ready"))}
             onClick={() => send()}
           >
-            ➤
+            {ingressCount > 0 ? `➤ ${ingressCount}` : "➤"}
           </button>
         </div>
         <div className="msg-meta" style={{ marginTop: 8, paddingLeft: 4 }}>
           <button onClick={makeTask} disabled={!lastUserContent()}>
             ＋ 存为任务
           </button>
-          <button onClick={() => send(true)} disabled={busy || !lastUserContent()}>
+          <button onClick={() => send(true)} disabled={busy || ingressCount > 0 || !lastUserContent()}>
             ↻ 重新生成
           </button>
         </div>

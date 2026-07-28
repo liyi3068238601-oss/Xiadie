@@ -2,7 +2,7 @@
 
 > 最近复核日期：2026-07-28
 >
-> 当前施工状态：KIG.0～KIG.15 已完成并由 PR #4 merge `b436e9f8876f8926ac90df3562edbeef3f085413` 合入 main；CIE.0 已完成技术施工并等待独立 Review，Schema 仍为 80
+> 当前施工状态：KIG.0～KIG.15 已合入 main；CIE.0 已提交，CIE.1 Review 的 P1 已修复并通过阶段门，当前进入 CIE.2，Schema 仍为 80
 >
 > 当前版本：`v0.1.0` MVP 骨架（知识库系统 K 系列已完成）
 >
@@ -35,8 +35,8 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests -q -p no:cacheprovider` | `2566 passed, 1 warning`；当前 Schema 80 |
-| 前端 | `cd frontend; npm.cmd test -- --run; npm.cmd run build` | 通过：52 项；TypeScript 检查及 Vite 生产构建 190 modules 成功 |
+| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests -q -p no:cacheprovider` | `2575 passed, 1 warning`；当前 Schema 80 |
+| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：59 项；TypeScript 检查及 Vite 生产构建 191 modules 成功 |
 | Electron / Windows | Electron contract/语法；`scripts\test-frozen-backend.ps1 -Port 18756`；win-unpacked 与 NSIS 临时安装生命周期 smoke | 3 项 contract 及语法通过；冻结后端、IANA 时区、BGE-M3、真实安装、首启、托盘保活、崩溃清理、重启及卸载清理通过；休眠/唤醒由 contract、重启推进和 resume guard 场景验证 |
 
 CDS.12 以 Schema 63 新增三张无正文反馈/校准审计表；CDS.13 未再新增迁移。`eap-decision-run-adapter-v1` 保持兼容。LIFE.0～13 与独立总 Review 已完成：Schema 64～71 分别建立来源事件、运行时、CatchUp、日程、目标、日期、日记和 SelfTimeline；6 类模型决策因样本/Provider 门不足继续 Shadow。Review 收口补强敏感格式识别、IANA 时区写入校验与多 Provider 一致性晋级门，LIFE v1 正式冻结于 Schema 71。`life-adapter-v1` 与 CDS/EAP 冻结契约兼容；LIFE PR #3 merge `f16d80ab0d2457065dc65d7d284d3cbf3584f5ee` 已锁定为 KIG predecessor，首个可用迁移号为 72。
@@ -45,7 +45,9 @@ KIG.0 已完成现有 Knowledge/CTX/MEM/EAP/LIFE/Task/ToolRun/Lore 的代码、S
 
 KIG.1～KIG.9 已完成并保持 `kig-retrieval-governance-v1`/Schema 76 冻结边界。KIG.10～15 以 Schema 77～80 追加来源化 PWM、可逆实体解析、owner proposal-only 接口、非破坏维护 worker 及现有知识主页上的关联视图；没有修改 48～76 历史迁移。`kig-p-acceptance-v1` 以纯合成临时库通过 100 单文档、100 多文档、100 跨库、100 版本和 100 entity merge/rollback；1 万/10 万/25 万 Chunk FTS 探针召回均为 100%，无来源 PWM、未确认删除、敏感画像、跨 scope merge 与无 ToolRun performed 均为 0。PWM 保持 Shadow、可重建且不拥有 Knowledge/MEM/LIFE/EAP/Tool 权威写入权。
 
-CIE.0 以 KIG PR #4 merge `b436e9f8876f8926ac90df3562edbeef3f085413` 锁定 predecessor，建立 5/20/100/500 轮共 625 条连续消息及 80 条打断、附件、节奏和第三方贡献合成固定集。当前 fallback 仍为单消息、单生成、纯文本 SSE 与本地文本附件解析；`cie_enabled` 是默认关闭的唯一总门，尚未接入聊天热路径。配置的 `deepseek/deepseek-v4-flash` 三次合成短提示首 token P50/P95 为 `1165.367/3241.132 ms`。全量回归额外修复摘要敏感扫描误扫内部数字 message ID 的既有问题，当前后端 `2566 passed, 1 warning`。CIE.0 无迁移、无用户数据写入，独立 Review 通过前不进入 CIE.1。
+CIE.0 以 KIG PR #4 merge `b436e9f8876f8926ac90df3562edbeef3f085413` 锁定 predecessor，建立 5/20/100/500 轮共 625 条连续消息及 80 条打断、附件、节奏和第三方贡献合成固定集。CIE.0 冻结的 fallback 为单消息、单生成、纯文本 SSE 与本地文本附件解析；`cie_enabled` 是默认关闭的唯一总门。配置的 `deepseek/deepseek-v4-flash` 三次合成短提示首 token P50/P95 为 `1165.367/3241.132 ms`。全量回归额外修复摘要敏感扫描误扫内部数字 message ID 的既有问题，CIE.0 收口时后端为 `2566 passed, 1 warning`。CIE.0 无迁移、无用户数据写入，并已通过独立 Review。
+
+CIE.1 在 `cie_enabled` 总门后接入默认 500 ms、硬范围 300～800 ms 的 `TurnIngressBuffer`。原始消息和附件仍分别落入既有权威表，服务端重建临时 `turn-envelope-v1`，不信任客户端拼接；`/stop`、Ctrl/Cmd+Enter、语音结束协议位和 20 条上限立即封口。5/20/100/500 轮共 625 条矩阵的五项零容忍指标均为 0。独立 Review 的会话切换锁死 P1 已修复；失败 flush 原序恢复，状态证据锚定到最后一条有正文的原消息。CIE.1 无需 Schema 81，已允许进入 CIE.2。
 
 已知但不阻断当前开发的警告：
 

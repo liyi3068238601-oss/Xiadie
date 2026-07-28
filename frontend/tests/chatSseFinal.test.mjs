@@ -53,7 +53,7 @@ test("current final plus done payload invokes authoritative replacement once", (
 
 test("typed runtime protocol preserves final and legacy done replacement", async () => {
   const normalized = typedProtocol
-    .replace(/export interface[\s\S]*?\n}\n\n/, "")
+    .replace(/export interface[\s\S]*?\r?\n}\r?\n\r?\n/, "")
     .replace(/export function dispatchChatSseEvent\([\s\S]*?\): void \{/, "export function dispatchChatSseEvent(event, data, callbacks, state) {");
   const fixture = await readFile(
     new URL("./fixtures/chatSseProtocol.mjs", import.meta.url), "utf8",

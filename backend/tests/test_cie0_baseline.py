@@ -87,8 +87,7 @@ def test_cie_feature_gate_is_single_fail_closed_and_round_trips():
     assert cie_settings.set_enabled(False) is False
 
 
-def test_cie0_does_not_touch_chat_hot_path_or_allocate_schema_81():
-    main_source = (BACKEND_DIR / "app" / "main.py").read_text(encoding="utf-8")
+def test_cie0_default_gate_and_schema_baseline_remain_frozen_for_later_stages():
     db_source = (BACKEND_DIR / "app" / "db.py").read_text(encoding="utf-8")
-    assert "cie_settings" not in main_source and "cie_enabled" not in main_source
+    assert cie_settings.DEFAULT_ENABLED is False
     assert "(81," not in db_source

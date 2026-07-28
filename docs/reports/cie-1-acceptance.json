@@ -1,0 +1,58 @@
+{
+  "report_version": "cie-1-acceptance-v1",
+  "protocol_version": "turn-ingress-buffer-v1",
+  "envelope_version": "turn-envelope-v1",
+  "synthetic_only": true,
+  "schema_version": 80,
+  "uses_schema_81": false,
+  "window_ms": 500,
+  "round_counts": [
+    5,
+    20,
+    100,
+    500
+  ],
+  "metrics": {
+    "input_messages": 625,
+    "output_messages": 625,
+    "message_loss_rate": 0.0,
+    "duplicate_processing_rate": 0.0,
+    "cross_session_or_window_rate": 0.0,
+    "order_violation_rate": 0.0,
+    "attachment_scope_loss_rate": 0.0
+  },
+  "outcomes": [
+    {
+      "rounds": 5,
+      "envelopes": 1,
+      "input_messages": 5,
+      "output_messages": 5,
+      "order_preserved": true,
+      "attachments_preserved": true
+    },
+    {
+      "rounds": 20,
+      "envelopes": 1,
+      "input_messages": 20,
+      "output_messages": 20,
+      "order_preserved": true,
+      "attachments_preserved": true
+    },
+    {
+      "rounds": 100,
+      "envelopes": 5,
+      "input_messages": 100,
+      "output_messages": 100,
+      "order_preserved": true,
+      "attachments_preserved": true
+    },
+    {
+      "rounds": 500,
+      "envelopes": 25,
+      "input_messages": 500,
+      "output_messages": 500,
+      "order_preserved": true,
+      "attachments_preserved": true
+    }
+  ]
+}

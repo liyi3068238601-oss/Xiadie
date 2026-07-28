@@ -1,6 +1,6 @@
 # 遐蝶 Codex 项目上下文
 
-> CIE 施工快照（2026-07-28）：KIG PR #4 已以 merge `b436e9f8876f8926ac90df3562edbeef3f085413` 合入 main；CIE.0 从该点锁定 ConstructionBaseline，完成 625 条连续消息与 80 条专项合成固定集、DeepSeek 首 token 实测、默认关闭的唯一 `cie_enabled` 总门与 ADR-0065。Schema 保持 80，聊天热路径未修改，后端 `2566 passed, 1 warning`，等待独立 Review 后才能进入 CIE.1。
+> CIE 施工快照（2026-07-29）：KIG PR #4 已合入 main；CIE.0 已提交 `f55a84f`。CIE.1 已实现有界 TurnIngressBuffer、服务端重建的瞬态 envelope、原消息/附件分别持久化与跨 scope 隔离；独立 Review 的 P1 已修复，缓冲失败恢复及纯附件末条证据锚定已补强，Schema 保持 80，允许进入 CIE.2。
 
 > 状态：当前执行约束  
 > 适用对象：Codex、维护者和后续参与开发的协作者  

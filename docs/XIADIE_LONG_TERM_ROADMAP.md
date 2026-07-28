@@ -1061,3 +1061,4 @@ v2.0 的最终成功标准：普通用户能够把一个真实、复杂、跨资
 | 2026-07-26 | CDS.0～10 review 后审计与定点返工 | 核实 CDS.4～9 无需推倒重做；新增失败测试发现 CDS.10 Episode/Saga 语义动作矩阵未完全闭合，已同步收紧 validator 与独立 oracle v3。CDS.6 修复 final+done 重复最终回调；后端 2284 项、前端 45 项通过。CDS.10 小样本质量仍为 50%，禁止据此晋级，未进入 CDS.11。 |
 | 2026-07-27 | LIFE.0～13 技术施工完成，等待总体 Review | Schema 64～71、生活事件/时钟/CatchUp/日程/目标/日期/日记/SelfTimeline、LIFE→EAP adapter 与产品页完成；180 天、30 天、100 时区日期、100 来源层级及保守压缩演练通过。后端 2416、前端 50、当前 Windows 构建、NSIS 临时安装、托盘/崩溃/重启/卸载和休眠唤醒保护场景通过；自然度与 0 P0/P1 总 Review 未完成，LIFE 尚未冻结，KIG 不开工。 |
 | 2026-07-28 | 登记 LIFE v2 长期候选基线 | 将 `structured-inner-state-v1` 与 `short-memo-v1` 固定为 LIFE v2 候选，明确非 CIE 前置、CIE 不得越权实现，并保留协议、迁移与排期未分配状态，便于未来专项检索与重新评审。 |
+| 2026-07-28 | CIE.1 消息积累窗口技术施工完成 | CIE.0 Review 通过后实现默认 500 ms 的有界 TurnIngressBuffer；原消息和附件分别持久化，服务端重建瞬态 envelope，625 条矩阵五项零容忍指标均为 0。Schema 保持 80，等待独立 Review 后再进入生成打断。 |

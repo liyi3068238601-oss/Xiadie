@@ -20,7 +20,7 @@ from . import (
     cognition_diagnostics as cognition_diagnostic_views, cognition_runtime,
     cognition_settings, companion_state, context_assembler, context_budget,
     context_controls, context_diagnostics, conversation_summaries,
-    conversation_summary_service, db,
+    conversation_summary_service, db, cie_settings,
     diary, entities, episode_consolidator, history_recall, important_dates,
     episode_summary_service, episodes, knowledge, knowledge_cleanup, knowledge_context,
     knowledge_embeddings, knowledge_grants,
@@ -28,7 +28,7 @@ from . import (
     knowledge_worker, kig_evidence, kig_governance, kig_maintenance, kig_pipeline, kig_sources, life_catchup, life_catchup_service, life_events, life_runtime, life_schedule, llm, lore, memory, memory_conflicts, memory_shadow_proposals,
     personal_goals,
     saga_consolidator, saga_lifecycle, saga_summary,
-    saga_summary_service, secret_store, self_timeline, slow_lifecycle,
+    saga_summary_service, secret_store, self_timeline, slow_lifecycle, turn_ingress,
 )
 from . import candidate_reranker_shadow  # noqa: F401
 from . import presence_thread_shadow  # noqa: F401 - registers CDS.3 Shadow contract
@@ -501,7 +501,21 @@ class ChatIn(BaseModel):
     knowledge_grant_token: Optional[str] = Field(default=None, max_length=256)
     knowledge_skip_restricted: bool = False
     attachment_ids: list[str] = Field(default_factory=list)
+    ingress_messages: list[turn_ingress.TurnIngressMessage] = Field(
+        default_factory=list, max_length=turn_ingress.MAX_MESSAGES,
+    )
     temporary_chat: bool = False
+
+
+@app.get("/api/cie/settings")
+def read_cie_settings() -> dict[str, object]:
+    return cie_settings.snapshot() | {
+        "window_ms": turn_ingress.DEFAULT_WINDOW_MS,
+        "window_min_ms": turn_ingress.MIN_WINDOW_MS,
+        "window_max_ms": turn_ingress.MAX_WINDOW_MS,
+        "max_messages": turn_ingress.MAX_MESSAGES,
+        "ingress_protocol_version": turn_ingress.PROTOCOL_VERSION,
+    }
 
 
 def _current_model() -> tuple[Optional[dict], str]:
@@ -534,10 +548,48 @@ def _context_capability(provider: dict | None, model: str):
 async def chat(body: ChatIn) -> StreamingResponse:
     # CDS.2: a real user turn preempts only not-started low-priority cognition work.
     cognition_runtime.DEFAULT_GOVERNOR.cancel_pending_for_user_message()
+    ingress_envelope: turn_ingress.TurnEnvelope | None = None
+    if body.ingress_messages:
+        if body.regenerate:
+            raise HTTPException(400, "regenerate 不接受 ingress_messages")
+        if not cie_settings.is_enabled():
+            raise HTTPException(409, {"code": "cie_disabled", "message": "CIE 消息积累尚未启用"})
+        try:
+            ingress_envelope = turn_ingress.build_envelope(body.session_id, body.ingress_messages)
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        if body.content != ingress_envelope.content:
+            raise HTTPException(409, {
+                "code": "turn_envelope_mismatch",
+                "message": "消息积累窗口内容与服务端封包不一致",
+            })
+    effective_content = ingress_envelope.content if ingress_envelope else body.content
+    # Frozen single-source state writers still accept one evidence message ID.
+    # Anchor their text to the last original message instead of falsely tying
+    # the whole ephemeral envelope to that ID. Retrieval may use the envelope.
+    anchored_ingress_index = None
+    if ingress_envelope:
+        anchored_ingress_index = next(
+            (
+                index for index in range(len(ingress_envelope.entries) - 1, -1, -1)
+                if ingress_envelope.entries[index].content.strip()
+            ),
+            len(ingress_envelope.entries) - 1,
+        )
+    anchored_content = (
+        ingress_envelope.entries[anchored_ingress_index].content
+        if ingress_envelope and anchored_ingress_index is not None
+        else effective_content
+    )
+    effective_attachment_ids = (
+        list(ingress_envelope.attachment_ids) if ingress_envelope else body.attachment_ids
+    )
     # 空 content 且无附件：拒绝（regenerate 不受此约束，因为复用历史消息）
-    if not body.regenerate and not body.content.strip() and not body.attachment_ids:
+    if not body.regenerate and not effective_content.strip() and not effective_attachment_ids:
         raise HTTPException(400, "content 和 attachment_ids 至少有一个非空")
     uid: str | None = None
+    ingress_message_ids: list[str] = []
+    anchored_uid: str | None = None
     replace_assistant_id: str | None = None
     provider, model = _current_model()
     kig_chat_result = None
@@ -557,7 +609,13 @@ async def chat(body: ChatIn) -> StreamingResponse:
 
         # 先分配/定位消息 ID，但在远传授权校验完成前不写入新消息。
         if not body.regenerate:
-            uid = db.new_id()
+            if ingress_envelope:
+                ingress_message_ids = [db.new_id() for _item in ingress_envelope.entries]
+                uid = ingress_message_ids[-1]
+                anchored_uid = ingress_message_ids[anchored_ingress_index]
+            else:
+                uid = db.new_id()
+                anchored_uid = uid
         else:
             # 重新生成时先保留旧回复。构造上下文时排除它，只有新回复成功写入的
             # 同一事务中才删除旧回复，网络或模型失败不会造成内容丢失。
@@ -574,27 +632,28 @@ async def chat(body: ChatIn) -> StreamingResponse:
             ).fetchone()
             if last_user:
                 uid = last_user["id"]
+                anchored_uid = uid
 
         # 构造上下文：人设 + 记忆摘要 + 历史
         digest, recalled_memories = (
-            ("", []) if temporary_chat else memory.build_digest(body.content)
+            ("", []) if temporary_chat else memory.build_digest(effective_content)
         )
         current_state = companion_state.get_state(persist_advance=False)
         next_state = (
             current_state
             if body.regenerate
-            else companion_state.preview_interaction(body.content, current_state)
+            else companion_state.preview_interaction(anchored_content, current_state)
         )
         style = companion_state.get_style_guidance(next_state)
-        lore_digest = lore.retrieve_lore(body.content)
+        lore_digest = lore.retrieve_lore(effective_content)
         recall_mode = knowledge_recall.settings()["mode"]
         # 提前计算 capability，供知识召回动态预算和上下文装配共用
         capability = _context_capability(provider, model)
         # 纯附件无文字消息：跳过知识召回（避免误触发远传授权询问）
-        content_has_text = bool(body.content.strip())
+        content_has_text = bool(effective_content.strip())
         if content_has_text:
             knowledge_retrieval, recall_decision = knowledge_context.prepare_for_mode(
-                body.content, mode=recall_mode, provider=provider,
+                effective_content, mode=recall_mode, provider=provider,
                 lore_text=lore_digest, memory_text=digest, session_id=body.session_id,
                 capability=capability,
             )
@@ -605,7 +664,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 knowledge_retrieval = knowledge_grants.authorize_chat_locked(
                     conn, prepared=knowledge_retrieval, session_id=body.session_id,
                     user_message_id=uid or "", request_nonce=body.request_nonce,
-                    content=body.content, provider=provider, model=model,
+                    content=effective_content, provider=provider, model=model,
                     grant_token=body.knowledge_grant_token,
                     skip_restricted=body.knowledge_skip_restricted,
                     recall_mode=recall_mode,
@@ -620,7 +679,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
         if content_has_text and uid:
             try:
                 kig_chat_result = kig_pipeline.prepare_for_chat(
-                    query=body.content, source_message_id=uid, session_id=body.session_id,
+                    query=effective_content, source_message_id=uid, session_id=body.session_id,
                     provider=provider, recall_mode=recall_mode,
                     authorized_knowledge_chunk_ids=frozenset(
                         str(item["chunk_id"])
@@ -637,10 +696,22 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 kig_chat_result = None
 
         if not body.regenerate:
-            conn.execute(
-                "INSERT INTO messages(id,session_id,role,content,created_at) VALUES(?,?,?,?,?)",
-                (uid, body.session_id, "user", body.content, db.now()),
-            )
+            if ingress_envelope:
+                created_at = db.now()
+                conn.executemany(
+                    "INSERT INTO messages(id,session_id,role,content,created_at) VALUES(?,?,?,?,?)",
+                    [
+                        (message_id, body.session_id, "user", item.content, created_at + index * 0.000001)
+                        for index, (message_id, item) in enumerate(
+                            zip(ingress_message_ids, ingress_envelope.entries), start=1,
+                        )
+                    ],
+                )
+            else:
+                conn.execute(
+                    "INSERT INTO messages(id,session_id,role,content,created_at) VALUES(?,?,?,?,?)",
+                    (uid, body.session_id, "user", effective_content, db.now()),
+                )
             cnt = conn.execute(
                 "SELECT COUNT(*) c FROM messages WHERE session_id=? AND role='user'",
                 (body.session_id,),
@@ -648,13 +719,13 @@ async def chat(body: ChatIn) -> StreamingResponse:
             if cnt == 1:
                 conn.execute(
                     "UPDATE sessions SET title=? WHERE id=?",
-                    (body.content.strip()[:20] or "新对话", body.session_id),
+                    (effective_content.strip()[:20] or "新对话", body.session_id),
                 )
 
         if not body.regenerate and uid and recall_mode == "smart" and recall_decision:
             knowledge_recall.record_actual_locked(
                 conn, session_id=body.session_id, user_message_id=uid,
-                user_text=body.content, provider=provider, result=recall_decision,
+                user_text=effective_content, provider=provider, result=recall_decision,
                 injected_count=len((knowledge_retrieval or {}).get("results", [])),
                 grant_id=(knowledge_retrieval or {}).get("_grant_id"),
             )
@@ -673,27 +744,40 @@ async def chat(body: ChatIn) -> StreamingResponse:
             ).fetchall()
         # 读取本轮附件全文，回填 message_id，拼接 attachment_block
         attachment_block = ""
-        if body.attachment_ids and uid:
+        if effective_attachment_ids and uid:
             rows = conn.execute(
-                "SELECT id, filename, content_text FROM message_attachments WHERE id IN (%s)"
-                % ",".join("?" * len(body.attachment_ids)),
-                body.attachment_ids,
+                "SELECT id, filename, content_text, message_id FROM message_attachments WHERE id IN (%s)"
+                % ",".join("?" * len(effective_attachment_ids)),
+                effective_attachment_ids,
             ).fetchall()
             found = {row["id"]: row for row in rows}
+            if ingress_envelope and (
+                set(found) != set(effective_attachment_ids)
+                or any(found[aid]["message_id"] is not None for aid in effective_attachment_ids)
+            ):
+                raise HTTPException(409, {
+                    "code": "turn_attachment_unavailable",
+                    "message": "积累窗口中的附件已失效或已经绑定",
+                })
+            attachment_owner = {
+                aid: ingress_message_ids[index]
+                for index, item in enumerate(ingress_envelope.entries if ingress_envelope else ())
+                for aid in item.attachment_ids
+            }
             parts = []
-            for aid in body.attachment_ids:
+            for aid in effective_attachment_ids:
                 row = found.get(aid)
                 if row:
                     conn.execute(
                         "UPDATE message_attachments SET message_id=? WHERE id=? AND message_id IS NULL",
-                        (uid, aid),
+                        (attachment_owner.get(aid, uid), aid),
                     )
                     parts.append("=== %s ===\n%s" % (row["filename"], row["content_text"]))
             if parts:
                 attachment_block = "\n\n".join(parts)
         knowledge_block = knowledge_context.prompt_block(knowledge_retrieval)
         self_timeline.refresh(conn=conn)
-        timeline_block = self_timeline.context_block(body.content)
+        timeline_block = self_timeline.context_block(effective_content)
         effective_lore_digest = "\n\n".join(part for part in (lore_digest, timeline_block) if part)
         if knowledge_retrieval:
             conn.execute(
@@ -718,7 +802,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
         history_prepared = (
             {"turns": [], "retrieval_id": None}
             if temporary_chat else history_recall.prepare_locked(
-                conn, body.content, current_session_id=body.session_id,
+                conn, effective_content, current_session_id=body.session_id,
             )
         )
         try:
@@ -756,7 +840,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
         # 纯附件无文字消息不触发知识召回，无需入队影子判断。
         knowledge_recall.enqueue(
             session_id=body.session_id, user_message_id=uid,
-            user_text=body.content, provider=provider,
+            user_text=effective_content, provider=provider,
         )
 
     # EAP v0.2 Conversation Presence v2：用户消息入库后更新 presence 状态。
@@ -772,7 +856,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
             )
         try:
             proactive_feedback.capture_natural_feedback(
-                body.session_id, uid, body.content,
+                body.session_id, anchored_uid, anchored_content,
             )
         except Exception:  # noqa: BLE001 - feedback inference must not block chat
             logger.warning(
@@ -782,8 +866,8 @@ async def chat(body: ChatIn) -> StreamingResponse:
         try:
             proactive_presence.update_presence(
                 body.session_id,
-                proactive_presence.detect_presence_signals(body.content),
-                source_message_id=uid,
+                proactive_presence.detect_presence_signals(anchored_content),
+                source_message_id=anchored_uid,
             )
         except Exception:  # noqa: BLE001 - presence failure must not block chat
             logger.warning(
@@ -886,6 +970,10 @@ async def chat(body: ChatIn) -> StreamingResponse:
                     "context_trimmed_messages": trimmed_count,
                     "context_trimmed_rounds": context_package.trimmed_rounds,
                     "context_budget": context_package.public_meta(),
+                    "turn_ingress": (
+                        ingress_envelope.public_meta(ingress_message_ids)
+                        if ingress_envelope else None
+                    ),
                 },
             )
             async for chunk in llm.stream_chat(
@@ -950,16 +1038,16 @@ async def chat(body: ChatIn) -> StreamingResponse:
         memory_observation = None
         if not body.regenerate and not temporary_chat:
             saved_companion_state = companion_state.commit_interaction(
-                body.content,
+                anchored_content,
                 source_session_id=body.session_id,
-                source_message_id=uid,
+                source_message_id=anchored_uid,
             )
             try:
                 memory_observation = memory_observer_service.enqueue_turn(
                     chat_provider=provider,
                     chat_model=model,
                     session_id=body.session_id,
-                    user_message_id=uid,
+                    user_message_id=anchored_uid,
                     assistant_message_id=aid,
                 )
             except Exception:  # noqa: BLE001 - 观察器故障不能破坏已完成的回复和引用
@@ -974,13 +1062,13 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 chat_provider=provider,
                 chat_model=model,
                 session_id=body.session_id,
-                user_message_id=uid,
+                user_message_id=anchored_uid,
                 assistant_message_id=aid,
             )
             try:
                 proactive_orchestrator.enqueue_after_chat(
                     session_id=body.session_id,
-                    user_message_id=uid,
+                    user_message_id=anchored_uid,
                     assistant_message_id=aid,
                 )
             except Exception:  # noqa: BLE001 - orchestration must not break a completed chat
@@ -1005,7 +1093,9 @@ async def chat(body: ChatIn) -> StreamingResponse:
             in ("observer_model_unavailable", "observer_enqueue_failed")
         ):
             try:
-                candidate = memory.maybe_create_candidate(body.content, body.session_id, uid)
+                candidate = memory.maybe_create_candidate(
+                    anchored_content, body.session_id, anchored_uid,
+                )
             except Exception:  # noqa: BLE001 - 记忆兜底不能吞掉成功的聊天回复
                 candidate = None
         final_payload = {
