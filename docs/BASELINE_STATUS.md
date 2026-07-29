@@ -2,7 +2,7 @@
 
 > 最近复核日期：2026-07-29
 >
-> 当前施工状态：LIFE2.0～LIFE2.2 完成。Persona v2 编译器、双模式/有限风格请求快照、旧 Prompt 回退，以及 30 条 WorldBook r1 Shadow 包已落地；候选尚未通过 LIFE2.3 模型晋级，生产继续使用旧 Persona/Lore，仍为 Schema 81
+> 当前施工状态：LIFE2.0～LIFE2.3 完成。Persona v2 在 `deepseek-v4-flash`、temperature=0 下三轮 120/120 硬门通过并登记为待 Review 候选；正式证书与生产门仍未开启。WorldBook r1 继续 Shadow，当前进入 Schema 82 / ShortMemo 施工
 >
 > 当前版本：`v0.1.0` MVP 骨架（知识库系统 K 系列已完成）
 >

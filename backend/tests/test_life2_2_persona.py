@@ -77,6 +77,7 @@ def test_certificate_is_bound_to_model_mode_and_compiled_hash(tmp_path, monkeypa
             "profile_version": manifest["profile_version"],
             "compiler_version": manifest["compiler_version"],
             "compiled_hashes": {"focused_work": compiled_hash},
+            "sampling_profile": {"temperature": 0.0},
             "status": "certified",
         }],
     }), encoding="utf-8")

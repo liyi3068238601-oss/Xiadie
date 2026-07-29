@@ -144,6 +144,7 @@ def compile_candidate(
     projection_text = _render_projection(projection)
     if projection_text:
         parts.append(projection_text)
+    parts.append(loaded["output_contract"])
     prompt = "\n\n".join(parts).strip()
     return prompt, manifest, hashes
 
@@ -197,6 +198,7 @@ def is_certified(
         and item.get("compiler_version") == compiler_version
         and isinstance(item.get("compiled_hashes"), dict)
         and item["compiled_hashes"].get(mode) == compiled_hash
+        and item.get("sampling_profile") == {"temperature": 0.0}
         and item.get("status") == "certified"
         for item in payload.get("certifications", []) if isinstance(item, dict)
     )

@@ -54,7 +54,8 @@ async def _stream_mock(messages: list[dict]) -> AsyncIterator[str]:
 
 
 async def _stream_openai_compatible(
-    base_url: str, api_key: str, model: str, messages: list[dict], *, max_tokens: int
+    base_url: str, api_key: str, model: str, messages: list[dict], *, max_tokens: int,
+    temperature: float | None = None,
 ) -> AsyncIterator[str]:
     url = base_url.rstrip("/") + "/chat/completions"
     headers = {"Content-Type": "application/json"}
@@ -66,6 +67,8 @@ async def _stream_openai_compatible(
         "stream": True,
         "max_tokens": max(1, int(max_tokens)),
     }
+    if temperature is not None:
+        payload["temperature"] = float(temperature)
     try:
         async with httpx.AsyncClient(timeout=60) as client:
             async with client.stream("POST", url, headers=headers, json=payload) as resp:
@@ -100,7 +103,8 @@ async def _stream_openai_compatible(
 
 
 async def stream_chat(
-    provider: Optional[dict], model: str, messages: list[dict], *, max_tokens: int = 1_024
+    provider: Optional[dict], model: str, messages: list[dict], *, max_tokens: int = 1_024,
+    temperature: float | None = None,
 ) -> AsyncIterator[str]:
     """按供应商分发。provider 为 None 或 mock 时走演示模型。"""
     if provider is None or provider["id"] == "mock" or not provider.get("base_url"):
@@ -109,7 +113,7 @@ async def stream_chat(
         return
     async for ch in _stream_openai_compatible(
         provider["base_url"], provider.get("api_key", ""), model, messages,
-        max_tokens=max_tokens,
+        max_tokens=max_tokens, temperature=temperature,
     ):
         yield ch
 

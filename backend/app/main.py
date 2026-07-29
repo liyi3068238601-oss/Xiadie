@@ -1295,6 +1295,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
             async for chunk in llm.stream_chat(
                 provider, model, messages,
                 max_tokens=context_package.output_reserve_tokens,
+                temperature=0.0 if persona_compilation.selected_v2 else None,
             ):
                 if body.cancel_token and chat_request_control.is_cancelled(body.cancel_token):
                     _finish_knowledge_retrieval(knowledge_retrieval, status="failed")

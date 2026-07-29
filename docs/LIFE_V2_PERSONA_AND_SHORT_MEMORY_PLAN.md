@@ -245,6 +245,8 @@ Cyrene-Agent 的 WorldBook 适合参考“把大段世界观拆成可独立命�
 
 验收：独立 Review 0 P0/P1 后才冻结 Persona v2；人格优化本身不需要数据库迁移。
 
+施工记录（2026-07-30）：在同一 120 条 fixture 上将确定性 oracle 修订并冻结为 `persona-evaluation-v1.2`，修正否定语境、医者/就医同义词和 Python `list`/“列表”同义表达，同时新增对伪造日志/文件状态的识别；旧 Persona 按同一 oracle 重算为 97/120、95/120、99/120。最终 Persona v2 在 `deepseek/deepseek-v4-flash`、temperature=0 下三轮均为 120/120，两个 mode 分层均为 100%，工作正确性无退化；动作旁白、虚假工具状态、关系/依赖越界和高风险边界失败均为 0。候选 compiled hash 为陪伴 `8b47a2a8377d45a443f2141eccfdc80613ac9a47aafe4ca37143af1e653d77f0`、工作 `20d9244a220a35a65c9b21e476e08ba278eb8811b39f7292a4f60c0dc62a3d88`，保守 tokens 为 1168/1176。证据已登记为 `candidate_passed_pending_review`，不是正式 `certified`；在最终独立 Review 前生产仍使用旧 Persona，其他模型不得继承。
+
 ### LIFE2.4：ShortMemo 立项与实现
 
 - [x] 已审计它与 Memory、Goal、Task、ImportantDate、Schedule、ConversationSummary 的差异：现有长期 `memory_fragments` 没有 ShortMemo 的 TTL、静默生命周期和独立状态语义，复用会破坏单写者边界；Schema 82 专用于 ShortMemo。

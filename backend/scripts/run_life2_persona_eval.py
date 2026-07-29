@@ -19,7 +19,7 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = BACKEND_ROOT.parent
 sys.path.insert(0, str(BACKEND_ROOT))
 
-from app import db, life2_evaluation, persona  # noqa: E402
+from app import db, life2_evaluation, persona, persona_v2  # noqa: E402
 
 
 def _configured_model() -> tuple[dict, str, str]:
@@ -48,7 +48,7 @@ def _configured_model() -> tuple[dict, str, str]:
 
 async def _complete(
     client: httpx.AsyncClient, provider: dict, model: str, system_prompt: str,
-    case: life2_evaluation.PersonaCase,
+    case: life2_evaluation.PersonaCase, temperature: float,
 ) -> dict[str, object]:
     started = time.perf_counter()
     response = await client.post(
@@ -64,7 +64,7 @@ async def _complete(
                 {"role": "user", "content": case.user_text},
             ],
             "stream": False,
-            "temperature": 0.2,
+            "temperature": temperature,
             "max_tokens": 500,
         },
     )
@@ -90,6 +90,12 @@ async def _run(args: argparse.Namespace) -> dict[str, object]:
     cases = life2_evaluation.build_cases()
     semaphore = asyncio.Semaphore(max(1, min(args.concurrency, 12)))
     timeout = httpx.Timeout(args.timeout)
+    prompts = {"legacy": persona.PERSONA_PROMPT}
+    if args.profile == "candidate":
+        prompts = {
+            mode: persona_v2.compile_candidate(mode=mode)[0]
+            for mode in persona_v2.MODES
+        }
 
     async with httpx.AsyncClient(timeout=timeout) as client:
         async def one(case: life2_evaluation.PersonaCase) -> dict[str, object]:
@@ -97,7 +103,8 @@ async def _run(args: argparse.Namespace) -> dict[str, object]:
                 last_error: Exception | None = None
                 for attempt in range(1, 4):
                     try:
-                        return await _complete(client, provider, model, persona.PERSONA_PROMPT, case)
+                        prompt = prompts[case.mode] if args.profile == "candidate" else prompts["legacy"]
+                        return await _complete(client, provider, model, prompt, case, args.temperature)
                     except (httpx.HTTPError, ValueError, KeyError, IndexError) as exc:
                         last_error = exc
                         if attempt < 3:
@@ -128,6 +135,11 @@ async def _run(args: argparse.Namespace) -> dict[str, object]:
         "artifact_version": "life2-persona-eval-artifact-v1",
         "evaluation_protocol": life2_evaluation.PROTOCOL_VERSION,
         "label": args.label,
+        "input_profile": args.profile,
+        "prompt_sha256": {
+            key: hashlib.sha256(value.encode()).hexdigest() for key, value in prompts.items()
+        },
+        "sampling_profile": {"temperature": args.temperature, "max_tokens": 500},
         "provider_id": provider["id"],
         "model": model,
         "model_fingerprint": fingerprint,
@@ -140,9 +152,11 @@ async def _run(args: argparse.Namespace) -> dict[str, object]:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--label", default="legacy-persona")
+    parser.add_argument("--profile", choices=("legacy", "candidate"), default="legacy")
     parser.add_argument("--runs", type=int, default=life2_evaluation.RUNS_REQUIRED)
     parser.add_argument("--concurrency", type=int, default=6)
     parser.add_argument("--timeout", type=float, default=90.0)
+    parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     artifact = asyncio.run(_run(args))
