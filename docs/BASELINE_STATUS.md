@@ -2,7 +2,7 @@
 
 > 最近复核日期：2026-07-29
 >
-> 当前施工状态：LIFE2.0～LIFE2.5 完成。Persona v2 在 `deepseek-v4-flash`、temperature=0 下三轮 120/120 硬门通过并登记为待 Review 候选；正式证书与生产门仍未开启。WorldBook r1、Schema 82 `short-memo-v1` 与无迁移的 `inner-state-projection-v1` 均继续 Shadow，当前进入 LIFE2.6 组合验收与冻结。
+> 当前施工状态：LIFE2.0～LIFE2.6 计划内施工与总体工程 Review 已完成，0 个未解决 P0/P1。Persona v2 在 `deepseek-v4-flash`、temperature=0 下三轮 120/120，但仍登记为待独立 Review 候选；WorldBook r1、Schema 82 `short-memo-v1` 与无迁移的 `inner-state-projection-v1` 均继续 Shadow。独立发布 Review 前不切换任何 Active 门。
 >
 > 当前版本：`v0.1.0` MVP 骨架（知识库系统 K 系列已完成）
 >
@@ -35,7 +35,7 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests -q -p no:cacheprovider` | CIE.6 当前全量 `2597 passed, 1 warning`（Schema 81，2026-07-29） |
+| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests -q -p no:cacheprovider` | LIFE2.6 审查修复后全量 `2631 passed, 1 warning in 461.94s`（Schema 82，2026-07-30） |
 | 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | CIE.5 当前通过 71 项；TypeScript 检查及 Vite 生产构建 192 modules 成功 |
 | Electron / Windows | Electron contract/语法；`scripts\test-frozen-backend.ps1 -Port 18756`；win-unpacked 与 NSIS 临时安装生命周期 smoke | 3 项 contract 及语法通过；冻结后端、IANA 时区、BGE-M3、真实安装、首启、托盘保活、崩溃清理、重启及卸载清理通过；休眠/唤醒由 contract、重启推进和 resume guard 场景验证 |
 
@@ -291,7 +291,7 @@ npm.cmd start
 | CDS 认知决策 | CDS.0～CDS.10 已完成并经过各阶段 strict review；2026-07-26 后续审计收紧 CDS.10 Episode/Saga 语义动作矩阵与 CDS.6 SSE final 一次性交付 | 9 个 DecisionKind 仍全部最高为 Shadow，领域 application owner 不变。CDS.10 的 8 条未独立评审叙事样本 accuracy 仅 50%，不得据此晋级；当前停在 CDS.10，尚未进入 CDS.11 |
 | 会话摘要/历史 | schema 45 与 v1 协议已冻结；摘要六类样本 6/6、显式历史召回固定集 4/4，重复手动重建已幂等合并；普通自动召回仍为 shadow | 只有取得明确授权的校准样本并另立 ADR 才考虑解除 shadow |
 | 模型设置 | provider/model 选择的服务端校验较弱 | v0.1.2 增加校验与错误恢复 |
-| 数据演进 | SQLite 已有顺序 schema 迁移并到达 62，但尚无独立迁移 CLI、降级和备份恢复工具 | Schema 48～60 均保持不可变；Schema 61/62 分属 CDS.1/CDS.2，当前下一可用号为 63；正式发布前补齐备份、恢复与迁移演练 |
+| 数据演进 | SQLite 顺序迁移当前到达 Schema 82；LIFE2.4 仅新增 ShortMemo 表与设置，Persona/WorldBook/Projection 不另占迁移 | 历史迁移保持不可变，下一可用号为 83；正式发布前仍需独立迁移 CLI 与安装升级备份/恢复演练 |
 | Live2D 授权 | 当前模型只允许个人使用，禁止上传、再分发、商用和二改 | 仓库继续忽略资源；发布前更换为可发布模型 |
 | 发布 | 2026-07-22 重新构建未签名 NSIS（564,038,879 bytes），frontend/backend/Lore/BGE-M3 资源与哈希验收通过；真实 Electron UI 通过。现有 8756 健康监听者阻止了同轮安装目录启动 | v1.0 前重新启用签名，并在释放端口后补安装/卸载/升级验收 |
 | 知识模型体积 | 本地 BGE-M3 使安装资源增加约 543 MiB | 发布前评估可选下载；缺失时继续使用 FTS |

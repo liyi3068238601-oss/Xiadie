@@ -277,13 +277,15 @@ Cyrene-Agent 的 WorldBook 适合参考“把大段世界观拆成可独立命�
 
 ### LIFE2.6：组合验收与冻结
 
-- Persona v2 开关关闭时完整恢复当前人格提示词。
-- ShortMemo/InnerStateProjection 任一失败均不阻塞基础聊天、Memory、LIFE v1、EAP、KIG 或 CIE。
-- 5/20/100/500 轮覆盖关系阶段、模式切换、过期、撤销、Provider/模型切换、前后台与休眠恢复。
-- 无 system prompt、用户正文、ShortMemo 正文或隐藏状态正文进入日志和无正文诊断。
-- 后端全量、前端测试/构建、Electron contract/Windows 烟测、迁移/回滚和独立 Review 全部通过。
+- [x] Persona v2 开关关闭时完整恢复当前人格提示词。
+- [x] ShortMemo/InnerStateProjection 任一失败均不阻塞基础聊天、Memory、LIFE v1、EAP、KIG 或 CIE。
+- [x] 5/20/100/500 轮覆盖关系阶段、模式切换、过期、撤销、Provider/模型切换、前后台、关闭恢复和重复回放；Windows 真实进程烟测与 Electron resume 合同分别验证。
+- [x] 无 system prompt、用户正文、ShortMemo 正文或隐藏状态正文进入日志和无正文诊断。
+- [~] 后端全量、前端测试/构建、Electron contract/Windows 烟测、迁移/回滚和总体工程 Review 已通过；用户独立发布 Review 尚未进行，因此所有候选继续 Shadow/Off，不以本施工记录代替独立晋级批准。
 
 验收：0 个未解决 P0/P1 后分别冻结已实际落地的协议；未实施候选不得写成完成。
+
+施工记录（2026-07-30）：`life2-final-acceptance-v1` 的 5/20/100/500 共 625 个组合案例全部通过，10 项失败计数为 0；最终审查修复 commit 为 `0348490`。审查发现并关闭 3 个冻结前问题：Projection 初始门与文档不一致、远端复核来源标记及 Off 门不完整、最大 Projection 导致 Persona 超出 1200 tokens；修复后最大 Persona 为陪伴 1186、专注工作 1194 tokens。后端审查修复后单次全量为 2631 passed、1 warning、461.94 秒；前端 73 passed，production build 通过；Windows 10.0.26200 隔离数据目录实机启动后端/Vite/Electron 并稳定存活 8 秒，端口与临时目录由烟测清理。真实 OS 休眠未由自动化强制触发以避免打断用户系统，`powerMonitor resume → /api/proactive/runtime/system-resume → delivery bridge` 合同由现有全量覆盖。总体工程 Review 当前 0 个未解决 P0/P1，但 Persona 仍是 `candidate_passed_pending_review`，WorldBook、ShortMemo、InnerStateProjection 均保持 Shadow；等待用户独立 Review 后再讨论任何 Active 晋级。证据见 `docs/reports/life2-final-review.md` 与 `docs/reports/life2-final-acceptance-v1.json`。
 
 ## 6. 冻结施工顺序（待计划独立 Review）
 
