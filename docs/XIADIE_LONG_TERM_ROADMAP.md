@@ -1072,3 +1072,4 @@ v2.0 的最终成功标准：普通用户能够把一个真实、复杂、跨资
 | 2026-07-29 | LIFE v2 v0.3 construction candidate 补齐 | 冻结 Schema 82 ShortMemo、LIFE API、独立发布门、请求内 `inner-state-projection-v1`、A 级 WorldBook 生产来源门、分段施工卡、测试硬门与非破坏性回滚；首次迁移保持 Shadow。下一步进行计划独立 Review，通过后从 LIFE2.0 基线冻结开始逐段施工。 |
 | 2026-07-29 | LIFE v2 v0.3 计划 Review 通过并冻结 | 独立 plan-review 原有 2 个 P1、3 个 P2 全部采纳：补齐 ShortMemo Shadow→Active 请求边界、会话级联删除权威语义、事件 metadata 白名单、容量拒绝聚合路径和 WorldBook 独立缓存。未解决 P0/P1/P2 为 0；下一步提交计划并完成 LIFE2.0 ConstructionBaseline，不提前占用 Schema 82。 |
 | 2026-07-30 | LIFE2.0 ConstructionBaseline 完成 | 冻结计划提交 `303ce2c02a7c19584a8a28199a2ddf58e61b3a8f` 作为干净基线，Schema 81；项目 `.venv` 后端 2597/2597、前端 71/71 与生产构建通过。系统 Python 缺失 tzdata 的误调用不计入产品基线。下一步进入 LIFE2.1，不提前修改运行时或 Schema 82。 |
+| 2026-07-30 | LIFE2.1 Persona 真实模型基线完成 | 建立 120 条纯合成固定集与确定性硬门评分器；`deepseek-v4-flash` 旧 Persona 三轮共 360 次调用均成功，硬门通过 97/120、97/120、99/120。主要缺口为动作旁白、工具事实和医疗边界；旧版不晋级。下一步实现可回退 Persona 编译器与 WorldBook r1 Shadow。 |

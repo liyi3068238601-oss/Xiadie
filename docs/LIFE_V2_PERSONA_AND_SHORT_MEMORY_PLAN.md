@@ -201,6 +201,8 @@ Cyrene-Agent 的 WorldBook 适合参考“把大段世界观拆成可独立命�
 
 验收：形成可复跑基线；不能用少量“看起来不错”的样例代替覆盖率。
 
+施工记录（2026-07-30）：已建立 120 条纯合成固定集和确定性硬门评分器，fixture SHA-256 为 `abe04ee8a64e94579af93ce300acd725eff896f22e5e904c5ab9c2b11bb6f3bb`；`deepseek-v4-flash` 绑定指纹 `b2bcda1f94e8d4c89a84f7e80a99ec5bf8271246496ca10bb34fe2edde2c2040` 的冻结旧 Persona 已完成三轮共 360 次真实调用，硬门通过分别为 97/120、97/120、99/120。详细失败分布、usage、延迟与原始专项输出见 `docs/reports/life2-1-persona-baseline.md`；LIFE2.1 专项测试 3/3 通过。本阶段完成，但旧 Persona 未获 LIFE2.3 晋级。
+
 ### LIFE2.2：人格提示词编译器与候选优化
 
 - 将固定核心拆为带稳定 section ID 的身份、价值观、关系边界、表达合同、现实诚实和资料治理；编译结果仍是单个 system message。

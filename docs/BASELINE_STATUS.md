@@ -2,7 +2,7 @@
 
 > 最近复核日期：2026-07-29
 >
-> 当前施工状态：LIFE v2 v0.3 计划已冻结；LIFE2.0 ConstructionBaseline 完成于 `303ce2c02a7c19584a8a28199a2ddf58e61b3a8f`，Schema 81，后端 2597、前端 71 与生产构建通过。当前进入 LIFE2.1 人格评测基线，尚未占用 Schema 82
+> 当前施工状态：LIFE2.0～LIFE2.1 完成。120 条 Persona 固定集与 `deepseek-v4-flash` 三轮旧版基线已落地，旧 Persona 硬门为 97/120、97/120、99/120，未获晋级；当前进入 LIFE2.2A/2.2B，仍为 Schema 81
 >
 > 当前版本：`v0.1.0` MVP 骨架（知识库系统 K 系列已完成）
 >
