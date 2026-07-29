@@ -2,7 +2,7 @@
 
 > 最近复核日期：2026-07-29
 >
-> 当前施工状态：CIE.0～CIE.6 已合入 main 并正式冻结；LIFE v2 实际代码审计与讨论稿已完成，等待用户确定 Persona v2、ShortMemo 与 StructuredInnerState 范围；当前 Schema 81
+> 当前施工状态：CIE.0～CIE.6 已合入 main 并正式冻结；LIFE v2 v0.3 plan-review 的 2 个 P1 与 3 个 P2 已全部关闭，计划现为 frozen。下一步提交计划并完成 LIFE2.0 ConstructionBaseline；尚未进入运行时施工，当前 Schema 81
 >
 > 当前版本：`v0.1.0` MVP 骨架（知识库系统 K 系列已完成）
 >

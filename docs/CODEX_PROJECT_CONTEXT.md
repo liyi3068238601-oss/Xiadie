@@ -1,6 +1,6 @@
 # 遐蝶 Codex 项目上下文
 
-> LIFE v2 规划快照（2026-07-29）：CIE.0～CIE.6 已合入 `main@3a663391cf12f5a843f4c1d5e311628ce8637c6e` 并正式冻结。当前从该点创建 `agent/life-v2-specialty`，`docs/LIFE_V2_PERSONA_AND_SHORT_MEMORY_PLAN.md` 已完成实际代码审计并形成讨论稿。下一步是与用户确定 Persona v2、ShortMemo 和 StructuredInnerState 的范围与顺序；讨论和计划 Review 前不改运行时、不占用 Schema 82。
+> LIFE v2 规划快照（2026-07-29）：CIE.0～CIE.6 已合入 `main@3a663391cf12f5a843f4c1d5e311628ce8637c6e` 并正式冻结。当前 `agent/life-v2-specialty` 的 `docs/LIFE_V2_PERSONA_AND_SHORT_MEMORY_PLAN.md` 已冻结为 v0.3：首发由用户明确选择 `companionship` / `focused_work`，自动模式延期且默认关闭；遐蝶核心人格确定为每轮 Persona Core 必达内容；原作人物关系、人物经历和生活细节进入 WorldBook/Lore 按需召回，当前用户关系保持独立；现有 Lore/KIG/CTX 所有权不变，首版不引入动态激活算法。Persona 与 WorldBook r1 内容治理已通过 Review；ShortMemo 确认为总开关开启后静默、最小化、带 TTL 写入并独占 Schema 82，首次迁移保持 Shadow；持久化 StructuredInnerState 已取消，改为无迁移、无持久化的当轮只读 `InnerStateProjection`。plan-review 的 2 个 P1 与 3 个 P2 已全部在数据/API、发布门、隐私删除、缓存、测试与回滚合同中关闭。下一步提交计划并完成 LIFE2.0 ConstructionBaseline；此前不改运行时代码。
 
 > 状态：当前执行约束  
 > 适用对象：Codex、维护者和后续参与开发的协作者  
@@ -383,4 +383,4 @@ EAP Schema 48～60 不回写；真实输出继续受后端最终授权复核、�
 
 EAP PR #1、CDS PR #2 与 LIFE PR #3 已依次合并冻结；LIFE predecessor 为 `main@f16d80ab0d2457065dc65d7d284d3cbf3584f5ee`、Schema 71。KIG-R 使用 Schema 72～76，冻结实现与 rollback point 为 `a18fd04a3759663f88d6a8041529fea14645c281`。KIG-P 使用 Schema 77～80，完成来源化 PWM、可逆实体解析、owner proposal-only 接口、非破坏性维护和原知识页扩展；既有 Knowledge/MEM/LIFE/CTX/EAP 所有权均未转移。模型认证仍只覆盖 `deepseek-v4-pro` 的 KIG-R 当前指纹，PWM 抽取保持 Shadow；Provider/模型切换必须重新认证。
 
-KIG PR #4 与 CIE v1 均已合入；CIE 正式冻结于 `main@3a663391cf12f5a843f4c1d5e311628ce8637c6e` / Schema 81。当前唯一规划入口为 `docs/LIFE_V2_PERSONA_AND_SHORT_MEMORY_PLAN.md`。Persona v2、`short-memo-v1` 与 `structured-inner-state-v1` 均未获施工授权；必须先完成用户讨论和计划 Review。Persona 固定核心归 Persona，最终预算归 CTX，LIFE 不得借专项名义成为第二个写入者。
+KIG PR #4 与 CIE v1 均已合入；CIE 正式冻结于 `main@3a663391cf12f5a843f4c1d5e311628ce8637c6e` / Schema 81。当前唯一规划入口为 `docs/LIFE_V2_PERSONA_AND_SHORT_MEMORY_PLAN.md`。Persona v2、`short-memo-v1` 与请求内 `inner-state-projection-v1` 的范围和施工合同已确认，但仍须先通过计划独立 Review 才获施工授权。持久化 `structured-inner-state-v1` 已取消。Persona 固定核心归 Persona，最终预算归 CTX，LIFE 不得借专项名义成为第二个写入者。

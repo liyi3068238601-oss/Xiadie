@@ -610,13 +610,13 @@ Artifact
 
 ### 14A.3 LIFE v2 长期候选基线
 
-以下能力仅登记为未来 LIFE v2 候选，不属于当前 v0.4.2/LIFE v1 的已实现范围，也不作为 CIE 开工或验收前置。后续若立项，必须先完成独立协议、隐私威胁模型、迁移与回滚评审；CIE 只能读取 LIFE 已授权的结构化投影，不能代建或写入这些对象。
+本节原为 LIFE v2 候选登记；CIE v1 已于 2026-07-29 冻结，随后专项审计已完成。以下是当前计划结论，仍不代表运行时已实现：
 
-- `structured-inner-state-v1` / `InnerStateEvent`：保存 emotion、expectation、open_thread、uncertainty、recovery 等有界枚举状态、强度区间、证据引用、可选用户可见摘要、过期与替代关系。只允许 LIFE 单写；不得保存、展示或要求模型输出完整内心独白或 chain-of-thought。
-- `short-memo-v1` / `ShortMemo`：保存限长、带来源快照与 1 小时～14 天 TTL 的临时备忘候选；建议上限 10 条、幂等 upsert、到期自动清理。它不是长期记忆、Goal、ImportantDate 或任务，模型只能提出候选，且不得自动晋升长期记忆。
-- 两项候选的协议版本、Schema 迁移号、产品入口和实施时间均保持未分配；必须在 CIE 冻结后由 LIFE v2 专项重新审计实际需求，不能把本节登记视为施工授权。
-- CIE v1 已于 2026-07-29 正式冻结。下一推荐入口是 LIFE v2 立项审计：先验证陪伴价值、与现有 Affect/Relationship/Memory/Goal 的重叠、单写者、隐私边界、TTL、迁移和回滚，再决定是否分别立项；审计本身不得创建 Schema 82 或运行时代码。
-- LIFE v2 讨论稿已扩展人格提示词优化轨道，详见 `docs/LIFE_V2_PERSONA_AND_SHORT_MEMORY_PLAN.md`。推荐先做 Persona 真实模型基线与可回退编译协议，再做 ShortMemo，最后决定是否需要持久化 StructuredInnerState；三条轨道分别过门，未实施项不得捆绑宣称完成。
+- 持久化 `structured-inner-state-v1` / `InnerStateEvent` 正式取消。首版只从现有 Affect、Relationship、Goal/Saga、LIFE 事件和相关 ShortMemo 确定性生成当轮只读 `inner-state-projection-v1`；无迁移、无缓存、无反向写回，不保存完整内心独白或 chain-of-thought。
+- `short-memo-v1` / `ShortMemo` 已确认立项：保存限长、带来源快照与 1 小时～14 天 TTL 的最小化近期备忘，默认 72 小时，当前单本机档案最多 10 条、相关时最多召回 3 条。用户开启总开关后允许静默创建，但秘密值与模型推断敏感事实永不入库；不自动晋升 Memory、Goal、ImportantDate 或 Task。
+- Schema 82 只分配给 ShortMemo；Persona、WorldBook 与 InnerStateProjection 不占迁移。首次迁移后发布门保持 Shadow，不写正式备忘、不召回，专项 Review 通过后才允许启用。
+- LIFE v2 v0.3 construction candidate 还包括 Persona 真实模型基线、可回退编译协议和 WorldBook r1 轨道，详见 `docs/LIFE_V2_PERSONA_AND_SHORT_MEMORY_PLAN.md`。首发由用户明确选择陪伴/工作模式；Cyrene WorldBook 只参考条目元数据、别名和单层关联，Lore/KIG/CTX 的正文、来源治理和预算所有权不变。
+- 计划独立 Review 通过后按 `LIFE2.0 → LIFE2.1 → LIFE2.2A → LIFE2.2B → LIFE2.3 → LIFE2.4A → LIFE2.4B → LIFE2.5 → LIFE2.6` 逐段施工；未实施或仍为 Shadow 的能力不得宣称完成。
 
 ### 14A.4 本版本验收
 
@@ -1066,3 +1066,8 @@ v2.0 的最终成功标准：普通用户能够把一个真实、复杂、跨资
 | 2026-07-28 | CIE.1 消息积累窗口技术施工完成 | CIE.0 Review 通过后实现默认 500 ms 的有界 TurnIngressBuffer；原消息和附件分别持久化，服务端重建瞬态 envelope，625 条矩阵五项零容忍指标均为 0。Schema 保持 80，等待独立 Review 后再进入生成打断。 |
 | 2026-07-29 | CIE.0～CIE.6 正式冻结 | 最终独立 Review 确认 0 P0/P1；后端 2597、前端 71、Electron contract/Windows 当前源码烟测、发布资源与 10 项零容忍指标全部通过。Schema 81 与 CIE v1 协议冻结；两个 P2 登记为兼容维护候选。下一步先做 LIFE v2 立项审计，不直接施工。 |
 | 2026-07-29 | LIFE v2 立项审计与讨论稿 | 审计现有 Persona/Affect/Relationship/CTX/Lore 装配链，将人格提示词版本化、模型评测和回退编译纳入 LIFE v2，同时把 ShortMemo 与 StructuredInnerState 分开过门。当前不改运行时、不占用 Schema 82，等待用户讨论。 |
+| 2026-07-29 | LIFE v2 Persona 与 WorldBook 内容讨论推进 | Persona Core、双模式、有限风格和负面矩阵已确认冻结；WorldBook `self/daily_life/events` 通过内容范围 Review，逐火条目按黄金裔 WIKI 3.7 补齐关键主干。来源与优先级仍待最终冻结，下一批进入 `characters`，未授权运行时施工或 Schema 82。 |
+| 2026-07-29 | LIFE v2 Persona / WorldBook r1 内容治理完成 | 30 个 WorldBook 条目和受限 Glossary 已完成内容、来源分级、唯一所有者与预算 Review；当前 `verified_a=0`、`candidate_b=27`、`local_candidate=3`，最坏三节实测 2185/3600 字符。旧 Lore 暂不覆盖；关联超过两条按 `priority DESC, entry_id ASC` 确定性取前二。下一步讨论 ShortMemo 与是否取消持久化 StructuredInnerState，仍未授权代码或 Schema 82。 |
+| 2026-07-29 | LIFE v2 ShortMemo / InnerState 范围确认 | ShortMemo 在用户总开关开启后允许静默创建，默认 72 小时、范围 1 小时～14 天、最多 10 条，只在相关时召回且不写其他状态域；敏感事项最小化，秘密值硬拒绝。持久化 StructuredInnerState 正式取消，改为当轮只读 `InnerStateProjection`，不占用迁移。下一步为计划独立 Review，尚未授权施工。 |
+| 2026-07-29 | LIFE v2 v0.3 construction candidate 补齐 | 冻结 Schema 82 ShortMemo、LIFE API、独立发布门、请求内 `inner-state-projection-v1`、A 级 WorldBook 生产来源门、分段施工卡、测试硬门与非破坏性回滚；首次迁移保持 Shadow。下一步进行计划独立 Review，通过后从 LIFE2.0 基线冻结开始逐段施工。 |
+| 2026-07-29 | LIFE v2 v0.3 计划 Review 通过并冻结 | 独立 plan-review 原有 2 个 P1、3 个 P2 全部采纳：补齐 ShortMemo Shadow→Active 请求边界、会话级联删除权威语义、事件 metadata 白名单、容量拒绝聚合路径和 WorldBook 独立缓存。未解决 P0/P1/P2 为 0；下一步提交计划并完成 LIFE2.0 ConstructionBaseline，不提前占用 Schema 82。 |
