@@ -2,7 +2,7 @@
 
 > 最近复核日期：2026-07-29
 >
-> 当前施工状态：CIE.0～CIE.6 已合入 main 并正式冻结；LIFE v2 v0.3 plan-review 的 2 个 P1 与 3 个 P2 已全部关闭，计划现为 frozen。下一步提交计划并完成 LIFE2.0 ConstructionBaseline；尚未进入运行时施工，当前 Schema 81
+> 当前施工状态：LIFE v2 v0.3 计划已冻结；LIFE2.0 ConstructionBaseline 完成于 `303ce2c02a7c19584a8a28199a2ddf58e61b3a8f`，Schema 81，后端 2597、前端 71 与生产构建通过。当前进入 LIFE2.1 人格评测基线，尚未占用 Schema 82
 >
 > 当前版本：`v0.1.0` MVP 骨架（知识库系统 K 系列已完成）
 >

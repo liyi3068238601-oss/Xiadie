@@ -185,10 +185,10 @@ Cyrene-Agent 的 WorldBook 适合参考“把大段世界观拆成可独立命�
 - [x] 与用户确认 Persona Core、两个模式、有限风格偏好和负面行为矩阵的具体内容。
 - [x] 用户确认 ShortMemo 允许静默创建，默认 72 小时、范围 1 小时～14 天、最多 10 条；不做逐条确认，但保留数据总开关与查看/删除/清空。
 - [x] 用户确认 StructuredInnerState 不持久化，首版只生成基于现有权威状态的当轮只读 `InnerStateProjection`。
-- [ ] 计划 Review 通过并合并/提交后，记录干净 ConstructionBaseline SHA、分支、Schema 81、依赖锁和实际测试结果；旧文档中的历史 passed 数不作为新基线。
+- [x] 计划已提交并以干净 `303ce2c02a7c19584a8a28199a2ddf58e61b3a8f` 记录 ConstructionBaseline：分支 `agent/life-v2-specialty`、Schema 81、依赖锁与实际测试结果见 `docs/reports/life2-0-construction-baseline.md`；旧文档中的历史 passed 数未复用。
 - [x] 独立 plan-review 确认所有权无冲突；原 2 个 P1 与 3 个 P2 已全部在计划中解决。
 
-验收：无运行时改动、无迁移、无 Provider 调用、文档与当前代码一致。
+验收：通过。基线提交无运行时改动、无迁移、无 Provider 调用；项目虚拟环境后端 2597/2597、前端 71/71 与生产构建通过。
 
 ### LIFE2.1：人格生成质量基线
 

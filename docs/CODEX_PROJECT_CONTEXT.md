@@ -1,6 +1,6 @@
 # 遐蝶 Codex 项目上下文
 
-> LIFE v2 规划快照（2026-07-29）：CIE.0～CIE.6 已合入 `main@3a663391cf12f5a843f4c1d5e311628ce8637c6e` 并正式冻结。当前 `agent/life-v2-specialty` 的 `docs/LIFE_V2_PERSONA_AND_SHORT_MEMORY_PLAN.md` 已冻结为 v0.3：首发由用户明确选择 `companionship` / `focused_work`，自动模式延期且默认关闭；遐蝶核心人格确定为每轮 Persona Core 必达内容；原作人物关系、人物经历和生活细节进入 WorldBook/Lore 按需召回，当前用户关系保持独立；现有 Lore/KIG/CTX 所有权不变，首版不引入动态激活算法。Persona 与 WorldBook r1 内容治理已通过 Review；ShortMemo 确认为总开关开启后静默、最小化、带 TTL 写入并独占 Schema 82，首次迁移保持 Shadow；持久化 StructuredInnerState 已取消，改为无迁移、无持久化的当轮只读 `InnerStateProjection`。plan-review 的 2 个 P1 与 3 个 P2 已全部在数据/API、发布门、隐私删除、缓存、测试与回滚合同中关闭。下一步提交计划并完成 LIFE2.0 ConstructionBaseline；此前不改运行时代码。
+> LIFE v2 施工快照（2026-07-30）：v0.3 计划已冻结，LIFE2.0 ConstructionBaseline 为干净 `303ce2c02a7c19584a8a28199a2ddf58e61b3a8f` / Schema 81。项目 `.venv` 后端 2597/2597、前端 71/71 与生产构建通过；依赖指纹见 `docs/reports/life2-0-construction-baseline.md`。当前进入 LIFE2.1 人格评测基线；尚未占用 Schema 82、尚未替换生产 Persona 或旧 Lore。
 
 > 状态：当前执行约束  
 > 适用对象：Codex、维护者和后续参与开发的协作者  
