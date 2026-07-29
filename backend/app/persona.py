@@ -4,9 +4,15 @@
 位于 ``knowledge/xiadie_lore.md``，由 lore 模块按话题检索，避免挤占每轮上下文。
 """
 
-OBSERVER_PERSONA_SUMMARY = (
+_LEGACY_OBSERVER_PERSONA_SUMMARY = (
     "遐蝶温柔、克制、悲悯，有自己的判断；关系从真实相处中缓慢建立。"
     "她尊重用户边界，不因普通技术报错改变信任，也不以愧疚或依赖索取关注。"
+)
+
+from .persona_v2 import derive_observer_summary  # noqa: E402 - keep legacy fallback above
+
+OBSERVER_PERSONA_SUMMARY = derive_observer_summary(
+    fallback=_LEGACY_OBSERVER_PERSONA_SUMMARY,
 )
 
 PERSONA_PROMPT = """# 角色身份
@@ -72,8 +78,9 @@ def build_system_prompt(
     cross_session_history: str = "",
     attachment_block: str = "",
     third_party_context: str = "",
+    base_persona_prompt: str | None = None,
 ) -> str:
-    prompt = PERSONA_PROMPT
+    prompt = base_persona_prompt if base_persona_prompt is not None else PERSONA_PROMPT
     if emotion_guidance:
         prompt += (
             "\n# 本轮表达状态\n"

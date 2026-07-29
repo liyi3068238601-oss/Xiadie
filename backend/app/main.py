@@ -26,7 +26,7 @@ from . import (
     knowledge_embeddings, knowledge_grants,
     knowledge_management, knowledge_parser, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search,
     knowledge_worker, kig_evidence, kig_governance, kig_maintenance, kig_pipeline, kig_sources, life_catchup, life_catchup_service, life_events, life_runtime, life_schedule, llm, lore, memory, memory_conflicts, memory_shadow_proposals,
-    personal_goals,
+    personal_goals, persona, persona_v2, worldbook_r1,
     saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, secret_store, self_timeline, slow_lifecycle, turn_ingress,
     chat_request_control, image_attachments, vision_capabilities,
@@ -530,6 +530,10 @@ class ChatIn(BaseModel):
     image_provider_id: Optional[str] = Field(default=None, max_length=80)
     image_model: Optional[str] = Field(default=None, max_length=200)
     image_location_revision: Optional[int] = Field(default=None, ge=1)
+    persona_mode: Optional[str] = Field(
+        default=None, pattern=r"^(companionship|focused_work)$",
+    )
+    persona_style: dict[str, str] = Field(default_factory=dict)
 
 
 class ChatCancelIn(BaseModel):
@@ -890,7 +894,21 @@ async def chat(body: ChatIn) -> StreamingResponse:
             else companion_state.preview_interaction(anchored_content, current_state)
         )
         style = companion_state.get_style_guidance(next_state)
-        lore_digest = lore.retrieve_lore(effective_content)
+        try:
+            persona_compilation = persona_v2.compile_for_request(
+                legacy_prompt=persona.PERSONA_PROMPT,
+                mode=body.persona_mode,
+                style=body.persona_style,
+                provider=provider,
+                model=model,
+            )
+        except persona_v2.PersonaResourceError as exc:
+            raise HTTPException(422, str(exc)) from exc
+        legacy_lore_digest = lore.retrieve_lore(effective_content)
+        worldbook_recall = worldbook_r1.retrieve_for_request(
+            effective_content, legacy_content=legacy_lore_digest,
+        )
+        lore_digest = worldbook_recall.content
         recall_mode = knowledge_recall.settings()["mode"]
         # 提前计算 capability，供知识召回动态预算和上下文装配共用
         capability = _context_capability(provider, model)
@@ -1069,6 +1087,9 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 attachment_block=attachment_block,
                 retrieval_bundle=(kig_chat_result.bundle if kig_chat_result else None),
                 context_contribution_candidates=governed_context_contributions,
+                base_persona_prompt=persona_compilation.prompt,
+                persona_meta=persona_compilation.public_meta(),
+                worldbook_meta=worldbook_recall.public_meta(),
             )
         except context_budget.ContextBudgetError as error:
             if conn.in_transaction:
@@ -1201,6 +1222,9 @@ async def chat(body: ChatIn) -> StreamingResponse:
                         current_session_id=body.session_id,
                         retrieval_bundle=(kig_chat_result.bundle if kig_chat_result else None),
                         context_contribution_candidates=governed_context_contributions,
+                        base_persona_prompt=persona_compilation.prompt,
+                        persona_meta=persona_compilation.public_meta(),
+                        worldbook_meta=worldbook_recall.public_meta(),
                     )
                     messages = list(context_package.messages)
                     trimmed_count = context_package.trimmed_messages

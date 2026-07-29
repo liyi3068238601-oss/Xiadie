@@ -2,7 +2,7 @@
 
 > 最近复核日期：2026-07-29
 >
-> 当前施工状态：LIFE2.0～LIFE2.1 完成。120 条 Persona 固定集与 `deepseek-v4-flash` 三轮旧版基线已落地，旧 Persona 硬门为 97/120、97/120、99/120，未获晋级；当前进入 LIFE2.2A/2.2B，仍为 Schema 81
+> 当前施工状态：LIFE2.0～LIFE2.2 完成。Persona v2 编译器、双模式/有限风格请求快照、旧 Prompt 回退，以及 30 条 WorldBook r1 Shadow 包已落地；候选尚未通过 LIFE2.3 模型晋级，生产继续使用旧 Persona/Lore，仍为 Schema 81
 >
 > 当前版本：`v0.1.0` MVP 骨架（知识库系统 K 系列已完成）
 >

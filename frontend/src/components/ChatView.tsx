@@ -55,6 +55,15 @@ type BufferedIngressEntry = api.TurnIngressMessage & {
   attachments: api.ChatAttachmentResult[];
 };
 
+type PersonaMode = "companionship" | "focused_work";
+type PersonaStyle = NonNullable<api.ChatRequestOptions["persona_style"]>;
+const DEFAULT_PERSONA_STYLE: PersonaStyle = {
+  address_style: "natural",
+  detail_level: "balanced",
+  poetic_level: "balanced",
+  proactivity_level: "balanced",
+};
+
 export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, onCompanionState, onSessionsChanged }: Props) {
   const [messages, setMessages] = useState<api.Message[]>([]);
   const [input, setInput] = useState("");
@@ -72,6 +81,8 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
   const [attachmentBusy, setAttachmentBusy] = useState(false);
   const [cieEnabled, setCieEnabled] = useState(false);
   const [ingressCount, setIngressCount] = useState(0);
+  const [personaMode, setPersonaMode] = useState<PersonaMode>("companionship");
+  const [personaStyle, setPersonaStyle] = useState<PersonaStyle>(DEFAULT_PERSONA_STYLE);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -103,6 +114,31 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
       .then((settings) => setCieEnabled(settings.enabled))
       .catch(() => setCieEnabled(false));
   }, []);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    const key = `xiadie-persona-v1:${sessionId}`;
+    try {
+      const saved = JSON.parse(window.sessionStorage.getItem(key) || "null");
+      setPersonaMode(saved?.mode === "focused_work" ? "focused_work" : "companionship");
+      setPersonaStyle({ ...DEFAULT_PERSONA_STYLE, ...(saved?.style || {}) });
+    } catch {
+      setPersonaMode("companionship");
+      setPersonaStyle(DEFAULT_PERSONA_STYLE);
+    }
+  }, [sessionId]);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    try {
+      window.sessionStorage.setItem(
+        `xiadie-persona-v1:${sessionId}`,
+        JSON.stringify({ mode: personaMode, style: personaStyle }),
+      );
+    } catch {
+      /* sessionStorage 不可用时只影响偏好持久化，不阻断聊天 */
+    }
+  }, [sessionId, personaMode, personaStyle]);
 
   useEffect(() => {
     const previousSession = activeSessionRef.current;
@@ -503,6 +539,8 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
         },
       },
       {
+        persona_mode: personaMode,
+        persona_style: personaStyle,
         regenerate,
         request_nonce: requestNonce,
         knowledge_grant_token: token,
@@ -857,6 +895,76 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
       </div>
 
       <div className="composer">
+        <div className="persona-controls" aria-label="遐蝶对话方式">
+          <label>
+            <span>对话方式</span>
+            <select
+              value={personaMode}
+              disabled={composerBusy}
+              onChange={(event) => setPersonaMode(event.target.value as PersonaMode)}
+            >
+              <option value="companionship">陪伴</option>
+              <option value="focused_work">技术工作</option>
+            </select>
+          </label>
+          <label>
+            <span>篇幅</span>
+            <select
+              value={personaStyle.detail_level}
+              disabled={composerBusy}
+              onChange={(event) => setPersonaStyle((current) => ({
+                ...current, detail_level: event.target.value as PersonaStyle["detail_level"],
+              }))}
+            >
+              <option value="concise">简短</option>
+              <option value="balanced">适中</option>
+              <option value="detailed">详细</option>
+            </select>
+          </label>
+          <label>
+            <span>诗意</span>
+            <select
+              value={personaStyle.poetic_level}
+              disabled={composerBusy}
+              onChange={(event) => setPersonaStyle((current) => ({
+                ...current, poetic_level: event.target.value as PersonaStyle["poetic_level"],
+              }))}
+            >
+              <option value="low">克制</option>
+              <option value="balanced">适中</option>
+              <option value="high">较多</option>
+            </select>
+          </label>
+          <label>
+            <span>主动性</span>
+            <select
+              value={personaStyle.proactivity_level}
+              disabled={composerBusy}
+              onChange={(event) => setPersonaStyle((current) => ({
+                ...current, proactivity_level: event.target.value as PersonaStyle["proactivity_level"],
+              }))}
+            >
+              <option value="reserved">克制</option>
+              <option value="balanced">适中</option>
+              <option value="engaged">积极</option>
+            </select>
+          </label>
+          <label>
+            <span>称呼</span>
+            <select
+              value={personaStyle.address_style}
+              disabled={composerBusy}
+              onChange={(event) => setPersonaStyle((current) => ({
+                ...current, address_style: event.target.value as PersonaStyle["address_style"],
+              }))}
+            >
+              <option value="natural">自然</option>
+              <option value="ge_xia_low">低频阁下</option>
+              <option value="name_if_known">已知姓名</option>
+              <option value="none">不主动称呼</option>
+            </select>
+          </label>
+        </div>
         {pendingAttachments.length > 0 && (
           <div className="attachment-chips">
             {pendingAttachments.map((a) => {

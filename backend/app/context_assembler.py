@@ -77,6 +77,8 @@ class ContextPackage:
     retrieval_conflict_count: int
     retrieval_insufficiency_count: int
     context_contribution_count: int
+    persona_meta: Mapping[str, object]
+    worldbook_meta: Mapping[str, object]
 
     @property
     def messages(self) -> tuple[dict[str, str], ...]:
@@ -111,6 +113,8 @@ class ContextPackage:
             "retrieval_conflict_count": self.retrieval_conflict_count,
             "retrieval_insufficiency_count": self.retrieval_insufficiency_count,
             "context_contribution_count": self.context_contribution_count,
+            "persona": dict(self.persona_meta),
+            "worldbook": dict(self.worldbook_meta),
             "source_type_counts": {
                 "current_session": self.raw_rounds_after_summary,
                 "rolling_summary": 1 if self.summary else 0,
@@ -145,6 +149,9 @@ def assemble(
     attachment_block: str = "",
     retrieval_bundle: object | None = None,
     context_contribution_candidates: Sequence[object] = (),
+    base_persona_prompt: str | None = None,
+    persona_meta: Mapping[str, object] | None = None,
+    worldbook_meta: Mapping[str, object] | None = None,
 ) -> ContextPackage:
     """构造单次模型请求；成功结果必定满足 CTX.1 硬预算不变量。"""
     rows = [_message(message) for message in history]
@@ -192,6 +199,7 @@ def assemble(
             components["rolling_summary"], components["cross_session_recall"],
             components["attachment"],
             components["third_party_context"],
+            base_persona_prompt=base_persona_prompt,
         )
         try:
             plan = context_budget.build_budget_plan(
@@ -231,6 +239,9 @@ def assemble(
             attachment_block=attachment_block,
             retrieval_bundle=retrieval_bundle,
             context_contribution_candidates=context_contribution_candidates,
+            base_persona_prompt=base_persona_prompt,
+            persona_meta=persona_meta,
+            worldbook_meta=worldbook_meta,
         )
     raw_before_current = max(0, len(plan.messages) - 2)
     component_tokens = {
@@ -251,6 +262,8 @@ def assemble(
         context_contribution_count=_count_rendered_contributions(
             components["third_party_context"], fallback=contribution_count,
         ),
+        persona_meta=dict(persona_meta or {}),
+        worldbook_meta=dict(worldbook_meta or {}),
     )
 
 

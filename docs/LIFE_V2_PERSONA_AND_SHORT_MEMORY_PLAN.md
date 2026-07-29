@@ -217,6 +217,8 @@ Cyrene-Agent 的 WorldBook 适合参考“把大段世界观拆成可独立命�
 
 验收：同输入同版本编译结果完全一致；未知 overlay fail closed；关闭开关逐字回到旧提示词；中途切换不改变活动请求，重放保持原模式。
 
+施工记录（2026-07-30）：LIFE2.2A 已实现 `persona-profile-v2` / `persona-prompt-compiler-v1` 的资源 hash 校验、确定性编译、双模式与四项有限风格选择、模型指纹与编译 hash 双绑定证书门、`off/shadow/active` 发布门及旧 `PERSONA_PROMPT` 逐字回退。陪伴/工作候选分别为 1169/1156 字符、991/975 保守 tokens，compiled hash 分别为 `77dd4b19c6e332f500f858c3b927dd33c948493cc62890fbf37374a03044f08b` 与 `4c8b34d99f4fb4a28dc9aa5f4fe84fc7fefe73ae5081fa140955611630039153`。观察器摘要已从同一份已校验 Core 确定性派生；前端按会话保存模式/风格并在每个聊天请求边界生成快照。当前证书为空、发布门默认关闭，因此生产聊天仍逐字使用旧 Persona。
+
 #### LIFE2.2A：Persona/Lore 分层与 WorldBook 参考适配
 
 - 逐条决定当前 Persona 与 `xiadie_lore.md` 的归属：跨场景不可缺失的身份/边界进入 Core，其余人物、地点、经历与世界观留在 Lore，禁止两边复制全文。
@@ -229,6 +231,8 @@ Cyrene-Agent 的 WorldBook 适合参考“把大段世界观拆成可独立命�
 - 第一版沿用现有最多 3 节/3600 字符作为兼容上界，再以模型 context capability 施加更严格 token 预算；任何上调必须由固定集收益证明。
 
 验收：相同 Lore revision 与查询得到相同候选和裁剪；循环关系不扩散、关联不超过一层、无显式命中不注入；Lore 失效时陪伴聊天可降级且不生成空人格；日志无 Lore 正文。
+
+施工记录（2026-07-30）：LIFE2.2B 已将 Review 通过的 30 条候选编译为 `worldbook-r1` 只读包，逐条固定 entry ID、revision、body SHA-256、来源状态、优先级和单层关联；独立 loader/cache namespace 绑定 manifest hash、`worldbook-source-gate-v1` 与发布门快照。召回保持最多 3 节/3600 字符、显式命中、关联最多 2 条及 `priority DESC, entry_id ASC`；注入块固定声明不得把当前用户映射为开拓者或原作人物。当前来源仍为 A=0/B=27/local=3，因此 r1 仅产生无正文诊断所需的 Shadow 候选元数据，`active` 也会 fail closed 回到未修改的旧 Lore，绝不把 B/local 条目带入生产。
 
 ### LIFE2.3：人格候选真实模型对照与晋级
 
