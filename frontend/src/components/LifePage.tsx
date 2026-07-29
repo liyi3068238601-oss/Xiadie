@@ -23,6 +23,7 @@ export function LifePage() {
   const [diary, setDiary] = useState<api.LifeDiaryEntry[]>([]);
   const [dates, setDates] = useState<api.LifeImportantDate[]>([]);
   const [goals, setGoals] = useState<api.LifeGoal[]>([]);
+  const [shortMemos, setShortMemos] = useState<api.ShortMemoItem[]>([]);
   const [diagnostics, setDiagnostics] = useState<api.LifeDiagnostics | null>(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -35,9 +36,9 @@ export function LifePage() {
   const refresh = useCallback(async () => {
     setFailed(false);
     try {
-      const [scheduleResult, settingsResult, stateResult, diaryResult, datesResult, goalsResult] = await Promise.all([
+      const [scheduleResult, settingsResult, stateResult, diaryResult, datesResult, goalsResult, memoResult] = await Promise.all([
         api.getLifeSchedule(today), api.getLifeSettings(), api.getLifeState(),
-        api.listLifeDiary(), api.listLifeDates(), api.listLifeGoals(),
+        api.listLifeDiary(), api.listLifeDates(), api.listLifeGoals(), api.listShortMemos(),
       ]);
       setSchedule(scheduleResult.item);
       setSettings(settingsResult);
@@ -45,6 +46,7 @@ export function LifePage() {
       setDiary(diaryResult.items);
       setDates(datesResult.items);
       setGoals(goalsResult.items);
+      setShortMemos(memoResult.items);
     } catch {
       setFailed(true);
     } finally {
@@ -58,6 +60,27 @@ export function LifePage() {
     await api.updateLifeSettings(mode);
     setSettings((current) => current ? { ...current, mode } : current);
     setNotice(mode === "continuous_simulated" ? "离线生活已开启" : mode === "paused" ? "生活推进已暂停" : "离线生活已关闭");
+  };
+
+  const updateShortMemoSettings = async (changes: Parameters<typeof api.updateShortMemoSettings>[0]) => {
+    const result = await api.updateShortMemoSettings(changes);
+    setSettings(result);
+    setNotice("近期约定设置已更新");
+  };
+
+  const changeMemoExpiry = async (item: api.ShortMemoItem) => {
+    const currentDays = Math.max(1, Math.round((item.expires_at - item.created_at) / 86400));
+    const daysText = window.prompt("从创建时间起保留多少天（1–14）", String(currentDays));
+    if (daysText === null) return;
+    const days = Number(daysText);
+    if (!Number.isInteger(days) || days < 1 || days > 14) {
+      setNotice("请输入 1–14 的整数天数");
+      return;
+    }
+    await api.updateShortMemo(item.id, {
+      expected_revision: item.revision, expires_at: item.created_at + days * 86400,
+    });
+    await refresh();
   };
 
   const addGoal = async (event: FormEvent) => {
@@ -224,6 +247,55 @@ export function LifePage() {
             </div>
           </article>
           <article className="life-card"><h3>数据管理</h3><p>可以重建本地生活索引，或导出包括私人日记在内的完整本地副本。</p><div className="life-actions"><button onClick={async () => { const result = await api.rebuildLifeViews(); setNotice(`已重建 ${result.timeline_entries} 条生活索引`); await refresh(); }}>重建</button><button onClick={downloadExport}>导出</button></div></article>
+          <article className="life-card">
+            <h3>近期约定</h3>
+            <p>遐蝶会静默整理你明确提到的近期安排，在有效期内自然跟进；它不会变成长期记忆，也不会向模型授予任何操作权限。</p>
+            {settings.short_memo.rollout_mode !== "active" && (
+              <p className="empty-inline">功能正在准备中。当前只做本地 Shadow 验证，不保存候选，也不会注入聊天。</p>
+            )}
+            <div className="life-mode-options" role="group" aria-label="近期约定设置">
+              <button
+                className={settings.short_memo.enabled ? "active" : ""}
+                onClick={() => updateShortMemoSettings({ short_memo_enabled: !settings.short_memo.enabled })}
+              >{settings.short_memo.enabled ? "已开启" : "已关闭"}</button>
+              <button
+                className={settings.short_memo.remote_extraction_enabled ? "active" : ""}
+                onClick={() => updateShortMemoSettings({
+                  short_memo_remote_extraction_enabled: !settings.short_memo.remote_extraction_enabled,
+                })}
+              >{settings.short_memo.remote_extraction_enabled ? "远程复核已授权" : "仅本地规则"}</button>
+              <select
+                aria-label="近期约定默认保留时间"
+                value={settings.short_memo.default_ttl_seconds}
+                onChange={(event) => updateShortMemoSettings({ short_memo_default_ttl_seconds: Number(event.target.value) })}
+              >
+                <option value={86400}>1 天</option>
+                <option value={259200}>3 天</option>
+                <option value={604800}>7 天</option>
+                <option value={1209600}>14 天</option>
+              </select>
+            </div>
+            <p><small>远程复核默认关闭。开启后，只会把已经过秘密拦截与敏感最小化的候选发送给当前模型；模型只能否决，不能改写内容。</small></p>
+            {shortMemos.map((item) => (
+              <div className="life-row" key={item.id}>
+                <div>
+                  <p>{item.content}</p>
+                  <small>有效至 {new Date(item.expires_at * 1000).toLocaleString()} · 来源：{item.source_session_title || "对话"}</small>
+                </div>
+                <div className="life-actions">
+                  <button onClick={() => changeMemoExpiry(item)}>改期</button>
+                  <button className="danger" onClick={async () => { await api.deleteShortMemo(item.id); await refresh(); }}>删除</button>
+                </div>
+              </div>
+            ))}
+            {shortMemos.length > 0 && (
+              <div className="life-actions">
+                <button className="danger" onClick={async () => {
+                  if (window.confirm("清空全部近期约定？此操作不可撤销。")) { await api.clearShortMemos(true); await refresh(); }
+                }}>清空全部</button>
+              </div>
+            )}
+          </article>
           <details className="life-card life-diagnostics" onToggle={(event) => { if (event.currentTarget.open) void openDiagnostics(); }}>
             <summary>开发者诊断</summary>
             {!diagnostics ? <p>正在读取无正文诊断……</p> : <div><p>Schema {diagnostics.schema_version} · 状态修订 {diagnostics.state_revision ?? "未建立"}</p><p>算法 {diagnostics.state_algorithm} · 错误码 {diagnostics.anomaly_code || "无"}</p><ul>{diagnostics.sources.map((source) => <li key={`${source.source_type}:${source.source_id}:${source.source_revision}`}>{source.source_type} · {source.source_id} · rev {source.source_revision} · {source.source_status}</li>)}</ul></div>}

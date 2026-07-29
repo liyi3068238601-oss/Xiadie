@@ -3896,6 +3896,58 @@ MIGRATIONS = [
             ON model_capability_evidence(capability,status,checked_at DESC);
         """,
     ),
+    (
+        82,
+        """
+        -- LIFE2.4: bounded, source-backed, expiring ShortMemo records.
+        CREATE TABLE short_memos (
+            id TEXT PRIMARY KEY,
+            content TEXT NOT NULL CHECK(length(trim(content)) BETWEEN 1 AND 240),
+            content_hash TEXT NOT NULL CHECK(length(content_hash)=64 AND content_hash=lower(content_hash)),
+            topic_keys_json TEXT NOT NULL DEFAULT '[]',
+            source_session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+            source_message_id TEXT NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
+            source_snapshot_hash TEXT NOT NULL CHECK(length(source_snapshot_hash)=64 AND source_snapshot_hash=lower(source_snapshot_hash)),
+            source_run_id TEXT REFERENCES decision_runs(id) ON DELETE SET NULL,
+            extraction_method TEXT NOT NULL CHECK(extraction_method IN ('deterministic','model_validated')),
+            sensitivity TEXT NOT NULL CHECK(sensitivity IN ('normal','sensitive_minimized')),
+            dedupe_key TEXT NOT NULL UNIQUE CHECK(length(dedupe_key)=64 AND dedupe_key=lower(dedupe_key)),
+            revision INTEGER NOT NULL DEFAULT 1 CHECK(revision >= 1),
+            created_at REAL NOT NULL,
+            updated_at REAL NOT NULL,
+            expires_at REAL NOT NULL CHECK(expires_at > created_at AND expires_at <= created_at + 1209600)
+        );
+        CREATE INDEX idx_short_memos_expiry ON short_memos(expires_at);
+        CREATE INDEX idx_short_memos_source ON short_memos(source_session_id,source_message_id);
+        CREATE INDEX idx_short_memos_list ON short_memos(updated_at DESC,id ASC);
+
+        CREATE TABLE short_memo_events (
+            id TEXT PRIMARY KEY,
+            memo_id TEXT NOT NULL,
+            action TEXT NOT NULL CHECK(action IN (
+                'created','deduplicated','expiry_changed','superseded','expired','deleted','cleared'
+            )),
+            reason_code TEXT NOT NULL DEFAULT '' CHECK(reason_code IN (
+                '','user_message','same_window','user_changed_expiry','replaced','ttl_elapsed',
+                'user_deleted','user_cleared','privacy_clear','source_invalid'
+            )),
+            metadata_json TEXT NOT NULL DEFAULT '{}',
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX idx_short_memo_events_memo ON short_memo_events(memo_id,created_at,id);
+
+        INSERT OR IGNORE INTO settings(key,value) VALUES('life.short_memo.enabled','1');
+        INSERT OR IGNORE INTO settings(key,value) VALUES('life.short_memo.rollout_mode','shadow');
+        INSERT OR IGNORE INTO settings(key,value) VALUES('life.short_memo.rollout_epoch','0');
+        INSERT OR IGNORE INTO settings(key,value) VALUES('life.short_memo.remote_extraction_enabled','0');
+        INSERT OR IGNORE INTO settings(key,value) VALUES('life.short_memo.default_ttl_seconds','259200');
+        INSERT OR IGNORE INTO settings(key,value) VALUES('life.short_memo.max_active','10');
+        INSERT OR IGNORE INTO settings(key,value) VALUES('life.short_memo.max_recall','3');
+        INSERT OR IGNORE INTO settings(key,value) VALUES('life.persona_v2.rollout_mode','off');
+        INSERT OR IGNORE INTO settings(key,value) VALUES('life.worldbook_r1.rollout_mode','off');
+        INSERT OR IGNORE INTO settings(key,value) VALUES('life.inner_state_projection.rollout_mode','off');
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

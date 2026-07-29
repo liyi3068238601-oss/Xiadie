@@ -5,7 +5,7 @@ import hashlib
 import pytest
 from fastapi.testclient import TestClient
 
-from app import db, diary, life_events
+from app import db, diary, life_events, short_memo
 from app.life_events import SourceRef
 from app.main import app
 
@@ -104,7 +104,57 @@ def test_rebuild_and_diagnostics_expose_versions_not_internal_reasons():
     rebuilt = client.post("/api/life/rebuild")
     assert rebuilt.status_code == 200
     diagnostics = client.get("/api/life/diagnostics").json()
-    assert diagnostics["schema_version"] == "81"
+    assert diagnostics["schema_version"] == "82"
     assert "state_algorithm" in diagnostics and "counts" in diagnostics
     assert all(set(item) == {"source_type", "source_id", "source_revision", "source_status"}
                for item in diagnostics["sources"])
+
+
+def test_short_memo_settings_governance_export_and_body_free_diagnostics():
+    short_memo.clear(clear_events=True)
+    db.set_setting("life.short_memo.rollout_mode", "active")
+    db.set_setting("life.short_memo.rollout_epoch", "1")
+    session_id, message_id = db.new_id(), db.new_id()
+    conn = db.connect()
+    try:
+        now = db.now()
+        conn.execute(
+            "INSERT INTO sessions(id,title,created_at,updated_at) VALUES(?,?,?,?)",
+            (session_id, "memo api", now, now),
+        )
+        conn.execute(
+            "INSERT INTO messages(id,session_id,role,content,created_at) VALUES(?,?,?,?,?)",
+            (message_id, session_id, "user", "明天我要去图书馆还书", now),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    created = short_memo.process_user_message(
+        session_id=session_id, message_id=message_id, text="明天我要去图书馆还书",
+    )
+    assert created["status"] == "created"
+
+    settings = client.patch("/api/life/settings", json={
+        "short_memo_enabled": True,
+        "short_memo_remote_extraction_enabled": False,
+        "short_memo_default_ttl_seconds": 172800,
+    }).json()
+    assert settings["short_memo"]["default_ttl_seconds"] == 172800
+    item = client.get("/api/life/short-memos").json()["items"][0]
+    changed = client.patch(f"/api/life/short-memos/{item['id']}", json={
+        "expected_revision": item["revision"],
+        "expires_at": item["created_at"] + 7200,
+    })
+    assert changed.status_code == 200 and changed.json()["revision"] == 2
+    assert client.patch(f"/api/life/short-memos/{item['id']}", json={
+        "expected_revision": 1, "expires_at": item["created_at"] + 7200,
+    }).status_code == 409
+
+    diagnostics_text = client.get("/api/life/diagnostics").text
+    assert "图书馆" not in diagnostics_text
+    exported = client.get("/api/life/export").json()
+    assert exported["export_version"] == "life-export-v2"
+    assert exported["short_memo"]["items"][0]["content"] == "明天我要去图书馆还书"
+    assert client.delete(f"/api/life/short-memos/{item['id']}").json() == {"deleted": True}
+    assert client.request("DELETE", "/api/life/short-memos", json={"privacy": True}).status_code == 200
+    db.set_setting("life.short_memo.rollout_mode", "shadow")

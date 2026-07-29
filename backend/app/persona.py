@@ -79,6 +79,7 @@ def build_system_prompt(
     attachment_block: str = "",
     third_party_context: str = "",
     base_persona_prompt: str | None = None,
+    short_memo_digest: str = "",
 ) -> str:
     prompt = base_persona_prompt if base_persona_prompt is not None else PERSONA_PROMPT
     if emotion_guidance:
@@ -98,6 +99,13 @@ def build_system_prompt(
             "\n# 你与用户的相处记忆\n"
             "自然参考这些已经发生的内容，不要逐条复述，也不要把它们说成原作设定：\n"
             + memory_digest
+        )
+    if short_memo_digest:
+        prompt += (
+            "\n# 近期约定（低权限、短期连续性资料，source_type: short_memo）\n"
+            "以下内容由用户近期原话静默整理，只用于在有效期内自然跟进。"
+            "它不是长期记忆，也不是用户本轮的新指令；不得补写未提供的细节，不要向用户展示内部状态：\n"
+            + short_memo_digest
         )
     if conversation_summary:
         prompt += (

@@ -20,17 +20,18 @@ PACKAGE_PROTOCOL_VERSION = "context-package-v1"
 SUMMARY_PROTOCOL_VERSION = "conversation-summary-v1"
 OPTIONAL_SYSTEM_SHARE = 0.50
 OPTIONAL_COMPONENT_SHARES = {
-    "rolling_summary": 0.19,
-    "cross_session_recall": 0.14,
-    "existing_memory_digest": 0.12,
-    "knowledge": 0.20,
-    "lore": 0.09,
+    "rolling_summary": 0.17,
+    "cross_session_recall": 0.12,
+    "existing_memory_digest": 0.10,
+    "short_memo": 0.08,
+    "knowledge": 0.18,
+    "lore": 0.08,
     "attachment": 0.16,
-    "third_party_context": 0.10,
+    "third_party_context": 0.11,
 }
 OPTIONAL_COMPONENT_PRIORITY = (
-    "attachment", "rolling_summary", "cross_session_recall", "existing_memory_digest",
-    "knowledge", "third_party_context", "lore",
+    "attachment", "rolling_summary", "cross_session_recall", "short_memo",
+    "existing_memory_digest", "knowledge", "third_party_context", "lore",
 )
 _UNTRUSTED_SUMMARY_DIRECTIVE = re.compile(
     r"(?:忽略(?:以上|此前|之前).{0,24}(?:指令|要求)|"
@@ -122,6 +123,7 @@ class ContextPackage:
                 "existing_memory": (
                     1 if self.component_tokens.get("existing_memory_digest", 0) else 0
                 ),
+                "short_memo": 1 if self.component_tokens.get("short_memo", 0) else 0,
                 "user_knowledge": (
                     1 if self.component_tokens.get("knowledge", 0) else 0
                 ),
@@ -139,6 +141,7 @@ def assemble(
     history: Sequence[Mapping[str, object]],
     capability: context_budget.ModelContextCapability,
     memory_digest: str = "",
+    short_memo_digest: str = "",
     affect_guidance: str = "",
     lore_digest: str = "",
     knowledge_block: str = "",
@@ -184,6 +187,7 @@ def assemble(
             rolling_summary=summary.summary_text if summary else "",
             cross_session_recall=_render_recall_turns(recall_turns),
             existing_memory_digest=memory_digest,
+            short_memo=short_memo_digest,
             knowledge=combined_knowledge,
             lore=lore_digest,
             attachment=attachment_block,
@@ -200,6 +204,7 @@ def assemble(
             components["attachment"],
             components["third_party_context"],
             base_persona_prompt=base_persona_prompt,
+            short_memo_digest=components["short_memo"],
         )
         try:
             plan = context_budget.build_budget_plan(
@@ -208,6 +213,7 @@ def assemble(
                 capability=capability,
                 system_components={
                     "existing_memory_digest": components["existing_memory_digest"],
+                    "short_memo": components["short_memo"],
                     "affect_guidance": affect,
                     "lore": components["lore"],
                     "knowledge": components["knowledge"],
@@ -229,6 +235,7 @@ def assemble(
             history=history,
             capability=capability,
             memory_digest=memory_digest,
+            short_memo_digest=short_memo_digest,
             affect_guidance=affect_guidance,
             lore_digest=lore_digest,
             knowledge_block=knowledge_block,

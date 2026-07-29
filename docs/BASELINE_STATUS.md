@@ -2,7 +2,7 @@
 
 > 最近复核日期：2026-07-29
 >
-> 当前施工状态：LIFE2.0～LIFE2.3 完成。Persona v2 在 `deepseek-v4-flash`、temperature=0 下三轮 120/120 硬门通过并登记为待 Review 候选；正式证书与生产门仍未开启。WorldBook r1 继续 Shadow，当前进入 Schema 82 / ShortMemo 施工
+> 当前施工状态：LIFE2.0～LIFE2.4 完成。Persona v2 在 `deepseek-v4-flash`、temperature=0 下三轮 120/120 硬门通过并登记为待 Review 候选；正式证书与生产门仍未开启。WorldBook r1 与 Schema 82 `short-memo-v1` 均继续 Shadow，当前进入请求内只读 `InnerStateProjection` 施工。
 >
 > 当前版本：`v0.1.0` MVP 骨架（知识库系统 K 系列已完成）
 >

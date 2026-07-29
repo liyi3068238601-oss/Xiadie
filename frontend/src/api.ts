@@ -81,6 +81,28 @@ export type LifeContinuityMode = "continuous_simulated" | "paused" | "disabled";
 export interface LifeSettings {
   mode: LifeContinuityMode;
   offline_continuity_default: LifeContinuityMode;
+  short_memo: {
+    enabled: boolean;
+    rollout_mode: "off" | "shadow" | "active";
+    rollout_epoch: number;
+    remote_extraction_enabled: boolean;
+    default_ttl_seconds: number;
+    max_active: number;
+    max_recall: number;
+  };
+}
+export interface ShortMemoItem {
+  id: string;
+  content: string;
+  topic_keys: string[];
+  source_session_id: string;
+  source_message_id: string;
+  source_session_title?: string;
+  sensitivity: "normal" | "sensitive_minimized";
+  revision: number;
+  created_at: number;
+  updated_at: number;
+  expires_at: number;
 }
 export interface LifeState {
   initialized: boolean;
@@ -139,8 +161,24 @@ export interface LifeDiagnostics {
 }
 export const getLifeSettings = () => j<LifeSettings>("/api/life/settings");
 export const updateLifeSettings = (mode: LifeContinuityMode) =>
-  j<{ mode: LifeContinuityMode }>("/api/life/settings", {
+  j<LifeSettings>("/api/life/settings", {
     method: "PATCH", body: JSON.stringify({ mode }),
+  });
+export const updateShortMemoSettings = (body: {
+  short_memo_enabled?: boolean;
+  short_memo_remote_extraction_enabled?: boolean;
+  short_memo_default_ttl_seconds?: number;
+}) => j<LifeSettings>("/api/life/settings", { method: "PATCH", body: JSON.stringify(body) });
+export const listShortMemos = () => j<{ items: ShortMemoItem[] }>("/api/life/short-memos");
+export const updateShortMemo = (id: string, body: { expected_revision: number; expires_at: number }) =>
+  j<ShortMemoItem>(`/api/life/short-memos/${encodeURIComponent(id)}`, {
+    method: "PATCH", body: JSON.stringify(body),
+  });
+export const deleteShortMemo = (id: string) =>
+  j<{ deleted: boolean }>(`/api/life/short-memos/${encodeURIComponent(id)}`, { method: "DELETE" });
+export const clearShortMemos = (privacy = false) =>
+  j<{ deleted_count: number }>("/api/life/short-memos", {
+    method: "DELETE", body: JSON.stringify({ privacy, clear_events: privacy }),
   });
 export const getLifeState = () => j<LifeState>("/api/life/state");
 export const listLifeDiary = () => j<{ items: LifeDiaryEntry[] }>("/api/life/diary");

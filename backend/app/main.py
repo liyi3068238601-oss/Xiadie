@@ -26,7 +26,7 @@ from . import (
     knowledge_embeddings, knowledge_grants,
     knowledge_management, knowledge_parser, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search,
     knowledge_worker, kig_evidence, kig_governance, kig_maintenance, kig_pipeline, kig_sources, life_catchup, life_catchup_service, life_events, life_runtime, life_schedule, llm, lore, memory, memory_conflicts, memory_shadow_proposals,
-    personal_goals, persona, persona_v2, worldbook_r1,
+    personal_goals, persona, persona_v2, short_memo, worldbook_r1,
     saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, secret_store, self_timeline, slow_lifecycle, turn_ingress,
     chat_request_control, image_attachments, vision_capabilities,
@@ -699,6 +699,9 @@ async def chat(body: ChatIn) -> StreamingResponse:
     governed_context_contributions: tuple[context_contributions.GovernedContribution, ...] = ()
     image_data_urls: list[str] = []
     consumed_image_files: list[tuple[str, str]] = []
+    short_memo_snapshot = None
+    short_memo_items: list[dict[str, object]] = []
+    short_memo_digest = ""
     conn = db.connect()
     try:
         sess = conn.execute("SELECT * FROM sessions WHERE id = ?", (body.session_id,)).fetchone()
@@ -712,6 +715,22 @@ async def chat(body: ChatIn) -> StreamingResponse:
             # one-way privacy transition before those reads to avoid retaining a
             # write lock for the rest of chat preparation.
             conn.commit()
+
+        if not temporary_chat:
+            # Capture once at the request boundary.  A rollout change during a
+            # request must not produce a mixed read/write policy.
+            short_memo_snapshot = short_memo.rollout_snapshot(conn)
+            try:
+                short_memo_items = short_memo.recall(
+                    effective_content, snapshot=short_memo_snapshot,
+                )
+                short_memo_digest = short_memo.render_recall(short_memo_items)
+            except Exception:  # short-term continuity must never block chat
+                logger.warning(
+                    "short_memo_recall_failed session_id=%s", body.session_id, exc_info=True,
+                )
+                short_memo_items = []
+                short_memo_digest = ""
 
         if cie_settings.is_enabled():
             contribution_request_id = f"cie-context:{db.new_id()}"
@@ -1078,6 +1097,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 history=history,
                 capability=capability,
                 memory_digest=digest,
+                short_memo_digest=short_memo_digest,
                 affect_guidance=style,
                 lore_digest=effective_lore_digest,
                 knowledge_block=knowledge_block,
@@ -1102,6 +1122,30 @@ async def chat(body: ChatIn) -> StreamingResponse:
         conn.commit()
     finally:
         conn.close()
+
+    if not body.regenerate and not temporary_chat and short_memo_snapshot:
+        source_items = (
+            zip(ingress_message_ids, ingress_envelope.entries)
+            if ingress_envelope else ((uid, None),)
+        )
+        for source_message_id, ingress_item in source_items:
+            if not source_message_id:
+                continue
+            source_text = ingress_item.content if ingress_item is not None else effective_content
+            try:
+                await short_memo.validate_and_process_user_message(
+                    session_id=body.session_id,
+                    message_id=source_message_id,
+                    text=source_text,
+                    provider=provider,
+                    model=model,
+                    snapshot=short_memo_snapshot,
+                )
+            except Exception:  # silent extraction is an optional, non-blocking side effect
+                logger.warning(
+                    "short_memo_process_failed session_id=%s message_id=%s",
+                    body.session_id, source_message_id, exc_info=True,
+                )
 
     for _attachment_id, storage_name in consumed_image_files:
         image_attachments.remove(storage_name)
@@ -1214,6 +1258,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
                         history=history,
                         capability=capability,
                         memory_digest=used_digest,
+                        short_memo_digest=short_memo_digest,
                         affect_guidance=style,
                         lore_digest=effective_lore_digest,
                         knowledge_block=knowledge_block,
@@ -1719,7 +1764,20 @@ def get_life_schedule(local_date: str, timezone_id: str = "Asia/Shanghai") -> di
 
 
 class LifeSettingsIn(BaseModel):
-    mode: str
+    mode: str | None = None
+    short_memo_enabled: bool | None = None
+    short_memo_remote_extraction_enabled: bool | None = None
+    short_memo_default_ttl_seconds: int | None = None
+
+
+class ShortMemoUpdateIn(BaseModel):
+    expected_revision: int = Field(ge=1)
+    expires_at: float
+
+
+class ShortMemoClearIn(BaseModel):
+    clear_events: bool = False
+    privacy: bool = False
 
 
 class LifeDiaryUpdateIn(BaseModel):
@@ -1758,15 +1816,57 @@ class LifeGoalUpdateIn(BaseModel):
 @app.get("/api/life/settings")
 def get_life_settings() -> dict:
     mode = life_catchup.get_mode()
-    return {"mode": mode, "offline_continuity_default": life_catchup.MODE_CONTINUOUS}
+    return {
+        "mode": mode,
+        "offline_continuity_default": life_catchup.MODE_CONTINUOUS,
+        "short_memo": short_memo.rollout_snapshot().public(),
+    }
 
 
 @app.patch("/api/life/settings")
 def update_life_settings(body: LifeSettingsIn) -> dict:
     try:
-        return {"mode": life_catchup.set_mode(body.mode)}
+        if body.mode is not None:
+            life_catchup.set_mode(body.mode)
+        short_memo.update_product_settings(
+            enabled=body.short_memo_enabled,
+            remote_extraction_enabled=body.short_memo_remote_extraction_enabled,
+            default_ttl_seconds=body.short_memo_default_ttl_seconds,
+        )
+        return get_life_settings()
     except life_catchup.CatchUpError as exc:
         raise HTTPException(400, detail=exc.code) from exc
+    except short_memo.ShortMemoError as exc:
+        raise HTTPException(400, detail=exc.code) from exc
+
+
+@app.get("/api/life/short-memos")
+def list_short_memos() -> dict:
+    return {"items": short_memo.list_active()}
+
+
+@app.patch("/api/life/short-memos/{memo_id}")
+def update_short_memo(memo_id: str, body: ShortMemoUpdateIn) -> dict:
+    try:
+        return short_memo.update_expiry(
+            memo_id, expected_revision=body.expected_revision, expires_at=body.expires_at,
+        )
+    except short_memo.ShortMemoError as exc:
+        status = 404 if exc.code == "short_memo_not_found" else 409
+        raise HTTPException(status, detail=exc.code) from exc
+
+
+@app.delete("/api/life/short-memos/{memo_id}")
+def delete_short_memo(memo_id: str) -> dict:
+    return {"deleted": short_memo.delete(memo_id)}
+
+
+@app.delete("/api/life/short-memos")
+def clear_short_memos(body: ShortMemoClearIn | None = None) -> dict:
+    options = body or ShortMemoClearIn()
+    return {"deleted_count": short_memo.clear(
+        clear_events=options.clear_events, privacy=options.privacy,
+    )}
 
 
 @app.get("/api/life/diary")
@@ -1902,12 +2002,13 @@ def rebuild_life_views() -> dict:
 @app.get("/api/life/export")
 def export_life_data() -> dict:
     return {
-        "export_version": "life-export-v1", "exported_at": db.now(),
+        "export_version": "life-export-v2", "exported_at": db.now(),
         "settings": get_life_settings(), "state": get_life_state(),
         "events": life_events.list_events(include_revoked=True, limit=500),
         "diary": diary.list_entries(include_revoked=True, limit=500),
         "important_dates": important_dates.list_dates(include_revoked=True, limit=500),
         "personal_goals": personal_goals.list_goals(include_revoked=True, limit=500),
+        "short_memo": short_memo.export_data(),
     }
 
 
@@ -1921,7 +2022,10 @@ def get_life_diagnostics() -> dict:
         ).fetchone()
         counts = {
             table: conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
-            for table in ("life_events", "diary_entries", "important_dates", "personal_goals")
+            for table in (
+                "life_events", "diary_entries", "important_dates", "personal_goals",
+                "short_memos", "short_memo_events",
+            )
         }
         sources = [dict(row) for row in conn.execute(
             "SELECT source_type,source_id,source_revision,source_status FROM self_timeline_entries "
@@ -1934,7 +2038,7 @@ def get_life_diagnostics() -> dict:
         "state_revision": state.revision if state else None,
         "state_algorithm": state.algorithm_version if state else life_runtime.ALGORITHM_VERSION,
         "anomaly_code": state.anomaly_code if state else None,
-        "counts": counts, "sources": sources,
+        "counts": counts, "sources": sources, "short_memo": short_memo.diagnostics(),
     }
 
 
