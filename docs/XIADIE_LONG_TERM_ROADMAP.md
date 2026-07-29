@@ -616,6 +616,7 @@ Artifact
 - `short-memo-v1` / `ShortMemo`：保存限长、带来源快照与 1 小时～14 天 TTL 的临时备忘候选；建议上限 10 条、幂等 upsert、到期自动清理。它不是长期记忆、Goal、ImportantDate 或任务，模型只能提出候选，且不得自动晋升长期记忆。
 - 两项候选的协议版本、Schema 迁移号、产品入口和实施时间均保持未分配；必须在 CIE 冻结后由 LIFE v2 专项重新审计实际需求，不能把本节登记视为施工授权。
 - CIE v1 已于 2026-07-29 正式冻结。下一推荐入口是 LIFE v2 立项审计：先验证陪伴价值、与现有 Affect/Relationship/Memory/Goal 的重叠、单写者、隐私边界、TTL、迁移和回滚，再决定是否分别立项；审计本身不得创建 Schema 82 或运行时代码。
+- LIFE v2 讨论稿已扩展人格提示词优化轨道，详见 `docs/LIFE_V2_PERSONA_AND_SHORT_MEMORY_PLAN.md`。推荐先做 Persona 真实模型基线与可回退编译协议，再做 ShortMemo，最后决定是否需要持久化 StructuredInnerState；三条轨道分别过门，未实施项不得捆绑宣称完成。
 
 ### 14A.4 本版本验收
 
@@ -1064,3 +1065,4 @@ v2.0 的最终成功标准：普通用户能够把一个真实、复杂、跨资
 | 2026-07-28 | 登记 LIFE v2 长期候选基线 | 将 `structured-inner-state-v1` 与 `short-memo-v1` 固定为 LIFE v2 候选，明确非 CIE 前置、CIE 不得越权实现，并保留协议、迁移与排期未分配状态，便于未来专项检索与重新评审。 |
 | 2026-07-28 | CIE.1 消息积累窗口技术施工完成 | CIE.0 Review 通过后实现默认 500 ms 的有界 TurnIngressBuffer；原消息和附件分别持久化，服务端重建瞬态 envelope，625 条矩阵五项零容忍指标均为 0。Schema 保持 80，等待独立 Review 后再进入生成打断。 |
 | 2026-07-29 | CIE.0～CIE.6 正式冻结 | 最终独立 Review 确认 0 P0/P1；后端 2597、前端 71、Electron contract/Windows 当前源码烟测、发布资源与 10 项零容忍指标全部通过。Schema 81 与 CIE v1 协议冻结；两个 P2 登记为兼容维护候选。下一步先做 LIFE v2 立项审计，不直接施工。 |
+| 2026-07-29 | LIFE v2 立项审计与讨论稿 | 审计现有 Persona/Affect/Relationship/CTX/Lore 装配链，将人格提示词版本化、模型评测和回退编译纳入 LIFE v2，同时把 ShortMemo 与 StructuredInnerState 分开过门。当前不改运行时、不占用 Schema 82，等待用户讨论。 |

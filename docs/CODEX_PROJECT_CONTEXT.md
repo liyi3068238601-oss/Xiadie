@@ -1,6 +1,6 @@
 # 遐蝶 Codex 项目上下文
 
-> CIE 冻结快照（2026-07-29）：CIE.0～CIE.6 已完成并通过独立 Review，0 个未解决 P0/P1；CIE v1 与 Schema 81 正式冻结，未占用 82。后端全量 2597 项、前端 71 项、Electron contract/当前源码 Windows 烟测和发布资源验证均通过；10 项零容忍指标为 0。下一步只进入 LIFE v2 立项审计与计划，不得在未审计前直接实施候选对象。
+> LIFE v2 规划快照（2026-07-29）：CIE.0～CIE.6 已合入 `main@3a663391cf12f5a843f4c1d5e311628ce8637c6e` 并正式冻结。当前从该点创建 `agent/life-v2-specialty`，`docs/LIFE_V2_PERSONA_AND_SHORT_MEMORY_PLAN.md` 已完成实际代码审计并形成讨论稿。下一步是与用户确定 Persona v2、ShortMemo 和 StructuredInnerState 的范围与顺序；讨论和计划 Review 前不改运行时、不占用 Schema 82。
 
 > 状态：当前执行约束  
 > 适用对象：Codex、维护者和后续参与开发的协作者  
@@ -383,4 +383,4 @@ EAP Schema 48～60 不回写；真实输出继续受后端最终授权复核、�
 
 EAP PR #1、CDS PR #2 与 LIFE PR #3 已依次合并冻结；LIFE predecessor 为 `main@f16d80ab0d2457065dc65d7d284d3cbf3584f5ee`、Schema 71。KIG-R 使用 Schema 72～76，冻结实现与 rollback point 为 `a18fd04a3759663f88d6a8041529fea14645c281`。KIG-P 使用 Schema 77～80，完成来源化 PWM、可逆实体解析、owner proposal-only 接口、非破坏性维护和原知识页扩展；既有 Knowledge/MEM/LIFE/CTX/EAP 所有权均未转移。模型认证仍只覆盖 `deepseek-v4-pro` 的 KIG-R 当前指纹，PWM 抽取保持 Shadow；Provider/模型切换必须重新认证。
 
-KIG PR #4 已合并；CIE.0～CIE.6 已完成并正式冻结于 Schema 81。`agent/cie-specialty` 基于 `main@b436e9f8876f8926ac90df3562edbeef3f085413` 完成专项，待合并后再从最新 `main` 建立下一专项分支。LIFE v2 的 `structured-inner-state-v1` 与 `short-memo-v1` 仍仅登记于长期路线基线；下一步只能先做需求、所有权、隐私、迁移和回滚审计，不构成直接施工授权。
+KIG PR #4 与 CIE v1 均已合入；CIE 正式冻结于 `main@3a663391cf12f5a843f4c1d5e311628ce8637c6e` / Schema 81。当前唯一规划入口为 `docs/LIFE_V2_PERSONA_AND_SHORT_MEMORY_PLAN.md`。Persona v2、`short-memo-v1` 与 `structured-inner-state-v1` 均未获施工授权；必须先完成用户讨论和计划 Review。Persona 固定核心归 Persona，最终预算归 CTX，LIFE 不得借专项名义成为第二个写入者。
