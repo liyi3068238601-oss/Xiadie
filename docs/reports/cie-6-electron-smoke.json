@@ -1,0 +1,16 @@
+{
+  "protocol_version": "cie-electron-smoke-v1",
+  "status": "pass",
+  "platform": "Microsoft Windows NT 10.0.26200.0",
+  "backend_health": true,
+  "frontend_load": true,
+  "electron_alive_seconds": 8,
+  "isolated_data_dir": true,
+  "ports_owned_by_smoke": [8756, 5173],
+  "cleanup": {
+    "ports_released": true,
+    "temporary_directory_removed": true,
+    "dev_flag_removed": true
+  },
+  "contains_user_data": false
+}

@@ -33,7 +33,7 @@ def test_schema_80_contains_all_pwm_and_maintenance_tables():
     try:
         assert conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
-        ).fetchone()["value"] == "80"
+        ).fetchone()["value"] == "81"
         names = {row["name"] for row in conn.execute(
             "SELECT name FROM sqlite_master WHERE type='table' AND (name LIKE 'pwm_%' "
             "OR name IN ('kig_system_proposals','kig_maintenance_candidates','kig_retrieval_feedback'))"

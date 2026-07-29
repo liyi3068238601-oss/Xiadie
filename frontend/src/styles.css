@@ -644,6 +644,13 @@ textarea {
 .typing-dots span:nth-child(3) {
   animation-delay: 0.4s;
 }
+.streaming-status {
+  margin-top: 4px;
+  padding-left: 4px;
+  color: var(--text-faint);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+}
 @keyframes blink {
   50% {
     opacity: 1;

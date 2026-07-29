@@ -7,6 +7,7 @@ import {
   shouldContinueMemoryObserverPolling,
 } from "../observerPolling.mjs";
 import { TurnIngressBuffer, buildTurnEnvelopeContent } from "../turnIngressBuffer.mjs";
+import { ReplyPresentationBuffer } from "../replyPresentation.mjs";
 
 interface Props {
   sessionId: string | null;
@@ -37,6 +38,14 @@ interface PendingGrant {
   locationChanged: boolean;
   activeSessionId: string;
   ingressMessages?: api.TurnIngressMessage[];
+  imageAuthorization?: ImageAuthorization;
+}
+
+interface ImageAuthorization {
+  image_transmission_consent: boolean;
+  image_provider_id: string;
+  image_model: string;
+  image_location_revision: number;
 }
 
 type GrantAction = "allow_once" | "skip" | "always_allow" | "local_only";
@@ -70,6 +79,7 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
   const noticeTimer = useRef<number | null>(null);
   const activeSessionRef = useRef<string | null>(sessionId);
   const activeRequestRef = useRef<ActiveChatRequest | null>(null);
+  const replyPresentationRef = useRef<ReplyPresentationBuffer | null>(null);
   const ingressWindowId = useRef(`window_${newRequestNonce().replace(/-/g, "_")}`);
   const flushIngressHandler = useRef<(
     scope: string, entries: BufferedIngressEntry[], reason: string,
@@ -98,6 +108,8 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
     const previousSession = activeSessionRef.current;
     activeSessionRef.current = sessionId;
     if (previousSession && previousSession !== sessionId) {
+      replyPresentationRef.current?.cancel();
+      replyPresentationRef.current = null;
       const previousScope = `${previousSession}:${ingressWindowId.current}`;
       void ingressBuffer.current!.flush(previousScope, "explicit_send");
       setIngressCount(0);
@@ -127,6 +139,8 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
     memoryWatchId.current += 1;
     if (noticeTimer.current !== null) window.clearTimeout(noticeTimer.current);
     ingressBuffer.current?.dispose();
+    replyPresentationRef.current?.cancel();
+    replyPresentationRef.current = null;
     const active = activeRequestRef.current;
     if (active) {
       void api.cancelChat(active.cancelToken).then((result) => {
@@ -152,15 +166,45 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
   async function handleFileSelect(files: FileList | null) {
     if (!files || files.length === 0) return;
     setAttachmentBusy(true);
+    let probedCapability: api.VisionCapability | null = null;
+    const existingImages = pendingAttachments.filter(
+      (item) => item.status === "ready" && item.result.attachment_kind === "image",
+    ).length;
+    let selectedImages = 0;
     for (const file of Array.from(files)) {
       const lower = file.name.toLowerCase();
-      if (!/\.(txt|md|pdf|docx)$/.test(lower)) {
-        toast("仅支持 txt/md/pdf/docx 文件");
+      const isImage = /\.(png|jpe?g)$/.test(lower);
+      if (!/\.(txt|md|pdf|docx|png|jpe?g)$/.test(lower)) {
+        toast("仅支持 txt/md/pdf/docx/png/jpg/jpeg 文件");
         continue;
       }
-      if (file.size > 10 * 1024 * 1024) {
-        toast(`${file.name} 超过 10 MiB 限制`);
+      if (isImage && existingImages + selectedImages >= 4) {
+        toast("每轮最多选择 4 张图片");
         continue;
+      }
+      const sizeLimit = isImage ? 5 * 1024 * 1024 : 10 * 1024 * 1024;
+      if (file.size > sizeLimit) {
+        toast(`${file.name} 超过 ${isImage ? 5 : 10} MiB 限制`);
+        continue;
+      }
+      if (isImage) {
+        try {
+          if (!probedCapability) {
+            probedCapability = await api.getVisionCapability();
+            if (probedCapability.status === "unknown") {
+              toast("正在验证当前模型的真实图片能力…");
+              probedCapability = await api.probeVisionCapability();
+            }
+          }
+          if (probedCapability.status !== "supported") {
+            toast("当前模型未通过图片能力验证；没有发送图片，也不会假装看到了图片");
+            continue;
+          }
+          selectedImages += 1;
+        } catch (error) {
+          toast(error instanceof api.ApiError ? error.message : "图片能力验证失败，请稍后重试");
+          continue;
+        }
       }
       // 先 push uploading 状态，让用户看到正在处理
       const localId = `${file.name}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -244,6 +288,9 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
       ? readyAttachments.map((a) => a.result.id)
       : undefined;
     try {
+      const imageAuthorization = regenerate
+        ? undefined
+        : await authorizeImages(readyAttachments.map((item) => item.result));
       const preview = await api.preflightKnowledgeTransmission(
         sessionId, requestNonce, content, attachmentIds,
       );
@@ -256,11 +303,12 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
           regenerate,
           locationChanged: rememberProviderLocation(preview.provider),
           activeSessionId: sessionId,
+          imageAuthorization,
         });
         return;
       }
       setGrantBusy(false);
-      await runChat({ content, requestNonce, regenerate, activeSessionId: sessionId });
+      await runChat({ content, requestNonce, regenerate, activeSessionId: sessionId, imageAuthorization });
     } catch (error) {
       showRequestError(error, "无法检查资料发送范围，请稍后重试。");
     } finally {
@@ -300,6 +348,7 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
         regenerate: pending.regenerate,
         activeSessionId,
         ingressMessages: pending.ingressMessages,
+        imageAuthorization: pending.imageAuthorization,
         token,
         skipRestricted,
       });
@@ -332,11 +381,27 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
     ingressMessages?: api.TurnIngressMessage[];
     token?: string;
     skipRestricted?: boolean;
+    imageAuthorization?: ImageAuthorization;
   }) {
     const activeSessionId = options.activeSessionId ?? sessionId;
     if (!activeSessionId) return;
     const { content, requestNonce, regenerate, ingressMessages, token, skipRestricted = false } = options;
     const activeInView = () => activeSessionRef.current === activeSessionId;
+    replyPresentationRef.current?.cancel();
+    const presentation = cieEnabled ? new ReplyPresentationBuffer({
+      onDisplay: (text) => {
+        if (!activeInView()) return;
+        setStreaming((current) => ({
+          text: (current?.text ?? "") + text,
+          phase: current?.phase,
+        }));
+      },
+      onReplace: (text) => {
+        if (!activeInView()) return;
+        setStreaming((current) => ({ text, phase: current?.phase }));
+      },
+    }) : null;
+    replyPresentationRef.current = presentation;
     const requestControl = cieEnabled ? {
       controller: new AbortController(),
       cancelToken: newRequestNonce(),
@@ -374,17 +439,22 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
       {
         onDelta: (t) => {
           if (!activeInView()) return;
-          setStreaming((s) => (s ? { ...s, text: s.text + t } : { text: t }));
+          if (presentation) presentation.push(t);
+          else setStreaming((s) => (s ? { ...s, text: s.text + t } : { text: t }));
         },
         onFinal: (final) => {
           if (!activeInView()) return;
-          setStreaming({ text: final.content });
+          if (presentation) presentation.finish(final.content);
+          setStreaming({ text: final.content, phase: "completed" });
+          if (replyPresentationRef.current === presentation) replyPresentationRef.current = null;
         },
         onPhase: (phase) => {
           if (!activeInView()) return;
           setStreaming((current) => ({ text: current?.text ?? "", phase }));
         },
         onCancelled: () => {
+          presentation?.cancel();
+          if (replyPresentationRef.current === presentation) replyPresentationRef.current = null;
           clearActiveRequest();
           if (!activeInView()) return;
           setStreaming(null);
@@ -392,6 +462,8 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
           api.desktop?.setPetState?.("idle", undefined, companionCluster);
         },
         onAbort: () => {
+          presentation?.cancel();
+          if (replyPresentationRef.current === presentation) replyPresentationRef.current = null;
           clearActiveRequest();
           if (!activeInView()) return;
           setStreaming(null);
@@ -399,6 +471,8 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
           api.desktop?.setPetState?.("idle", undefined, companionCluster);
         },
         onError: (msg, hint) => {
+          presentation?.cancel();
+          if (replyPresentationRef.current === presentation) replyPresentationRef.current = null;
           clearActiveRequest();
           if (!activeInView()) return;
           setStreaming(null);
@@ -414,6 +488,7 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
           }
         },
         onDone: (d) => {
+          if (replyPresentationRef.current === presentation) replyPresentationRef.current = null;
           clearActiveRequest();
           if (activeInView()) {
             setStreaming(null);
@@ -438,6 +513,7 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
         ingress_messages: ingressMessages,
         chat_nonce: requestControl?.chatNonce,
         cancel_token: requestControl?.cancelToken,
+        ...options.imageAuthorization,
         signal: requestControl?.controller.signal,
       },
     );
@@ -460,6 +536,8 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
         setErrorCard({ msg: "回复正在保存", hint: "保存完成后即可继续补充，不会删除已有回复。" });
         return false;
       }
+      replyPresentationRef.current?.cancel();
+      replyPresentationRef.current = null;
       active.controller.abort();
       if (activeRequestRef.current?.cancelToken === active.cancelToken) {
         activeRequestRef.current = null;
@@ -480,12 +558,16 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
     boundary: api.TurnIngressMessage["boundary"],
   ) {
     if (!sessionId) return;
+    const imageItems = attachments.filter((item) => item.result.attachment_kind === "image");
+    const imageLocation = imageItems[0]?.result.vision_capability?.provider_location;
     const apiEntry: api.TurnIngressMessage = {
       client_message_id: `message_${newRequestNonce().replace(/-/g, "_")}`,
       window_id: ingressWindowId.current,
       content,
       attachment_ids: attachments.map((item) => item.result.id),
-      authorization_scope: "local_text_only",
+      authorization_scope: imageItems.length === 0
+        ? "local_text_only"
+        : imageLocation === "local" ? "local_image" : "remote_image_once",
       queued_at_ms: Date.now(),
       boundary,
     };
@@ -519,6 +601,9 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
     setMemoryNotice(null);
     setGrantBusy(true);
     try {
+      const imageAuthorization = await authorizeImages(
+        entries.flatMap((item) => item.attachments),
+      );
       const preview = await api.preflightKnowledgeTransmission(
         activeSessionId, requestNonce, content, attachmentIds.length > 0 ? attachmentIds : undefined,
       );
@@ -527,16 +612,18 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
           preview, content, requestNonce, regenerate: false,
           locationChanged: rememberProviderLocation(preview.provider),
           activeSessionId, ingressMessages,
+          imageAuthorization,
         });
         return;
       }
       setGrantBusy(false);
       await runChat({
         content, requestNonce, regenerate: false, activeSessionId, ingressMessages,
+        imageAuthorization,
       });
     } catch (error) {
-      if (error instanceof api.ApiError && error.code === "cie_disabled") {
-        setCieEnabled(false);
+      if (error instanceof api.ApiError && ["cie_disabled", "image_consent_declined"].includes(error.code || "")) {
+        if (error.code === "cie_disabled") setCieEnabled(false);
         const persisted = await api.listMessages(activeSessionId).catch(() => []);
         if (activeSessionRef.current === activeSessionId) {
           setMessages(persisted);
@@ -548,7 +635,12 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
             result,
           }))));
         }
-        showRequestError(error, "CIE 已关闭，消息已恢复到输入框，可按旧单消息路径重新发送。");
+        showRequestError(
+          error,
+          error.code === "cie_disabled"
+            ? "CIE 已关闭，消息已恢复到输入框，可按旧单消息路径重新发送。"
+            : "图片仍保留在输入框；只有再次发送并确认后才会传给模型。",
+        );
         return;
       }
       showRequestError(error, "连续消息发送失败，请稍后重试。");
@@ -558,6 +650,46 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
     }
   }
   flushIngressHandler.current = flushBufferedEntries;
+
+  async function authorizeImages(
+    attachments: api.ChatAttachmentResult[],
+  ): Promise<ImageAuthorization | undefined> {
+    const images = attachments.filter((item) => item.attachment_kind === "image");
+    if (images.length === 0) return undefined;
+    const uploaded = images[0].vision_capability;
+    if (!uploaded || images.some((item) =>
+      !item.vision_capability
+      || item.vision_capability.provider_id !== uploaded.provider_id
+      || item.vision_capability.model !== uploaded.model
+      || item.vision_capability.provider_location_revision !== uploaded.provider_location_revision
+    )) {
+      throw new api.ApiError(409, "图片的发送目标不一致，请重新选择图片", "image_snapshot_mismatch");
+    }
+    const current = await api.getVisionCapability();
+    if (
+      current.status !== "supported"
+      || current.provider_id !== uploaded.provider_id
+      || current.model !== uploaded.model
+      || current.provider_location_revision !== uploaded.provider_location_revision
+    ) {
+      throw new api.ApiError(
+        409, "模型或 Provider 位置已变化，请重新选择图片", "image_authorization_snapshot_changed",
+      );
+    }
+    const remote = current.provider_location !== "local";
+    if (remote && !window.confirm(
+      `仅本轮将 ${images.length} 张图片发送给 ${current.provider_id} / ${current.model}。\n`
+      + "图片不会进入长期记忆或知识库，发送后本地临时原始字节会销毁。是否继续？",
+    )) {
+      throw new api.ApiError(409, "已取消本轮图片发送", "image_consent_declined");
+    }
+    return {
+      image_transmission_consent: remote,
+      image_provider_id: current.provider_id,
+      image_model: current.model,
+      image_location_revision: current.provider_location_revision,
+    };
+  }
 
   function showRequestError(error: unknown, fallbackHint: string) {
     const message = error instanceof api.ApiError ? error.message : "请求失败";
@@ -685,6 +817,9 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
                   </span>
                 )}
               </div>
+              <div className="streaming-status" role="status" aria-live="polite">
+                {replyPhaseLabel(streaming.phase, Boolean(streaming.text))}
+              </div>
             </div>
           </div>
         )}
@@ -754,7 +889,7 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
               }
               return (
                 <span className="attachment-chip" key={a.localId}>
-                  📎 {a.filename}
+                  {a.result.attachment_kind === "image" ? "🖼️" : "📎"} {a.filename}
                   <button
                     className="attachment-chip-remove"
                     onClick={() => void removeAttachment(a.localId)}
@@ -772,7 +907,7 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
             ref={fileInputRef}
             type="file"
             multiple
-            accept=".txt,.md,.pdf,.docx"
+            accept=".txt,.md,.pdf,.docx,.png,.jpg,.jpeg,image/png,image/jpeg"
             style={{ display: "none" }}
             onChange={(e) => {
               handleFileSelect(e.target.files);
@@ -1048,15 +1183,23 @@ function MessageRow({
             <div className="message-attachments">
               {m.attachments!.map((attachment) => (
                 <div className="message-attachment-card" key={attachment.id}>
-                  <span className="message-attachment-icon" aria-hidden="true">📄</span>
+                  <span className="message-attachment-icon" aria-hidden="true">
+                    {attachment.attachment_kind === "image" ? "🖼️" : "📄"}
+                  </span>
                   <div className="message-attachment-info">
                     <strong>{attachment.filename}</strong>
-                    <small>{attachment.char_count} 字符</small>
+                    <small>
+                      {attachment.attachment_kind === "image"
+                        ? `${attachment.pixel_width}×${attachment.pixel_height} · 原始字节已销毁`
+                        : `${attachment.char_count} 字符`}
+                    </small>
                   </div>
-                  <button
-                    className="message-attachment-view"
-                    onClick={() => void openAttachment(attachment)}
-                  >查看全文</button>
+                  {attachment.attachment_kind !== "image" && (
+                    <button
+                      className="message-attachment-view"
+                      onClick={() => void openAttachment(attachment)}
+                    >查看全文</button>
+                  )}
                 </div>
               ))}
             </div>
@@ -1130,6 +1273,16 @@ function sourceLocation(source: api.KnowledgeCitation): string {
   const heading = source.heading_path.length ? ` · ${source.heading_path.join(" › ")}` : "";
   const page = source.page_start ? ` · 第 ${source.page_start}${source.page_end !== source.page_start ? `–${source.page_end}` : ""} 页` : "";
   return `段落 ${source.paragraph_start}–${source.paragraph_end} · 行 ${source.line_start}–${source.line_end}${page}${heading} · ${source.content_fingerprint}`;
+}
+
+function replyPhaseLabel(
+  phase: Streaming["phase"],
+  hasVisibleText: boolean,
+): string {
+  if (phase === "persistence") return "正在整理这次回复…";
+  if (phase === "completed") return "回复完成";
+  if (phase === "generation") return hasVisibleText ? "正在继续回应…" : "正在组织语言…";
+  return "正在准备回复…";
 }
 
 function localMsg(

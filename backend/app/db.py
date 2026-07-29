@@ -3864,6 +3864,38 @@ MIGRATIONS = [
         );
         """,
     ),
+    (
+        81,
+        """
+        -- CIE.3: verified vision capability and ephemeral image metadata.
+        ALTER TABLE message_attachments ADD COLUMN attachment_kind TEXT NOT NULL DEFAULT 'text'
+            CHECK(attachment_kind IN ('text','image'));
+        ALTER TABLE message_attachments ADD COLUMN storage_path TEXT;
+        ALTER TABLE message_attachments ADD COLUMN byte_count INTEGER NOT NULL DEFAULT 0
+            CHECK(byte_count >= 0);
+        ALTER TABLE message_attachments ADD COLUMN pixel_width INTEGER
+            CHECK(pixel_width IS NULL OR pixel_width > 0);
+        ALTER TABLE message_attachments ADD COLUMN pixel_height INTEGER
+            CHECK(pixel_height IS NULL OR pixel_height > 0);
+        ALTER TABLE message_attachments ADD COLUMN expires_at REAL;
+
+        CREATE TABLE model_capability_evidence (
+            provider_id TEXT NOT NULL REFERENCES providers(id) ON DELETE CASCADE,
+            model TEXT NOT NULL,
+            capability TEXT NOT NULL CHECK(capability IN ('vision')),
+            status TEXT NOT NULL CHECK(status IN ('unknown','supported','unsupported')),
+            provider_location TEXT NOT NULL CHECK(provider_location IN ('local','remote','unknown')),
+            provider_location_revision INTEGER NOT NULL CHECK(provider_location_revision >= 1),
+            probe_protocol_version TEXT NOT NULL,
+            evidence_sha256 TEXT NOT NULL CHECK(length(evidence_sha256)=64),
+            error_code TEXT,
+            checked_at REAL NOT NULL,
+            PRIMARY KEY(provider_id,model,capability,provider_location_revision)
+        );
+        CREATE INDEX idx_model_capability_evidence_status
+            ON model_capability_evidence(capability,status,checked_at DESC);
+        """,
+    ),
 ]
 
 # 默认供应商：全部 OpenAI-Compatible。api_key 开发期存本地库，

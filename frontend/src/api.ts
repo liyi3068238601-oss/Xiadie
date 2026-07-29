@@ -267,6 +267,38 @@ export interface ContextDiagnostics {
   history_events: Array<Record<string, unknown>>;
   summary_runs: Array<Record<string, unknown>>;
   summary_revisions: Array<Record<string, unknown>>;
+  context_contributors: ContextContributorDiagnostics;
+}
+
+export interface ContextContributor {
+  contributor_id: string;
+  version: string;
+  enabled: boolean;
+  allowed_kinds: string[];
+  allowed_privacy: string[];
+  timeout_ms: number;
+}
+
+export interface ContextContributorRun {
+  contributor_id: string;
+  status: "ok" | "disabled" | "timeout" | "error";
+  elapsed_ms: number;
+  candidate_count: number;
+  reason_code?: string | null;
+}
+
+export interface ContextContributorDiagnostics {
+  protocol_version: "context-contribution-v1";
+  contributors: ContextContributor[];
+  recent_collections: Array<{
+    request_id: string;
+    created_at: number;
+    candidate_count: number;
+    accepted_count?: number | null;
+    rejected_count?: number | null;
+    rejected_reason_counts?: Record<string, number>;
+    runs: ContextContributorRun[];
+  }>;
 }
 export type { EmotionCluster } from "./affectPresentation.mjs";
 export interface AffectState {
@@ -1163,8 +1195,15 @@ export async function importKnowledgeFile(
   });
   if (!response.ok) {
     let detail = response.statusText;
-    try { detail = (await response.json()).detail || detail; } catch { /* ignore */ }
-    throw new ApiError(response.status, detail);
+    let code: string | undefined;
+    try {
+      const payload = await response.json();
+      const structured = payload?.detail;
+      if (typeof structured === "string") detail = structured;
+      else if (structured?.message) detail = structured.message;
+      code = structured?.code;
+    } catch { /* ignore */ }
+    throw new ApiError(response.status, detail, code);
   }
   return response.json();
 }
@@ -1497,6 +1536,10 @@ export interface ChatRequestOptions {
   ingress_messages?: TurnIngressMessage[];
   chat_nonce?: string;
   cancel_token?: string;
+  image_transmission_consent?: boolean;
+  image_provider_id?: string;
+  image_model?: string;
+  image_location_revision?: number;
   signal?: AbortSignal;
 }
 
@@ -1505,7 +1548,7 @@ export interface TurnIngressMessage {
   window_id: string;
   content: string;
   attachment_ids: string[];
-  authorization_scope: "local_text_only";
+  authorization_scope: "local_text_only" | "local_image" | "remote_image_once";
   queued_at_ms: number;
   boundary: "idle_timeout" | "explicit_send" | "voice_end" | "stop";
 }
@@ -1523,6 +1566,26 @@ export interface CieSettings {
 }
 
 export const getCieSettings = () => j<CieSettings>("/api/cie/settings");
+export const getContextContributors = () =>
+  j<ContextContributorDiagnostics>("/api/cie/context-contributors");
+export const setContextContributorEnabled = (contributorId: string, enabled: boolean) =>
+  j<ContextContributor>(`/api/cie/context-contributors/${encodeURIComponent(contributorId)}`, {
+    method: "PUT", body: JSON.stringify({ enabled }),
+  });
+export interface VisionCapability {
+  protocol_version: string;
+  provider_id: string;
+  model: string;
+  status: "unknown" | "supported" | "unsupported";
+  provider_location: "local" | "remote" | "unknown" | string;
+  provider_location_revision: number;
+  checked_at: number | null;
+  error_code: string | null;
+}
+export const getVisionCapability = () => j<VisionCapability>("/api/cie/vision-capability");
+export const probeVisionCapability = () => j<VisionCapability>("/api/cie/vision-capability/probe", {
+  method: "POST",
+});
 export const cancelChat = (cancelToken: string) =>
   j<{ found: boolean; accepted: boolean; phase: string | null }>("/api/chat/cancel", {
     method: "POST", body: JSON.stringify({ cancel_token: cancelToken }),
@@ -1533,8 +1596,14 @@ export interface ChatAttachmentResult {
   id: string;
   filename: string;
   mime_type: string;
+  attachment_kind: "text" | "image";
   char_count: number;
+  byte_count?: number;
+  pixel_width?: number;
+  pixel_height?: number;
+  expires_at?: number;
   content_preview: string;
+  vision_capability?: VisionCapability;
 }
 
 export async function uploadChatAttachment(
@@ -1547,6 +1616,10 @@ export async function uploadChatAttachment(
       ? "application/pdf"
       : lower.endsWith(".docx")
         ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        : lower.endsWith(".png")
+          ? "image/png"
+          : lower.endsWith(".jpg") || lower.endsWith(".jpeg")
+            ? "image/jpeg"
         : "text/plain";
   const response = await fetch(API_BASE + "/api/chat/attachments", {
     method: "POST",

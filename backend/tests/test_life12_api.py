@@ -104,7 +104,7 @@ def test_rebuild_and_diagnostics_expose_versions_not_internal_reasons():
     rebuilt = client.post("/api/life/rebuild")
     assert rebuilt.status_code == 200
     diagnostics = client.get("/api/life/diagnostics").json()
-    assert diagnostics["schema_version"] == "80"
+    assert diagnostics["schema_version"] == "81"
     assert "state_algorithm" in diagnostics and "counts" in diagnostics
     assert all(set(item) == {"source_type", "source_id", "source_revision", "source_status"}
                for item in diagnostics["sources"])

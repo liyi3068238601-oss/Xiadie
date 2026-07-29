@@ -20,7 +20,7 @@ from . import (
     cognition_diagnostics as cognition_diagnostic_views, cognition_runtime,
     cognition_settings, companion_state, context_assembler, context_budget,
     context_controls, context_diagnostics, conversation_summaries,
-    conversation_summary_service, db, cie_settings,
+    context_contributions, conversation_summary_service, db, cie_settings,
     diary, entities, episode_consolidator, history_recall, important_dates,
     episode_summary_service, episodes, knowledge, knowledge_cleanup, knowledge_context,
     knowledge_embeddings, knowledge_grants,
@@ -29,7 +29,7 @@ from . import (
     personal_goals,
     saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, secret_store, self_timeline, slow_lifecycle, turn_ingress,
-    chat_request_control,
+    chat_request_control, image_attachments, vision_capabilities,
 )
 from . import candidate_reranker_shadow  # noqa: F401
 from . import presence_thread_shadow  # noqa: F401 - registers CDS.3 Shadow contract
@@ -69,11 +69,18 @@ def cleanup_orphan_attachments(max_age_seconds: float = 3600) -> int:
     cutoff = db.now() - max_age_seconds
     conn = db.connect()
     try:
+        image_rows = conn.execute(
+            "SELECT storage_path FROM message_attachments"
+            " WHERE message_id IS NULL AND created_at < ? AND attachment_kind='image'",
+            (cutoff,),
+        ).fetchall()
         cursor = conn.execute(
             "DELETE FROM message_attachments WHERE message_id IS NULL AND created_at < ?",
             (cutoff,),
         )
         conn.commit()
+        for row in image_rows:
+            image_attachments.remove(row["storage_path"])
         return cursor.rowcount or 0
     finally:
         conn.close()
@@ -85,6 +92,7 @@ async def lifespan(app: FastAPI):
     await life_catchup_service.start()
     # 启动时清理上一次运行遗留的孤儿附件（message_id IS NULL 且超过 1 小时）
     cleanup_orphan_attachments()
+    image_attachments.cleanup_expired()
     conversation_summaries.recover_stale_runs()
     await conversation_summary_service.start_worker()
     await affect_observer_service.start_worker()
@@ -242,7 +250,8 @@ def list_messages(sid: str) -> list[dict]:
             evidence_by_message.setdefault(public["assistant_message_id"], []).append(public)
         attachments_by_message: dict[str, list[dict]] = {}
         attach_rows = conn.execute(
-            "SELECT id, message_id, filename, mime_type, char_count, content_sha256, created_at"
+            "SELECT id, message_id, filename, mime_type, char_count, content_sha256, created_at,"
+            " attachment_kind,byte_count,pixel_width,pixel_height"
             " FROM message_attachments WHERE message_id IN"
             " (SELECT id FROM messages WHERE session_id=?) ORDER BY message_id, created_at",
             (sid,),
@@ -258,6 +267,10 @@ def list_messages(sid: str) -> list[dict]:
                 "content_preview": "",
                 "content_sha256": attach["content_sha256"],
                 "created_at": attach["created_at"],
+                "attachment_kind": attach["attachment_kind"],
+                "byte_count": attach["byte_count"],
+                "pixel_width": attach["pixel_width"],
+                "pixel_height": attach["pixel_height"],
             })
         for message in messages:
             message["knowledge_citations"] = by_message.get(message["id"], [])
@@ -274,12 +287,14 @@ def get_message_attachment_content(mid: str, aid: str) -> dict:
     conn = db.connect()
     try:
         row = conn.execute(
-            "SELECT id, message_id, filename, mime_type, content_text, char_count"
+            "SELECT id, message_id, filename, mime_type, content_text, char_count,attachment_kind"
             " FROM message_attachments WHERE id=? AND message_id=?",
             (aid, mid),
         ).fetchone()
         if not row:
             raise HTTPException(404, "附件不存在")
+        if row["attachment_kind"] == "image":
+            raise HTTPException(409, "图片原始字节为临时数据，不提供消息历史回读")
         return {
             "id": row["id"],
             "filename": row["filename"],
@@ -301,19 +316,20 @@ def delete_chat_attachment(attachment_id: str) -> dict:
     """
     conn = db.connect()
     try:
+        attachment = conn.execute(
+            "SELECT message_id,storage_path FROM message_attachments WHERE id=?",
+            (attachment_id,),
+        ).fetchone()
+        if attachment is None:
+            raise HTTPException(404, "附件不存在")
+        if attachment["message_id"] is not None:
+            raise HTTPException(409, "附件已绑定到消息，不能单独删除")
         cursor = conn.execute(
             "DELETE FROM message_attachments WHERE id=? AND message_id IS NULL",
             (attachment_id,),
         )
         conn.commit()
-        if cursor.rowcount == 0:
-            row = conn.execute(
-                "SELECT message_id FROM message_attachments WHERE id=?",
-                (attachment_id,),
-            ).fetchone()
-            if row is None:
-                raise HTTPException(404, "附件不存在")
-            raise HTTPException(409, "附件已绑定到消息，不能单独删除")
+        image_attachments.remove(attachment["storage_path"])
         return {"deleted": True}
     finally:
         conn.close()
@@ -385,6 +401,7 @@ def get_context_diagnostics(session_id: str | None = None, limit: int = 50) -> d
             conversation_summaries.list_revisions(session_id, limit=limit)
             if session_id else []
         ),
+        "context_contributors": context_contributions.diagnostics(),
     }
 
 
@@ -509,10 +526,18 @@ class ChatIn(BaseModel):
                                      pattern=r"^[A-Za-z0-9_-]+$")
     cancel_token: Optional[str] = Field(default=None, min_length=16, max_length=64,
                                        pattern=r"^[A-Za-z0-9_-]+$")
+    image_transmission_consent: bool = False
+    image_provider_id: Optional[str] = Field(default=None, max_length=80)
+    image_model: Optional[str] = Field(default=None, max_length=200)
+    image_location_revision: Optional[int] = Field(default=None, ge=1)
 
 
 class ChatCancelIn(BaseModel):
     cancel_token: str = Field(min_length=16, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
+
+
+class ContextContributorToggleIn(BaseModel):
+    enabled: bool
 
 
 @app.get("/api/cie/settings")
@@ -524,6 +549,36 @@ def read_cie_settings() -> dict[str, object]:
         "max_messages": turn_ingress.MAX_MESSAGES,
         "ingress_protocol_version": turn_ingress.PROTOCOL_VERSION,
     }
+
+
+@app.get("/api/cie/context-contributors")
+def read_context_contributors() -> dict[str, object]:
+    """Body-free registration, switch and recent collection diagnostics."""
+    return context_contributions.diagnostics()
+
+
+@app.put("/api/cie/context-contributors/{contributor_id}")
+def put_context_contributor(
+    contributor_id: str, body: ContextContributorToggleIn,
+) -> dict[str, object]:
+    try:
+        return context_contributions.set_enabled(contributor_id, body.enabled)
+    except KeyError as error:
+        raise HTTPException(404, "上下文贡献者不存在") from error
+
+
+@app.get("/api/cie/vision-capability")
+def read_vision_capability() -> dict:
+    provider, model = _current_model()
+    return vision_capabilities.status(provider, model)
+
+
+@app.post("/api/cie/vision-capability/probe")
+async def probe_vision_capability() -> dict:
+    if not cie_settings.is_enabled():
+        raise HTTPException(409, {"code": "cie_disabled", "message": "CIE 图片能力尚未启用"})
+    provider, model = _current_model()
+    return await vision_capabilities.probe(provider, model)
 
 
 @app.post("/api/chat/cancel")
@@ -637,6 +692,9 @@ async def chat(body: ChatIn) -> StreamingResponse:
     replace_assistant_id: str | None = None
     provider, model = _current_model()
     kig_chat_result = None
+    governed_context_contributions: tuple[context_contributions.GovernedContribution, ...] = ()
+    image_data_urls: list[str] = []
+    consumed_image_files: list[tuple[str, str]] = []
     conn = db.connect()
     try:
         sess = conn.execute("SELECT * FROM sessions WHERE id = ?", (body.session_id,)).fetchone()
@@ -650,6 +708,36 @@ async def chat(body: ChatIn) -> StreamingResponse:
             # one-way privacy transition before those reads to avoid retaining a
             # write lock for the rest of chat preparation.
             conn.commit()
+
+        if cie_settings.is_enabled():
+            contribution_request_id = f"cie-context:{db.new_id()}"
+            try:
+                contribution_batch = await context_contributions.collect(
+                    context_contributions.ContributionRequest(
+                        request_id=contribution_request_id,
+                        session_id=body.session_id,
+                        query=effective_content,
+                        provider_id=str((provider or {}).get("id") or "mock"),
+                        provider_location=str(
+                            (provider or {}).get("execution_location") or "local"
+                        ),
+                        temporary_chat=temporary_chat,
+                        now=db.now(),
+                    ),
+                )
+                contribution_governance = kig_pipeline.govern_context_contributions(
+                    contribution_batch,
+                    provider=provider,
+                    temporary_chat=temporary_chat,
+                )
+                governed_context_contributions = contribution_governance.accepted
+            except Exception:  # third-party context must never block base chat
+                logger.warning(
+                    "cie_context_contribution_failed session_id=%s",
+                    body.session_id,
+                    exc_info=True,
+                )
+                governed_context_contributions = ()
 
         # 先分配/定位消息 ID，但在远传授权校验完成前不写入新消息。
         if not body.regenerate:
@@ -677,6 +765,119 @@ async def chat(body: ChatIn) -> StreamingResponse:
             if last_user:
                 uid = last_user["id"]
                 anchored_uid = uid
+
+        attachment_rows: dict[str, object] = {}
+        if effective_attachment_ids:
+            rows = conn.execute(
+                "SELECT id,filename,mime_type,content_text,message_id,attachment_kind,"
+                "storage_path,byte_count,pixel_width,pixel_height,expires_at"
+                " FROM message_attachments WHERE id IN (%s)"
+                % ",".join("?" * len(effective_attachment_ids)),
+                effective_attachment_ids,
+            ).fetchall()
+            attachment_rows = {row["id"]: row for row in rows}
+            if set(attachment_rows) != set(effective_attachment_ids):
+                raise HTTPException(409, {
+                    "code": "turn_attachment_unavailable",
+                    "message": "本轮附件已失效或不存在",
+                })
+            if any(attachment_rows[aid]["message_id"] is not None for aid in effective_attachment_ids):
+                raise HTTPException(409, {
+                    "code": "turn_attachment_unavailable",
+                    "message": "本轮附件已经绑定到其他消息",
+                })
+
+        image_ids = [
+            aid for aid in effective_attachment_ids
+            if attachment_rows[aid]["attachment_kind"] == "image"
+        ]
+        if image_ids:
+            if body.regenerate:
+                raise HTTPException(409, {
+                    "code": "image_regenerate_unsupported",
+                    "message": "图片原始字节已按单轮策略销毁，不能重新生成；请重新选择图片",
+                })
+            if not cie_settings.is_enabled():
+                raise HTTPException(409, {"code": "cie_disabled", "message": "CIE 图片能力尚未启用"})
+            if len(image_ids) > image_attachments.MAX_IMAGES_PER_TURN:
+                raise HTTPException(413, {
+                    "code": "image_count_exceeded",
+                    "message": "每轮最多发送 4 张图片",
+                })
+            total_image_bytes = sum(int(attachment_rows[aid]["byte_count"] or 0) for aid in image_ids)
+            if total_image_bytes > image_attachments.MAX_TOTAL_IMAGE_BYTES:
+                raise HTTPException(413, {
+                    "code": "image_bytes_exceeded",
+                    "message": "本轮图片总字节超过 10 MiB 限制",
+                })
+            total_pixels = sum(
+                int(attachment_rows[aid]["pixel_width"] or 0)
+                * int(attachment_rows[aid]["pixel_height"] or 0)
+                for aid in image_ids
+            )
+            if total_pixels > image_attachments.MAX_TOTAL_PIXELS:
+                raise HTTPException(413, {
+                    "code": "image_pixels_exceeded",
+                    "message": "本轮图片总像素超过 1600 万限制",
+                })
+            capability_status = vision_capabilities.status(provider, model)
+            if capability_status["status"] != "supported":
+                raise HTTPException(409, {
+                    "code": "vision_capability_unavailable",
+                    "message": "当前模型尚未通过真实图片能力探测，不能假装看到了图片",
+                    "capability": capability_status,
+                })
+            expected_snapshot = (
+                capability_status["provider_id"], capability_status["model"],
+                capability_status["provider_location_revision"],
+            )
+            supplied_snapshot = (
+                body.image_provider_id, body.image_model, body.image_location_revision,
+            )
+            if supplied_snapshot != expected_snapshot:
+                raise HTTPException(409, {
+                    "code": "image_authorization_snapshot_changed",
+                    "message": "图片发送目标已变化，请重新确认本轮授权",
+                    "capability": capability_status,
+                })
+            location = capability_status["provider_location"]
+            if location != "local" and not body.image_transmission_consent:
+                raise HTTPException(409, {
+                    "code": "image_transmission_consent_required",
+                    "message": "向远程或位置未知的模型发送图片需要本轮单次确认",
+                    "capability": capability_status,
+                })
+            if ingress_envelope:
+                image_id_set = set(image_ids)
+                expected_image_scope = "local_image" if location == "local" else "remote_image_once"
+                for item in ingress_envelope.entries:
+                    expected_scope = (
+                        expected_image_scope
+                        if any(aid in image_id_set for aid in item.attachment_ids)
+                        else "local_text_only"
+                    )
+                    if item.authorization_scope != expected_scope:
+                        raise HTTPException(409, {
+                            "code": "turn_authorization_scope_mismatch",
+                            "message": "积累消息的图片授权范围与当前发送目标不一致",
+                        })
+            current_time = db.now()
+            try:
+                for aid in image_ids:
+                    row = attachment_rows[aid]
+                    if not row["storage_path"] or float(row["expires_at"] or 0) <= current_time:
+                        raise HTTPException(410, {
+                            "code": "image_attachment_expired",
+                            "message": "图片临时数据已过期，请重新选择图片",
+                        })
+                    image_data_urls.append(
+                        image_attachments.load_data_url(row["storage_path"], row["mime_type"]),
+                    )
+            except (OSError, image_attachments.ImageAttachmentError) as error:
+                raise HTTPException(410, {
+                    "code": "image_attachment_unavailable",
+                    "message": "图片临时数据不可用，请重新选择图片",
+                }) from error
 
         # 构造上下文：人设 + 记忆摘要 + 历史
         digest, recalled_memories = (
@@ -789,12 +990,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
         # 读取本轮附件全文，回填 message_id，拼接 attachment_block
         attachment_block = ""
         if effective_attachment_ids and uid:
-            rows = conn.execute(
-                "SELECT id, filename, content_text, message_id FROM message_attachments WHERE id IN (%s)"
-                % ",".join("?" * len(effective_attachment_ids)),
-                effective_attachment_ids,
-            ).fetchall()
-            found = {row["id"]: row for row in rows}
+            found = attachment_rows
             if ingress_envelope and (
                 set(found) != set(effective_attachment_ids)
                 or any(found[aid]["message_id"] is not None for aid in effective_attachment_ids)
@@ -812,11 +1008,21 @@ async def chat(body: ChatIn) -> StreamingResponse:
             for aid in effective_attachment_ids:
                 row = found.get(aid)
                 if row:
-                    conn.execute(
-                        "UPDATE message_attachments SET message_id=? WHERE id=? AND message_id IS NULL",
-                        (attachment_owner.get(aid, uid), aid),
-                    )
-                    parts.append("=== %s ===\n%s" % (row["filename"], row["content_text"]))
+                    if row["attachment_kind"] == "image":
+                        # 图片不进入 attachment_block；原始字节只通过 apply_images
+                        # 临时加入本轮 LLM messages，Memory/Knowledge/KIG 仍只看文本。
+                        conn.execute(
+                            "UPDATE message_attachments SET message_id=?"
+                            " WHERE id=? AND message_id IS NULL",
+                            (attachment_owner.get(aid, uid), aid),
+                        )
+                        consumed_image_files.append((aid, row["storage_path"]))
+                    else:
+                        conn.execute(
+                            "UPDATE message_attachments SET message_id=? WHERE id=? AND message_id IS NULL",
+                            (attachment_owner.get(aid, uid), aid),
+                        )
+                        parts.append("=== %s ===\n%s" % (row["filename"], row["content_text"]))
             if parts:
                 attachment_block = "\n\n".join(parts)
         knowledge_block = knowledge_context.prompt_block(knowledge_retrieval)
@@ -862,16 +1068,36 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 current_session_id=body.session_id,
                 attachment_block=attachment_block,
                 retrieval_bundle=(kig_chat_result.bundle if kig_chat_result else None),
+                context_contribution_candidates=governed_context_contributions,
             )
         except context_budget.ContextBudgetError as error:
             if conn.in_transaction:
                 conn.rollback()
             raise HTTPException(413, error.public_detail()) from error
         messages = list(context_package.messages)
+        if image_data_urls:
+            messages = vision_capabilities.apply_images(messages, image_data_urls)
         trimmed_count = context_package.trimmed_messages
         conn.commit()
     finally:
         conn.close()
+
+    for _attachment_id, storage_name in consumed_image_files:
+        image_attachments.remove(storage_name)
+    if consumed_image_files:
+        try:
+            cleanup_conn = db.connect()
+            try:
+                cleanup_conn.executemany(
+                    "UPDATE message_attachments SET storage_path=NULL"
+                    " WHERE id=? AND storage_path=?",
+                    consumed_image_files,
+                )
+                cleanup_conn.commit()
+            finally:
+                cleanup_conn.close()
+        except Exception:
+            logger.warning("cie_image_metadata_cleanup_failed", exc_info=True)
 
     if body.chat_nonce and body.cancel_token:
         request_state, _replay_payload = chat_request_control.begin(
@@ -974,6 +1200,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
                         cross_session_recall=history_prepared["turns"],
                         current_session_id=body.session_id,
                         retrieval_bundle=(kig_chat_result.bundle if kig_chat_result else None),
+                        context_contribution_candidates=governed_context_contributions,
                     )
                     messages = list(context_package.messages)
                     trimmed_count = context_package.trimmed_messages
@@ -2258,31 +2485,90 @@ async def import_knowledge_document(request: Request) -> dict:
 
 @app.post("/api/chat/attachments")
 async def upload_chat_attachment(request: Request) -> dict:
-    """聊天框附件上传：同步解析文件提取纯文本供本轮注入。
+    """聊天框附件上传：文本本地解析；图片验证后仅存放到本轮临时区。
 
-    附件仅用于本轮对话阅读（通过 attachment_block 直接注入 system prompt），
+    文本附件仅用于本轮对话阅读（通过 attachment_block 直接注入 system prompt），
     不存入知识库。存入知识库会导致 transmission_policy=ask_each_time，
     知识库检索命中附件时触发远传授权 409，与"本轮直接阅读"的意图冲突。
-    用户如需持久化，可从知识库页面单独上传。
+    用户如需持久化文本，可从知识库页面单独上传。图片原始字节不进入知识库或消息历史。
     """
     import os as _os
     import secrets as _secrets
+    filename = unquote(request.headers.get("X-Xiadie-Filename", ""))
+    if not filename:
+        raise HTTPException(400, "缺少文件名")
+    ext = _os.path.splitext(filename)[1].lower()
+    declared_mime = request.headers.get("content-type", "application/octet-stream")
+    normalized_mime = declared_mime.split(";", 1)[0].strip().lower()
+    is_image = ext in {".png", ".jpg", ".jpeg"} or normalized_mime.startswith("image/")
+    max_bytes = image_attachments.MAX_IMAGE_BYTES if is_image else knowledge.MAX_FILE_BYTES
+    if is_image:
+        if not cie_settings.is_enabled():
+            raise HTTPException(409, {"code": "cie_disabled", "message": "CIE 图片能力尚未启用"})
+        provider, model = _current_model()
+        capability_status = vision_capabilities.status(provider, model)
+        if capability_status["status"] != "supported":
+            raise HTTPException(409, {
+                "code": "vision_capability_unavailable",
+                "message": "当前模型尚未通过真实图片能力探测，不能上传到本轮对话",
+                "capability": capability_status,
+            })
     declared_length = request.headers.get("content-length")
     if declared_length:
         try:
-            if int(declared_length) > knowledge.MAX_FILE_BYTES:
-                raise HTTPException(413, "文件超过 10 MiB 限制")
+            if int(declared_length) > max_bytes:
+                raise HTTPException(413, "图片超过 5 MiB 限制" if is_image else "文件超过 10 MiB 限制")
         except ValueError as error:
             raise HTTPException(400, "Content-Length 无效") from error
     body = bytearray()
     async for chunk in request.stream():
         body.extend(chunk)
-        if len(body) > knowledge.MAX_FILE_BYTES:
-            raise HTTPException(413, "文件超过 10 MiB 限制")
-    filename = unquote(request.headers.get("X-Xiadie-Filename", ""))
-    if not filename:
-        raise HTTPException(400, "缺少文件名")
-    ext = _os.path.splitext(filename)[1].lower()
+        if len(body) > max_bytes:
+            raise HTTPException(413, "图片超过 5 MiB 限制" if is_image else "文件超过 10 MiB 限制")
+    attachment_id = _secrets.token_hex(8)
+    if is_image:
+        try:
+            metadata = image_attachments.inspect_image(bytes(body), declared_mime)
+        except image_attachments.ImageAttachmentError as error:
+            status = 415 if error.code in {"image_mime_mismatch", "image_format_unsupported"} else 413
+            raise HTTPException(status, {"code": error.code, "message": str(error)}) from error
+        # 仅在本次图片已通过接纳检查后触发轻量 GC；拒绝路径保持无副作用。
+        image_attachments.cleanup_expired()
+        storage_name = image_attachments.save(attachment_id, bytes(body))
+        expires_at = db.now() + image_attachments.TTL_SECONDS
+        conn = db.connect()
+        try:
+            conn.execute(
+                "INSERT INTO message_attachments(id,message_id,filename,mime_type,content_text,"
+                "content_sha256,char_count,created_at,attachment_kind,storage_path,byte_count,"
+                "pixel_width,pixel_height,expires_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    attachment_id, None, filename, metadata["mime_type"], "",
+                    metadata["content_sha256"], 0, db.now(), "image", storage_name,
+                    metadata["byte_count"], metadata["pixel_width"],
+                    metadata["pixel_height"], expires_at,
+                ),
+            )
+            conn.commit()
+
+        except Exception:
+            image_attachments.remove(storage_name)
+            raise
+        finally:
+            conn.close()
+        return {
+            "id": attachment_id,
+            "filename": filename,
+            "mime_type": metadata["mime_type"],
+            "attachment_kind": "image",
+            "char_count": 0,
+            "byte_count": metadata["byte_count"],
+            "pixel_width": metadata["pixel_width"],
+            "pixel_height": metadata["pixel_height"],
+            "expires_at": expires_at,
+            "content_preview": f"图片 {metadata['pixel_width']}×{metadata['pixel_height']}",
+            "vision_capability": capability_status,
+        }
     # 同步解析文件提取纯文本
     try:
         result = knowledge_parser.parse(bytes(body), extension=ext)
@@ -2294,9 +2580,8 @@ async def upload_chat_attachment(request: Request) -> dict:
             "parser_unsupported", "encoding_unsupported",
         } else 400
         raise HTTPException(status, {"code": error.code, "message": str(error)}) from error
-    attachment_id = _secrets.token_hex(8)
     content_sha256 = hashlib.sha256(content_text.encode("utf-8")).hexdigest()
-    mime_type = request.headers.get("content-type", "application/octet-stream")
+    mime_type = declared_mime
     conn = db.connect()
     try:
         conn.execute(
@@ -2313,7 +2598,9 @@ async def upload_chat_attachment(request: Request) -> dict:
         "id": attachment_id,
         "filename": filename,
         "mime_type": mime_type,
+        "attachment_kind": "text",
         "char_count": char_count,
+        "byte_count": len(body),
         "content_preview": content_text[:200],
     }
 
@@ -3221,6 +3508,7 @@ def current_model() -> dict:
         "provider_name": prov["name"] if prov else "内置演示",
         "model": model,
         "capabilities": _capabilities(prov, model) if prov else ["local"],
+        "vision_capability": vision_capabilities.status(prov, model),
         "context_capability": context_capability.public_meta(),
     }
 
@@ -3238,14 +3526,14 @@ def set_current_model(body: SelectModelIn) -> dict:
 
 
 def _capabilities(prov: dict, model: str) -> list[str]:
-    """能力标签（需求 MODEL-003），按供应商/模型名简单推断。"""
+    """能力标签；图片能力只接受当前 Provider 位置版本的探测证据。"""
     caps = ["stream"]
     m = model.lower()
     if prov["id"] == "ollama":
         caps.append("local")
     if any(k in m for k in ("reason", "r1", "o1", "o3", "thinking")):
         caps.append("reasoning")
-    if any(k in m for k in ("4o", "vl", "vision", "gpt-4")):
+    if vision_capabilities.status(prov, model)["status"] == "supported":
         caps.append("vision")
     caps.append("tools")
     return caps

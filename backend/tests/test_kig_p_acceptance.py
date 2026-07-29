@@ -43,7 +43,7 @@ def test_kig_v1_keeps_kig_r_protocol_and_uses_schema_80():
     try:
         assert conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
-        ).fetchone()["value"] == "80"
+        ).fetchone()["value"] == "81"
     finally:
         conn.close()
 

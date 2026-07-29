@@ -55,7 +55,7 @@ def test_schema_70_adds_diary_threads_sources_and_versions():
         tables = {row["name"] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     finally:
         conn.close()
-    assert version == "80"
+    assert version == "81"
     assert {"diary_entries", "diary_entry_revisions", "diary_entry_sources", "continuity_threads"} <= tables
 
 

@@ -50,7 +50,7 @@ def test_schema_68_adds_goal_fsm_without_tool_authority():
         columns = {row["name"] for row in conn.execute("PRAGMA table_info(personal_goals)")}
     finally:
         conn.close()
-    assert version == "80"
+    assert version == "81"
     assert {"status", "confidence", "revision", "priority"} <= columns
     assert not ({"tool_run_id", "delivery_id", "execution_status"} & columns)
 

@@ -1,8 +1,8 @@
 # 遐蝶项目基线状态
 
-> 最近复核日期：2026-07-28
+> 最近复核日期：2026-07-29
 >
-> 当前施工状态：KIG.0～KIG.15 已合入 main；CIE.0～CIE.2 已通过独立 Review，当前进入 CIE.3 原生图片多模态，Schema 仍为 80
+> 当前施工状态：KIG.0～KIG.15 已合入 main；CIE.0～CIE.6 已通过独立 Review并正式冻结，当前 Schema 81；下一步进入 LIFE v2 立项审计与计划阶段
 >
 > 当前版本：`v0.1.0` MVP 骨架（知识库系统 K 系列已完成）
 >
@@ -31,12 +31,12 @@
 
 ## 3. 自动验证结果
 
-以下命令最近于 2026-07-28 执行：
+以下最终验证均于 2026-07-29 执行：
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests -q -p no:cacheprovider` | `2583 passed, 1 warning`；当前 Schema 80 |
-| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | 通过：61 项；TypeScript 检查及 Vite 生产构建 191 modules 成功 |
+| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests -q -p no:cacheprovider` | CIE.6 当前全量 `2597 passed, 1 warning`（Schema 81，2026-07-29） |
+| 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | CIE.5 当前通过 71 项；TypeScript 检查及 Vite 生产构建 192 modules 成功 |
 | Electron / Windows | Electron contract/语法；`scripts\test-frozen-backend.ps1 -Port 18756`；win-unpacked 与 NSIS 临时安装生命周期 smoke | 3 项 contract 及语法通过；冻结后端、IANA 时区、BGE-M3、真实安装、首启、托盘保活、崩溃清理、重启及卸载清理通过；休眠/唤醒由 contract、重启推进和 resume guard 场景验证 |
 
 CDS.12 以 Schema 63 新增三张无正文反馈/校准审计表；CDS.13 未再新增迁移。`eap-decision-run-adapter-v1` 保持兼容。LIFE.0～13 与独立总 Review 已完成：Schema 64～71 分别建立来源事件、运行时、CatchUp、日程、目标、日期、日记和 SelfTimeline；6 类模型决策因样本/Provider 门不足继续 Shadow。Review 收口补强敏感格式识别、IANA 时区写入校验与多 Provider 一致性晋级门，LIFE v1 正式冻结于 Schema 71。`life-adapter-v1` 与 CDS/EAP 冻结契约兼容；LIFE PR #3 merge `f16d80ab0d2457065dc65d7d284d3cbf3584f5ee` 已锁定为 KIG predecessor，首个可用迁移号为 72。
@@ -48,6 +48,14 @@ KIG.1～KIG.9 已完成并保持 `kig-retrieval-governance-v1`/Schema 76 冻结�
 CIE.0 以 KIG PR #4 merge `b436e9f8876f8926ac90df3562edbeef3f085413` 锁定 predecessor，建立 5/20/100/500 轮共 625 条连续消息及 80 条打断、附件、节奏和第三方贡献合成固定集。CIE.0 冻结的 fallback 为单消息、单生成、纯文本 SSE 与本地文本附件解析；`cie_enabled` 是默认关闭的唯一总门。配置的 `deepseek/deepseek-v4-flash` 三次合成短提示首 token P50/P95 为 `1165.367/3241.132 ms`。全量回归额外修复摘要敏感扫描误扫内部数字 message ID 的既有问题，CIE.0 收口时后端为 `2566 passed, 1 warning`。CIE.0 无迁移、无用户数据写入，并已通过独立 Review。
 
 CIE.1 在 `cie_enabled` 总门后接入默认 500 ms、硬范围 300～800 ms 的 `TurnIngressBuffer`。原始消息和附件仍分别落入既有权威表，服务端重建临时 `turn-envelope-v1`，不信任客户端拼接；`/stop`、Ctrl/Cmd+Enter、语音结束协议位和 20 条上限立即封口。5/20/100/500 轮共 625 条矩阵的五项零容忍指标均为 0。独立 Review 的会话切换锁死 P1 已修复；失败 flush 原序恢复，状态证据锚定到最后一条有正文的原消息。CIE.1 无需 Schema 81，已允许进入 CIE.2。
+
+CIE.3 以 Schema 81 建立按 Provider、模型和位置版本隔离的真实 vision 探测证据，并为现有聊天附件补充图片类型、字节、尺寸、TTL 和临时路径元数据。PNG/JPEG 受 4 张、单张 5 MiB、单轮 10 MiB/1600 万像素与 4096 单边限制；远端图片逐轮授权，成功绑定消息后原始字节立即销毁，不进入 Memory、Knowledge、KIG 或日志。当前 `deepseek/deepseek-v4-flash` 真实探针返回 HTTP 400，故诚实标记为不支持而非按名称猜测支持。
+
+CIE.4 新增纯客户端 `reply-presentation-v1`：原始 delta 只按受保护边界延迟展示，服务端 final 仍整体替换为权威正文。CIE.0 的 20 条 rhythm 固定集上文本重组差异、重复发送、代码块破坏和打断后未展示泄漏均为 0；内部控制阶段只映射为自然状态文字。CIE.4 无模型调用、无表达协议变更且未占用 Schema 82。
+
+CIE.5 新增 `context-contribution-v1`：受信任代码可注册 contributor，但候选继续按不可信数据治理。每个来源独立超时/异常降级；KIG 复核权限、TTL/hash、token、注入、Provider 位置和 owner SourceRef 当前证据，CTX 只接收治理类型并按完整 JSON 记录裁剪。候选正文不落库，无正文诊断和逐 contributor 开关位于高级设置。第三方自由 Prompt、过期贡献、未授权远传、重复 ID、诊断正文和基础聊天受影响率均为 0；CIE.5 无 Provider 调用、无迁移，Schema 保持 81。
+
+CIE.6 以 `cie-final-acceptance-v1` 完成 5/20/100/500 轮、取消/重放、运行环境、图片目标变化与 ContextContribution 攻击总矩阵。10 项零容忍指标均为 0。当前源码使用隔离数据目录在 Windows 实际启动后端、Vite 与 Electron 并稳定存活 8 秒；退出后 8756/5173、临时目录与 dev 标志均已清理。发布资源验证通过；最终独立 Review 确认 0 P0/P1，CIE v1 已于 Schema 81 正式冻结。
 
 已知但不阻断当前开发的警告：
 
@@ -289,6 +297,7 @@ npm.cmd start
 | 知识模型体积 | 本地 BGE-M3 使安装资源增加约 543 MiB | 发布前评估可选下载；缺失时继续使用 FTS |
 | 外部 Provider | 授权协议用 mock/受控流完成矩阵，未把测试正文发送给真实在线供应商 | 各供应商接入时单独做不含私密正文的网络兼容回归 |
 | Token 估算 | CTX.7 未读取真实聊天；当前没有经用户明确提供的 Provider usage 样本，误差百分比未实测 | 保留保守估算与已验证窗口；以后仅用用户显式样本输出无正文聚合误差 |
+| CIE 冻结后维护 | 异常退出残留图片只在启动和上传前清理；回放 payload 暂含限时的 affect/memory 结构化观察元数据 | 后续维护调度统一评审周期 GC；如精简回放字段，必须保持 `cie-cancel-control-v1` 兼容或升级协议版本 |
 
 ## 8. 数据与资源边界
 

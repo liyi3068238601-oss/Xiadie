@@ -22,7 +22,9 @@ class TurnIngressMessage(BaseModel):
     window_id: str = Field(min_length=8, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
     content: str = Field(default="", max_length=12_000)
     attachment_ids: list[str] = Field(default_factory=list, max_length=MAX_ATTACHMENTS_PER_MESSAGE)
-    authorization_scope: Literal["local_text_only"] = "local_text_only"
+    authorization_scope: Literal[
+        "local_text_only", "local_image", "remote_image_once",
+    ] = "local_text_only"
     queued_at_ms: int = Field(ge=0)
     boundary: Literal["idle_timeout", "explicit_send", "voice_end", "stop"] = "idle_timeout"
 

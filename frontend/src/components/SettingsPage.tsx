@@ -542,6 +542,17 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
       .finally(() => setContextBusy(false));
   };
 
+  const toggleContextContributor = (contributor: api.ContextContributor) => {
+    setContextBusy(true);
+    api.setContextContributorEnabled(contributor.contributor_id, !contributor.enabled)
+      .then(() => {
+        toast(!contributor.enabled ? "已启用该上下文来源" : "已停用该上下文来源");
+        loadContextDiagnostics();
+      })
+      .catch((e) => toast(e.message || "保存贡献者开关失败"))
+      .finally(() => setContextBusy(false));
+  };
+
   const deleteDerivedSummary = () => {
     if (!currentSessionId) return toast("请先选择一个会话");
     if (!window.confirm("只删除当前会话的派生摘要？原始聊天不会被删除。")) return;
@@ -1231,8 +1242,41 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
             ) : (
               <p className="settings-card-hint">当前会话还没有可显示的无正文诊断记录。</p>
             )}
+            {contextDiagnostics?.context_contributors.contributors.length ? (
+              <div className="context-contributor-list">
+                {contextDiagnostics.context_contributors.contributors.map((contributor) => {
+                  const latest = contextDiagnostics.context_contributors.recent_collections
+                    .flatMap((event) => event.runs)
+                    .find((run) => run.contributor_id === contributor.contributor_id);
+                  return (
+                    <div className="settings-mem-toggle-row" key={contributor.contributor_id}>
+                      <div className="settings-mem-toggle-text">
+                        <h2>{contributor.contributor_id}</h2>
+                        <p>
+                          协议版本 {contributor.version} · 超时上限 {contributor.timeout_ms} ms
+                          {latest ? ` · 最近状态 ${latest.status}` : " · 暂无运行记录"}
+                        </p>
+                      </div>
+                      <button
+                        className={`toggle-track${contributor.enabled ? " is-on" : ""}`}
+                        role="switch"
+                        aria-checked={contributor.enabled}
+                        aria-label={`${contributor.contributor_id} 上下文来源`}
+                        disabled={contextBusy}
+                        onClick={() => toggleContextContributor(contributor)}
+                      >
+                        <span className="toggle-thumb" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="settings-card-hint">当前没有已注册的第三方上下文来源。</p>
+            )}
             <p className="settings-card-hint">
-              重建或删除摘要只影响可再生成的派生数据，不会改写或删除原始聊天。
+              第三方来源只提供本轮候选资料；正文不会写入诊断。重建或删除摘要只影响可再生成的派生数据，
+              不会改写或删除原始聊天。
             </p>
           </details>
 

@@ -1,0 +1,15 @@
+{
+  "protocol_version": "reply-presentation-v1",
+  "sample_count": 20,
+  "source_fixture": "cie0_interaction_v1.json#rhythm",
+  "provider_calls": 0,
+  "schema_version": 81,
+  "uses_schema_82": false,
+  "metrics": {
+    "text_reconstruction_diff_rate": 0,
+    "duplicate_send_rate": 0,
+    "code_block_break_rate": 0,
+    "interruption_undisplayed_leak_rate": 0,
+    "semantic_model_rewrite_calls": 0
+  }
+}

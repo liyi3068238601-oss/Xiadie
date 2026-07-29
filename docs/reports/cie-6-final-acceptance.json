@@ -1,0 +1,39 @@
+{
+  "protocol_version": "cie-final-acceptance-v1",
+  "schema_version": 81,
+  "uses_schema_82": false,
+  "synthetic_only": false,
+  "contains_user_data": false,
+  "provider_calls": 0,
+  "round_counts": [5, 20, 100, 500],
+  "evaluated_messages": 625,
+  "matrices": {
+    "continuous_and_interruption": ["5_rounds", "20_rounds", "100_rounds", "500_rounds", "generation_cancel", "persistence_cancel_rejection", "replay"],
+    "runtime_environment": ["local_provider", "remote_provider", "online", "offline", "foreground", "background", "sleep_resume_guard", "clock_rollback"],
+    "native_images": ["local", "remote_once_consent", "consent_refusal", "delete_before_send", "expired", "provider_location_change", "model_change", "unsupported_model"],
+    "context_contributions": ["default_off", "malicious_body", "unicode_confusable", "over_budget", "expired", "stale_evidence", "duplicate_id", "source_timeout"],
+    "windows_electron": ["lifecycle_contract", "current_source_dev_launch", "backend_health", "frontend_load", "clean_shutdown"]
+  },
+  "metrics": {
+    "message_loss_rate": 0.0,
+    "cross_session_merge_rate": 0.0,
+    "ghost_reply_rate": 0.0,
+    "duplicate_reply_or_persistence_rate": 0.0,
+    "unauthorized_image_transfer_rate": 0,
+    "unsupported_vision_false_claim_rate": 0,
+    "third_party_free_prompt_injection_rate": 0,
+    "expired_contribution_application_rate": 0,
+    "full_inner_reasoning_persistence_rate": 0,
+    "cie_failure_base_chat_impact_rate": 0
+  },
+  "evidence": {
+    "continuous": "test_cie1_acceptance.py",
+    "cancellation": "test_cie2_chat_cancellation.py",
+    "images": "test_cie3_images.py + test_cie6_acceptance.py",
+    "presentation": "frontend/tests/replyPresentation.test.mjs",
+    "contributions": "test_cie5_context_contributions.py",
+    "runtime": "test_proactive_production_acceptance.py + desktop lifecycle contract",
+    "electron": "scripts/test-cie6-electron-smoke.ps1"
+  },
+  "independent_review": "passed"
+}

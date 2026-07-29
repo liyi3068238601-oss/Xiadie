@@ -71,7 +71,7 @@ def _seed_sources() -> dict[str, str]:
 def test_schema_72_has_only_minimal_dependency_metadata():
     conn = db.connect()
     try:
-        assert conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0] == "80"
+        assert conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0] == "81"
         columns = {row["name"] for row in conn.execute("PRAGMA table_info(derived_dependencies)")}
         tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     finally:

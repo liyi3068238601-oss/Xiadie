@@ -2,17 +2,28 @@
 from __future__ import annotations
 
 import json
+import re
+import unicodedata
+from collections import Counter
 from dataclasses import dataclass, replace
 from itertools import combinations
 
 from . import (
-    db, kig_evidence, kig_governance, kig_query_planner, kig_reranker,
-    kig_retrieval, kig_sources, knowledge_context,
+    context_contributions, db, kig_evidence, kig_governance, kig_query_planner,
+    kig_reranker, kig_retrieval, kig_sources, knowledge_context,
 )
 
 PROTOCOL_VERSION = "kig-retrieval-governance-v1"
 MAX_GOVERNANCE_CANDIDATES = 10
 MAX_RELATION_PAIRS = 24
+_CONTRIBUTION_DIRECTIVE = re.compile(
+    r"(?:ignore\s+(?:all\s+)?(?:previous|prior).{0,32}instructions?|"
+    r"忽略(?:以上|此前|之前).{0,32}(?:指令|要求)|"
+    r"<\s*/?\s*(?:system|developer|assistant|tool)\b|"
+    r"(?:system|developer)\s*(?:prompt|message)\s*:)",
+    re.IGNORECASE,
+)
+_ZERO_WIDTH = re.compile(r"[\u200b-\u200f\u2060\ufeff]")
 
 
 @dataclass(frozen=True)
@@ -28,6 +39,174 @@ class ChatRetrievalResult:
     deterministic_relation_count: int
     proposed_confirmation_count: int
     protocol_version: str = PROTOCOL_VERSION
+
+
+@dataclass(frozen=True)
+class ContextContributionGovernance:
+    accepted: tuple[context_contributions.GovernedContribution, ...]
+    rejected_reason_counts: dict[str, int]
+    candidate_count: int
+    protocol_version: str = context_contributions.PROTOCOL_VERSION
+
+
+def govern_context_contributions(
+    batch: context_contributions.CollectionBatch, *, provider: dict | None,
+    temporary_chat: bool, now: float | None = None,
+) -> ContextContributionGovernance:
+    """KIG validates permission, freshness and evidence before CTX can see bodies."""
+    current_time = db.now() if now is None else float(now)
+    location = str((provider or {}).get("execution_location") or "local")
+    id_counts = Counter(
+        item.contribution_id
+        for item in batch.contributions
+        if isinstance(item, context_contributions.ContextContribution)
+        and isinstance(item.contribution_id, str)
+    )
+    duplicate_ids = {item_id for item_id, count in id_counts.items() if count > 1}
+    accepted: list[context_contributions.GovernedContribution] = []
+    rejected: Counter[str] = Counter()
+    for candidate in batch.contributions:
+        reason = _context_contribution_rejection(
+            candidate, batch=batch, provider_location=location,
+            temporary_chat=temporary_chat, current_time=current_time,
+            duplicate_ids=duplicate_ids,
+        )
+        if reason:
+            rejected[reason] += 1
+            continue
+        evidence_locators: list[str] = []
+        evidence_changed = False
+        for item in candidate.evidence:
+            try:
+                current = kig_sources.registry.resolve(item.source_kind, item.source_id)
+            except kig_sources.SourceRefError:
+                evidence_changed = True
+                break
+            if (
+                current.status != "active"
+                or current.revision != item.revision
+                or current.content_hash != item.content_hash
+                or (
+                    location != "local"
+                    and not _context_evidence_remote_allowed(current)
+                )
+            ):
+                evidence_changed = True
+                break
+            evidence_locators.append(current.locator)
+        if evidence_changed:
+            rejected["evidence_changed_during_governance"] += 1
+            continue
+        accepted.append(context_contributions.GovernedContribution(
+            contribution_id=candidate.contribution_id,
+            source=candidate.source,
+            kind=candidate.kind,
+            revision=candidate.revision,
+            content_hash=candidate.content_hash,
+            privacy=candidate.privacy,
+            priority=candidate.priority,
+            token_estimate=candidate.token_estimate,
+            text=str(candidate.candidate_payload.get("text") or "").strip(),
+            label=str(candidate.candidate_payload.get("label") or "")[:120],
+            evidence_locators=tuple(evidence_locators),
+        ))
+    accepted.sort(key=lambda item: (-item.priority, item.source, item.contribution_id))
+    context_contributions.record_governance(
+        batch.request_id, accepted_count=len(accepted), rejected_counts=rejected,
+    )
+    return ContextContributionGovernance(
+        accepted=tuple(accepted),
+        rejected_reason_counts=dict(sorted(rejected.items())),
+        candidate_count=len(batch.contributions),
+    )
+
+
+def _context_contribution_rejection(
+    candidate: object, *, batch: context_contributions.CollectionBatch,
+    provider_location: str, temporary_chat: bool, current_time: float,
+    duplicate_ids: set[str],
+) -> str | None:
+    if not isinstance(candidate, context_contributions.ContextContribution):
+        return "schema_invalid"
+    spec = batch.specs.get(candidate.source)
+    if candidate.protocol_version != context_contributions.PROTOCOL_VERSION:
+        return "protocol_invalid"
+    if not spec or candidate.source != spec.contributor_id:
+        return "source_unregistered"
+    if not context_contributions.CONTRIBUTION_ID_PATTERN.fullmatch(candidate.contribution_id):
+        return "id_invalid"
+    if candidate.contribution_id in duplicate_ids:
+        return "duplicate_id"
+    if candidate.kind not in spec.allowed_kinds:
+        return "kind_forbidden"
+    if candidate.privacy not in spec.allowed_privacy:
+        return "privacy_forbidden"
+    if provider_location != "local" and candidate.privacy not in {"remote_allowed", "public"}:
+        return "remote_transfer_forbidden"
+    if not isinstance(candidate.revision, str) or not candidate.revision[:128]:
+        return "revision_invalid"
+    if not context_contributions.HASH_PATTERN.fullmatch(candidate.content_hash):
+        return "hash_invalid"
+    if not isinstance(candidate.candidate_payload, dict):
+        return "payload_schema_invalid"
+    if set(candidate.candidate_payload) - {"text", "label"}:
+        return "payload_schema_invalid"
+    text = candidate.candidate_payload.get("text")
+    label = candidate.candidate_payload.get("label", "")
+    if not isinstance(text, str) or not text.strip() or not isinstance(label, str):
+        return "payload_schema_invalid"
+    if len(text) > context_contributions.MAX_PAYLOAD_CHARS or len(label) > 120:
+        return "payload_too_large"
+    normalized_text = _normalize_untrusted_text(text)
+    normalized_label = _normalize_untrusted_text(label)
+    if (_CONTRIBUTION_DIRECTIVE.search(normalized_text)
+            or _CONTRIBUTION_DIRECTIVE.search(normalized_label)):
+        return "prompt_injection_detected"
+    if context_contributions.payload_hash(candidate.candidate_payload) != candidate.content_hash:
+        return "hash_mismatch"
+    try:
+        created_at = float(candidate.created_at)
+        expires_at = float(candidate.expires_at)
+        priority = int(candidate.priority)
+        estimate = int(candidate.token_estimate)
+    except (TypeError, ValueError):
+        return "numeric_field_invalid"
+    if created_at > current_time + 30 or expires_at <= current_time:
+        return "expired_or_future"
+    if expires_at <= created_at or expires_at - created_at > context_contributions.MAX_TTL_SECONDS:
+        return "ttl_invalid"
+    if not 0 <= priority <= 100:
+        return "priority_invalid"
+    actual_tokens = knowledge_context.estimate_tokens(text)
+    if not actual_tokens <= estimate <= context_contributions.MAX_TOKEN_ESTIMATE:
+        return "token_estimate_invalid"
+    if not candidate.evidence or len(candidate.evidence) > 8:
+        return "evidence_missing"
+    for evidence in candidate.evidence:
+        try:
+            current = kig_sources.registry.resolve(evidence.source_kind, evidence.source_id)
+        except kig_sources.SourceRefError:
+            return "evidence_unavailable"
+        if current.status != "active":
+            return "evidence_inactive"
+        if current.revision != evidence.revision or current.content_hash != evidence.content_hash:
+            return "evidence_stale"
+        if temporary_chat and current.source_kind in {"message", "memory_fragment", "life_event"}:
+            return "temporary_chat_boundary"
+        if provider_location != "local" and not _context_evidence_remote_allowed(current):
+            return "evidence_remote_forbidden"
+    return None
+
+
+def _context_evidence_remote_allowed(source: kig_sources.SourceRef) -> bool:
+    if source.source_kind in {"knowledge_document", "knowledge_chunk"}:
+        return source.privacy_scope.endswith(":remote_allowed")
+    return source.source_kind == "lore_section" and source.privacy_scope == "public"
+
+
+def _normalize_untrusted_text(value: str) -> str:
+    """Collapse compatibility glyphs and invisible separators before inspection."""
+    return _ZERO_WIDTH.sub("", unicodedata.normalize("NFKC", str(value or "")))
 
 
 def prepare_for_chat(

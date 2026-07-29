@@ -18,7 +18,7 @@
 
 ## 边界
 
-- CDS.9 阶段未新增迁移、表或列；阶段基线为 Schema 62，当前项目为 Schema 80。
+- CDS.9 阶段未新增迁移、表或列；阶段基线为 Schema 62，当前项目为 Schema 81。
 - memory_conflict_proposal 与 memory_retention_proposal 使用独立输入/输出 Schema，均固定 Shadow。
 - 独立 oracle：`cds9-memory-safety-oracle-v3`，不读取 fixture expected。
 - fallback 复用 MEM 纯投影；Shadow 只写共享 DecisionRun 账本，MEM 仍是唯一 application owner。

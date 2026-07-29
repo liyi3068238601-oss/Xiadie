@@ -139,37 +139,47 @@ ShortMemo
 
 ### CIE.3：原生图片多模态
 
-- [ ] Provider/model 能力探测必须证明 vision 可用，不能依赖名称猜测。
-- [ ] 本地解析元数据、尺寸、MIME 和 hash；限制单轮数量、像素和字节。
-- [ ] 远端逐次授权，明确 Provider 位置与用途；临时文件按 TTL 删除。
-- [ ] 模型不支持或用户拒绝时回退本地 OCR/描述候选或明确提示，不伪装已看图。
-- [ ] 图片不得进入长期记忆、知识或日志，除非另有明确授权。
+- [x] Provider/model 能力探测必须证明 vision 可用，不能依赖名称猜测。
+- [x] 本地解析元数据、尺寸、MIME 和 hash；限制单轮数量、像素和字节。
+- [x] 远端逐次授权，明确 Provider 位置与用途；临时文件按 TTL 删除。
+- [x] 模型不支持或用户拒绝时回退本地 OCR/描述候选或明确提示，不伪装已看图。
+- [x] 图片不得进入长期记忆、知识或日志，除非另有明确授权。
+
+施工记录（2026-07-29）：新增 `vision-probe-v1` 与 `cie-image-attachment-v1`，Schema 81 只保存能力证据和图片非正文元数据。远端逐轮授权绑定 Provider、模型及位置版本；提交后立即销毁临时原始字节，未发送数据由 1 小时 TTL、删除 API 与启动 GC 清理。当前 `deepseek/deepseek-v4-flash` 真实图片探针返回 HTTP 400，诚实标记为不支持。针对性后端用例、前端 63 项和 Vite 191 modules 已通过，等待独立 Review 后进入 CIE.4。
+
+Review 收口（2026-07-29）：独立 Review 以 0 P0 / 0 P1 通过。3 个 P2 均采纳轻量加固：图片分支补充不进入 `attachment_block` 的注释、图片上传前触发过期 GC、`save()` 统一经 `_safe_path()`；本地 OCR 作为未来独立候选，不插入 CIE.4。允许进入 CIE.4。
 
 ### CIE.4：回复节奏与输入状态
 
-- [ ] 客户端优先实现流式输入状态和视觉节奏，不修改语义文本。
-- [ ] 句子拆分必须保护代码块、URL、引用、数字和 Markdown。
-- [ ] 用户新消息到达时停止尚未展示的分段。
-- [ ] 若需要模型输出表达计划，提出 `expression-plan-v2`，不得改写冻结 v1。
+- [x] 客户端优先实现流式输入状态和视觉节奏，不修改语义文本。
+- [x] 句子拆分必须保护代码块、URL、引用、数字和 Markdown。
+- [x] 用户新消息到达时停止尚未展示的分段。
+- [x] 若需要模型输出表达计划，提出 `expression-plan-v2`，不得改写冻结 v1。（本阶段无模型表达计划需求，未新建 v2）
 
 完成门：文本重组差异率 0；重复发送率 0；代码块破坏率 0。
 
+施工记录（2026-07-29）：新增纯客户端 `reply-presentation-v1`，按原字符串安全切片做短间隔展示，服务端 final 始终整体替换为权威正文。取消、会话切换、卸载及失败清除未展示队列；内部阶段映射为自然状态文案。CIE.0 的 20 条 rhythm 固定集上文本差异、重复发送、代码块破坏和打断后泄漏均为 0；无 Provider 调用、无表达协议变更、Schema 保持 81。独立 Review 以 0 P0 / 0 P1 通过；采纳 final 到达即标记 completed，不采纳把协议枚举翻译后再存 state 的建议，允许进入 CIE.5。
+
 ### CIE.5：第三方 ContextContribution
 
-- [ ] 定义 `context-contribution-v1`：source、kind、revision/hash、TTL、privacy、priority、token estimate、candidate payload。
-- [ ] 禁止第三方直接追加 system/developer Prompt。
-- [ ] KIG 执行权限、新鲜度与证据检查，CTX 执行最终预算裁剪。
-- [ ] 单一贡献者超时、异常或注入攻击不影响其他来源和聊天。
-- [ ] 提供只读无正文诊断和逐贡献者开关。
+- [x] 定义 `context-contribution-v1`：source、kind、revision/hash、TTL、privacy、priority、token estimate、candidate payload。
+- [x] 禁止第三方直接追加 system/developer Prompt。
+- [x] KIG 执行权限、新鲜度与证据检查，CTX 执行最终预算裁剪。
+- [x] 单一贡献者超时、异常或注入攻击不影响其他来源和聊天。
+- [x] 提供只读无正文诊断和逐贡献者开关。
+
+施工记录（2026-07-29）：新增进程内 `context-contribution-v1` 注册与逐 contributor 超时隔离；新来源默认关闭，用户逐来源启用后才接收本轮查询。KIG 在每轮复核协议、权限、幂等 ID、TTL/hash、token 低报、注入、Provider 位置及 owner SourceRef 的 revision/status/privacy；CTX 只接受治理类型，按 priority 和完整 JSON 记录执行最终预算裁剪。候选正文不持久化，诊断仅保留状态、耗时和计数，高级设置提供逐来源开关。独立 Review 以 0 P0 / 0 P1 通过；采纳 NFKC/零宽字符注入加固，不采纳跨 owner store 长读锁，允许进入 CIE.6。
 
 ### CIE.6：整体验收与冻结
 
-- [ ] 5/20/100/500 轮连续消息与打断回归。
-- [ ] 本地/远端、在线/断网、前后台、休眠恢复、时钟回拨矩阵。
-- [ ] 图片授权、撤回、过期、Provider 位置变化与模型切换矩阵。
-- [ ] 第三方贡献恶意正文、超预算、过期来源和重复 ID 矩阵。
-- [ ] Windows Electron 实机验收。
-- [ ] 独立 Review 0 个未解决 P0/P1 后冻结。
+- [x] 5/20/100/500 轮连续消息与打断回归。
+- [x] 本地/远端、在线/断网、前后台、休眠恢复、时钟回拨矩阵。
+- [x] 图片授权、撤回、过期、Provider 位置变化与模型切换矩阵。
+- [x] 第三方贡献恶意正文、超预算、过期来源和重复 ID 矩阵。
+- [x] Windows Electron 实机验收。
+- [x] 独立 Review 0 个未解决 P0/P1 后冻结。
+
+施工记录（2026-07-29）：`cie-final-acceptance-v1` 汇总 625 条连续消息、取消/重放、运行环境、图片和 ContextContribution 攻击矩阵，10 项零容忍指标均为 0。后端全量 `2597 passed, 1 warning`；前端 `71 passed`、Vite 192 modules；Electron 3 项 contract、JS 语法和发布资源验证通过。当前源码在隔离数据目录完成 Windows Electron 实机烟测，后端/前端健康且 Electron 存活 8 秒，退出后端口和临时状态全部清理。Schema 保持 81。最终独立 Review 以 0 P0 / 0 P1、2 个可延后 P2 通过，CIE v1 正式冻结；新增能力必须进入后续专项和新协议版本。
 
 ## 7. 指标
 

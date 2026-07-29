@@ -1,0 +1,34 @@
+{
+  "protocol_version": "context-contribution-v1",
+  "schema_version": 81,
+  "uses_schema_82": false,
+  "provider_calls": 0,
+  "targeted_backend_tests": 104,
+  "frontend_tests": 71,
+  "frontend_modules_built": 192,
+  "metrics": {
+    "third_party_free_prompt_injection_rate": 0,
+    "stale_or_expired_contribution_application_rate": 0,
+    "unauthorized_remote_transfer_rate": 0,
+    "duplicate_contribution_application_rate": 0,
+    "contributor_failure_base_chat_impact_rate": 0,
+    "diagnostic_body_persistence_rate": 0,
+    "context_budget_overflow_rate": 0
+  },
+  "covered_boundaries": [
+    "registered_source_permissions",
+    "default_off_disclosure_control",
+    "per_contributor_disable",
+    "timeout_isolation",
+    "exception_isolation",
+    "payload_schema_allowlist",
+    "prompt_injection_rejection",
+    "ttl_expiry_rejection",
+    "evidence_revision_freshness",
+    "provider_location_privacy",
+    "duplicate_id_rejection",
+    "whole_record_ctx_trimming",
+    "body_free_diagnostics",
+    "base_chat_degradation"
+  ]
+}

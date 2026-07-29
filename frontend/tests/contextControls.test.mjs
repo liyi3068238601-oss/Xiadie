@@ -8,6 +8,7 @@ const settings = await readFile(
 const chat = await readFile(
   new URL("../src/components/ChatView.tsx", import.meta.url), "utf8",
 );
+const api = await readFile(new URL("../src/api.ts", import.meta.url), "utf8");
 
 test("conversation history and summary controls remain separate from long-term memory", () => {
   assert.match(settings, /参考过往聊天/);
@@ -29,4 +30,12 @@ test("normal companion chat does not expose technical memory or knowledge counte
   assert.doesNotMatch(chat, /正在核对.*本地资料/);
   assert.doesNotMatch(chat, /memoryCount/);
   assert.doesNotMatch(chat, /knowledgeCount/);
+});
+
+test("CIE context contributors expose body-free diagnostics and per-source switches", () => {
+  assert.match(settings, /当前没有已注册的第三方上下文来源/);
+  assert.match(settings, /正文不会写入诊断/);
+  assert.match(settings, /setContextContributorEnabled/);
+  assert.match(api, /context-contribution-v1/);
+  assert.match(api, /\/api\/cie\/context-contributors/);
 });

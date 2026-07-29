@@ -1,12 +1,12 @@
 # 遐蝶 Codex 项目上下文
 
-> CIE 施工快照（2026-07-29）：CIE.0～CIE.2 已通过独立 Review。活动生成可在持久化前协作取消，短期 nonce 防重复，运行时关门恢复旧路径草稿；Schema 保持 80。当前施工入口为 CIE.3 原生图片多模态。
+> CIE 冻结快照（2026-07-29）：CIE.0～CIE.6 已完成并通过独立 Review，0 个未解决 P0/P1；CIE v1 与 Schema 81 正式冻结，未占用 82。后端全量 2597 项、前端 71 项、Electron contract/当前源码 Windows 烟测和发布资源验证均通过；10 项零容忍指标为 0。下一步只进入 LIFE v2 立项审计与计划，不得在未审计前直接实施候选对象。
 
 > 状态：当前执行约束  
 > 适用对象：Codex、维护者和后续参与开发的协作者  
 > 项目根目录：`E:\Xiadie\Xiadie`  
 > 当前产品基线：v0.1.0  
-> 最后更新：2026-07-28
+> 最后更新：2026-07-29
 
 ## 1. 使用方式
 
@@ -383,4 +383,4 @@ EAP Schema 48～60 不回写；真实输出继续受后端最终授权复核、�
 
 EAP PR #1、CDS PR #2 与 LIFE PR #3 已依次合并冻结；LIFE predecessor 为 `main@f16d80ab0d2457065dc65d7d284d3cbf3584f5ee`、Schema 71。KIG-R 使用 Schema 72～76，冻结实现与 rollback point 为 `a18fd04a3759663f88d6a8041529fea14645c281`。KIG-P 使用 Schema 77～80，完成来源化 PWM、可逆实体解析、owner proposal-only 接口、非破坏性维护和原知识页扩展；既有 Knowledge/MEM/LIFE/CTX/EAP 所有权均未转移。模型认证仍只覆盖 `deepseek-v4-pro` 的 KIG-R 当前指纹，PWM 抽取保持 Shadow；Provider/模型切换必须重新认证。
 
-KIG PR #4 已合并；当前唯一施工入口为 `docs/KFC_COMPANION_INTERACTION_ENHANCEMENT_PLAN.md` 的 CIE.0 Review。`agent/cie-specialty` 基于 `main@b436e9f8876f8926ac90df3562edbeef3f085413`；Schema 81 仅为后续暂定候选，Review 通过前不实现 TurnIngressBuffer。LIFE v2 的 `structured-inner-state-v1` 与 `short-memo-v1` 仅登记于长期路线基线，不属于 CIE 权限或前置。
+KIG PR #4 已合并；CIE.0～CIE.6 已完成并正式冻结于 Schema 81。`agent/cie-specialty` 基于 `main@b436e9f8876f8926ac90df3562edbeef3f085413` 完成专项，待合并后再从最新 `main` 建立下一专项分支。LIFE v2 的 `structured-inner-state-v1` 与 `short-memo-v1` 仍仅登记于长期路线基线；下一步只能先做需求、所有权、隐私、迁移和回滚审计，不构成直接施工授权。
