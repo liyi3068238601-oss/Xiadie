@@ -79,6 +79,7 @@ def compile_for_request(
     *, legacy_prompt: str, mode: str | None, style: Mapping[str, str] | None,
     provider: Mapping[str, object] | None, model: str,
     projection: Mapping[str, object] | None = None,
+    projection_rollout_mode: str = "off",
     rollout_mode: str | None = None,
 ) -> PersonaCompilation:
     selected_mode = mode or "companionship"
@@ -91,10 +92,17 @@ def compile_for_request(
     selected_rollout = rollout_mode or db.get_setting(ROLLOUT_KEY, "off")
     if selected_rollout not in ROLLOUT_MODES:
         selected_rollout = "off"
+    if projection_rollout_mode not in ROLLOUT_MODES:
+        projection_rollout_mode = "off"
     try:
-        candidate, manifest, section_hashes = compile_candidate(
-            mode=selected_mode, style=style, projection=projection,
+        static_candidate, manifest, section_hashes = compile_candidate(
+            mode=selected_mode, style=style, projection=None,
         )
+        projected_candidate = static_candidate
+        if projection is not None and projection_rollout_mode in {"shadow", "active"}:
+            projected_candidate, _, _ = compile_candidate(
+                mode=selected_mode, style=style, projection=projection,
+            )
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
         return PersonaCompilation(
             prompt=legacy_prompt, candidate_prompt="", profile_version="legacy",
@@ -104,7 +112,10 @@ def compile_for_request(
             candidate_tokens=0, fallback_reason="persona_resource_invalid",
         )
     fingerprint = model_fingerprint(provider, model)
-    compiled_hash = hashlib.sha256(candidate.encode()).hexdigest()
+    # Certification binds reviewed static resources.  A validated request-local
+    # projection may alter the selected prompt but must not invalidate or inherit
+    # that static model certificate.
+    compiled_hash = hashlib.sha256(static_candidate.encode()).hexdigest()
     certified = is_certified(
         fingerprint, manifest["profile_version"], manifest["compiler_version"],
         selected_mode, compiled_hash,
@@ -113,15 +124,17 @@ def compile_for_request(
     fallback = None
     if not selected:
         fallback = "persona_rollout_inactive" if selected_rollout != "active" else "persona_model_uncertified"
+    selected_candidate = projected_candidate if projection_rollout_mode == "active" else static_candidate
+    comparison_candidate = projected_candidate if projection_rollout_mode == "shadow" else selected_candidate
     return PersonaCompilation(
-        prompt=candidate if selected else legacy_prompt,
-        candidate_prompt=candidate,
+        prompt=selected_candidate if selected else legacy_prompt,
+        candidate_prompt=comparison_candidate,
         profile_version=manifest["profile_version"],
         compiler_version=manifest["compiler_version"], mode=selected_mode,
         rollout_mode=selected_rollout, selected_v2=selected, certified=certified,
         section_hashes=section_hashes,
         compiled_hash=compiled_hash,
-        candidate_tokens=context_budget.estimate_tokens(candidate), fallback_reason=fallback,
+        candidate_tokens=context_budget.estimate_tokens(comparison_candidate), fallback_reason=fallback,
     )
 
 
@@ -207,6 +220,31 @@ def is_certified(
 def _render_projection(projection: Mapping[str, object] | None) -> str:
     if not projection:
         return ""
+    allowed_keys = {
+        "protocol_version", "source_snapshot_hash", "affect_band", "relationship_boundary",
+        "open_goal_ids", "open_saga_ids", "recent_life_event_ids",
+        "relevant_short_memo_ids", "expression_flags",
+    }
+    if set(projection) - allowed_keys:
+        raise PersonaResourceError("inner_state_projection_invalid")
+    if projection.get("protocol_version") != "inner-state-projection-v1":
+        raise PersonaResourceError("inner_state_projection_invalid")
+    if not re.fullmatch(r"[0-9a-f]{64}", str(projection.get("source_snapshot_hash") or "")):
+        raise PersonaResourceError("inner_state_projection_invalid")
+    scalar_values = {
+        "affect_band": {
+            "bright", "serene", "agitated", "melancholic", "focused",
+            "contemplative", "pleased", "subdued", "neutral",
+        },
+        "relationship_boundary": {
+            "defensive", "highly_guarded", "default_distance", "softly_guarded", "relaxed",
+        },
+    }
+    list_limits = {
+        "open_goal_ids": 3, "open_saga_ids": 2, "recent_life_event_ids": 3,
+        "relevant_short_memo_ids": 3, "expression_flags": 5,
+    }
+    expression_values = {"calm", "warm", "concise", "gently_curious", "offer_help"}
     allowed_scalars = ("affect_band", "relationship_boundary")
     allowed_lists = (
         "open_goal_ids", "open_saga_ids", "recent_life_event_ids",
@@ -215,12 +253,25 @@ def _render_projection(projection: Mapping[str, object] | None) -> str:
     lines = []
     for key in allowed_scalars:
         value = projection.get(key)
+        if value is not None and value not in scalar_values[key]:
+            raise PersonaResourceError("inner_state_projection_invalid")
         if isinstance(value, str) and value:
             lines.append(f"- {key}: {value}")
     for key in allowed_lists:
         value = projection.get(key)
+        if value is not None and not isinstance(value, (list, tuple)):
+            raise PersonaResourceError("inner_state_projection_invalid")
         if isinstance(value, (list, tuple)) and value:
+            if len(value) > list_limits[key] or len(set(value)) != len(value):
+                raise PersonaResourceError("inner_state_projection_invalid")
             safe = [str(item) for item in value if isinstance(item, str) and item]
+            if len(safe) != len(value):
+                raise PersonaResourceError("inner_state_projection_invalid")
+            if key == "expression_flags":
+                if any(item not in expression_values for item in safe):
+                    raise PersonaResourceError("inner_state_projection_invalid")
+            elif any(not re.fullmatch(r"[0-9a-f]{16}", item) for item in safe):
+                raise PersonaResourceError("inner_state_projection_invalid")
             if safe:
                 lines.append(f"- {key}: {', '.join(safe)}")
     if not lines:

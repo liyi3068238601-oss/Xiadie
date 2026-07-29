@@ -21,7 +21,7 @@ from . import (
     cognition_settings, companion_state, context_assembler, context_budget,
     context_controls, context_diagnostics, conversation_summaries,
     context_contributions, conversation_summary_service, db, cie_settings,
-    diary, entities, episode_consolidator, history_recall, important_dates,
+    diary, entities, episode_consolidator, history_recall, important_dates, inner_state_projection,
     episode_summary_service, episodes, knowledge, knowledge_cleanup, knowledge_context,
     knowledge_embeddings, knowledge_grants,
     knowledge_management, knowledge_parser, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search,
@@ -913,6 +913,28 @@ async def chat(body: ChatIn) -> StreamingResponse:
             else companion_state.preview_interaction(anchored_content, current_state)
         )
         style = companion_state.get_style_guidance(next_state)
+        projection_rollout = inner_state_projection.rollout_mode()
+        projection_mapping = None
+        if projection_rollout != "off":
+            try:
+                request_mode = body.persona_mode or "companionship"
+                projection = inner_state_projection.build(
+                    state=next_state,
+                    goals=personal_goals.list_goals(limit=20),
+                    sagas=saga_lifecycle.list_sagas(status="active", limit=2),
+                    life_events=life_events.list_events(limit=3),
+                    short_memos=short_memo_items,
+                    request_mode=request_mode,
+                    current_intent=inner_state_projection.classify_current_intent(
+                        effective_content, request_mode=request_mode,
+                    ),
+                )
+                projection_mapping = projection.as_mapping() if projection else None
+            except Exception:  # request-local expression hints must never block chat
+                logger.warning(
+                    "inner_state_projection_failed session_id=%s", body.session_id, exc_info=True,
+                )
+                projection_mapping = None
         try:
             persona_compilation = persona_v2.compile_for_request(
                 legacy_prompt=persona.PERSONA_PROMPT,
@@ -920,6 +942,8 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 style=body.persona_style,
                 provider=provider,
                 model=model,
+                projection=projection_mapping,
+                projection_rollout_mode=projection_rollout,
             )
         except persona_v2.PersonaResourceError as exc:
             raise HTTPException(422, str(exc)) from exc

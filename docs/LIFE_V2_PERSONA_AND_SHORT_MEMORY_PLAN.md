@@ -265,13 +265,15 @@ Cyrene-Agent 的 WorldBook 适合参考“把大段世界观拆成可独立命�
 
 ### LIFE2.5：只读 `InnerStateProjection`（不持久化）
 
-- 每轮只读组合现有 Affect、Relationship、开放 Saga/Goal、最近 LIFE 事件和相关 ShortMemo，生成请求内 `InnerStateProjection`；请求结束即丢弃，不写数据库、缓存、Memory 或日志正文。
-- 投影只包含有界字段和来源对象 ID，例如情绪基调、关系边界、近期关注、开放目标和表达建议；不生成自由内心独白、隐藏日记或 chain-of-thought。
-- 各字段缺失时省略，不由模型补猜；来源对象撤销、过期或删除后，下轮投影自然消失。投影不得反向写回任何来源域。
-- Persona 编译器只读取这一低权限投影；安全、事实、用户当前请求、Persona Core 和领域权威状态始终优先。
-- 首版正式取消持久化 `StructuredInnerState`，不占用 Schema。只有固定集证明存在稳定且无法映射到现有权威对象的缺口，才允许另立 ADR，不在本专项预留迁移。
+- [x] 每轮只读组合现有 Affect、Relationship、开放 Saga/Goal、最近 LIFE 事件和相关 ShortMemo，生成请求内 `InnerStateProjection`；请求结束即丢弃，不写数据库、缓存、Memory 或日志正文。
+- [x] 投影只包含有界字段和来源对象 ID，例如情绪基调、关系边界、近期关注、开放目标和表达建议；不生成自由内心独白、隐藏日记或 chain-of-thought。
+- [x] 各字段缺失时省略，不由模型补猜；来源对象撤销、过期或删除后，下轮投影自然消失。投影不得反向写回任何来源域。
+- [x] Persona 编译器只读取这一低权限投影；安全、事实、用户当前请求、Persona Core 和领域权威状态始终优先。
+- [x] 首版正式取消持久化 `StructuredInnerState`，不占用 Schema。只有固定集证明存在稳定且无法映射到现有权威对象的缺口，才允许另立 ADR，不在本专项预留迁移。
 
 验收：同一来源快照得到相同投影；无来源不生成、删除后不残留、请求结束不持久化、日志无投影正文；不得用“更像人”作为不可度量的扩表理由。
+
+施工记录（2026-07-30）：已实现不可变 `inner-state-projection-v1`，仅含冻结枚举、现有对象 ID、最多 3/2/3/3 个 Goal/Saga/LIFE Event/ShortMemo 来源以及五项表达旗标。`gently_curious` 与 `offer_help` 只在关系边界允许时生成，专注工作模式固定获得 `concise`；Persona 编译器对协议、hash、枚举、数组上限、去重、ID 格式和未知字段再次 fail closed。静态 Persona 证书继续只绑定受审查资源 hash：Projection Shadow 只生成候选对比，不改变已认证生产 prompt；仅独立发布门为 Active 时才进入选中 Persona。测试确认同快照同 hash、撤销来源零残留、无来源不生成、构建前后 Schema/表集合不变、隐藏正文无法进入候选；当前发布门保持 `shadow`。证据见 `docs/reports/life2-5-inner-state-projection.md`。
 
 ### LIFE2.6：组合验收与冻结
 
