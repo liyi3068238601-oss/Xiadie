@@ -25,7 +25,7 @@
   ],
   "mem_domain_write_count": 0,
   "changed_mem_domain_tables": [],
-  "schema_version": 81,
+  "schema_version": 82,
   "stage_schema_baseline": 62,
   "schema_changed": false,
   "fallback_kind": "pure_deterministic",

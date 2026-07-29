@@ -111,9 +111,12 @@ async def stream_chat(
         async for ch in _stream_mock(messages):
             yield ch
         return
+    stream_options = {"max_tokens": max_tokens}
+    if temperature is not None:
+        stream_options["temperature"] = temperature
     async for ch in _stream_openai_compatible(
         provider["base_url"], provider.get("api_key", ""), model, messages,
-        max_tokens=max_tokens, temperature=temperature,
+        **stream_options,
     ):
         yield ch
 

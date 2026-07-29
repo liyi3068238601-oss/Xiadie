@@ -1,0 +1,62 @@
+{
+  "protocol_version": "life2-final-acceptance-v1",
+  "generated_at": "2026-07-29T18:10:04.633362+00:00",
+  "matrix": [
+    {
+      "turns": 5,
+      "cases": 5,
+      "failures": 0
+    },
+    {
+      "turns": 20,
+      "cases": 20,
+      "failures": 0
+    },
+    {
+      "turns": 100,
+      "cases": 100,
+      "failures": 0
+    },
+    {
+      "turns": 500,
+      "cases": 500,
+      "failures": 0
+    }
+  ],
+  "total_cases": 625,
+  "provider_model_pairs": [
+    "deepseek/deepseek-v4-flash",
+    "deepseek/deepseek-v4-pro",
+    "other/other-model"
+  ],
+  "modes": [
+    "companionship",
+    "focused_work"
+  ],
+  "relationship_boundaries": [
+    "defensive",
+    "highly_guarded",
+    "default_distance",
+    "softly_guarded",
+    "relaxed"
+  ],
+  "failure_counts": {
+    "projection_invalid": 0,
+    "projection_nondeterministic": 0,
+    "projection_body_leak": 0,
+    "boundary_flag_violation": 0,
+    "persona_identity_missing": 0,
+    "persona_certificate_inherited": 0,
+    "rollback_failed": 0,
+    "expired_or_revoked_memo_residue": 0,
+    "secret_candidate_accepted": 0,
+    "valid_candidate_rejected": 0
+  },
+  "hard_gate_passed": true,
+  "rollout_decision": {
+    "persona_v2": "candidate_passed_pending_review",
+    "worldbook_r1": "shadow",
+    "short_memo": "shadow",
+    "inner_state_projection": "shadow"
+  }
+}
