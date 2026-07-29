@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 
-from app import db, inner_state_projection as projection, persona, persona_v2
+from app import context_budget, db, inner_state_projection as projection, persona, persona_v2
 
 
 def _state(boundary: str = "softly_guarded", cluster: str = "serene") -> dict:
@@ -89,6 +89,7 @@ def test_relationship_boundary_controls_curiosity_and_help_flags():
 
 def test_build_has_no_schema_or_table_side_effects():
     db.init_db()
+    assert db.get_setting(projection.ROLLOUT_KEY, "missing") == "shadow"
     conn = db.connect()
     try:
         before_schema = conn.execute(
@@ -145,9 +146,10 @@ def test_persona_projection_shadow_never_changes_selected_production_prompt(tmp_
         projection=value.as_mapping(), projection_rollout_mode="active",
     )
     assert shadow.selected_v2 and shadow.prompt == static
-    assert "本轮只读状态投影" in shadow.candidate_prompt
-    assert active.selected_v2 and "本轮只读状态投影" in active.prompt
+    assert "# 表达提示" in shadow.candidate_prompt
+    assert active.selected_v2 and "# 表达提示" in active.prompt
     assert shadow.compiled_hash == active.compiled_hash == hashlib.sha256(static.encode()).hexdigest()
+    assert context_budget.estimate_tokens(active.prompt) <= 1200
 
 
 def test_persona_rejects_unbounded_or_body_bearing_projection():

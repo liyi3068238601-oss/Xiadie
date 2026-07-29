@@ -231,4 +231,30 @@ def test_remote_validator_accepts_only_the_deterministic_candidate(monkeypatch):
     ))
     assert result["status"] == "created"
     assert observed["content"] == text
-    assert short_memo.list_active()[0]["content"] == text
+    stored = short_memo.list_active()[0]
+    assert stored["content"] == text
+    conn = db.connect()
+    try:
+        assert conn.execute(
+            "SELECT extraction_method FROM short_memos WHERE id=?", (stored["id"],),
+        ).fetchone()[0] == "model_validated"
+    finally:
+        conn.close()
+
+
+def test_rollout_off_never_calls_remote_validator(monkeypatch):
+    text = "明天我要去图书馆还书"
+    session_id, message_id = _source(text)
+    db.set_setting("life.short_memo.remote_extraction_enabled", "1")
+    snap = short_memo.set_rollout_mode("off")
+
+    async def forbidden(*_args, **_kwargs):
+        raise AssertionError("remote validator must not run while rollout is off")
+
+    monkeypatch.setattr(short_memo.llm, "complete_json", forbidden)
+    result = asyncio.run(short_memo.validate_and_process_user_message(
+        session_id=session_id, message_id=message_id, text=text,
+        provider={"id": "remote", "base_url": "https://example.invalid"},
+        model="validator", snapshot=snap,
+    ))
+    assert result == {"status": "disabled"}

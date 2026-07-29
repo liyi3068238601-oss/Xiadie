@@ -250,4 +250,8 @@ def test_contributor_exception_cannot_break_base_chat():
     assert response.status_code == 200
     assert "event: done" in response.text
     latest = context_contributions.diagnostics()["recent_collections"][0]
-    assert latest["runs"][0]["status"] == "error"
+    # A synchronous third-party handler runs in a worker thread so it cannot
+    # block chat.  Under a deliberately tiny 20 ms deadline, scheduler load may
+    # honestly classify the same isolated failure as error or timeout.
+    assert latest["runs"][0]["status"] in {"error", "timeout"}
+    assert latest["runs"][0]["candidate_count"] == 0

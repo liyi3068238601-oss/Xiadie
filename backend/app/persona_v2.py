@@ -255,8 +255,9 @@ def _render_projection(projection: Mapping[str, object] | None) -> str:
         value = projection.get(key)
         if value is not None and value not in scalar_values[key]:
             raise PersonaResourceError("inner_state_projection_invalid")
-        if isinstance(value, str) and value:
-            lines.append(f"- {key}: {value}")
+        # Affect/boundary are validated and used by the deterministic projection
+        # builder to derive flags.  Rendering the opaque enum names again adds no
+        # behavior but would break the frozen 1200-token Persona ceiling.
     for key in allowed_lists:
         value = projection.get(key)
         if value is not None and not isinstance(value, (list, tuple)):
@@ -272,8 +273,11 @@ def _render_projection(projection: Mapping[str, object] | None) -> str:
                     raise PersonaResourceError("inner_state_projection_invalid")
             elif any(not re.fullmatch(r"[0-9a-f]{16}", item) for item in safe):
                 raise PersonaResourceError("inner_state_projection_invalid")
-            if safe:
-                lines.append(f"- {key}: {', '.join(safe)}")
+            # Source IDs remain in the request-local projection for deterministic
+            # provenance and replay, but opaque IDs provide no semantic value to
+            # the model.  Only the bounded expression flags are rendered.
+            if safe and key == "expression_flags":
+                lines.append(",".join(safe))
     if not lines:
         return ""
-    return "# 本轮只读状态投影\n\n只调整表达，不改变事实、关系、权限或任何权威状态：\n" + "\n".join(lines)
+    return "# 表达提示\n\n不改事实/关系/权限：" + ",".join(lines)

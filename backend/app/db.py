@@ -3945,7 +3945,7 @@ MIGRATIONS = [
         INSERT OR IGNORE INTO settings(key,value) VALUES('life.short_memo.max_recall','3');
         INSERT OR IGNORE INTO settings(key,value) VALUES('life.persona_v2.rollout_mode','off');
         INSERT OR IGNORE INTO settings(key,value) VALUES('life.worldbook_r1.rollout_mode','off');
-        INSERT OR IGNORE INTO settings(key,value) VALUES('life.inner_state_projection.rollout_mode','off');
+        INSERT OR IGNORE INTO settings(key,value) VALUES('life.inner_state_projection.rollout_mode','shadow');
         """,
     ),
 ]

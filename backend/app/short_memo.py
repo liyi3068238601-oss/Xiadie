@@ -193,6 +193,10 @@ async def validate_and_process_user_message(
     model can veto a candidate but can never author or rewrite stored content.
     """
     snap = snapshot or rollout_snapshot()
+    if not snap.enabled or snap.rollout_mode == "off":
+        return process_user_message(
+            session_id=session_id, message_id=message_id, text=text, snapshot=snap, now=now,
+        )
     if not snap.remote_extraction_enabled:
         return process_user_message(
             session_id=session_id, message_id=message_id, text=text, snapshot=snap, now=now,
@@ -234,14 +238,17 @@ async def validate_and_process_user_message(
     _diagnose(snap.rollout_epoch, "remote_validation_accepted")
     return process_user_message(
         session_id=session_id, message_id=message_id, text=text, snapshot=snap, now=now,
+        extraction_method="model_validated",
     )
 
 
 def process_user_message(
     *, session_id: str, message_id: str, text: str, snapshot: RolloutSnapshot | None = None,
-    now: float | None = None,
+    now: float | None = None, extraction_method: str = "deterministic",
 ) -> dict[str, object]:
     snap = snapshot or rollout_snapshot()
+    if extraction_method not in {"deterministic", "model_validated"}:
+        raise ShortMemoError("short_memo_extraction_method_invalid")
     timestamp = float(now if now is not None else db.now())
     if not snap.enabled or snap.rollout_mode == "off":
         _diagnose(snap.rollout_epoch, "disabled")
@@ -301,7 +308,7 @@ def process_user_message(
             (
                 memo_id, candidate.content, content_hash,
                 json.dumps(candidate.topic_keys, ensure_ascii=False, separators=(",", ":")),
-                session_id, message_id, source_hash, None, "deterministic",
+                session_id, message_id, source_hash, None, extraction_method,
                 candidate.sensitivity, dedupe, 1, timestamp, timestamp, expires_at,
             ),
         )
