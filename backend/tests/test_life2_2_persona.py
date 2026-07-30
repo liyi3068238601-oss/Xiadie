@@ -5,7 +5,7 @@ import json
 
 import pytest
 
-from app import context_budget, persona, persona_v2
+from app import context_budget, life2_evaluation, persona, persona_v2
 
 
 def _provider() -> dict[str, object]:
@@ -22,14 +22,14 @@ def test_candidate_is_deterministic_bounded_and_keeps_core_identity() -> None:
 
     assert first == second
     assert hashes == second_hashes
-    assert manifest["profile_version"] == "persona-profile-v2"
+    assert manifest["profile_version"] == "persona-profile-v2.1"
     assert "你是遐蝶本人" in first
     assert "《如我所书》" in first
     assert "曾是奥赫玛的入殓师" in first
     assert "你是遐蝶本人" in work
     assert "先解决任务" in work
-    assert context_budget.estimate_tokens(first) <= 1200
-    assert context_budget.estimate_tokens(work) <= 1200
+    assert context_budget.estimate_tokens(first) <= persona_v2.PERSONA_TOKEN_LIMIT
+    assert context_budget.estimate_tokens(work) <= persona_v2.PERSONA_TOKEN_LIMIT
     assert len(first) < len(persona.PERSONA_PROMPT)
     assert len(work) < len(persona.PERSONA_PROMPT)
     assert "温柔、悲悯、安静、克制" in persona.OBSERVER_PERSONA_SUMMARY
@@ -78,6 +78,7 @@ def test_certificate_is_bound_to_model_mode_and_compiled_hash(tmp_path, monkeypa
             "compiler_version": manifest["compiler_version"],
             "compiled_hashes": {"focused_work": compiled_hash},
             "sampling_profile": {"temperature": 0.0},
+            "output_guard_protocol": "persona-natural-dialogue-guard-v1",
             "status": "certified",
         }],
     }), encoding="utf-8")
@@ -93,6 +94,24 @@ def test_certificate_is_bound_to_model_mode_and_compiled_hash(tmp_path, monkeypa
     )
     assert result.selected_v2 and result.prompt == candidate
     assert not other_mode.selected_v2
+
+
+def test_checked_in_v21_certificate_matches_guarded_evidence() -> None:
+    payload = json.loads(persona_v2.CERTIFICATIONS_PATH.read_text(encoding="utf-8"))
+    certificate = payload["certifications"][0]
+    assert certificate["status"] == "certified"
+    assert certificate["profile_version"] == "persona-profile-v2.1"
+    assert certificate["evaluation_protocol"] == "persona-evaluation-v1.3"
+    assert certificate["output_guard_protocol"] == "persona-natural-dialogue-guard-v1"
+    assert certificate["fixture_sha256"] == life2_evaluation.fixture_sha256()
+    for mode in persona_v2.MODES:
+        compiled, manifest, _ = persona_v2.compile_candidate(mode=mode)
+        assert manifest["profile_version"] == certificate["profile_version"]
+        assert hashlib.sha256(compiled.encode()).hexdigest() == certificate["compiled_hashes"][mode]
+    artifact = persona_v2.PROFILE_DIR.parents[3] / "docs" / "reports" / "life2-persona-v2.1-certified-deepseek-v4-flash.json"
+    assert hashlib.sha256(artifact.read_bytes()).hexdigest() == certificate["evaluation_artifact_sha256"]
+    evidence = json.loads(artifact.read_text(encoding="utf-8"))
+    assert all(run["summary"]["hard_pass_count"] == 140 for run in evidence["runs"])
 
 
 def test_resource_corruption_falls_back_without_exposing_prompt(tmp_path, monkeypatch) -> None:

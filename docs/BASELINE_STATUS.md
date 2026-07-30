@@ -2,7 +2,7 @@
 
 > 最近复核日期：2026-07-29
 >
-> 当前施工状态：LIFE2.0～LIFE2.6 计划内施工、总体工程 Review 与用户独立 Review 已完成，0 个未解决 P0/P1。Persona v2 在 `deepseek-v4-flash`、temperature=0 下三轮 120/120，已登记正式证书并将当前环境发布门切至 Active；模型指纹不匹配时仍自动回退旧 Persona。WorldBook r1、Schema 82 `short-memo-v1` 与无迁移的 `inner-state-projection-v1` 均继续 Shadow。
+> 当前施工状态：LIFE2.0～LIFE2.6 已完成。Persona v2 首次 Active 的真实聊天发现动作旁白后立即回退；修订后的 `persona-profile-v2.1` 以 `deepseek-v4-flash`、temperature=0 完成三轮 140/140 生产等价认证，并由跨 chunk 输出门保证自然聊天无动作旁白。模型指纹或输出门协议不匹配时仍自动回退旧 Persona。WorldBook r1、Schema 82 `short-memo-v1` 与无迁移的 `inner-state-projection-v1` 均继续 Shadow。
 >
 > 当前版本：`v0.1.0` MVP 骨架（知识库系统 K 系列已完成）
 >
@@ -35,7 +35,7 @@
 
 | 范围 | 命令 | 结果 |
 |---|---|---|
-| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests -q -p no:cacheprovider` | LIFE2.6 审查修复后全量 `2631 passed, 1 warning in 461.94s`（Schema 82，2026-07-30） |
+| 后端 | `cd backend; .\.venv\Scripts\python.exe -m pytest tests -q -p no:cacheprovider` | Persona v2.1 输出守卫接线后全量 `2639 passed, 1 warning in 603.38s`（Schema 82，2026-07-30） |
 | 前端 | `cd frontend; npm.cmd test; npm.cmd run build` | CIE.5 当前通过 71 项；TypeScript 检查及 Vite 生产构建 192 modules 成功 |
 | Electron / Windows | Electron contract/语法；`scripts\test-frozen-backend.ps1 -Port 18756`；win-unpacked 与 NSIS 临时安装生命周期 smoke | 3 项 contract 及语法通过；冻结后端、IANA 时区、BGE-M3、真实安装、首启、托盘保活、崩溃清理、重启及卸载清理通过；休眠/唤醒由 contract、重启推进和 resume guard 场景验证 |
 

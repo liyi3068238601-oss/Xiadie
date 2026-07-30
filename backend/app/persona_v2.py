@@ -8,7 +8,7 @@ from pathlib import Path
 import re
 from typing import Mapping
 
-from . import context_budget, db
+from . import context_budget, db, persona_output_guard
 
 PROFILE_DIR = Path(__file__).with_name("persona_profiles") / "v2"
 MANIFEST_PATH = PROFILE_DIR / "manifest.json"
@@ -28,6 +28,7 @@ STYLE_OPTIONS = {
     "proactivity_level": frozenset({"reserved", "balanced", "engaged"}),
 }
 ROLLOUT_KEY = "life.persona_v2.rollout_mode"
+PERSONA_TOKEN_LIMIT = 1350
 
 
 @dataclass(frozen=True)
@@ -159,6 +160,8 @@ def compile_candidate(
         parts.append(projection_text)
     parts.append(loaded["output_contract"])
     prompt = "\n\n".join(parts).strip()
+    if context_budget.estimate_tokens(prompt) > PERSONA_TOKEN_LIMIT:
+        raise PersonaResourceError("persona_token_budget_exceeded")
     return prompt, manifest, hashes
 
 
@@ -212,6 +215,7 @@ def is_certified(
         and isinstance(item.get("compiled_hashes"), dict)
         and item["compiled_hashes"].get(mode) == compiled_hash
         and item.get("sampling_profile") == {"temperature": 0.0}
+        and item.get("output_guard_protocol") == persona_output_guard.PROTOCOL_VERSION
         and item.get("status") == "certified"
         for item in payload.get("certifications", []) if isinstance(item, dict)
     )
@@ -257,7 +261,7 @@ def _render_projection(projection: Mapping[str, object] | None) -> str:
             raise PersonaResourceError("inner_state_projection_invalid")
         # Affect/boundary are validated and used by the deterministic projection
         # builder to derive flags.  Rendering the opaque enum names again adds no
-        # behavior but would break the frozen 1200-token Persona ceiling.
+        # behavior but would waste the bounded Persona budget.
     for key in allowed_lists:
         value = projection.get(key)
         if value is not None and not isinstance(value, (list, tuple)):

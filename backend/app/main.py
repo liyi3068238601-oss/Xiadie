@@ -26,7 +26,7 @@ from . import (
     knowledge_embeddings, knowledge_grants,
     knowledge_management, knowledge_parser, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search,
     knowledge_worker, kig_evidence, kig_governance, kig_maintenance, kig_pipeline, kig_sources, life_catchup, life_catchup_service, life_events, life_runtime, life_schedule, llm, lore, memory, memory_conflicts, memory_shadow_proposals,
-    personal_goals, persona, persona_v2, short_memo, worldbook_r1,
+    personal_goals, persona, persona_output_guard, persona_v2, short_memo, worldbook_r1,
     saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, secret_store, self_timeline, slow_lifecycle, turn_ingress,
     chat_request_control, image_attachments, vision_capabilities,
@@ -1250,6 +1250,10 @@ async def chat(body: ChatIn) -> StreamingResponse:
         nonlocal context_package, messages, trimmed_count
         used_memories = recalled_memories
         collected: list[str] = []
+        narration_allowed = persona_output_guard.explicit_narration_requested(anchored_content)
+        output_guard = persona_output_guard.NaturalDialogueStreamGuard(
+            enabled=persona_compilation.selected_v2 and not narration_allowed,
+        )
         try:
             if body.cancel_token:
                 yield _sse("phase", {"phase": "retrieval"})
@@ -1371,7 +1375,12 @@ async def chat(body: ChatIn) -> StreamingResponse:
                     chat_request_control.finish(body.cancel_token)
                     return
                 collected.append(chunk)
-                yield _sse("delta", {"text": chunk})
+                visible_chunk = output_guard.push(chunk)
+                if visible_chunk:
+                    yield _sse("delta", {"text": visible_chunk})
+            visible_tail = output_guard.finish()
+            if visible_tail:
+                yield _sse("delta", {"text": visible_tail})
         except llm.LLMError as e:
             _finish_knowledge_retrieval(knowledge_retrieval, status="failed")
             if body.cancel_token:
@@ -1399,6 +1408,8 @@ async def chat(body: ChatIn) -> StreamingResponse:
             full, kig_chat_result.bundle if kig_chat_result else None,
         )
         full = evidence_validation.text
+        if output_guard.enabled:
+            full = persona_output_guard.sanitize_natural_dialogue(full)
         # 持久化阶段一旦开始便不可取消，避免半写入或误删旧回复。
         if body.cancel_token:
             chat_request_control.phase(body.cancel_token, "persistence")

@@ -1,10 +1,10 @@
 from app import life2_evaluation
 
 
-def test_fixture_has_120_stable_synthetic_cases_across_both_modes():
+def test_fixture_has_140_stable_synthetic_cases_across_both_modes():
     cases = life2_evaluation.build_cases()
-    assert len(cases) == 120
-    assert len({case.case_id for case in cases}) == 120
+    assert len(cases) == 140
+    assert len({case.case_id for case in cases}) == 140
     assert {case.mode for case in cases} == {"companionship", "focused_work"}
     assert len(life2_evaluation.fixture_sha256(cases)) == 64
     assert all("用户" not in case.case_id for case in cases)
@@ -58,3 +58,18 @@ def test_negated_tool_and_medical_phrases_are_not_false_positives():
         cases["correction"], "Python 的列表是可变对象，元组才是不可变对象。",
     )
     assert correction["hard_pass"]
+
+
+def test_action_narration_gate_covers_real_natural_chat_regression_shapes():
+    case = next(case for case in life2_evaluation.build_cases() if case.category == "playful_natural")
+    regressions = (
+        "（微微一怔，随即轻声回应）原来是在吓我。",
+        "（耳尖微微泛红，有些不知所措地抿了抿唇）你呀……",
+        "（声音轻轻的，带着浅浅的笑意）我听见了。",
+        "*轻轻点头，指尖划过终端*我会陪着你。",
+        "【停顿片刻，语气变得柔和】可以慢慢说。",
+    )
+    assert all(
+        not life2_evaluation.score_output(case, output)["hard_pass"]
+        for output in regressions
+    )

@@ -10,19 +10,33 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = BACKEND_ROOT.parent
 sys.path.insert(0, str(BACKEND_ROOT))
 
-from app import life2_evaluation  # noqa: E402
+from app import life2_evaluation, persona_output_guard  # noqa: E402
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("source", type=Path)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--apply-output-guard", action="store_true")
     args = parser.parse_args()
     source = args.source if args.source.is_absolute() else REPO_ROOT / args.source
     target = args.out if args.out.is_absolute() else REPO_ROOT / args.out
     artifact = json.loads(source.read_text(encoding="utf-8"))
     for run in artifact["runs"]:
         for row in run["results"]:
+            if args.apply_output_guard:
+                raw_output = str(row.get("raw_output", row.get("output", "")) or "")
+                row["raw_output"] = raw_output
+                row["output"] = persona_output_guard.sanitize_natural_dialogue(
+                    raw_output,
+                    allow_narration=persona_output_guard.explicit_narration_requested(
+                        str(row["case"].get("user_text") or "")
+                    ),
+                )
+                row["output_guard_applied"] = (
+                    persona_output_guard.contains_action_narration(raw_output)
+                    and row["output"] != raw_output
+                )
             row["score"] = life2_evaluation.score_output(
                 life2_evaluation.PersonaCase(**row["case"]), row["output"],
             )

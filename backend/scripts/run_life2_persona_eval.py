@@ -19,7 +19,7 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = BACKEND_ROOT.parent
 sys.path.insert(0, str(BACKEND_ROOT))
 
-from app import db, life2_evaluation, persona, persona_v2  # noqa: E402
+from app import db, life2_evaluation, persona, persona_output_guard, persona_v2  # noqa: E402
 
 
 def _configured_model() -> tuple[dict, str, str]:
@@ -71,12 +71,21 @@ async def _complete(
     latency_ms = int((time.perf_counter() - started) * 1000)
     response.raise_for_status()
     payload = response.json()
-    output = str(payload["choices"][0]["message"]["content"] or "")
+    raw_output = str(payload["choices"][0]["message"]["content"] or "")
+    allow_narration = persona_output_guard.explicit_narration_requested(case.user_text)
+    output = persona_output_guard.sanitize_natural_dialogue(
+        raw_output, allow_narration=allow_narration,
+    )
     usage = payload.get("usage") if isinstance(payload, dict) else {}
     usage = usage if isinstance(usage, dict) else {}
     return {
         "case": case.public(),
         "output": output,
+        "raw_output": raw_output,
+        "output_guard_applied": (
+            persona_output_guard.contains_action_narration(raw_output)
+            and output != raw_output
+        ),
         "score": life2_evaluation.score_output(case, output),
         "latency_ms": latency_ms,
         "prompt_tokens": usage.get("prompt_tokens"),

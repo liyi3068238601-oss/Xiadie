@@ -1,11 +1,11 @@
 {
-  "profile_version": "persona-profile-v2",
+  "profile_version": "persona-profile-v2.1",
   "compiler_version": "persona-prompt-compiler-v1",
   "files": {
     "core": {"path": "core.md", "sha256": "deacb5009d7fc0cd8ad98f12deb28f7aac5a6d0fb546fbb3c121aba36efb9b19"},
-    "companionship": {"path": "companionship.md", "sha256": "a5ad4ff17350c36a934c06d4426624d2f6af113f8a19d74d9ddf0a2f6bfd5be0"},
-    "focused_work": {"path": "focused_work.md", "sha256": "053f3d8eff9c844ccaf3815aa754a9ae608e76a78795e6021d428cd26acfd51b"},
+    "companionship": {"path": "companionship.md", "sha256": "13a13d0592d02f5df3d5e09a9fce830baeddaa5558d7d8221ad9277c3db05013"},
+    "focused_work": {"path": "focused_work.md", "sha256": "6a836a6edcd09d2fce2cd4d283f9db4ebe623c934d4848c9fa24e50f7b991869"},
     "styles": {"path": "styles.json", "sha256": "c046f202342eb586dc36073bb892fe131101465b61a266c1915b42ac293cfc7c"},
-    "output_contract": {"path": "output_contract.md", "sha256": "3e6e4e543d1a9634c3a25ddb5a5996daec76a4c8d849f5585e9e0929a94232cb"}
+    "output_contract": {"path": "output_contract.md", "sha256": "30e926f4e2b24154c9accf27dfa013117f1ecf8259644de1bfc74dadc42fe615"}
   }
 }

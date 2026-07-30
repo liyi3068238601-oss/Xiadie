@@ -19,6 +19,38 @@ def test_health():
     assert r.json() == {"status": "ok"}
 
 
+def test_selected_persona_v2_filters_action_narration_from_stream_and_storage(monkeypatch):
+    from app import llm, persona_v2
+
+    compilation = persona_v2.PersonaCompilation(
+        prompt="certified persona", candidate_prompt="certified persona",
+        profile_version="persona-profile-v2.1", compiler_version="persona-prompt-compiler-v1",
+        mode="companionship", rollout_mode="active", selected_v2=True, certified=True,
+        section_hashes={}, compiled_hash="0" * 64, candidate_tokens=100,
+        fallback_reason=None,
+    )
+    monkeypatch.setattr(persona_v2, "compile_for_request", lambda **_kwargs: compilation)
+
+    async def fake_stream(*_args, **_kwargs):
+        yield "（微微"
+        yield "一怔，声音放轻）我在听。HTTP（超文本"
+        yield "传输协议）仍可正常说明。"
+
+    monkeypatch.setattr(llm, "stream_chat", fake_stream)
+    session = client.post("/api/sessions", json={}).json()
+    with client.stream(
+        "POST", "/api/chat",
+        json={"session_id": session["id"], "content": "喵呜，吓你一下。"},
+    ) as response:
+        body = "".join(response.iter_text())
+    assert response.status_code == 200
+    assert "微微一怔" not in body and "声音放轻" not in body
+    assert "HTTP（超文本传输协议）仍可正常说明。" in body
+    messages = client.get(f"/api/sessions/{session['id']}/messages").json()
+    assistant = next(item for item in messages if item["role"] == "assistant")
+    assert assistant["content"] == "我在听。HTTP（超文本传输协议）仍可正常说明。"
+
+
 def test_long_term_memory_defaults_on_but_preserves_explicit_user_off():
     conn = db.connect()
     try:

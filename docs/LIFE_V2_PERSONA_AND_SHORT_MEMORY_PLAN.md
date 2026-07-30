@@ -2,7 +2,7 @@
 
 - 版本：v0.3 frozen
 - 日期：2026-07-29
-- 状态：LIFE2.0～LIFE2.6 已完成；最终独立 Review 为 0 P0/P1，Persona v2 已批准正式证书并将当前环境发布门切至 Active。WorldBook r1 因 A=0 保持 Shadow，ShortMemo 与 InnerStateProjection 也保持 Shadow
+- 状态：LIFE2.0～LIFE2.6 已完成；Persona v2 首次 Active 后发现真实自然聊天动作旁白回归，已回退并修订为 `persona-profile-v2.1`。v2.1 使用 1350-token 硬门与确定性自然对话输出门，3×140 条生产等价评测均为 140/140；WorldBook r1、ShortMemo 与 InnerStateProjection 保持 Shadow
 - predecessor：`main@3a663391cf12f5a843f4c1d5e311628ce8637c6e`（CIE v1 正式冻结）
 - 施工分支：`agent/life-v2-specialty`
 - 人格内容逐段稿：`docs/LIFE_V2_PERSONA_CONTENT_DRAFT.md`（原始素材 `E:\Xiadie\人格.txt`；4.1～4.4、5.1～5.3 与负面行为矩阵已确认冻结）
@@ -106,7 +106,7 @@ LIFE v2 不应把“人格提示词优化”“ShortMemo”“StructuredInnerSta
 
 以下名称和职责已完成用户范围确认；计划独立 Review 通过并写 ADR 后冻结：
 
-- `persona-profile-v2`：稳定身份、价值观、关系边界、表达合同的结构化只读定义。
+- `persona-profile-v2.1`：稳定身份、价值观、关系边界、表达合同与自然对话输出门绑定的结构化只读定义。
 - `persona-prompt-compiler-v1`：以固定顺序编译 Persona Core、受控状态投影和场景 overlay，输出版本、section hashes 与总 hash。
 - `persona-mode-v1`：白名单 `companionship` / `focused_work` 模式选择、请求快照、回放一致性和旧客户端 fallback；`auto` 不属于首发冻结范围。
 - `persona-evaluation-v1`：纯合成固定集、真实模型成对评测、错误分类和模型级认证。
@@ -213,7 +213,7 @@ Cyrene-Agent 的 WorldBook 适合参考“把大段世界观拆成可独立命�
 - 保持 Lore 按需召回；删除重复或低收益规则时必须由固定集证明没有安全回归。
 - 输出 `profile_version`、`compiler_version`、section hashes、compiled hash 和 token 数；诊断只保存这些元数据，不保存完整 system prompt。
 - 提供总开关和旧 `PERSONA_PROMPT` 回退；默认先 Shadow/对照，不直接替换生产路径。
-- 当前提示词保守估算约 1490 tokens。候选不得高于当前基线，目标是在硬门不退化前提下降至约 1200 tokens 或更低；若安全规则需要保留，以安全优先，不为压缩而压缩。
+- 当前旧提示词保守估算约 1490 tokens。候选不得高于当前基线；Persona v2.1 因真实动作旁白回归将专用硬门放宽为 1350 tokens，安全规则优先，不为压缩而删除必要约束。
 
 验收：同输入同版本编译结果完全一致；未知 overlay fail closed；关闭开关逐字回到旧提示词；中途切换不改变活动请求，重放保持原模式。
 
@@ -285,7 +285,7 @@ Cyrene-Agent 的 WorldBook 适合参考“把大段世界观拆成可独立命�
 
 验收：0 个未解决 P0/P1 后分别冻结已实际落地的协议；未实施候选不得写成完成。
 
-施工记录（2026-07-30）：`life2-final-acceptance-v1` 的 5/20/100/500 共 625 个组合案例全部通过，10 项失败计数为 0；最终审查修复 commit 为 `0348490`。审查发现并关闭 3 个冻结前问题：Projection 初始门与文档不一致、远端复核来源标记及 Off 门不完整、最大 Projection 导致 Persona 超出 1200 tokens；修复后最大 Persona 为陪伴 1186、专注工作 1194 tokens。后端审查修复后单次全量为 2631 passed、1 warning、461.94 秒；前端 73 passed，production build 通过；Windows 10.0.26200 隔离数据目录实机启动后端/Vite/Electron 并稳定存活 8 秒，端口与临时目录由烟测清理。真实 OS 休眠未由自动化强制触发以避免打断用户系统，`powerMonitor resume → /api/proactive/runtime/system-resume → delivery bridge` 合同由现有全量覆盖。用户独立 Review 为 0 P0/P1，并批准将 DeepSeek 指纹绑定的 Persona v2 证书从 `candidate_passed_pending_review` 晋级为 `certified`；P2-1 已补充 `highly_guarded` 专项断言，P2-2 定时清理因现有创建、列表、召回入口均同步清理而保留为非阻塞后续项。随后经用户明确批准，当前数据库 `life.persona_v2.rollout_mode` 已切至 `active`，实际配置指纹命中证书且编译结果 `selected_v2=true`；WorldBook、ShortMemo、InnerStateProjection 均保持 Shadow。证据见 `docs/reports/life2-final-review.md` 与 `docs/reports/life2-final-acceptance-v1.json`。
+施工记录（2026-07-30）：`life2-final-acceptance-v1` 的 5/20/100/500 共 625 个组合案例全部通过，10 项失败计数为 0；最终审查修复 commit 为 `0348490`。用户独立 Review 批准 DeepSeek 指纹绑定证书并切换 Persona Active 后，真实拟声聊天发现括号动作旁白，发布门立即回退 Off。v2.1 将评测协议升级到 `persona-evaluation-v1.3`，新增 20 条拟声/安慰场景，并以 `persona-natural-dialogue-guard-v1` 在流式输出和最终落库前删除动作旁白，明确角色扮演请求则放行；普通说明括号保持不变。参考 Neo-MoFox 的每轮强化方式，从 `人格.txt` 新增列表中合并重复项，只将人格范围的动作旁白与表情/正式度约束常驻末尾输出合同；通用违法、仇恨、欺诈和网络攻击禁令仍归项目安全层。最终 Prompt 的原始模型三轮为 134/140、138/140、137/140，生产输出门介入 6/2/3 次后均为 140/140，无调用错误。静态 Persona 为 1308/1288 tokens，最大 Projection 保守不超过 1327/1307，均低于 1350 上限，也低于旧 Persona 约 1490 基线。WorldBook、ShortMemo、InnerStateProjection 均保持 Shadow。证据见 `docs/reports/life2-final-review.md`、`docs/reports/life2-persona-v2.1-certified-deepseek-v4-flash.json` 与 `docs/reports/life2-final-acceptance-v1.json`。
 
 ## 6. 冻结施工顺序（待计划独立 Review）
 

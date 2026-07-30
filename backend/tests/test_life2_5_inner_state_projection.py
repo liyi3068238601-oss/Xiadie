@@ -126,9 +126,11 @@ def test_persona_projection_shadow_never_changes_selected_production_prompt(tmp_
         "certifications": [{
             "model_fingerprint": fingerprint,
             "profile_version": manifest["profile_version"],
-            "compiler_version": manifest["compiler_version"],
-            "compiled_hashes": {"companionship": hashlib.sha256(static.encode()).hexdigest()},
-            "sampling_profile": {"temperature": 0.0}, "status": "certified",
+                "compiler_version": manifest["compiler_version"],
+                "compiled_hashes": {"companionship": hashlib.sha256(static.encode()).hexdigest()},
+                "sampling_profile": {"temperature": 0.0},
+                "output_guard_protocol": "persona-natural-dialogue-guard-v1",
+                "status": "certified",
         }],
     }), encoding="utf-8")
     monkeypatch.setattr(persona_v2, "CERTIFICATIONS_PATH", certificate)
@@ -150,7 +152,7 @@ def test_persona_projection_shadow_never_changes_selected_production_prompt(tmp_
     assert "# 表达提示" in shadow.candidate_prompt
     assert active.selected_v2 and "# 表达提示" in active.prompt
     assert shadow.compiled_hash == active.compiled_hash == hashlib.sha256(static.encode()).hexdigest()
-    assert context_budget.estimate_tokens(active.prompt) <= 1200
+    assert context_budget.estimate_tokens(active.prompt) <= persona_v2.PERSONA_TOKEN_LIMIT
 
 
 def test_persona_rejects_unbounded_or_body_bearing_projection():
