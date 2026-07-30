@@ -2,7 +2,7 @@
 
 - 版本：v0.3 frozen
 - 日期：2026-07-29
-- 状态：LIFE2.0～LIFE2.6 已完成；最终独立 Review 为 0 P0/P1，Persona v2 已批准正式证书。WorldBook r1 因 A=0 保持 Shadow，ShortMemo 与 InnerStateProjection 也保持 Shadow，未授权切换 Active
+- 状态：LIFE2.0～LIFE2.6 已完成；最终独立 Review 为 0 P0/P1，Persona v2 已批准正式证书并将当前环境发布门切至 Active。WorldBook r1 因 A=0 保持 Shadow，ShortMemo 与 InnerStateProjection 也保持 Shadow
 - predecessor：`main@3a663391cf12f5a843f4c1d5e311628ce8637c6e`（CIE v1 正式冻结）
 - 施工分支：`agent/life-v2-specialty`
 - 人格内容逐段稿：`docs/LIFE_V2_PERSONA_CONTENT_DRAFT.md`（原始素材 `E:\Xiadie\人格.txt`；4.1～4.4、5.1～5.3 与负面行为矩阵已确认冻结）
@@ -285,7 +285,7 @@ Cyrene-Agent 的 WorldBook 适合参考“把大段世界观拆成可独立命�
 
 验收：0 个未解决 P0/P1 后分别冻结已实际落地的协议；未实施候选不得写成完成。
 
-施工记录（2026-07-30）：`life2-final-acceptance-v1` 的 5/20/100/500 共 625 个组合案例全部通过，10 项失败计数为 0；最终审查修复 commit 为 `0348490`。审查发现并关闭 3 个冻结前问题：Projection 初始门与文档不一致、远端复核来源标记及 Off 门不完整、最大 Projection 导致 Persona 超出 1200 tokens；修复后最大 Persona 为陪伴 1186、专注工作 1194 tokens。后端审查修复后单次全量为 2631 passed、1 warning、461.94 秒；前端 73 passed，production build 通过；Windows 10.0.26200 隔离数据目录实机启动后端/Vite/Electron 并稳定存活 8 秒，端口与临时目录由烟测清理。真实 OS 休眠未由自动化强制触发以避免打断用户系统，`powerMonitor resume → /api/proactive/runtime/system-resume → delivery bridge` 合同由现有全量覆盖。用户独立 Review 为 0 P0/P1，并批准将 DeepSeek 指纹绑定的 Persona v2 证书从 `candidate_passed_pending_review` 晋级为 `certified`；P2-1 已补充 `highly_guarded` 专项断言，P2-2 定时清理因现有创建、列表、召回入口均同步清理而保留为非阻塞后续项。Persona 发布门仍为 Off，WorldBook、ShortMemo、InnerStateProjection 均保持 Shadow，本次证书批准不自动切换任何 Active 门。证据见 `docs/reports/life2-final-review.md` 与 `docs/reports/life2-final-acceptance-v1.json`。
+施工记录（2026-07-30）：`life2-final-acceptance-v1` 的 5/20/100/500 共 625 个组合案例全部通过，10 项失败计数为 0；最终审查修复 commit 为 `0348490`。审查发现并关闭 3 个冻结前问题：Projection 初始门与文档不一致、远端复核来源标记及 Off 门不完整、最大 Projection 导致 Persona 超出 1200 tokens；修复后最大 Persona 为陪伴 1186、专注工作 1194 tokens。后端审查修复后单次全量为 2631 passed、1 warning、461.94 秒；前端 73 passed，production build 通过；Windows 10.0.26200 隔离数据目录实机启动后端/Vite/Electron 并稳定存活 8 秒，端口与临时目录由烟测清理。真实 OS 休眠未由自动化强制触发以避免打断用户系统，`powerMonitor resume → /api/proactive/runtime/system-resume → delivery bridge` 合同由现有全量覆盖。用户独立 Review 为 0 P0/P1，并批准将 DeepSeek 指纹绑定的 Persona v2 证书从 `candidate_passed_pending_review` 晋级为 `certified`；P2-1 已补充 `highly_guarded` 专项断言，P2-2 定时清理因现有创建、列表、召回入口均同步清理而保留为非阻塞后续项。随后经用户明确批准，当前数据库 `life.persona_v2.rollout_mode` 已切至 `active`，实际配置指纹命中证书且编译结果 `selected_v2=true`；WorldBook、ShortMemo、InnerStateProjection 均保持 Shadow。证据见 `docs/reports/life2-final-review.md` 与 `docs/reports/life2-final-acceptance-v1.json`。
 
 ## 6. 冻结施工顺序（待计划独立 Review）
 

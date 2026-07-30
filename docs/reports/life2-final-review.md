@@ -7,14 +7,14 @@
 
 ## 结论
 
-LIFE v2 的计划内施工已经完成，当前总体工程 Review 与用户独立发布 Review 均为 **0 个未解决 P0/P1**。独立 Review 已批准 DeepSeek 指纹绑定的 Persona v2 正式证书；发布门仍与证书分离，Persona 保持 Off，WorldBook r1、ShortMemo 与 InnerStateProjection 均保持 Shadow，旧 Persona 与旧 Lore 继续承担生产路径。
+LIFE v2 的计划内施工已经完成，当前总体工程 Review 与用户独立发布 Review 均为 **0 个未解决 P0/P1**。独立 Review 已批准 DeepSeek 指纹绑定的 Persona v2 正式证书，用户随后明确批准将当前环境 Persona 发布门切至 Active；WorldBook r1、ShortMemo 与 InnerStateProjection 均保持 Shadow，旧 Lore 继续承担生产路径。
 
 ## 用户独立 Review 处置（2026-07-30）
 
 - 接受证书批准：`certifications.json` 的状态由 `candidate_passed_pending_review` 更新为 `certified`。证书仍严格绑定原 provider/model/location 指纹、静态 compiled hashes、fixture 与评测 artifact；其他模型不能继承。
 - 接受 P2-1：`test_relationship_boundary_controls_curiosity_and_help_flags` 现在分别覆盖 `defensive` 与 `highly_guarded`，两档都禁止 `gently_curious` / `offer_help`。
 - 暂不实施 P2-2：过期 ShortMemo 已在创建、活动列表和召回三个实际入口同步清理。为单纯物理回收引入常驻定时任务会扩大生命周期与并发面；该项保留为非阻塞后续优化，不影响过期项零召回。
-- 不扩大批准范围：Review 没有提供 A 级 WorldBook 来源，也没有明确授权 ShortMemo、InnerStateProjection 或 Persona 发布门切换 Active，因此所有运行门保持原值。
+- 发布决定：Review 本身只批准证书；用户随后单独批准 Persona 发布门切至 Active。WorldBook 没有 A 级来源，ShortMemo 与 InnerStateProjection 也未获 Active 授权，因此三者保持原值。
 
 ## Review 发现与处理
 
@@ -39,7 +39,7 @@ LIFE v2 的计划内施工已经完成，当前总体工程 Review 与用户独�
 
 ## 回退与发布决定
 
-- Persona v2：`life.persona_v2.rollout_mode=off`，下一请求仍使用冻结旧 Persona；正式证书仅使其具备后续 Active 资格，不自动更改发布门。
+- Persona v2：当前数据库 `life.persona_v2.rollout_mode=active`，已验证当前 `deepseek/deepseek-v4-flash` 指纹命中证书且 `selected_v2=true`。切回 `off` 后下一请求恢复冻结旧 Persona；更换到未认证模型时即使门为 Active 也会 fail closed 回退旧 Persona。
 - WorldBook r1：关闭门后继续旧 `xiadie_lore.md`；当前仍未晋级。
 - ShortMemo：发布门 Off 立即停止分类、远端复核、写入与召回，不删除用户已有数据；Schema 82 表保留。
 - InnerStateProjection：发布门 Off 停止生成，无数据库回滚。
