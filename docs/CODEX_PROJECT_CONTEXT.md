@@ -1,6 +1,6 @@
 # 遐蝶 Codex 项目上下文
 
-> LIFE v2 施工快照（2026-07-30）：LIFE2.0～LIFE2.6 计划内施工与总体工程 Review 已完成。当前 Schema 82；审查修复后后端全量 2631/2631，前端 73/73、生产构建和 Windows 隔离 Electron 烟测通过。Persona v2 三次 120/120 但仍待独立 Review，WorldBook r1、ShortMemo 与 InnerStateProjection 均保持 Shadow；生产 Persona 和旧 Lore 尚未替换。总体验收见 `docs/reports/life2-final-review.md`。
+> LIFE v2 施工快照（2026-07-30）：LIFE2.0～LIFE2.6 计划内施工、总体工程 Review 与用户独立 Review 已完成。当前 Schema 82；审查修复后后端全量 2631/2631，前端 73/73、生产构建和 Windows 隔离 Electron 烟测通过。Persona v2 三次 120/120 并已获 DeepSeek 指纹绑定的正式证书，但发布门仍为 Off；WorldBook r1、ShortMemo 与 InnerStateProjection 均保持 Shadow，生产 Persona 和旧 Lore 尚未替换。总体验收见 `docs/reports/life2-final-review.md`。
 
 > 状态：当前执行约束  
 > 适用对象：Codex、维护者和后续参与开发的协作者  
@@ -383,4 +383,4 @@ EAP Schema 48～60 不回写；真实输出继续受后端最终授权复核、�
 
 EAP PR #1、CDS PR #2 与 LIFE PR #3 已依次合并冻结；LIFE predecessor 为 `main@f16d80ab0d2457065dc65d7d284d3cbf3584f5ee`、Schema 71。KIG-R 使用 Schema 72～76，冻结实现与 rollback point 为 `a18fd04a3759663f88d6a8041529fea14645c281`。KIG-P 使用 Schema 77～80，完成来源化 PWM、可逆实体解析、owner proposal-only 接口、非破坏性维护和原知识页扩展；既有 Knowledge/MEM/LIFE/CTX/EAP 所有权均未转移。模型认证仍只覆盖 `deepseek-v4-pro` 的 KIG-R 当前指纹，PWM 抽取保持 Shadow；Provider/模型切换必须重新认证。
 
-KIG PR #4 与 CIE v1 均已合入；CIE 正式冻结于 `main@3a663391cf12f5a843f4c1d5e311628ce8637c6e` / Schema 81。LIFE v2 已按 `docs/LIFE_V2_PERSONA_AND_SHORT_MEMORY_PLAN.md` 完成计划内施工并将当前 Schema 推进到 82；持久化 `structured-inner-state-v1` 已取消。Persona 固定核心归 Persona，最终预算归 CTX，LIFE 未成为第二写入者。Persona v2、WorldBook r1、`short-memo-v1` 与请求内 `inner-state-projection-v1` 在用户独立发布 Review 前均不得从候选/Shadow 晋级 Active。
+KIG PR #4 与 CIE v1 均已合入；CIE 正式冻结于 `main@3a663391cf12f5a843f4c1d5e311628ce8637c6e` / Schema 81。LIFE v2 已按 `docs/LIFE_V2_PERSONA_AND_SHORT_MEMORY_PLAN.md` 完成计划内施工并将当前 Schema 推进到 82；持久化 `structured-inner-state-v1` 已取消。Persona 固定核心归 Persona，最终预算归 CTX，LIFE 未成为第二写入者。用户独立 Review 已批准 Persona v2 的 DeepSeek 指纹绑定证书，但未自动切换发布门；WorldBook r1、`short-memo-v1` 与请求内 `inner-state-projection-v1` 继续 Shadow，任何 Active 晋级均需单独发布决定。

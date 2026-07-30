@@ -7,7 +7,14 @@
 
 ## 结论
 
-LIFE v2 的计划内施工已经完成，当前总体工程 Review 为 **0 个未解决 P0/P1**。这不等于发布晋级批准：Persona v2 仍登记为 `candidate_passed_pending_review`，WorldBook r1、ShortMemo 与 InnerStateProjection 均保持 Shadow，旧 Persona 与旧 Lore 继续承担生产路径。
+LIFE v2 的计划内施工已经完成，当前总体工程 Review 与用户独立发布 Review 均为 **0 个未解决 P0/P1**。独立 Review 已批准 DeepSeek 指纹绑定的 Persona v2 正式证书；发布门仍与证书分离，Persona 保持 Off，WorldBook r1、ShortMemo 与 InnerStateProjection 均保持 Shadow，旧 Persona 与旧 Lore 继续承担生产路径。
+
+## 用户独立 Review 处置（2026-07-30）
+
+- 接受证书批准：`certifications.json` 的状态由 `candidate_passed_pending_review` 更新为 `certified`。证书仍严格绑定原 provider/model/location 指纹、静态 compiled hashes、fixture 与评测 artifact；其他模型不能继承。
+- 接受 P2-1：`test_relationship_boundary_controls_curiosity_and_help_flags` 现在分别覆盖 `defensive` 与 `highly_guarded`，两档都禁止 `gently_curious` / `offer_help`。
+- 暂不实施 P2-2：过期 ShortMemo 已在创建、活动列表和召回三个实际入口同步清理。为单纯物理回收引入常驻定时任务会扩大生命周期与并发面；该项保留为非阻塞后续优化，不影响过期项零召回。
+- 不扩大批准范围：Review 没有提供 A 级 WorldBook 来源，也没有明确授权 ShortMemo、InnerStateProjection 或 Persona 发布门切换 Active，因此所有运行门保持原值。
 
 ## Review 发现与处理
 
@@ -19,7 +26,7 @@ LIFE v2 的计划内施工已经完成，当前总体工程 Review 为 **0 个�
 
 ## 实际验证
 
-- Persona DeepSeek 门：`deepseek-v4-flash`、temperature=0，候选三次均 120/120；旧版按同一 v1.2 oracle 为 97/120、95/120、99/120。证书状态仍为待 Review，不是正式 certified。
+- Persona DeepSeek 门：`deepseek-v4-flash`、temperature=0，候选三次均 120/120；旧版按同一 v1.2 oracle 为 97/120、95/120、99/120。用户独立 Review 后证书状态为 `certified`。
 - Persona 最大请求编译预算：1186/1194 tokens（陪伴/专注工作）。
 - WorldBook r1：30 条资源合同通过；来源仍为 A=0、B=27、local=3，因此继续 Shadow。
 - ShortMemo：200 条合成分类矩阵及秘密、敏感最小化、TTL、容量、来源、远端只否决、治理 API/UI 和独立 CTX 区块通过；发布门继续 Shadow。
@@ -32,7 +39,7 @@ LIFE v2 的计划内施工已经完成，当前总体工程 Review 为 **0 个�
 
 ## 回退与发布决定
 
-- Persona v2：`life.persona_v2.rollout_mode=off`，下一请求使用冻结旧 Persona；当前本来就是 Off/未认证生产路径。
+- Persona v2：`life.persona_v2.rollout_mode=off`，下一请求仍使用冻结旧 Persona；正式证书仅使其具备后续 Active 资格，不自动更改发布门。
 - WorldBook r1：关闭门后继续旧 `xiadie_lore.md`；当前仍未晋级。
 - ShortMemo：发布门 Off 立即停止分类、远端复核、写入与召回，不删除用户已有数据；Schema 82 表保留。
 - InnerStateProjection：发布门 Off 停止生成，无数据库回滚。
@@ -45,4 +52,4 @@ LIFE v2 的计划内施工已经完成，当前总体工程 Review 为 **0 个�
 3. `gently_curious` / `offer_help` 在 `default_distance`、`softly_guarded`、`relaxed` 三档是否符合关系节奏；防御两档必须无这两项。
 4. 所有来源门是否保持诚实：A=0 的 WorldBook 不得晋级，未认证模型不得继承 DeepSeek 证书，Shadow 不得写正式数据或影响生产 prompt。
 
-独立 Review 完成前，不建议切换任何 Active 门。
+后续切换任何 Active 门都应作为单独发布决定处理；本次 Review 只批准 Persona v2 证书。

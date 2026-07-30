@@ -125,7 +125,7 @@ def run() -> dict[str, object]:
         "failure_counts": failures,
         "hard_gate_passed": all(value == 0 for value in failures.values()),
         "rollout_decision": {
-            "persona_v2": "candidate_passed_pending_review",
+            "persona_v2": "certified",
             "worldbook_r1": "shadow",
             "short_memo": "shadow",
             "inner_state_projection": "shadow",

@@ -9,7 +9,7 @@ def test_life2_5_20_100_500_combination_matrix_passes_all_hard_gates():
     assert report["hard_gate_passed"] is True
     assert set(report["failure_counts"].values()) == {0}
     assert report["rollout_decision"] == {
-        "persona_v2": "candidate_passed_pending_review",
+        "persona_v2": "certified",
         "worldbook_r1": "shadow",
         "short_memo": "shadow",
         "inner_state_projection": "shadow",

@@ -74,12 +74,13 @@ def test_no_sources_returns_none_and_removed_sources_leave_no_residue():
 
 
 def test_relationship_boundary_controls_curiosity_and_help_flags():
-    guarded = _inputs()
-    guarded["state"] = _state("defensive")
-    guarded_value = projection.build(**guarded)
-    assert guarded_value
-    assert "gently_curious" not in guarded_value.expression_flags
-    assert "offer_help" not in guarded_value.expression_flags
+    for boundary in ("defensive", "highly_guarded"):
+        guarded = _inputs()
+        guarded["state"] = _state(boundary)
+        guarded_value = projection.build(**guarded)
+        assert guarded_value
+        assert "gently_curious" not in guarded_value.expression_flags
+        assert "offer_help" not in guarded_value.expression_flags
     focused = _inputs()
     focused["request_mode"] = "focused_work"
     focused["current_intent"] = "focused_work"
