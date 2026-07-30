@@ -3,17 +3,17 @@
   "certifications": [
     {
       "model_fingerprint": "b2bcda1f94e8d4c89a84f7e80a99ec5bf8271246496ca10bb34fe2edde2c2040",
-      "profile_version": "persona-profile-v2.1",
+      "profile_version": "persona-profile-v2.2",
       "compiler_version": "persona-prompt-compiler-v1",
       "compiled_hashes": {
-        "companionship": "77f04b6a16d0e8d0549112d05408c54ce10cbe169640e6ce9005d68129c2061b",
-        "focused_work": "3de429537b7f8f9b8c736caa108bd001b72523d40343a31821dcbb5fbc6e6c58"
+        "companionship": "aff81f21baf25004d052748997d087c54e0396e56f7559f0303dc21c2b28561f",
+        "focused_work": "0e6fd222be57ffa6fd3544a853638420466028946d1b7bac76f04d8cf3d1416e"
       },
       "sampling_profile": {"temperature": 0.0},
-      "output_guard_protocol": "persona-natural-dialogue-guard-v1",
-      "evaluation_protocol": "persona-evaluation-v1.3",
-      "fixture_sha256": "d5f3d3e2ad83a2637a67d7f934771c5e9d046870760048480965b9c408221a77",
-      "evaluation_artifact_sha256": "1b09002662d1e720ad6596a14f9660f26b8c2b66d4cd40f93c58695da3d56e7b",
+      "output_guard_protocol": "persona-natural-dialogue-guard-v2",
+      "evaluation_protocol": "persona-evaluation-v1.4",
+      "fixture_sha256": "d2a4fea72bbfaa6a66ffe843c7a798f1d29044e8879031ea0639c1708c1f2872",
+      "evaluation_artifact_sha256": "561fc4dc7087bde5a881e2e2e6508ee9263729771cfea138d5d724d56f24445c",
       "evaluated_at": "2026-07-30",
       "status": "certified"
     }

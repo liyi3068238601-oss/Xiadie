@@ -397,6 +397,10 @@ def _terms(value: str) -> set[str]:
 
 
 def _claim_type(text: str) -> str:
+    # A direct question requests information; it is not itself a factual claim
+    # that should be rewritten with an insufficiency prefix.
+    if str(text or "").strip().endswith(("?", "？")):
+        return "other"
     if _COMPARISON.search(text):
         return "comparison"
     if _TEMPORAL.search(text):

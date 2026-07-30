@@ -31,6 +31,12 @@ _FORBID = re.compile(
 _DOUBLE_NEGATIVE = re.compile(r"(?:不要|别|无需|不用).{0,2}不(?:查|检索|搜索|引用|找)")
 _SOURCE_CONFLICT = re.compile(r"(?:我记得|记忆|印象).{0,40}(?:资料|文档).{0,12}(?:怎么写|不一样|冲突|却说)")
 _GREETING = re.compile(r"^(?:嗨|你好|您好|早上好|中午好|下午好|晚上好|晚安|在吗)[呀啊哦嘛吗！!，,。\s]*(?:今天)?(?:陪我聊(?:一会儿|会儿)?(?:吧|嘛)?)?[。！!？?\s]*$")
+_CASUAL_CHAT_INVITATION = re.compile(
+    r"^(?:(?:(?:你)?今天|今天你)?(?:想)?(?:和我|跟我|陪我|我们)?"
+    r"(?:聊聊|聊|谈谈|说说)(?:点|些)?什么(?:好|呢|呀|啊|吗)?|"
+    r"现在想聊聊吗|陪我随便聊(?:一会儿|会儿)?吧|你有什么想说的吗|"
+    r"今天由你选个话题吧|我想听听你现在想说什么|随便聊聊吧)[。！？!?\s]*$"
+)
 _EMOTION = re.compile(r"(?:有点|很|太|好)?(?:累|难过|伤心|焦虑|烦|孤独|委屈|害怕|想哭|睡不着|没精神)")
 _SIMPLE_TASK = re.compile(r"^(?:帮我)?(?:翻译|改写|润色|计算|算一下|列个清单|起个标题|写一句).{0,48}$")
 _AMBIGUOUS = re.compile(r"^(?:嗯+|哦+|好吧|然后呢|继续|你觉得呢|她呢|他呢|它呢|这个呢|那个呢|后来呢)[？?。！!\s]*$")
@@ -55,6 +61,11 @@ _CJK_STOP_LIST = frozenset({
     "一个", "一些", "一下", "可能", "应该", "然后", "而且", "之后", "之前",
     "非常", "比较", "特别", "一般", "大概", "左右",
 })
+
+
+def is_companion_smalltalk(user_text: str) -> bool:
+    text = str(user_text or "").strip()
+    return bool(_GREETING.fullmatch(text) or _CASUAL_CHAT_INVITATION.fullmatch(text))
 
 
 def settings() -> dict:
@@ -179,7 +190,7 @@ def evaluate(
     explicit_query, _ = knowledge_context.retrieval_query(query_source)
     if explicit_query:
         base["recall_mode"] = "explicit"
-    if _GREETING.fullmatch(text):
+    if is_companion_smalltalk(text):
         return _finish(base, started, "skip", "companion_smalltalk", "high")
     if _EMOTION.search(text) and not explicit_query:
         return _finish(base, started, "skip", "emotional_support", "high")

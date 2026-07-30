@@ -194,6 +194,19 @@ def test_complex_uncited_fact_enters_bundle_insufficiency_not_fake_citation():
     assert "[来源:" not in checked.text
 
 
+def test_direct_question_is_not_rewritten_as_an_unsupported_fact():
+    _sid, _mid, candidate = _message_candidate()
+    bundle = evidence.build_bundle(
+        query="比较当前和未来方案", request_id=db.new_id(),
+        selected_sources=("history", "memory"), batch=_batch(candidate),
+    )
+    text = "你呢，今天有什么特别想聊的事吗？"
+    checked = evidence.validate_answer(text, bundle)
+    assert checked.text == text
+    assert checked.insufficiency_count == 0
+    assert checked.segments[0].citation_required is False
+
+
 def test_source_change_after_generation_is_explicitly_unavailable():
     _sid, message_id, candidate = _message_candidate()
     bundle = evidence.build_bundle(

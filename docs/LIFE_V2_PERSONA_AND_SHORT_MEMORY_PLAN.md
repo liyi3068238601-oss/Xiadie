@@ -2,7 +2,7 @@
 
 - 版本：v0.3 frozen
 - 日期：2026-07-29
-- 状态：LIFE2.0～LIFE2.6 已完成；Persona v2 首次 Active 后发现真实自然聊天动作旁白回归，已回退并修订为 `persona-profile-v2.1`。v2.1 使用 1350-token 硬门与确定性自然对话输出门，3×140 条生产等价评测均为 140/140；WorldBook r1、ShortMemo 与 InnerStateProjection 保持 Shadow
+- 状态：LIFE2.0～LIFE2.6 已完成；Persona 真实聊天发现的动作旁白与虚构闲聊环境/KIG 审计措辞污染均已收口至 `persona-profile-v2.2`。v2.2 使用 1450-token 硬门与 `persona-natural-dialogue-guard-v2`，3×150 条生产等价评测均为 150/150；WorldBook r1、ShortMemo 与 InnerStateProjection 保持 Shadow
 - predecessor：`main@3a663391cf12f5a843f4c1d5e311628ce8637c6e`（CIE v1 正式冻结）
 - 施工分支：`agent/life-v2-specialty`
 - 人格内容逐段稿：`docs/LIFE_V2_PERSONA_CONTENT_DRAFT.md`（原始素材 `E:\Xiadie\人格.txt`；4.1～4.4、5.1～5.3 与负面行为矩阵已确认冻结）
@@ -106,7 +106,7 @@ LIFE v2 不应把“人格提示词优化”“ShortMemo”“StructuredInnerSta
 
 以下名称和职责已完成用户范围确认；计划独立 Review 通过并写 ADR 后冻结：
 
-- `persona-profile-v2.1`：稳定身份、价值观、关系边界、表达合同与自然对话输出门绑定的结构化只读定义。
+- `persona-profile-v2.2`：稳定身份、价值观、关系边界、表达合同、闲聊事实边界与自然对话输出门绑定的结构化只读定义。
 - `persona-prompt-compiler-v1`：以固定顺序编译 Persona Core、受控状态投影和场景 overlay，输出版本、section hashes 与总 hash。
 - `persona-mode-v1`：白名单 `companionship` / `focused_work` 模式选择、请求快照、回放一致性和旧客户端 fallback；`auto` 不属于首发冻结范围。
 - `persona-evaluation-v1`：纯合成固定集、真实模型成对评测、错误分类和模型级认证。
@@ -286,6 +286,8 @@ Cyrene-Agent 的 WorldBook 适合参考“把大段世界观拆成可独立命�
 验收：0 个未解决 P0/P1 后分别冻结已实际落地的协议；未实施候选不得写成完成。
 
 施工记录（2026-07-30）：`life2-final-acceptance-v1` 的 5/20/100/500 共 625 个组合案例全部通过，10 项失败计数为 0；最终审查修复 commit 为 `0348490`。用户独立 Review 批准 DeepSeek 指纹绑定证书并切换 Persona Active 后，真实拟声聊天发现括号动作旁白，发布门立即回退 Off。v2.1 将评测协议升级到 `persona-evaluation-v1.3`，新增 20 条拟声/安慰场景，并以 `persona-natural-dialogue-guard-v1` 在流式输出和最终落库前删除动作旁白，明确角色扮演请求则放行；普通说明括号保持不变。参考 Neo-MoFox 的每轮强化方式，从 `人格.txt` 新增列表中合并重复项，只将人格范围的动作旁白与表情/正式度约束常驻末尾输出合同；通用违法、仇恨、欺诈和网络攻击禁令仍归项目安全层。最终 Prompt 的原始模型三轮为 134/140、138/140、137/140，生产输出门介入 6/2/3 次后均为 140/140，无调用错误。静态 Persona 为 1308/1288 tokens，最大 Projection 保守不超过 1327/1307，均低于 1350 上限，也低于旧 Persona 约 1490 基线。WorldBook、ShortMemo、InnerStateProjection 均保持 Shadow。证据见 `docs/reports/life2-final-review.md`、`docs/reports/life2-persona-v2.1-certified-deepseek-v4-flash.json` 与 `docs/reports/life2-final-acceptance-v1.json`。
+
+补充施工记录（2026-07-30）：真实输入“今天想聊点什么？”暴露第二类回归：Smart Recall/KIG 误检索聊天邀请，模型虚构当前天气、光线或即时活动，证据门又把普通反问改写为“资料不足”。v2.2 统一增加聊天邀请跳过规则、问句非事实判定和 `persona-natural-dialogue-guard-v2`；固定集使用 10 种真实邀请扩为 150 条。最终 DeepSeek 固定集原始三轮为 146/150、148/150、147/150（动作旁白 3/2/3，闲聊真实性 1/0/0），生产门介入 4/3/3 条后均为 150/150。静态预算为 1400/1381，最大 Projection 不超过 1419/1400，低于 1450 上限。正式证据见 `docs/reports/life2-persona-v2.2-certified-deepseek-v4-flash.json`。
 
 ## 6. 冻结施工顺序（待计划独立 Review）
 

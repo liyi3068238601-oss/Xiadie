@@ -2,7 +2,7 @@
 
 > 最近复核日期：2026-07-29
 >
-> 当前施工状态：LIFE2.0～LIFE2.6 已完成。Persona v2 首次 Active 的真实聊天发现动作旁白后立即回退；修订后的 `persona-profile-v2.1` 以 `deepseek-v4-flash`、temperature=0 完成三轮 140/140 生产等价认证，并由跨 chunk 输出门保证自然聊天无动作旁白。模型指纹或输出门协议不匹配时仍自动回退旧 Persona。WorldBook r1、Schema 82 `short-memo-v1` 与无迁移的 `inner-state-projection-v1` 均继续 Shadow。
+> 当前施工状态：LIFE2.0～LIFE2.6 已完成。Persona 真实聊天先后发现动作旁白，以及闲聊中虚构当前环境并混入“资料不足”审计措辞；当前 `persona-profile-v2.2` 以 `deepseek-v4-flash`、temperature=0 完成三轮 150/150 生产等价认证。`persona-natural-dialogue-guard-v2` 同时约束跨 chunk 动作旁白与无依据闲聊环境，Smart Recall/KIG 不再检索聊天邀请，问句也不会被证据门改写。模型指纹或输出门协议不匹配时仍自动回退旧 Persona。WorldBook r1、Schema 82 `short-memo-v1` 与无迁移的 `inner-state-projection-v1` 均继续 Shadow。
 >
 > 当前版本：`v0.1.0` MVP 骨架（知识库系统 K 系列已完成）
 >

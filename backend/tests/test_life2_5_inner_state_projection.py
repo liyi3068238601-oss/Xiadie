@@ -129,7 +129,7 @@ def test_persona_projection_shadow_never_changes_selected_production_prompt(tmp_
                 "compiler_version": manifest["compiler_version"],
                 "compiled_hashes": {"companionship": hashlib.sha256(static.encode()).hexdigest()},
                 "sampling_profile": {"temperature": 0.0},
-                "output_guard_protocol": "persona-natural-dialogue-guard-v1",
+                "output_guard_protocol": "persona-natural-dialogue-guard-v2",
                 "status": "certified",
         }],
     }), encoding="utf-8")

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import re
 
-PROTOCOL_VERSION = "persona-natural-dialogue-guard-v1"
+PROTOCOL_VERSION = "persona-natural-dialogue-guard-v2"
 ACTION_MARKERS = (
     "轻笑", "微笑", "笑意", "低头", "抬头", "垂眸", "抬眸", "眼帘", "目光",
     "看着", "望向", "靠近", "抱住", "伸手", "牵住", "握住", "点头", "摇头",
@@ -28,6 +28,15 @@ _EXPLICIT_ROLEPLAY = re.compile(
     re.IGNORECASE,
 )
 _OPENERS = {"（": "）", "(": ")", "[": "]", "【": "】", "*": "*"}
+_UNGROUNDED_CASUAL_SENTENCE = re.compile(
+    r"[^。！？!?\n]*(?:今天天气|今天是晴|今天很晴|窗外|阳光透过|月光透过|"
+    r"空气里|今天我醒|终端提示|我刚刚在翻看|正在翻看|没有对应的记录)"
+    r"[^。！？!?\n]*(?:[。！？!?]+|$)"
+)
+_CASUAL_AUDIT_PREFIX = re.compile(
+    r"(?:现有)?(?:资料|信息)(?:仍然|目前|暂时)?(?:不足以?|不够)(?:确认|判断)?[：:]?|"
+    r"(?:目前|暂时)?无法确认[：:]?"
+)
 
 
 def explicit_narration_requested(user_text: str) -> bool:
@@ -41,11 +50,17 @@ def contains_action_narration(text: str) -> bool:
     return bool(ACTION_NARRATION.search(str(text or "")))
 
 
-def sanitize_natural_dialogue(text: str, *, allow_narration: bool = False) -> str:
+def sanitize_natural_dialogue(
+    text: str, *, allow_narration: bool = False,
+    suppress_ungrounded_ambience: bool = False,
+) -> str:
     value = str(text or "")
     if allow_narration:
         return value
     cleaned = ACTION_NARRATION.sub("", value)
+    if suppress_ungrounded_ambience:
+        cleaned = _UNGROUNDED_CASUAL_SENTENCE.sub("", cleaned)
+        cleaned = _CASUAL_AUDIT_PREFIX.sub("", cleaned)
     cleaned = re.sub(r"(?m)^[ \t]+", "", cleaned)
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
     return cleaned.strip()
@@ -54,8 +69,9 @@ def sanitize_natural_dialogue(text: str, *, allow_narration: bool = False) -> st
 class NaturalDialogueStreamGuard:
     """Hold delimited spans across chunks until they can be allowed or removed."""
 
-    def __init__(self, *, enabled: bool) -> None:
+    def __init__(self, *, enabled: bool, suppress_ungrounded_ambience: bool = False) -> None:
         self.enabled = bool(enabled)
+        self.suppress_ungrounded_ambience = bool(suppress_ungrounded_ambience)
         self._buffer = ""
 
     def push(self, chunk: str) -> str:
@@ -63,6 +79,8 @@ class NaturalDialogueStreamGuard:
         if not self.enabled:
             return value
         self._buffer += value
+        if self.suppress_ungrounded_ambience:
+            return ""
         emitted: list[str] = []
         while self._buffer:
             positions = [self._buffer.find(opener) for opener in _OPENERS]
@@ -98,6 +116,11 @@ class NaturalDialogueStreamGuard:
         if not self.enabled:
             value, self._buffer = self._buffer, ""
             return value
+        if self.suppress_ungrounded_ambience:
+            value, self._buffer = self._buffer, ""
+            return sanitize_natural_dialogue(
+                value, suppress_ungrounded_ambience=True,
+            )
         value, self._buffer = self._buffer, ""
         if any(marker in value for marker in ACTION_MARKERS):
             return ""

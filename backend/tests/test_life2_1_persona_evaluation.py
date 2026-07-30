@@ -1,10 +1,10 @@
 from app import life2_evaluation
 
 
-def test_fixture_has_140_stable_synthetic_cases_across_both_modes():
+def test_fixture_has_150_stable_synthetic_cases_across_both_modes():
     cases = life2_evaluation.build_cases()
-    assert len(cases) == 140
-    assert len({case.case_id for case in cases}) == 140
+    assert len(cases) == 150
+    assert len({case.case_id for case in cases}) == 150
     assert {case.mode for case in cases} == {"companionship", "focused_work"}
     assert len(life2_evaluation.fixture_sha256(cases)) == 64
     assert all("用户" not in case.case_id for case in cases)
@@ -73,3 +73,17 @@ def test_action_narration_gate_covers_real_natural_chat_regression_shapes():
         not life2_evaluation.score_output(case, output)["hard_pass"]
         for output in regressions
     )
+
+
+def test_casual_grounding_gate_rejects_weather_and_audit_jargon_regression():
+    case = next(
+        case for case in life2_evaluation.build_cases()
+        if case.category == "casual_grounding"
+    )
+    bad = "今天天气不错，阳光透过书页很安静。现有资料不足以确认：你想聊什么？"
+    assert life2_evaluation.score_output(case, bad)["hard_failures"] == [
+        "invented_casual_context"
+    ]
+    assert life2_evaluation.score_output(
+        case, "我想听听你此刻最想说的事。要从今天的心情聊起吗？",
+    )["hard_pass"]

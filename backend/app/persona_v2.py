@@ -28,7 +28,7 @@ STYLE_OPTIONS = {
     "proactivity_level": frozenset({"reserved", "balanced", "engaged"}),
 }
 ROLLOUT_KEY = "life.persona_v2.rollout_mode"
-PERSONA_TOKEN_LIMIT = 1350
+PERSONA_TOKEN_LIMIT = 1450
 
 
 @dataclass(frozen=True)

@@ -184,6 +184,22 @@ def test_disabled_and_ambiguous_queries_preserve_existing_chat_behavior(monkeypa
     assert calls == 0
 
 
+def test_casual_chat_invitation_does_not_enter_retrieval(monkeypatch):
+    calls = 0
+
+    def retrieve(_request):
+        nonlocal calls
+        calls += 1
+        raise AssertionError("casual companionship chat must not retrieve evidence")
+
+    monkeypatch.setattr(retrieval, "retrieve", retrieve)
+    assert pipeline.prepare_for_chat(
+        query="今天想聊点什么？", source_message_id=db.new_id(), session_id=db.new_id(),
+        provider={"execution_location": "local"}, recall_mode="smart",
+    ) is None
+    assert calls == 0
+
+
 def test_remote_task_body_is_never_admitted_without_explicit_setting(monkeypatch):
     task = _candidate(
         "高风险工具执行结果", source="task", source_kind="tool_run", privacy="private",

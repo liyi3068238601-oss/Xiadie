@@ -24,7 +24,7 @@ def test_selected_persona_v2_filters_action_narration_from_stream_and_storage(mo
 
     compilation = persona_v2.PersonaCompilation(
         prompt="certified persona", candidate_prompt="certified persona",
-        profile_version="persona-profile-v2.1", compiler_version="persona-prompt-compiler-v1",
+        profile_version="persona-profile-v2.2", compiler_version="persona-prompt-compiler-v1",
         mode="companionship", rollout_mode="active", selected_v2=True, certified=True,
         section_hashes={}, compiled_hash="0" * 64, candidate_tokens=100,
         fallback_reason=None,
@@ -49,6 +49,37 @@ def test_selected_persona_v2_filters_action_narration_from_stream_and_storage(mo
     messages = client.get(f"/api/sessions/{session['id']}/messages").json()
     assistant = next(item for item in messages if item["role"] == "assistant")
     assert assistant["content"] == "我在听。HTTP（超文本传输协议）仍可正常说明。"
+
+
+def test_selected_persona_v2_filters_ungrounded_casual_ambience(monkeypatch):
+    from app import llm, persona_v2
+
+    compilation = persona_v2.PersonaCompilation(
+        prompt="certified persona", candidate_prompt="certified persona",
+        profile_version="persona-profile-v2.2", compiler_version="persona-prompt-compiler-v1",
+        mode="companionship", rollout_mode="active", selected_v2=True, certified=True,
+        section_hashes={}, compiled_hash="0" * 64, candidate_tokens=100,
+        fallback_reason=None,
+    )
+    monkeypatch.setattr(persona_v2, "compile_for_request", lambda **_kwargs: compilation)
+
+    async def fake_stream(*_args, **_kwargs):
+        yield "今天天气不错，阳光透过书页间洒下来。"
+        yield "现有资料不足以确认：你呢，今天有什么特别想聊的事吗？"
+
+    monkeypatch.setattr(llm, "stream_chat", fake_stream)
+    session = client.post("/api/sessions", json={}).json()
+    with client.stream(
+        "POST", "/api/chat",
+        json={"session_id": session["id"], "content": "今天想聊点什么？"},
+    ) as response:
+        body = "".join(response.iter_text())
+    assert response.status_code == 200
+    assert "今天天气" not in body and "资料不足" not in body
+    assert "你呢，今天有什么特别想聊的事吗？" in body
+    messages = client.get(f"/api/sessions/{session['id']}/messages").json()
+    assistant = next(item for item in messages if item["role"] == "assistant")
+    assert assistant["content"] == "你呢，今天有什么特别想聊的事吗？"
 
 
 def test_long_term_memory_defaults_on_but_preserves_explicit_user_off():

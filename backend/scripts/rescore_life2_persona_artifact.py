@@ -32,11 +32,11 @@ def main() -> None:
                     allow_narration=persona_output_guard.explicit_narration_requested(
                         str(row["case"].get("user_text") or "")
                     ),
+                    suppress_ungrounded_ambience=(
+                        row["case"].get("category") == "casual_grounding"
+                    ),
                 )
-                row["output_guard_applied"] = (
-                    persona_output_guard.contains_action_narration(raw_output)
-                    and row["output"] != raw_output
-                )
+                row["output_guard_applied"] = row["output"] != raw_output
             row["score"] = life2_evaluation.score_output(
                 life2_evaluation.PersonaCase(**row["case"]), row["output"],
             )

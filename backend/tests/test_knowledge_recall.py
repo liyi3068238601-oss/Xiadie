@@ -44,6 +44,15 @@ def test_deterministic_skip_and_explicit_rules_do_not_search(monkeypatch):
         raise AssertionError("skip rule must not search")
     monkeypatch.setattr(knowledge_search, "hybrid_search", forbidden_search)
     assert knowledge_recall.evaluate("晚上好，今天陪我聊一会儿吧。")["reason_code"] == "companion_smalltalk"
+    assert knowledge_recall.evaluate("今天想聊点什么？")["reason_code"] == "companion_smalltalk"
+    assert all(
+        knowledge_recall.is_companion_smalltalk(text)
+        for text in (
+            "你今天想聊什么？", "我们聊点什么好？", "想和我聊些什么吗？",
+            "现在想聊聊吗？", "陪我随便聊会儿吧。", "你有什么想说的吗？",
+            "今天由你选个话题吧。", "我想听听你现在想说什么。", "随便聊聊吧。",
+        )
+    )
     assert knowledge_recall.evaluate("今天有点累。")["reason_code"] == "emotional_support"
     assert knowledge_recall.evaluate("帮我翻译 hello")["reason_code"] == "simple_task"
     assert knowledge_recall.evaluate("她呢？")["reason_code"] == "ambiguous_reference"

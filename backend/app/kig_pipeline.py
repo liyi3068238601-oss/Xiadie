@@ -10,7 +10,7 @@ from itertools import combinations
 
 from . import (
     context_contributions, db, kig_evidence, kig_governance, kig_query_planner,
-    kig_reranker, kig_retrieval, kig_sources, knowledge_context,
+    kig_reranker, kig_retrieval, kig_sources, knowledge_context, knowledge_recall,
 )
 
 PROTOCOL_VERSION = "kig-retrieval-governance-v1"
@@ -218,6 +218,8 @@ def prepare_for_chat(
     """Use deterministic KIG decisions in chat; semantic model proposals stay Shadow."""
     if db.get_setting("kig_enabled", "1") != "1" or recall_mode == "off" \
             or not str(query or "").strip() or not source_message_id:
+        return None
+    if knowledge_recall.is_companion_smalltalk(query):
         return None
     enabled = _enabled_sources(provider, temporary_chat=temporary_chat)
     payload = kig_query_planner.QueryPlanInput(

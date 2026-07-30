@@ -21,6 +21,23 @@ def test_stream_guard_holds_cross_chunk_action_and_preserves_normal_parentheses(
     assert displayed == "我在听。HTTP（超文本传输协议）可用。"
 
 
+def test_casual_grounding_guard_removes_invented_ambience_and_audit_jargon():
+    value = (
+        "今天天气不错，阳光透过书页间洒下来。"
+        "现有资料不足以确认：你呢，今天有什么特别想聊的事吗？"
+    )
+    assert guard.sanitize_natural_dialogue(
+        value, suppress_ungrounded_ambience=True,
+    ) == "你呢，今天有什么特别想聊的事吗？"
+
+    stream = guard.NaturalDialogueStreamGuard(
+        enabled=True, suppress_ungrounded_ambience=True,
+    )
+    assert stream.push("窗外有风，树叶") == ""
+    assert stream.push("小声说话。你想聊什么？") == ""
+    assert stream.finish() == "你想聊什么？"
+
+
 def test_stream_guard_does_not_hold_markdown_bullet_without_closing_star():
     stream = guard.NaturalDialogueStreamGuard(enabled=True)
     assert stream.push("* 第一项\n") == "* 第一项\n"

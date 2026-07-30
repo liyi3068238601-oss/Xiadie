@@ -75,6 +75,7 @@ async def _complete(
     allow_narration = persona_output_guard.explicit_narration_requested(case.user_text)
     output = persona_output_guard.sanitize_natural_dialogue(
         raw_output, allow_narration=allow_narration,
+        suppress_ungrounded_ambience=case.category == "casual_grounding",
     )
     usage = payload.get("usage") if isinstance(payload, dict) else {}
     usage = usage if isinstance(usage, dict) else {}
@@ -83,8 +84,7 @@ async def _complete(
         "output": output,
         "raw_output": raw_output,
         "output_guard_applied": (
-            persona_output_guard.contains_action_narration(raw_output)
-            and output != raw_output
+            output != raw_output
         ),
         "score": life2_evaluation.score_output(case, output),
         "latency_ms": latency_ms,

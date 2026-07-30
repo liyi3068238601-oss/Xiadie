@@ -1253,6 +1253,10 @@ async def chat(body: ChatIn) -> StreamingResponse:
         narration_allowed = persona_output_guard.explicit_narration_requested(anchored_content)
         output_guard = persona_output_guard.NaturalDialogueStreamGuard(
             enabled=persona_compilation.selected_v2 and not narration_allowed,
+            suppress_ungrounded_ambience=(
+                persona_compilation.selected_v2
+                and knowledge_recall.is_companion_smalltalk(anchored_content)
+            ),
         )
         try:
             if body.cancel_token:
@@ -1409,7 +1413,10 @@ async def chat(body: ChatIn) -> StreamingResponse:
         )
         full = evidence_validation.text
         if output_guard.enabled:
-            full = persona_output_guard.sanitize_natural_dialogue(full)
+            full = persona_output_guard.sanitize_natural_dialogue(
+                full,
+                suppress_ungrounded_ambience=output_guard.suppress_ungrounded_ambience,
+            )
         # 持久化阶段一旦开始便不可取消，避免半写入或误删旧回复。
         if body.cancel_token:
             chat_request_control.phase(body.cancel_token, "persistence")
