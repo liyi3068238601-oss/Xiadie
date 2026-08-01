@@ -1,8 +1,8 @@
 # LIFE v2：人格提示词、短期备忘与请求内状态投影计划
 
-- 版本：v0.3 frozen
-- 日期：2026-07-29
-- 状态：LIFE2.0～LIFE2.6 已完成；Persona 真实聊天发现的动作旁白与虚构闲聊环境/KIG 审计措辞污染均已收口至 `persona-profile-v2.2`。v2.2 使用 1450-token 硬门与 `persona-natural-dialogue-guard-v2`，3×150 条生产等价评测均为 150/150；WorldBook r1、ShortMemo 与 InnerStateProjection 保持 Shadow
+- 版本：v0.4 successor rollout
+- 日期：2026-08-01
+- 状态：LIFE2.0～LIFE2.6 已冻结；LIFE2.7 已将 ShortMemo 独立发布为 Active，当前 epoch=1、正文/事件均为 0，等待阶段 Review。Persona v2.2 保持 Active，WorldBook r1 与 InnerStateProjection 保持原发布状态
 - predecessor：`main@3a663391cf12f5a843f4c1d5e311628ce8637c6e`（CIE v1 正式冻结）
 - 施工分支：`agent/life-v2-specialty`
 - 人格内容逐段稿：`docs/LIFE_V2_PERSONA_CONTENT_DRAFT.md`（原始素材 `E:\Xiadie\人格.txt`；4.1～4.4、5.1～5.3 与负面行为矩阵已确认冻结）
@@ -564,3 +564,15 @@ expression_flags[]           # calm / warm / concise / gently_curious / offer_he
 - [x] plan-review 的 2 个 P1 与 3 个 P2 均已在合同层解决，未解决 P0/P1/P2 为 0。
 
 本轮 plan-review 已有条件通过，原 2 个 P1 与 3 个 P2 均已在合同层关闭，本文件现为 `v0.3 frozen`。提交后记录计划冻结 commit/hash，并完成 LIFE2.0 尚未完成的 ConstructionBaseline 项；下一段只施工 LIFE2.1。此后每段完工交付变更范围、实际测试、已知风险、回滚开关，以及建议 Review 重点，等待用户 Review 后再继续。
+
+## 15. LIFE2.7 ShortMemo Active 后续施工记录
+
+施工日期：2026-08-01。正式后续计划见 `docs/superpowers/plans/2026-08-01-persona-v2-3-implementation-plan.md`。
+
+- Schema 保持 82；只把 Schema 82 面向全新数据库的 ShortMemo seed 从 `shadow` 改为 `active`，没有新增表、字段、索引或迁移号。
+- `rollout_snapshot()` 在设置缺失时采用产品默认 `active`，但非法设置仍 fail closed 为 `off`。
+- 当前真实数据库通过内部 `set_rollout_mode("active")` 从 `(shadow, epoch=0)` 切换为 `(active, epoch=1)`；重复调用后仍为 epoch 1。
+- 切换没有创建 ShortMemo 或事件，当前 `short_memos=0`、`short_memo_events=0`。
+- 新增独立发布合同测试，覆盖全新数据库、设置缺失/非法值、setter 幂等、请求快照、产品开关、普通聊天静默创建/下一轮召回和临时聊天零写入。
+- 旧 LIFE2.6 Shadow 认证报告和 625 项历史矩阵保持不可变；本次 Active 结论由新的 LIFE2.7 报告承载。
+- LIFE2.8 在用户 Review 前不施工。

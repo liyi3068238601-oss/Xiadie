@@ -43,7 +43,7 @@ def _source(text: str) -> tuple[str, str]:
     return session_id, message_id
 
 
-def test_schema_82_is_additive_and_defaults_to_shadow():
+def test_schema_82_is_additive_and_explicit_shadow_fixture_is_honored():
     conn = db.connect()
     try:
         version = conn.execute(

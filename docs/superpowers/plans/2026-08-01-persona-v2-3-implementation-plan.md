@@ -1,8 +1,8 @@
 # Persona v2.3 与 LIFE Active 正式实施计划
 
 - 日期：2026-08-01
-- 版本：v0.1 review candidate
-- 状态：待用户 Review；未授权运行时代码施工
+- 版本：v0.2 construction
+- 状态：LIFE2.7 已完成并等待用户 Review；LIFE2.8 尚未授权施工
 - 施工分支：`agent/life-v2-specialty`
 - 计划基线：`079a8e2`（Persona v2.3 身份分层设计已收口）
 - Schema 基线：82

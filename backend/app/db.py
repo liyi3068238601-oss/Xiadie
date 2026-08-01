@@ -3937,7 +3937,7 @@ MIGRATIONS = [
         CREATE INDEX idx_short_memo_events_memo ON short_memo_events(memo_id,created_at,id);
 
         INSERT OR IGNORE INTO settings(key,value) VALUES('life.short_memo.enabled','1');
-        INSERT OR IGNORE INTO settings(key,value) VALUES('life.short_memo.rollout_mode','shadow');
+        INSERT OR IGNORE INTO settings(key,value) VALUES('life.short_memo.rollout_mode','active');
         INSERT OR IGNORE INTO settings(key,value) VALUES('life.short_memo.rollout_epoch','0');
         INSERT OR IGNORE INTO settings(key,value) VALUES('life.short_memo.remote_extraction_enabled','0');
         INSERT OR IGNORE INTO settings(key,value) VALUES('life.short_memo.default_ttl_seconds','259200');

@@ -13,6 +13,7 @@ from . import db, llm
 
 PROTOCOL_VERSION = "short-memo-v1"
 ROLLOUT_MODES = ("off", "shadow", "active")
+DEFAULT_ROLLOUT_MODE = "active"
 MIN_TTL = 3_600
 MAX_TTL = 1_209_600
 DEFAULT_TTL = 259_200
@@ -92,7 +93,7 @@ def rollout_snapshot(conn=None) -> RolloutSnapshot:
                 "SELECT key,value FROM settings WHERE key LIKE 'life.short_memo.%'"
             )
         }
-        rollout = rows.get("life.short_memo.rollout_mode", "shadow")
+        rollout = rows.get("life.short_memo.rollout_mode", DEFAULT_ROLLOUT_MODE)
         if rollout not in ROLLOUT_MODES:
             rollout = "off"
         return RolloutSnapshot(
