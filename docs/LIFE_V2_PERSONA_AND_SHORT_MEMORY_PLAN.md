@@ -412,7 +412,7 @@ Schema 82 是前向兼容的纯新增迁移，不修改现有 `memory_fragments`
 设置继续复用现有 `settings(key,value)`，不新建配置表：
 
 - `life.short_memo.enabled=1`：用户产品偏好，首发默认开启且在设置页持续可见。
-- `life.short_memo.rollout_mode=shadow`：发布门，只能为 `off/shadow/active`；Schema 82 落地时固定为 `shadow`，Review 后才能改为 `active`。
+- `life.short_memo.rollout_mode=shadow`：发布门，只能为 `off/shadow/active`；此处记录 LIFE2.4 落地时的冻结值。LIFE2.7 已将面向全新数据库的 Schema 82 seed 更新为 `active`，现有数据库仍只能通过内部 setter 切换。
 - `life.short_memo.rollout_epoch=0`：每次发布门实际变化时原子递增的非负整数，用于请求快照和无正文统计分界；普通前端不可修改。
 - `life.short_memo.remote_extraction_enabled=0`：是否允许远端模型接触经秘密拦截和最小化后的候选；默认关闭。
 - `life.short_memo.default_ttl_seconds=259200`：允许 3600～1209600。
@@ -576,3 +576,14 @@ expression_flags[]           # calm / warm / concise / gently_curious / offer_he
 - 新增独立发布合同测试，覆盖全新数据库、设置缺失/非法值、setter 幂等、请求快照、产品开关、普通聊天静默创建/下一轮召回和临时聊天零写入。
 - 旧 LIFE2.6 Shadow 认证报告和 625 项历史矩阵保持不可变；本次 Active 结论由新的 LIFE2.7 报告承载。
 - LIFE2.8 在用户 Review 前不施工。
+
+## 16. LIFE2.8 InnerStateProjection Active 后续施工记录
+
+施工日期：2026-08-01。正式施工计划与证据分别见 `docs/superpowers/plans/2026-08-01-persona-v2-3-implementation-plan.md` 和 `docs/reports/life2-8-inner-state-projection-active.md`。
+
+- Schema 保持 82；只把全新数据库的 Projection seed 与设置缺失默认值从 `shadow` 改为 `active`，非法值继续 fail closed 为 `off`。
+- 新增仅供内部发布使用的幂等 `set_rollout_mode()`；没有新增普通 API、设置 UI、表、字段、索引或迁移。
+- 当前真实数据库已通过内部 setter 从 Shadow 切至 Active；ShortMemo 仍独立保持 Active。
+- Projection 仍为请求内只读值，只包含有界枚举、ID 与 hash；没有持久化、缓存、正文日志或向权威状态反向写入。
+- 请求边界快照、Active/Shadow/Off、失败非阻断和独立回滚合同均已加入专项测试。
+- LIFE2.9 在用户 Review 前不施工。

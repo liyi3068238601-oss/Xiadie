@@ -11,6 +11,7 @@ from . import db
 PROTOCOL_VERSION = "inner-state-projection-v1"
 ROLLOUT_KEY = "life.inner_state_projection.rollout_mode"
 ROLLOUT_MODES = ("off", "shadow", "active")
+DEFAULT_ROLLOUT_MODE = "active"
 AFFECT_BANDS = frozenset({
     "bright", "serene", "agitated", "melancholic", "focused",
     "contemplative", "pleased", "subdued", "neutral",
@@ -19,6 +20,12 @@ RELATIONSHIP_BOUNDARIES = frozenset({
     "defensive", "highly_guarded", "default_distance", "softly_guarded", "relaxed",
 })
 EXPRESSION_FLAGS = frozenset({"calm", "warm", "concise", "gently_curious", "offer_help"})
+
+
+class ProjectionRolloutError(ValueError):
+    def __init__(self, code: str):
+        super().__init__(code)
+        self.code = code
 
 
 @dataclass(frozen=True)
@@ -51,9 +58,36 @@ class InnerStateProjection:
         return result
 
 
-def rollout_mode() -> str:
-    value = db.get_setting(ROLLOUT_KEY, "shadow")
-    return value if value in ROLLOUT_MODES else "off"
+def rollout_mode(conn=None) -> str:
+    owned = conn is None
+    connection = conn or db.connect()
+    try:
+        row = connection.execute(
+            "SELECT value FROM settings WHERE key = ?", (ROLLOUT_KEY,)
+        ).fetchone()
+        value = row["value"] if row else DEFAULT_ROLLOUT_MODE
+        return value if value in ROLLOUT_MODES else "off"
+    finally:
+        if owned:
+            connection.close()
+
+
+def set_rollout_mode(mode: str) -> str:
+    """Internal release operation; ordinary API/UI must never call this function."""
+    if mode not in ROLLOUT_MODES:
+        raise ProjectionRolloutError("inner_state_projection_rollout_invalid")
+    conn = db.connect()
+    try:
+        if rollout_mode(conn) != mode:
+            conn.execute(
+                "INSERT INTO settings(key,value) VALUES(?,?) "
+                "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                (ROLLOUT_KEY, mode),
+            )
+        conn.commit()
+        return rollout_mode(conn)
+    finally:
+        conn.close()
 
 
 def build(

@@ -1,8 +1,8 @@
 # Persona v2.3 与 LIFE Active 正式实施计划
 
 - 日期：2026-08-01
-- 版本：v0.2 construction
-- 状态：LIFE2.7 已完成并等待用户 Review；LIFE2.8 尚未授权施工
+- 版本：v0.3 construction
+- 状态：LIFE2.7 Review 已通过；LIFE2.8 已完成并等待用户 Review；LIFE2.9 尚未授权施工
 - 施工分支：`agent/life-v2-specialty`
 - 计划基线：`079a8e2`（Persona v2.3 身份分层设计已收口）
 - Schema 基线：82
@@ -13,8 +13,8 @@
 
 本轮不复用已经完成的 `LIFE2.6` 编号，从 `LIFE2.7` 开始施工：
 
-1. `LIFE2.7`：ShortMemo 从 Shadow 切换为 Active。
-2. `LIFE2.8`：InnerStateProjection 从 Shadow 切换为 Active。
+1. `LIFE2.7`：ShortMemo 从 Shadow 切换为 Active。已完成并通过 Review。
+2. `LIFE2.8`：InnerStateProjection 从 Shadow 切换为 Active。已完成，等待 Review。
 3. `LIFE2.9`：实现版本化 Persona v2.3 资源与可运行 v2.2 回退。
 4. `LIFE2.10`：执行固定集、DeepSeek 真实模型认证并发布 v2.3。
 5. `LIFE2.11`：真实聊天观察、问题驱动修复与最终冻结。
@@ -196,6 +196,16 @@ git diff --check
 ### 7.6 回滚
 
 调用 Projection 内部 setter 切回 `shadow` 或 `off`。下一轮恢复静态 Persona；ShortMemo 和 Persona profile 状态不改变。
+
+### 7.7 施工记录（2026-08-01）
+
+- Schema 82 保持不变；全新数据库的 Projection seed 和设置缺失默认值改为 `active`，非法设置仍 fail closed 为 `off`。
+- 新增内部 `set_rollout_mode()`，只接受 `off/shadow/active`；重复设置幂等，不暴露 API/UI。
+- 当前真实数据库通过内部 setter 从 `shadow` 切至 `active`；重复调用仍为 Active。切换前后均为 165 张表、0 张 Projection 表。
+- 请求仍只读取一次 Projection rollout；专项测试模拟构建期间切回 Shadow，当前请求继续使用已捕获的 Active，下一轮才读取新值。
+- 新增失败降级聊天测试：Projection 构建异常时传入 `None`，普通聊天继续完成。
+- 定向组合验证为 `23 passed, 1 warning`；后端全量、真实 DeepSeek 和人工真实聊天均未在本阶段运行。
+- LIFE2.9 在用户 Review 前不施工。正式证据见 `docs/reports/life2-8-inner-state-projection-active.md`。
 
 ## 8. LIFE2.9：Persona v2.3 资源与版本路由
 

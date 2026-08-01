@@ -90,7 +90,7 @@ def test_relationship_boundary_controls_curiosity_and_help_flags():
 
 def test_build_has_no_schema_or_table_side_effects():
     db.init_db()
-    assert db.get_setting(projection.ROLLOUT_KEY, "missing") == "shadow"
+    assert db.get_setting(projection.ROLLOUT_KEY, "missing") == "active"
     conn = db.connect()
     try:
         before_schema = conn.execute(
