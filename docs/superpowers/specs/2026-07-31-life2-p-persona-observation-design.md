@@ -1,12 +1,18 @@
 # LIFE2-P Persona v2 真实体验观察期设计
 
 - 日期：2026-07-31
-- 状态：设计已获用户批准
+- 状态：已结束；其发布顺序于 2026-08-01 被 Persona v2.3 后续决策取代
 - 范围：Persona v2.2 真实体验稳定期
 - 当前分支：`agent/life-v2-specialty`
 - 当前 Persona：`persona-profile-v2.2`
 - 当前输出门：`persona-natural-dialogue-guard-v2`
 - 当前发布状态：Persona Active；ShortMemo Shadow；InnerStateProjection Shadow；WorldBook r1 Shadow
+
+> 后续决策说明：本文保留 2026-07-31 时的观察事实、边界和回滚依据，不再作为当前施工入口。
+> 用户根据后续真实体验，决定采用
+> [`2026-08-01-persona-v2-3-modern-ai-companion-design.md`](./2026-08-01-persona-v2-3-modern-ai-companion-design.md)
+> 中的联合 LIFE Active 目标。下文“先 ShortMemo、后 Projection”的长期激活门仅是历史方案；两项能力在新方案中
+> 仍须独立诊断、验证和回滚，但不再互相设置长期等待门。
 
 ## 1. 目标与阶段定位
 
