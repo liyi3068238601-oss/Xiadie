@@ -1,8 +1,8 @@
 # Persona v2.3 与 LIFE Active 正式实施计划
 
 - 日期：2026-08-01
-- 版本：v0.4 construction
-- 状态：LIFE2.7～LIFE2.8 Review 已通过；LIFE2.9 已完成并等待用户 Review；LIFE2.10 尚未授权施工
+- 版本：v0.5 construction
+- 状态：LIFE2.7～LIFE2.9 Review 已通过；LIFE2.10 已完成并等待用户 Review；LIFE2.11 尚未授权施工
 - 施工分支：`agent/life-v2-specialty`
 - 计划基线：`079a8e2`（Persona v2.3 身份分层设计已收口）
 - Schema 基线：82
@@ -15,8 +15,8 @@
 
 1. `LIFE2.7`：ShortMemo 从 Shadow 切换为 Active。已完成并通过 Review。
 2. `LIFE2.8`：InnerStateProjection 从 Shadow 切换为 Active。已完成并通过 Review。
-3. `LIFE2.9`：实现版本化 Persona v2.3 资源与可运行 v2.2 回退。已完成，等待 Review。
-4. `LIFE2.10`：执行固定集、DeepSeek 真实模型认证并发布 v2.3。
+3. `LIFE2.9`：实现版本化 Persona v2.3 资源与可运行 v2.2 回退。已完成并通过 Review。
+4. `LIFE2.10`：执行固定集、DeepSeek 真实模型认证并发布 v2.3。已完成，等待 Review。
 5. `LIFE2.11`：真实聊天观察、问题驱动修复与最终冻结。
 
 各阶段可以连续推进，不设置人为的长期等待期；但每段必须独立提交、独立 Review、独立归因和独立回滚。前一段出现未解决 P0/P1 时，不进入下一段。
@@ -275,7 +275,7 @@ git diff --check
 - 新增 `v2_3/` 候选资源，落实现代通用能力、遐蝶第一人称、关系/事实边界、兴趣证据、Chat/Work 同一人格和负面行为常驻约束。
 - 同一 `persona-prompt-compiler-v1` 支持显式 profile；内部 selector 仅接受已安装白名单，未知值 fail closed 到 v2.2。
 - Active 回退链为“请求 profile → 已认证 v2.2 → legacy”；v2.3 的 `certifications.json` 保持空数组，当前生产 selector 明确为 v2.2。
-- v2.3 静态预算：companionship 1391 tokens、focused_work 1322 tokens；加入测试 Projection 后仍不超过 1450。
+- LIFE2.9 Review 修订后，v2.3 静态预算：companionship 1404 tokens、focused_work 1357 tokens；加入测试 Projection 后分别为 1422/1375，仍不超过 1450。
 - 定向历史与新合同组合为 `31 passed, 1 warning`；未运行后端全量、前端测试/构建和 DeepSeek 认证。
 - LIFE2.10 在用户逐段 Review v2.3 四份正文与本阶段代码后才施工。证据见 `docs/reports/life2-9-persona-v23-candidate.md`。
 
@@ -332,6 +332,16 @@ git diff --check
 ### 9.7 发布与回滚
 
 通过后使用内部 selector 将现有数据库切至 v2.3，并将全新安装默认 profile 设为 v2.3。失败或 Review 未通过时不签证、不切换。发布后发现阻断问题，只把 selector 切回 v2.2；ShortMemo 与 Projection 保持各自状态。
+
+### 9.8 施工记录（2026-08-01）
+
+- 采纳 LIFE2.9 Review 的 profile 请求快照、关系越级与现实建议边界；摄影不再作为无来源的常驻爱好。
+- 新增 `persona-evaluation-v2.0` 的 250 例固定集；保留旧 150 例、v1.4 协议和历史 fixture hash 不变。
+- DeepSeek `deepseek-v4-flash`、temperature 0、max tokens 4000 三轮真实评测：v2.3 为 750/750；v2.2 同集为 747/750，三个失败均为技术身份回答未说明 Xiadie。
+- 输出门收口时发现代码缩进被清洗的阻断缺陷；已保留 fenced/unfenced 代码缩进，并为 Work Python 增加 AST 硬门。既有原始模型产物确定性重评分后 v2.3 仍为 750/750。
+- v2.3 两种模式 compiled hash 为 `6a3d7174...` 与 `4b0b91fb...`，模型证书已签发；当前数据库与全新安装默认 selector 已切至 v2.3，v2.2 与 legacy 回退保留。
+- 最终状态：Schema 82，Persona/ShortMemo/Projection Active，WorldBook r1 Off；详细模型、hash、测试和回滚证据见 `docs/reports/life2-10-persona-v23-model-gate.md`。
+- LIFE2.11 在用户 Review 前不施工。
 
 ## 10. LIFE2.11：真实聊天观察与最终冻结
 

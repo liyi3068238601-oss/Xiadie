@@ -5,7 +5,7 @@
 - 施工基线：`fad640e`
 - 结果提交：本报告所在提交
 - Schema：82（未新增迁移）
-- 状态：候选施工完成，等待用户 Review；尚未认证或发布 v2.3
+- 状态：候选施工完成并通过用户 Review；后续认证与发布见 LIFE2.10 报告
 
 ## 1. 结论
 
@@ -64,8 +64,8 @@ focused_work  0e6fd222be57ffa6fd3544a853638420466028946d1b7bac76f04d8cf3d1416e
 静态 compiled hash 与预算：
 
 ```text
-companionship 83ac53e02d294d0ae032a92976fb9aa651d3694da8794409bfa4a19aceb81190  1391 tokens
-focused_work  5214c33fb6f8cd772c0fac308cc7999088b6471d42f23e3e89b47cc2d949b121  1322 tokens
+companionship 6a3d71745a600e89ff6779a351ddb33b9f59d78b77b585e00a6b08cc2c512aa1  1404 tokens
+focused_work  4b0b91fbd73ab8692a0f0fd8e095868cf5630d92a5c920cf7c256921aefbdc27  1357 tokens
 ```
 
 测试用包含 `calm,warm,gently_curious,offer_help` 的 Projection 后，两种模式仍不超过 1450-token 硬门。
@@ -93,7 +93,7 @@ focused_work  5214c33fb6f8cd772c0fac308cc7999088b6471d42f23e3e89b47cc2d949b121  
 - 未运行 DeepSeek：v2.3 真实模型固定集、证书和发布属于 LIFE2.10。
 - 未运行后端全量、前端全量和生产构建：公共聊天调用签名向后兼容，生产仍走 v2.2；按计划在 LIFE2.10 首次运行。
 - v2.3 内容尚需用户逐段 Review。当前文本是候选，任何实质修改都会改变 section/compiled hash，必须在模型认证前完成。
-- v2.3 陪伴静态预算为 1391，余量有限；后续新增规则应先去重而非直接追加。
+- LIFE2.9 Review 修订后，v2.3 陪伴静态预算为 1404，余量有限；后续新增规则应先去重而非直接追加。
 
 ## 8. Review 重点
 
@@ -104,3 +104,7 @@ focused_work  5214c33fb6f8cd772c0fac308cc7999088b6471d42f23e3e89b47cc2d949b121  
 5. 路由：v2.3 未认证时必须停在 v2.2；v2.2 资源和历史证书不能因目录迁移改变。
 
 本阶段不需要重跑后端全量。Review 通过并完成内容修改后，才进入 LIFE2.10 DeepSeek 认证与发布。
+
+## 9. Review 后修订附记
+
+用户 Review 已通过本阶段并授权 LIFE2.10。按 Review 采纳：请求边界捕获一次 profile selector；Core 恢复“一次浓烈对话不能越级”，移除无来源摄影爱好；Work 恢复不得用死亡权能、入殓经历或角色比喻替代现实建议。上述正文修改使 manifest、compiled hash 与 token 预算发生变化，因此本报告第 5 节更新为最终候选值；原施工时数值由 Git 历史保留。

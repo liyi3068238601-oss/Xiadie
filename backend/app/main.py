@@ -913,6 +913,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
             else companion_state.preview_interaction(anchored_content, current_state)
         )
         style = companion_state.get_style_guidance(next_state)
+        profile_version = persona_v2.selected_profile_version()
         projection_rollout = inner_state_projection.rollout_mode()
         projection_mapping = None
         if projection_rollout != "off":
@@ -942,6 +943,7 @@ async def chat(body: ChatIn) -> StreamingResponse:
                 style=body.persona_style,
                 provider=provider,
                 model=model,
+                profile_version=profile_version,
                 projection=projection_mapping,
                 projection_rollout_mode=projection_rollout,
             )

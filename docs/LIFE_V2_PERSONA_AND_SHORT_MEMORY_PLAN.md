@@ -598,3 +598,14 @@ expression_flags[]           # calm / warm / concise / gently_curious / offer_he
 - 回退链固定为 v2.3 → 已认证 v2.2 → legacy。未知 selector、资源/hash/预算失败或未认证都不能让 v2.3 进入生产。
 - v2.3 两种模式与请求内 Projection 均通过 1450-token 门；LIFE2 历史与版本路由定向组合通过。
 - LIFE2.10 的 DeepSeek 固定集、认证与发布在用户 Review 前不施工。
+
+## 18. LIFE2.10 Persona v2.3 模型门、认证与发布记录
+
+施工日期：2026-08-01。正式证据见 `docs/reports/life2-10-persona-v23-model-gate.md`。
+
+- 已采纳 LIFE2.9 Review 的请求 profile 快照与正文边界修订；v2.3 最终静态预算为 companionship 1404、focused_work 1357 tokens。
+- 新增不覆盖旧证据的 `persona-evaluation-v2.0` 250 例固定集；DeepSeek v4-flash 三轮 v2.3 为 750/750，v2.2 同集为 747/750。
+- 修复输出门删除 Python 缩进的问题，并把 Work 代码可解析性纳入硬门；没有手工替换模型答案。
+- v2.3 证书已绑定模型、compiled hash、fixture 和最终 artifact；当前数据库与全新安装默认 profile 均为 v2.3。
+- Schema 保持 82；Persona、ShortMemo、Projection 为 Active，WorldBook r1 保持 Off；v2.2 与 legacy 回退仍可运行。
+- LIFE2.11 的真实聊天观察与最终冻结在用户 Review 前不施工。

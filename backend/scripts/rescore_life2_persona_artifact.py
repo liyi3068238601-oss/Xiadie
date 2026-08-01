@@ -41,9 +41,14 @@ def main() -> None:
                 life2_evaluation.PersonaCase(**row["case"]), row["output"],
             )
         run["summary"] = life2_evaluation.summarize(
-            row["score"] for row in run["results"]
+            (row["score"] for row in run["results"]),
+            protocol_version=str(
+                artifact.get("evaluation_protocol") or life2_evaluation.PROTOCOL_VERSION
+            ),
         )
-    artifact["evaluation_protocol"] = life2_evaluation.PROTOCOL_VERSION
+    artifact["evaluation_protocol"] = str(
+        artifact.get("evaluation_protocol") or life2_evaluation.PROTOCOL_VERSION
+    )
     artifact["rescored_from"] = source.name
     target.write_text(json.dumps(artifact, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps({

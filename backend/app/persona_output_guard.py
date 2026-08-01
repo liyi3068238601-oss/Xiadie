@@ -37,6 +37,7 @@ _CASUAL_AUDIT_PREFIX = re.compile(
     r"(?:现有)?(?:资料|信息)(?:仍然|目前|暂时)?(?:不足以?|不够)(?:确认|判断)?[：:]?|"
     r"(?:目前|暂时)?无法确认[：:]?"
 )
+_FENCED_CODE_BLOCK = re.compile(r"```[\s\S]*?(?:```|\Z)")
 
 
 def explicit_narration_requested(user_text: str) -> bool:
@@ -57,13 +58,22 @@ def sanitize_natural_dialogue(
     value = str(text or "")
     if allow_narration:
         return value
-    cleaned = ACTION_NARRATION.sub("", value)
-    if suppress_ungrounded_ambience:
-        cleaned = _UNGROUNDED_CASUAL_SENTENCE.sub("", cleaned)
-        cleaned = _CASUAL_AUDIT_PREFIX.sub("", cleaned)
-    cleaned = re.sub(r"(?m)^[ \t]+", "", cleaned)
-    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
-    return cleaned.strip()
+
+    def clean_prose(segment: str) -> str:
+        cleaned = ACTION_NARRATION.sub("", segment)
+        if suppress_ungrounded_ambience:
+            cleaned = _UNGROUNDED_CASUAL_SENTENCE.sub("", cleaned)
+            cleaned = _CASUAL_AUDIT_PREFIX.sub("", cleaned)
+        return re.sub(r"\n{3,}", "\n\n", cleaned)
+
+    parts: list[str] = []
+    cursor = 0
+    for match in _FENCED_CODE_BLOCK.finditer(value):
+        parts.append(clean_prose(value[cursor:match.start()]))
+        parts.append(match.group(0))
+        cursor = match.end()
+    parts.append(clean_prose(value[cursor:]))
+    return "".join(parts).strip()
 
 
 class NaturalDialogueStreamGuard:

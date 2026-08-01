@@ -11,7 +11,7 @@ from app import context_budget, db, persona, persona_v2
 
 def _provider() -> dict[str, object]:
     return {
-        "id": "deepseek", "base_url": "https://api.deepseek.com",
+        "id": "deepseek", "base_url": "https://api.deepseek.com/v1",
         "execution_location": "remote",
     }
 
@@ -96,11 +96,11 @@ def test_v23_candidate_is_deterministic_bounded_and_keeps_modern_identity_contra
     assert "不切换成冷淡客服" in work
 
 
-def test_internal_selector_defaults_v22_is_idempotent_and_rejects_unknown(
+def test_internal_selector_defaults_released_v23_is_idempotent_and_rejects_unknown(
     monkeypatch, tmp_path,
 ):
     _use_isolated_db(monkeypatch, tmp_path)
-    assert persona_v2.selected_profile_version() == persona_v2.DEFAULT_PROFILE_VERSION
+    assert persona_v2.selected_profile_version() == persona_v2.ACTIVE_PROFILE_VERSION
     assert persona_v2.set_profile_version(persona_v2.DEFAULT_PROFILE_VERSION) == "persona-profile-v2.2"
     assert persona_v2.set_profile_version(persona_v2.CANDIDATE_PROFILE_VERSION) == "persona-profile-v2.3"
     assert persona_v2.set_profile_version(persona_v2.CANDIDATE_PROFILE_VERSION) == "persona-profile-v2.3"
@@ -112,6 +112,14 @@ def test_internal_selector_defaults_v22_is_idempotent_and_rejects_unknown(
 
 def test_uncertified_v23_selector_falls_back_to_certified_v22(tmp_path, monkeypatch):
     _certify_v22(tmp_path, monkeypatch)
+    original_is_certified = persona_v2.is_certified
+
+    def reject_v23(fingerprint, profile_version, *args, **kwargs):
+        if profile_version == persona_v2.CANDIDATE_PROFILE_VERSION:
+            return False
+        return original_is_certified(fingerprint, profile_version, *args, **kwargs)
+
+    monkeypatch.setattr(persona_v2, "is_certified", reject_v23)
     result = persona_v2.compile_for_request(
         legacy_prompt=persona.PERSONA_PROMPT, mode="companionship", style=None,
         provider=_provider(), model="deepseek-v4-flash", rollout_mode="active",
@@ -159,7 +167,7 @@ def test_broken_v23_resources_fall_back_v22_but_broken_v22_falls_back_legacy(
     assert not legacy.selected_v2
 
 
-def test_v23_shadow_is_candidate_only_and_has_no_checked_in_certificate():
+def test_v23_shadow_remains_candidate_only_even_after_checked_in_certification():
     result = persona_v2.compile_for_request(
         legacy_prompt=persona.PERSONA_PROMPT, mode="companionship", style=None,
         provider=_provider(), model="deepseek-v4-flash", rollout_mode="shadow",
@@ -168,11 +176,13 @@ def test_v23_shadow_is_candidate_only_and_has_no_checked_in_certificate():
     assert result.prompt == persona.PERSONA_PROMPT
     assert result.candidate_prompt
     assert result.profile_version == persona_v2.CANDIDATE_PROFILE_VERSION
-    assert not result.selected_v2 and not result.certified
+    assert not result.selected_v2 and result.certified
     certificate_path = persona_v2.PROFILE_DIRS[
         persona_v2.CANDIDATE_PROFILE_VERSION
     ] / "certifications.json"
-    assert json.loads(certificate_path.read_text(encoding="utf-8"))["certifications"] == []
+    certificate = json.loads(certificate_path.read_text(encoding="utf-8"))["certifications"]
+    assert len(certificate) == 1
+    assert certificate[0]["profile_version"] == persona_v2.CANDIDATE_PROFILE_VERSION
 
 
 def test_observer_summary_is_derived_from_one_explicit_profile_without_mixing():

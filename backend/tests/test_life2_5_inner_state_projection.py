@@ -117,7 +117,9 @@ def test_build_has_no_schema_or_table_side_effects():
 
 
 def test_persona_projection_shadow_never_changes_selected_production_prompt(tmp_path, monkeypatch):
-    static, manifest, _ = persona_v2.compile_candidate(mode="companionship")
+    static, manifest, _ = persona_v2.compile_candidate(
+        mode="companionship", profile_version=persona_v2.DEFAULT_PROFILE_VERSION,
+    )
     fingerprint = persona_v2.model_fingerprint({
         "id": "deepseek", "base_url": "https://api.deepseek.com", "execution_location": "remote",
     }, "deepseek-v4-flash")
@@ -140,12 +142,14 @@ def test_persona_projection_shadow_never_changes_selected_production_prompt(tmp_
         legacy_prompt=persona.PERSONA_PROMPT, mode="companionship", style=None,
         provider={"id": "deepseek", "base_url": "https://api.deepseek.com", "execution_location": "remote"},
         model="deepseek-v4-flash", rollout_mode="active",
+        profile_version=persona_v2.DEFAULT_PROFILE_VERSION,
         projection=value.as_mapping(), projection_rollout_mode="shadow",
     )
     active = persona_v2.compile_for_request(
         legacy_prompt=persona.PERSONA_PROMPT, mode="companionship", style=None,
         provider={"id": "deepseek", "base_url": "https://api.deepseek.com", "execution_location": "remote"},
         model="deepseek-v4-flash", rollout_mode="active",
+        profile_version=persona_v2.DEFAULT_PROFILE_VERSION,
         projection=value.as_mapping(), projection_rollout_mode="active",
     )
     assert shadow.selected_v2 and shadow.prompt == static

@@ -13,6 +13,7 @@ from . import context_budget, db, persona_output_guard
 PROFILE_ROOT = Path(__file__).with_name("persona_profiles")
 DEFAULT_PROFILE_VERSION = "persona-profile-v2.2"
 CANDIDATE_PROFILE_VERSION = "persona-profile-v2.3"
+ACTIVE_PROFILE_VERSION = CANDIDATE_PROFILE_VERSION
 INSTALLED_PROFILE_VERSIONS = (DEFAULT_PROFILE_VERSION, CANDIDATE_PROFILE_VERSION)
 PROFILE_DIRS = {
     DEFAULT_PROFILE_VERSION: PROFILE_ROOT / "v2_2",
@@ -77,7 +78,7 @@ class PersonaResourceError(ValueError):
 
 def selected_profile_version() -> str:
     try:
-        value = db.get_setting(PROFILE_SELECTOR_KEY, DEFAULT_PROFILE_VERSION)
+        value = db.get_setting(PROFILE_SELECTOR_KEY, ACTIVE_PROFILE_VERSION)
     except Exception:
         value = DEFAULT_PROFILE_VERSION
     return value if value in INSTALLED_PROFILE_VERSIONS else DEFAULT_PROFILE_VERSION
@@ -266,7 +267,7 @@ def compile_candidate(
 
 
 def derive_observer_summary(
-    *, fallback: str, profile_version: str = DEFAULT_PROFILE_VERSION,
+    *, fallback: str, profile_version: str = ACTIVE_PROFILE_VERSION,
 ) -> str:
     """Derive the observer's compact persona anchor from the verified Core resource."""
     try:

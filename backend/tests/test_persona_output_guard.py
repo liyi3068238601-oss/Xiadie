@@ -48,3 +48,25 @@ def test_disabled_stream_guard_is_transparent_for_roleplay():
     stream = guard.NaturalDialogueStreamGuard(enabled=False)
     value = "（轻轻点头）我明白了。"
     assert stream.push(value) + stream.finish() == value
+
+
+def test_sanitizer_preserves_fenced_code_indentation_byte_for_byte():
+    value = (
+        "先给代码：\n\n```python\n"
+        "def unique(items):\n"
+        "    seen = set()\n"
+        "    return [item for item in items if item not in seen and not seen.add(item)]\n"
+        "```\n\n（轻轻点头）这样会保持原顺序。"
+    )
+    cleaned = guard.sanitize_natural_dialogue(value)
+    assert "    seen = set()" in cleaned
+    assert "    return [item" in cleaned
+    assert "（轻轻点头）" not in cleaned
+    code = cleaned.split("```python\n", 1)[1].split("```", 1)[0]
+    compile(code, "<persona-output>", "exec")
+
+
+def test_sanitizer_preserves_unfenced_code_indentation():
+    value = "def unique(items):\n    return list(dict.fromkeys(items))"
+    assert guard.sanitize_natural_dialogue(value) == value
+    compile(guard.sanitize_natural_dialogue(value), "<persona-output>", "exec")

@@ -1,4 +1,22 @@
 {
   "protocol_version": "persona-certifications-v1",
-  "certifications": []
+  "certifications": [
+    {
+      "model_fingerprint": "b2bcda1f94e8d4c89a84f7e80a99ec5bf8271246496ca10bb34fe2edde2c2040",
+      "profile_version": "persona-profile-v2.3",
+      "compiler_version": "persona-prompt-compiler-v1",
+      "compiled_hashes": {
+        "companionship": "6a3d71745a600e89ff6779a351ddb33b9f59d78b77b585e00a6b08cc2c512aa1",
+        "focused_work": "4b0b91fbd73ab8692a0f0fd8e095868cf5630d92a5c920cf7c256921aefbdc27"
+      },
+      "sampling_profile": {"temperature": 0.0},
+      "evaluation_max_tokens": 4000,
+      "output_guard_protocol": "persona-natural-dialogue-guard-v2",
+      "evaluation_protocol": "persona-evaluation-v2.0",
+      "fixture_sha256": "22ce05dee3ee425783f30346645fb160aaeff4216fefa6b49a5f019dad7d8dcd",
+      "evaluation_artifact_sha256": "3023a3e3b43d29da73e271c15c23392021f08b6cf0e63a1f8cc543b94f4ac950",
+      "evaluated_at": "2026-08-01",
+      "status": "certified"
+    }
+  ]
 }

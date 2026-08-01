@@ -16,9 +16,15 @@ def _provider() -> dict[str, object]:
 
 
 def test_candidate_is_deterministic_bounded_and_keeps_core_identity() -> None:
-    first, manifest, hashes = persona_v2.compile_candidate(mode="companionship")
-    second, _, second_hashes = persona_v2.compile_candidate(mode="companionship")
-    work, _, _ = persona_v2.compile_candidate(mode="focused_work")
+    first, manifest, hashes = persona_v2.compile_candidate(
+        mode="companionship", profile_version=persona_v2.DEFAULT_PROFILE_VERSION,
+    )
+    second, _, second_hashes = persona_v2.compile_candidate(
+        mode="companionship", profile_version=persona_v2.DEFAULT_PROFILE_VERSION,
+    )
+    work, _, _ = persona_v2.compile_candidate(
+        mode="focused_work", profile_version=persona_v2.DEFAULT_PROFILE_VERSION,
+    )
 
     assert first == second
     assert hashes == second_hashes
@@ -66,7 +72,9 @@ def test_shadow_and_uncertified_active_keep_legacy_prompt() -> None:
 
 
 def test_certificate_is_bound_to_model_mode_and_compiled_hash(tmp_path, monkeypatch) -> None:
-    candidate, manifest, _ = persona_v2.compile_candidate(mode="focused_work")
+    candidate, manifest, _ = persona_v2.compile_candidate(
+        mode="focused_work", profile_version=persona_v2.DEFAULT_PROFILE_VERSION,
+    )
     compiled_hash = hashlib.sha256(candidate.encode()).hexdigest()
     fingerprint = persona_v2.model_fingerprint(_provider(), "deepseek-v4-flash")
     certification = tmp_path / "certifications.json"
@@ -87,10 +95,12 @@ def test_certificate_is_bound_to_model_mode_and_compiled_hash(tmp_path, monkeypa
     result = persona_v2.compile_for_request(
         legacy_prompt=persona.PERSONA_PROMPT, mode="focused_work", style=None,
         provider=_provider(), model="deepseek-v4-flash", rollout_mode="active",
+        profile_version=persona_v2.DEFAULT_PROFILE_VERSION,
     )
     other_mode = persona_v2.compile_for_request(
         legacy_prompt=persona.PERSONA_PROMPT, mode="companionship", style=None,
         provider=_provider(), model="deepseek-v4-flash", rollout_mode="active",
+        profile_version=persona_v2.DEFAULT_PROFILE_VERSION,
     )
     assert result.selected_v2 and result.prompt == candidate
     assert not other_mode.selected_v2
@@ -105,7 +115,9 @@ def test_checked_in_v22_certificate_matches_guarded_evidence() -> None:
     assert certificate["output_guard_protocol"] == "persona-natural-dialogue-guard-v2"
     assert certificate["fixture_sha256"] == life2_evaluation.fixture_sha256()
     for mode in persona_v2.MODES:
-        compiled, manifest, _ = persona_v2.compile_candidate(mode=mode)
+        compiled, manifest, _ = persona_v2.compile_candidate(
+            mode=mode, profile_version=persona_v2.DEFAULT_PROFILE_VERSION,
+        )
         assert manifest["profile_version"] == certificate["profile_version"]
         assert hashlib.sha256(compiled.encode()).hexdigest() == certificate["compiled_hashes"][mode]
     artifact = persona_v2.PROFILE_DIR.parents[3] / "docs" / "reports" / "life2-persona-v2.2-certified-deepseek-v4-flash.json"

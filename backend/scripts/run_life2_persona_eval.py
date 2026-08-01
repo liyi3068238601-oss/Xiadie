@@ -22,6 +22,21 @@ sys.path.insert(0, str(BACKEND_ROOT))
 from app import db, life2_evaluation, persona, persona_output_guard, persona_v2  # noqa: E402
 
 
+def _profile_version_for_arg(profile: str) -> str | None:
+    return {
+        "candidate": persona_v2.selected_profile_version(),
+        "v22": persona_v2.DEFAULT_PROFILE_VERSION,
+        "v23": persona_v2.CANDIDATE_PROFILE_VERSION,
+    }.get(profile)
+
+
+def _prompt_for_case(
+    prompts: dict[str, str], case: life2_evaluation.PersonaCase,
+    profile_version: str | None,
+) -> str:
+    return prompts[case.mode] if profile_version else prompts["legacy"]
+
+
 def _configured_model() -> tuple[dict, str, str]:
     cfg = json.loads(db.get_setting("current_model", "{}") or "{}")
     provider_id = str(cfg.get("provider_id") or "")
@@ -48,7 +63,7 @@ def _configured_model() -> tuple[dict, str, str]:
 
 async def _complete(
     client: httpx.AsyncClient, provider: dict, model: str, system_prompt: str,
-    case: life2_evaluation.PersonaCase, temperature: float,
+    case: life2_evaluation.PersonaCase, temperature: float, max_tokens: int,
 ) -> dict[str, object]:
     started = time.perf_counter()
     response = await client.post(
@@ -65,13 +80,16 @@ async def _complete(
             ],
             "stream": False,
             "temperature": temperature,
-            "max_tokens": 500,
+            "max_tokens": max_tokens,
         },
     )
     latency_ms = int((time.perf_counter() - started) * 1000)
     response.raise_for_status()
     payload = response.json()
-    raw_output = str(payload["choices"][0]["message"]["content"] or "")
+    message = payload["choices"][0]["message"]
+    raw_output = str(message.get("content") or "")
+    if not raw_output.strip():
+        raise ValueError("model_final_output_empty")
     allow_narration = persona_output_guard.explicit_narration_requested(case.user_text)
     output = persona_output_guard.sanitize_natural_dialogue(
         raw_output, allow_narration=allow_narration,
@@ -96,13 +114,19 @@ async def _complete(
 async def _run(args: argparse.Namespace) -> dict[str, object]:
     db.init_db()
     provider, model, fingerprint = _configured_model()
-    cases = life2_evaluation.build_cases()
+    cases = (
+        life2_evaluation.build_v23_cases()
+        if args.suite == "v23" else life2_evaluation.build_cases()
+    )
     semaphore = asyncio.Semaphore(max(1, min(args.concurrency, 12)))
     timeout = httpx.Timeout(args.timeout)
     prompts = {"legacy": persona.PERSONA_PROMPT}
-    if args.profile == "candidate":
+    profile_version = _profile_version_for_arg(args.profile)
+    if profile_version:
         prompts = {
-            mode: persona_v2.compile_candidate(mode=mode)[0]
+            mode: persona_v2.compile_candidate(
+                mode=mode, profile_version=profile_version,
+            )[0]
             for mode in persona_v2.MODES
         }
 
@@ -112,8 +136,11 @@ async def _run(args: argparse.Namespace) -> dict[str, object]:
                 last_error: Exception | None = None
                 for attempt in range(1, 4):
                     try:
-                        prompt = prompts[case.mode] if args.profile == "candidate" else prompts["legacy"]
-                        return await _complete(client, provider, model, prompt, case, args.temperature)
+                        prompt = _prompt_for_case(prompts, case, profile_version)
+                        return await _complete(
+                            client, provider, model, prompt, case,
+                            args.temperature, args.max_tokens,
+                        )
                     except (httpx.HTTPError, ValueError, KeyError, IndexError) as exc:
                         last_error = exc
                         if attempt < 3:
@@ -123,6 +150,7 @@ async def _run(args: argparse.Namespace) -> dict[str, object]:
                     "score": life2_evaluation.score_output(case, ""),
                     "latency_ms": 0, "prompt_tokens": None, "completion_tokens": None,
                     "error": type(last_error).__name__ if last_error else "unknown",
+                    "error_detail": str(last_error or "unknown")[:160],
                 }
 
         runs: list[dict[str, object]] = []
@@ -130,11 +158,17 @@ async def _run(args: argparse.Namespace) -> dict[str, object]:
             started = time.time()
             rows = await asyncio.gather(*(one(case) for case in cases))
             scores = [row["score"] for row in rows]
+            protocol = (
+                life2_evaluation.V23_PROTOCOL_VERSION
+                if args.suite == "v23" else life2_evaluation.PROTOCOL_VERSION
+            )
             runs.append({
                 "run": run_number,
                 "started_at": started,
                 "finished_at": time.time(),
-                "summary": life2_evaluation.summarize(scores),
+                "summary": life2_evaluation.summarize(
+                    scores, protocol_version=protocol,
+                ),
                 "latency_ms_total": sum(int(row["latency_ms"]) for row in rows),
                 "prompt_tokens_total": sum(int(row["prompt_tokens"] or 0) for row in rows),
                 "completion_tokens_total": sum(int(row["completion_tokens"] or 0) for row in rows),
@@ -142,13 +176,18 @@ async def _run(args: argparse.Namespace) -> dict[str, object]:
             })
     return {
         "artifact_version": "life2-persona-eval-artifact-v1",
-        "evaluation_protocol": life2_evaluation.PROTOCOL_VERSION,
+        "evaluation_protocol": (
+            life2_evaluation.V23_PROTOCOL_VERSION
+            if args.suite == "v23" else life2_evaluation.PROTOCOL_VERSION
+        ),
         "label": args.label,
         "input_profile": args.profile,
         "prompt_sha256": {
             key: hashlib.sha256(value.encode()).hexdigest() for key, value in prompts.items()
         },
-        "sampling_profile": {"temperature": args.temperature, "max_tokens": 500},
+        "sampling_profile": {
+            "temperature": args.temperature, "max_tokens": args.max_tokens,
+        },
         "provider_id": provider["id"],
         "model": model,
         "model_fingerprint": fingerprint,
@@ -161,11 +200,15 @@ async def _run(args: argparse.Namespace) -> dict[str, object]:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--label", default="legacy-persona")
-    parser.add_argument("--profile", choices=("legacy", "candidate"), default="legacy")
+    parser.add_argument(
+        "--profile", choices=("legacy", "candidate", "v22", "v23"), default="legacy",
+    )
+    parser.add_argument("--suite", choices=("v14", "v23"), default="v23")
     parser.add_argument("--runs", type=int, default=life2_evaluation.RUNS_REQUIRED)
     parser.add_argument("--concurrency", type=int, default=6)
     parser.add_argument("--timeout", type=float, default=90.0)
     parser.add_argument("--temperature", type=float, default=0.0)
+    parser.add_argument("--max-tokens", type=int, default=2000)
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     artifact = asyncio.run(_run(args))
