@@ -1,8 +1,8 @@
 # Persona v2.3 与 LIFE Active 正式实施计划
 
 - 日期：2026-08-01
-- 版本：v0.3 construction
-- 状态：LIFE2.7 Review 已通过；LIFE2.8 已完成并等待用户 Review；LIFE2.9 尚未授权施工
+- 版本：v0.4 construction
+- 状态：LIFE2.7～LIFE2.8 Review 已通过；LIFE2.9 已完成并等待用户 Review；LIFE2.10 尚未授权施工
 - 施工分支：`agent/life-v2-specialty`
 - 计划基线：`079a8e2`（Persona v2.3 身份分层设计已收口）
 - Schema 基线：82
@@ -14,8 +14,8 @@
 本轮不复用已经完成的 `LIFE2.6` 编号，从 `LIFE2.7` 开始施工：
 
 1. `LIFE2.7`：ShortMemo 从 Shadow 切换为 Active。已完成并通过 Review。
-2. `LIFE2.8`：InnerStateProjection 从 Shadow 切换为 Active。已完成，等待 Review。
-3. `LIFE2.9`：实现版本化 Persona v2.3 资源与可运行 v2.2 回退。
+2. `LIFE2.8`：InnerStateProjection 从 Shadow 切换为 Active。已完成并通过 Review。
+3. `LIFE2.9`：实现版本化 Persona v2.3 资源与可运行 v2.2 回退。已完成，等待 Review。
 4. `LIFE2.10`：执行固定集、DeepSeek 真实模型认证并发布 v2.3。
 5. `LIFE2.11`：真实聊天观察、问题驱动修复与最终冻结。
 
@@ -226,7 +226,7 @@ git diff --check
 - `backend/app/persona_profiles/v2_3/certifications.json`
 - `backend/tests/test_life2_2_persona.py`（保持 v2.2 历史合同）
 - `backend/tests/test_life2_9_persona_v23.py`（新增）
-- `docs/adr/0047-versioned-persona-profile-routing.md`（新增）
+- `docs/adr/0072-versioned-persona-profile-routing.md`（新增；按当前 ADR 最大编号顺延）
 - `docs/reports/life2-9-persona-v23-candidate.md`（新增）
 
 最终目录名可在施工时按现有命名规范微调，但必须同时满足：v2.2/v2.3 可寻址、v2.2 资源不被 v2.3 原地覆盖、未知 profile fail closed。
@@ -268,6 +268,16 @@ git diff --check
 ### 8.7 回滚
 
 删除 v2.3 候选路由或将 selector 固定回 v2.2；v2.2 资源、证书和生产行为保持不变。
+
+### 8.8 施工记录（2026-08-01）
+
+- 原 `persona_profiles/v2/` 已机械迁移为不可变 `v2_2/`；两种模式的已认证 compiled hash 逐字保持 `aff81f...` 与 `0e6fd2...`，历史证书和报告未修改。
+- 新增 `v2_3/` 候选资源，落实现代通用能力、遐蝶第一人称、关系/事实边界、兴趣证据、Chat/Work 同一人格和负面行为常驻约束。
+- 同一 `persona-prompt-compiler-v1` 支持显式 profile；内部 selector 仅接受已安装白名单，未知值 fail closed 到 v2.2。
+- Active 回退链为“请求 profile → 已认证 v2.2 → legacy”；v2.3 的 `certifications.json` 保持空数组，当前生产 selector 明确为 v2.2。
+- v2.3 静态预算：companionship 1391 tokens、focused_work 1322 tokens；加入测试 Projection 后仍不超过 1450。
+- 定向历史与新合同组合为 `31 passed, 1 warning`；未运行后端全量、前端测试/构建和 DeepSeek 认证。
+- LIFE2.10 在用户逐段 Review v2.3 四份正文与本阶段代码后才施工。证据见 `docs/reports/life2-9-persona-v23-candidate.md`。
 
 ## 9. LIFE2.10：DeepSeek 评测、认证与发布
 

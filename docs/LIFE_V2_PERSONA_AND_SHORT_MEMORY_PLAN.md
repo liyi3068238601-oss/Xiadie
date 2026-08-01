@@ -587,3 +587,14 @@ expression_flags[]           # calm / warm / concise / gently_curious / offer_he
 - Projection 仍为请求内只读值，只包含有界枚举、ID 与 hash；没有持久化、缓存、正文日志或向权威状态反向写入。
 - 请求边界快照、Active/Shadow/Off、失败非阻断和独立回滚合同均已加入专项测试。
 - LIFE2.9 在用户 Review 前不施工。
+
+## 17. LIFE2.9 Persona v2.3 候选与版本路由施工记录
+
+施工日期：2026-08-01。正式证据见 `docs/reports/life2-9-persona-v23-candidate.md` 与 `docs/adr/0072-versioned-persona-profile-routing.md`。
+
+- 已认证 v2.2 从含混的 `persona_profiles/v2/` 迁移为 `v2_2/`，资源、manifest、证书和 compiled hash 保持不变。
+- 新增 `v2_3/` 候选资源与空认证文件；未签发模型证书、未改变生产 prompt。
+- 内部 profile selector 只接受 `persona-profile-v2.2/v2.3`；当前真实数据库明确选择 v2.2。
+- 回退链固定为 v2.3 → 已认证 v2.2 → legacy。未知 selector、资源/hash/预算失败或未认证都不能让 v2.3 进入生产。
+- v2.3 两种模式与请求内 Projection 均通过 1450-token 门；LIFE2 历史与版本路由定向组合通过。
+- LIFE2.10 的 DeepSeek 固定集、认证与发布在用户 Review 前不施工。

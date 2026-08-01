@@ -10,7 +10,16 @@ from typing import Mapping
 
 from . import context_budget, db, persona_output_guard
 
-PROFILE_DIR = Path(__file__).with_name("persona_profiles") / "v2"
+PROFILE_ROOT = Path(__file__).with_name("persona_profiles")
+DEFAULT_PROFILE_VERSION = "persona-profile-v2.2"
+CANDIDATE_PROFILE_VERSION = "persona-profile-v2.3"
+INSTALLED_PROFILE_VERSIONS = (DEFAULT_PROFILE_VERSION, CANDIDATE_PROFILE_VERSION)
+PROFILE_DIRS = {
+    DEFAULT_PROFILE_VERSION: PROFILE_ROOT / "v2_2",
+    CANDIDATE_PROFILE_VERSION: PROFILE_ROOT / "v2_3",
+}
+# Compatibility aliases for the frozen v2.2 profile and its existing tests/tools.
+PROFILE_DIR = PROFILE_DIRS[DEFAULT_PROFILE_VERSION]
 MANIFEST_PATH = PROFILE_DIR / "manifest.json"
 CERTIFICATIONS_PATH = PROFILE_DIR / "certifications.json"
 MODES = ("companionship", "focused_work")
@@ -28,6 +37,7 @@ STYLE_OPTIONS = {
     "proactivity_level": frozenset({"reserved", "balanced", "engaged"}),
 }
 ROLLOUT_KEY = "life.persona_v2.rollout_mode"
+PROFILE_SELECTOR_KEY = "life.persona_v2.profile_version"
 PERSONA_TOKEN_LIMIT = 1450
 
 
@@ -65,6 +75,23 @@ class PersonaResourceError(ValueError):
     pass
 
 
+def selected_profile_version() -> str:
+    try:
+        value = db.get_setting(PROFILE_SELECTOR_KEY, DEFAULT_PROFILE_VERSION)
+    except Exception:
+        value = DEFAULT_PROFILE_VERSION
+    return value if value in INSTALLED_PROFILE_VERSIONS else DEFAULT_PROFILE_VERSION
+
+
+def set_profile_version(profile_version: str) -> str:
+    """Internal release selector; ordinary API/UI must never call this function."""
+    if profile_version not in INSTALLED_PROFILE_VERSIONS:
+        raise PersonaResourceError("persona_profile_invalid")
+    if db.get_setting(PROFILE_SELECTOR_KEY, "") != profile_version:
+        db.set_setting(PROFILE_SELECTOR_KEY, profile_version)
+    return selected_profile_version()
+
+
 def model_fingerprint(provider: Mapping[str, object] | None, model: str) -> str:
     payload = {
         "provider_id": str((provider or {}).get("id") or "mock"),
@@ -82,6 +109,7 @@ def compile_for_request(
     projection: Mapping[str, object] | None = None,
     projection_rollout_mode: str = "off",
     rollout_mode: str | None = None,
+    profile_version: str | None = None,
 ) -> PersonaCompilation:
     selected_mode = mode or "companionship"
     if selected_mode not in MODES:
@@ -95,57 +123,129 @@ def compile_for_request(
         selected_rollout = "off"
     if projection_rollout_mode not in ROLLOUT_MODES:
         projection_rollout_mode = "off"
-    try:
-        static_candidate, manifest, section_hashes = compile_candidate(
-            mode=selected_mode, style=style, projection=None,
-        )
-        projected_candidate = static_candidate
-        if projection is not None and projection_rollout_mode in {"shadow", "active"}:
-            projected_candidate, _, _ = compile_candidate(
-                mode=selected_mode, style=style, projection=projection,
+    requested_profile = profile_version or selected_profile_version()
+    if requested_profile not in INSTALLED_PROFILE_VERSIONS:
+        requested_profile = DEFAULT_PROFILE_VERSION
+
+    # Shadow/off evaluates only the requested profile and never changes production.
+    if selected_rollout != "active":
+        try:
+            candidate = _compile_for_profile(
+                requested_profile, mode=selected_mode, style=style,
+                projection=projection, projection_rollout_mode=projection_rollout_mode,
+                provider=provider, model=model,
             )
-    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
+        except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
+            return _legacy_compilation(
+                legacy_prompt, selected_mode, selected_rollout, "persona_resource_invalid",
+            )
         return PersonaCompilation(
-            prompt=legacy_prompt, candidate_prompt="", profile_version="legacy",
-            compiler_version="legacy", mode=selected_mode, rollout_mode=selected_rollout,
-            selected_v2=False, certified=False, section_hashes={},
-            compiled_hash=hashlib.sha256(legacy_prompt.encode()).hexdigest(),
-            candidate_tokens=0, fallback_reason="persona_resource_invalid",
+            prompt=legacy_prompt, candidate_prompt=candidate["comparison_candidate"],
+            profile_version=candidate["manifest"]["profile_version"],
+            compiler_version=candidate["manifest"]["compiler_version"],
+            mode=selected_mode, rollout_mode=selected_rollout, selected_v2=False,
+            certified=candidate["certified"], section_hashes=candidate["section_hashes"],
+            compiled_hash=candidate["compiled_hash"],
+            candidate_tokens=context_budget.estimate_tokens(candidate["comparison_candidate"]),
+            fallback_reason="persona_rollout_inactive",
         )
-    fingerprint = model_fingerprint(provider, model)
-    # Certification binds reviewed static resources.  A validated request-local
-    # projection may alter the selected prompt but must not invalidate or inherit
-    # that static model certificate.
+
+    attempts = [requested_profile]
+    if requested_profile != DEFAULT_PROFILE_VERSION:
+        attempts.append(DEFAULT_PROFILE_VERSION)
+    first_failure = "persona_resource_invalid"
+    for attempted_profile in attempts:
+        try:
+            candidate = _compile_for_profile(
+                attempted_profile, mode=selected_mode, style=style,
+                projection=projection, projection_rollout_mode=projection_rollout_mode,
+                provider=provider, model=model,
+            )
+        except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
+            first_failure = "persona_resource_invalid"
+            continue
+        if not candidate["certified"]:
+            first_failure = "persona_model_uncertified"
+            continue
+        fallback = (
+            None if attempted_profile == requested_profile
+            else f"persona_profile_fallback:{requested_profile}"
+        )
+        return PersonaCompilation(
+            prompt=candidate["selected_candidate"],
+            candidate_prompt=candidate["comparison_candidate"],
+            profile_version=candidate["manifest"]["profile_version"],
+            compiler_version=candidate["manifest"]["compiler_version"],
+            mode=selected_mode, rollout_mode=selected_rollout, selected_v2=True,
+            certified=True, section_hashes=candidate["section_hashes"],
+            compiled_hash=candidate["compiled_hash"],
+            candidate_tokens=context_budget.estimate_tokens(candidate["comparison_candidate"]),
+            fallback_reason=fallback,
+        )
+    return _legacy_compilation(
+        legacy_prompt, selected_mode, selected_rollout, first_failure,
+    )
+
+
+def _compile_for_profile(
+    profile_version: str, *, mode: str, style: Mapping[str, str] | None,
+    projection: Mapping[str, object] | None, projection_rollout_mode: str,
+    provider: Mapping[str, object] | None, model: str,
+) -> dict[str, object]:
+    static_candidate, manifest, section_hashes = compile_candidate(
+        mode=mode, style=style, projection=None, profile_version=profile_version,
+    )
+    projected_candidate = static_candidate
+    if projection is not None and projection_rollout_mode in {"shadow", "active"}:
+        projected_candidate, _, _ = compile_candidate(
+            mode=mode, style=style, projection=projection,
+            profile_version=profile_version,
+        )
     compiled_hash = hashlib.sha256(static_candidate.encode()).hexdigest()
+    fingerprint = model_fingerprint(provider, model)
     certified = is_certified(
         fingerprint, manifest["profile_version"], manifest["compiler_version"],
-        selected_mode, compiled_hash,
+        mode, compiled_hash, _profile_paths(profile_version)[2],
     )
-    selected = selected_rollout == "active" and certified
-    fallback = None
-    if not selected:
-        fallback = "persona_rollout_inactive" if selected_rollout != "active" else "persona_model_uncertified"
-    selected_candidate = projected_candidate if projection_rollout_mode == "active" else static_candidate
-    comparison_candidate = projected_candidate if projection_rollout_mode == "shadow" else selected_candidate
+    selected_candidate = (
+        projected_candidate if projection_rollout_mode == "active" else static_candidate
+    )
+    comparison_candidate = (
+        projected_candidate if projection_rollout_mode == "shadow" else selected_candidate
+    )
+    return {
+        "manifest": manifest,
+        "section_hashes": section_hashes,
+        "compiled_hash": compiled_hash,
+        "certified": certified,
+        "selected_candidate": selected_candidate,
+        "comparison_candidate": comparison_candidate,
+    }
+
+
+def _legacy_compilation(
+    legacy_prompt: str, mode: str, rollout_mode: str, fallback_reason: str,
+) -> PersonaCompilation:
     return PersonaCompilation(
-        prompt=selected_candidate if selected else legacy_prompt,
-        candidate_prompt=comparison_candidate,
-        profile_version=manifest["profile_version"],
-        compiler_version=manifest["compiler_version"], mode=selected_mode,
-        rollout_mode=selected_rollout, selected_v2=selected, certified=certified,
-        section_hashes=section_hashes,
-        compiled_hash=compiled_hash,
-        candidate_tokens=context_budget.estimate_tokens(comparison_candidate), fallback_reason=fallback,
+        prompt=legacy_prompt, candidate_prompt="", profile_version="legacy",
+        compiler_version="legacy", mode=mode, rollout_mode=rollout_mode,
+        selected_v2=False, certified=False, section_hashes={},
+        compiled_hash=hashlib.sha256(legacy_prompt.encode()).hexdigest(),
+        candidate_tokens=0, fallback_reason=fallback_reason,
     )
 
 
 def compile_candidate(
     *, mode: str, style: Mapping[str, str] | None = None,
     projection: Mapping[str, object] | None = None,
+    profile_version: str | None = None,
 ) -> tuple[str, dict, dict[str, str]]:
     if mode not in MODES:
         raise PersonaResourceError("persona_mode_invalid")
-    manifest, loaded, hashes = _load_profile_resources()
+    selected_profile = profile_version or selected_profile_version()
+    if selected_profile not in INSTALLED_PROFILE_VERSIONS:
+        raise PersonaResourceError("persona_profile_invalid")
+    manifest, loaded, hashes = _load_profile_resources(selected_profile)
     style_map = json.loads(loaded["styles"])
     chosen = dict(DEFAULT_STYLE)
     if style:
@@ -165,10 +265,12 @@ def compile_candidate(
     return prompt, manifest, hashes
 
 
-def derive_observer_summary(*, fallback: str) -> str:
+def derive_observer_summary(
+    *, fallback: str, profile_version: str = DEFAULT_PROFILE_VERSION,
+) -> str:
     """Derive the observer's compact persona anchor from the verified Core resource."""
     try:
-        _, loaded, _ = _load_profile_resources()
+        _, loaded, _ = _load_profile_resources(profile_version)
         sections = {
             heading.strip(): body.strip()
             for heading, body in re.findall(
@@ -185,13 +287,27 @@ def derive_observer_summary(*, fallback: str) -> str:
         return fallback
 
 
-def _load_profile_resources() -> tuple[dict, dict[str, str], dict[str, str]]:
-    manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+def _profile_paths(profile_version: str) -> tuple[Path, Path, Path]:
+    if profile_version == DEFAULT_PROFILE_VERSION:
+        return PROFILE_DIR, MANIFEST_PATH, CERTIFICATIONS_PATH
+    profile_dir = PROFILE_DIRS.get(profile_version)
+    if profile_dir is None:
+        raise PersonaResourceError("persona_profile_invalid")
+    return profile_dir, profile_dir / "manifest.json", profile_dir / "certifications.json"
+
+
+def _load_profile_resources(
+    profile_version: str,
+) -> tuple[dict, dict[str, str], dict[str, str]]:
+    profile_dir, manifest_path, _ = _profile_paths(profile_version)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if manifest.get("profile_version") != profile_version:
+        raise PersonaResourceError("persona_profile_version_mismatch")
     files = manifest["files"]
     loaded: dict[str, str] = {}
     hashes: dict[str, str] = {}
     for key, spec in files.items():
-        raw = (PROFILE_DIR / spec["path"]).read_text(encoding="utf-8")
+        raw = (profile_dir / spec["path"]).read_text(encoding="utf-8")
         digest = hashlib.sha256(raw.encode()).hexdigest()
         if digest != spec["sha256"]:
             raise PersonaResourceError(f"persona_hash_mismatch:{key}")
@@ -202,10 +318,11 @@ def _load_profile_resources() -> tuple[dict, dict[str, str], dict[str, str]]:
 
 def is_certified(
     fingerprint: str, profile_version: str, compiler_version: str,
-    mode: str, compiled_hash: str,
+    mode: str, compiled_hash: str, certification_path: Path | None = None,
 ) -> bool:
     try:
-        payload = json.loads(CERTIFICATIONS_PATH.read_text(encoding="utf-8"))
+        path = certification_path or _profile_paths(profile_version)[2]
+        payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError, TypeError):
         return False
     return any(
