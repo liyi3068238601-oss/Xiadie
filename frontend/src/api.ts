@@ -281,6 +281,17 @@ export interface ContextControls {
   memory_enabled: boolean;
 }
 
+export interface ConversationSummaryModelConfig {
+  mode: "current" | "dedicated";
+  provider_id: string | null;
+  model: string | null;
+  allow_remote_history: true;
+  resolved_provider_id: string | null;
+  resolved_model: string | null;
+  execution_location: "local" | "remote" | "unknown";
+  location_revision: number;
+}
+
 export interface ContextPackageEvent {
   id: string;
   session_id: string;
@@ -1476,6 +1487,8 @@ export const listCompanionStateEvents = (limit = 10) =>
 
 // ---- 对话连续性（与长期记忆相互独立） ----
 export const getContextControls = () => j<ContextControls>("/api/context/controls");
+export const getConversationSummaryModelConfig = () =>
+  j<ConversationSummaryModelConfig>("/api/conversation-summaries/model-config");
 
 // ---- 通用 settings（走封装，自动带 token）----
 export const getSetting = (key: string) =>

@@ -265,6 +265,7 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
       .then((cm) => {
         setCurrent(cm);
         onModelChanged();
+        loadContextControls();
         toast(`已切换到 ${cm.provider_name} · ${cm.model}`);
       })
       .catch((e) => toast(e.message || "切换失败"));
@@ -367,6 +368,7 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
       .updateProvider(p.id, body)
       .then(() => {
         toast(`已保存「${p.name}」`);
+        loadContextControls();
         // 清空本地 key 输入，避免残留；写操作后刷新列表。
         setEdits((prev) => ({ ...prev, [p.id]: { ...prev[p.id], api_key: "" } }));
         closeDrawer();
@@ -498,6 +500,8 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
 
   // ---- 对话连续性：与长期记忆独立，普通聊天不展示技术计数 ----
   const [contextControls, setContextControlsState] = useState<api.ContextControls | null>(null);
+  const [summaryModelConfig, setSummaryModelConfig] = useState<api.ConversationSummaryModelConfig | null>(null);
+  const [summaryModelError, setSummaryModelError] = useState("");
   const [contextDiagnostics, setContextDiagnostics] = useState<api.ContextDiagnostics | null>(null);
   const [contextBusy, setContextBusy] = useState(false);
 
@@ -505,6 +509,13 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
     api.getContextControls()
       .then(setContextControlsState)
       .catch((e) => toast(e.message || "读取对话连续性设置失败"));
+    setSummaryModelError("");
+    api.getConversationSummaryModelConfig()
+      .then(setSummaryModelConfig)
+      .catch((e) => {
+        setSummaryModelConfig(null);
+        setSummaryModelError(e.message || "摘要模型信息读取失败");
+      });
   };
 
   const loadContextDiagnostics = () => {
@@ -1189,7 +1200,26 @@ export function SettingsPage({ onModelChanged, currentSessionId }: {
             <div className="settings-mem-toggle-row context-summary-control">
               <div className="settings-mem-toggle-text">
                 <h2>使用会话摘要衔接长对话</h2>
-                <p>关闭后只停止摘要注入；自动整理与原始聊天档案仍会保留。</p>
+                <p>关闭后只停止摘要注入，不停止自动整理，也不改变摘要模型的数据去向；原始聊天档案仍会保留。</p>
+                {summaryModelConfig ? (
+                  <div className="context-summary-destination">
+                    <strong>
+                      摘要模型：{summaryModelConfig.resolved_provider_id || "未配置"}
+                      {summaryModelConfig.resolved_model ? ` / ${summaryModelConfig.resolved_model}` : ""}
+                    </strong>
+                    <span>
+                      {summaryModelConfig.execution_location === "local"
+                        ? "本机处理：生成摘要所需的历史对话不会发送给远程摘要模型。"
+                        : summaryModelConfig.execution_location === "remote"
+                          ? "远程处理：生成摘要所需的历史对话文本会发送给上方远程模型。"
+                          : "数据位置未知：生成摘要时，所需历史对话文本可能会发送给该模型。"}
+                    </span>
+                  </div>
+                ) : (
+                  <p className="context-summary-destination is-error">
+                    {summaryModelError || "正在读取摘要模型和数据位置…"}
+                  </p>
+                )}
               </div>
               {contextControls && (
                 <button

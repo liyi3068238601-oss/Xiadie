@@ -17,6 +17,18 @@ test("conversation history and summary controls remain separate from long-term m
   assert.match(settings, /与长期记忆开关相互独立/);
 });
 
+test("summary model destination is disclosed separately from summary injection", () => {
+  assert.match(api, /export interface ConversationSummaryModelConfig/);
+  assert.match(api, /getConversationSummaryModelConfig/);
+  assert.match(api, /\/api\/conversation-summaries\/model-config/);
+  assert.match(settings, /resolved_provider_id/);
+  assert.match(settings, /resolved_model/);
+  assert.match(settings, /execution_location/);
+  assert.match(settings, /远程处理：生成摘要所需的历史对话文本会发送给上方远程模型/);
+  assert.match(settings, /关闭后只停止摘要注入，不停止自动整理，也不改变摘要模型的数据去向/);
+  assert.doesNotMatch(settings, /允许远程模型处理历史对话/);
+});
+
 test("advanced diagnostics state that bodies are not recorded and raw chat is preserved", () => {
   assert.match(settings, /高级上下文诊断/);
   assert.match(settings, /不显示聊天、摘要、记忆或知识正文/);

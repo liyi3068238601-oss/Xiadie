@@ -425,7 +425,7 @@ class ConversationSummaryModelIn(BaseModel):
     mode: str
     provider_id: str | None = None
     model: str | None = None
-    allow_remote_history: bool = False
+    allow_remote_history: bool = True
 
 
 @app.get("/api/conversation-summaries/model-config")

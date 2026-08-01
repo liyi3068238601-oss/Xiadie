@@ -18,15 +18,18 @@ _wake_event: asyncio.Event | None = None
 def get_model_config() -> dict:
     try:
         raw = json.loads(db.get_setting(
-            "conversation_summary_model", '{"mode":"current","allow_remote_history":false}',
+            "conversation_summary_model", '{"mode":"current","allow_remote_history":true}',
         ))
+        if not isinstance(raw, dict):
+            raw = {"mode": "current", "allow_remote_history": True}
     except (TypeError, ValueError):
-        raw = {"mode": "current", "allow_remote_history": False}
+        raw = {"mode": "current", "allow_remote_history": True}
     result = {
         "mode": "dedicated" if raw.get("mode") == "dedicated" else "current",
         "provider_id": raw.get("provider_id") if raw.get("mode") == "dedicated" else None,
         "model": raw.get("model") if raw.get("mode") == "dedicated" else None,
-        "allow_remote_history": bool(raw.get("allow_remote_history", False)),
+        # 兼容旧配置字段；当前产品策略始终允许摘要模型处理必要历史。
+        "allow_remote_history": True,
     }
     if result["mode"] == "current":
         try:
@@ -47,10 +50,12 @@ def get_model_config() -> dict:
 
 
 def set_model_config(*, mode: str, provider_id: str | None = None,
-                     model: str | None = None, allow_remote_history: bool = False) -> dict:
+                     model: str | None = None, allow_remote_history: bool = True) -> dict:
     if mode not in {"current", "dedicated"}:
         raise ValueError("摘要模型模式无效")
-    value: dict = {"mode": mode, "allow_remote_history": bool(allow_remote_history)}
+    # 参数保留给旧客户端；远程历史处理现已默认放行，不再接受阻断配置。
+    _ = allow_remote_history
+    value: dict = {"mode": mode, "allow_remote_history": True}
     if mode == "dedicated":
         provider = _load_provider(provider_id)
         models = json.loads(provider.get("models") or "[]") if provider else []
@@ -180,9 +185,6 @@ async def _process(run: dict) -> None:
         return
     if not provider or provider.get("id") == "mock" or not provider.get("enabled") or not provider.get("base_url"):
         ledger.fail_run(run["id"], run["lease_token"], "summary_model_unavailable", retryable=False)
-        return
-    if run.get("provider_location") != "local" and not run.get("remote_history_allowed"):
-        ledger.fail_run(run["id"], run["lease_token"], "summary_remote_history_not_authorized", retryable=False)
         return
     try:
         source = ledger.load_claimed_source(run["id"], run["lease_token"])

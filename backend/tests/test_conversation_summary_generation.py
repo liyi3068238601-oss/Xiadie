@@ -21,7 +21,7 @@ def clean_data():
     db.init_db()
     db.set_setting(
         "conversation_summary_model",
-        '{"mode":"current","allow_remote_history":false}',
+        '{"mode":"current","allow_remote_history":true}',
     )
     db.set_setting("current_model", '{"provider_id":"deepseek","model":"deepseek-chat"}')
     conn = db.connect()
@@ -142,24 +142,65 @@ def test_invalid_json_gets_only_one_repair_and_never_fabricates_fallback(monkeyp
     assert not any(item["status"] == "active" for item in conversation_summaries.list_revisions(sid))
 
 
-def test_remote_history_requires_explicit_authorization(monkeypatch):
-    sid, _ = _session([("我决定采用单窗口", "好")])
+def test_remote_history_is_allowed_for_legacy_false_config_and_queued_run(monkeypatch):
+    sid, ids = _session([("我决定采用单窗口", "好")])
     provider = _provider(location="remote", revision=2)
+    db.set_setting(
+        "conversation_summary_model",
+        '{"mode":"current","allow_remote_history":false}',
+    )
     calls = []
 
-    async def fake_complete(*_args, **_kwargs):
+    async def fake_complete(_provider, _model, _messages, **_kwargs):
         calls.append(1)
-        raise AssertionError("未授权历史不应发送")
+        return {"text": json.dumps(_payload(ids[0]), ensure_ascii=False),
+                "prompt_tokens": 5, "completion_tokens": 3}
 
     monkeypatch.setattr(llm, "complete_json", fake_complete)
-    service.enqueue_after_chat(session_id=sid, chat_provider=provider, chat_model="deepseek-chat")
+    queued = service.enqueue_after_chat(
+        session_id=sid, chat_provider=provider, chat_model="deepseek-chat",
+    )
+    assert conversation_summaries.get_run(queued["id"])["remote_history_allowed"] == 1
+    conn = db.connect()
+    try:
+        conn.execute(
+            "UPDATE conversation_summary_runs SET remote_history_allowed=0 WHERE id=?",
+            (queued["id"],),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
     asyncio.run(service.process_due())
     run = conversation_summaries.list_runs(session_id=sid)[0]
-    assert calls == []
-    assert run["error_code"] == "summary_remote_history_not_authorized"
+    assert calls == [1]
+    assert run["status"] == "completed" and run["error_code"] is None
     config = service.get_model_config()
+    assert config["allow_remote_history"] is True
     assert config["execution_location"] == "remote"
     assert config["resolved_provider_id"] == "deepseek"
+
+
+def test_model_config_normalizes_legacy_false_to_allowed():
+    db.set_setting("conversation_summary_model", "null")
+    assert service.get_model_config()["allow_remote_history"] is True
+
+    result = service.set_model_config(mode="current", allow_remote_history=False)
+    assert result["allow_remote_history"] is True
+    stored = json.loads(db.get_setting("conversation_summary_model", "{}"))
+    assert stored["allow_remote_history"] is True
+
+    explicit_false = client.put(
+        "/api/conversation-summaries/model-config",
+        json={"mode": "current", "allow_remote_history": False},
+    )
+    omitted = client.put(
+        "/api/conversation-summaries/model-config",
+        json={"mode": "current"},
+    )
+    assert explicit_false.status_code == omitted.status_code == 200
+    assert explicit_false.json()["allow_remote_history"] is True
+    assert omitted.json()["allow_remote_history"] is True
 
 
 def test_provider_location_change_invalidates_queued_authorization(monkeypatch):

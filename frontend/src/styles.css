@@ -3274,6 +3274,16 @@ input[type="range"].xd-range::-moz-range-thumb { width: 20px; height: 20px; bord
   border-radius: 12px;
   background: rgba(157, 108, 255, 0.04);
 }
+.context-summary-destination {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+  color: var(--text-dim);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.context-summary-destination strong { color: var(--text); font-weight: 600; }
+.context-summary-destination.is-error { color: #e1a6ad; }
 .context-diagnostic-actions {
   display: flex;
   flex-wrap: wrap;
