@@ -1047,6 +1047,39 @@ export interface ToolLog {
   summary: string;
   created_at: number;
 }
+export type RuntimeLogCategory = "model" | "reasoning" | "retrieval" | "context" | "tool" | "system";
+export type RuntimeLogStatus = "success" | "warning" | "error" | "pending";
+export interface RuntimeLogItem {
+  id: string;
+  source: string;
+  category: RuntimeLogCategory;
+  title: string;
+  summary: string;
+  status: string;
+  status_group: RuntimeLogStatus;
+  created_at: number;
+  details: Record<string, unknown>;
+  detail_available: boolean;
+}
+export interface RuntimeLogFeed {
+  items: RuntimeLogItem[];
+  counts: Record<RuntimeLogCategory, number>;
+  total: number;
+  privacy_notice: string;
+}
+export interface RuntimeLogTurnInput {
+  message_id: string;
+  content: string;
+  created_at: number;
+}
+export interface RuntimeLogTurnDetail {
+  id: string;
+  source: "chat";
+  session_id: string;
+  assistant: RuntimeLogTurnInput & { model: string };
+  inputs: RuntimeLogTurnInput[];
+  representation: "persisted-turn-final-v1";
+}
 
 // ---- 会话 ----
 export const listSessions = () => j<Session[]>("/api/sessions");
@@ -1523,6 +1556,19 @@ export const deleteConversationSummaryDerived = (sessionId: string) =>
 
 // ---- 工具日志 ----
 export const listToolLogs = () => j<ToolLog[]>("/api/tool-logs");
+export const listRuntimeLogs = (options: {
+  category?: RuntimeLogCategory;
+  status?: RuntimeLogStatus;
+  limit?: number;
+} = {}) => {
+  const query = new URLSearchParams();
+  if (options.category) query.set("category", options.category);
+  if (options.status) query.set("status", options.status);
+  query.set("limit", String(options.limit ?? 200));
+  return j<RuntimeLogFeed>(`/api/runtime-logs?${query.toString()}`);
+};
+export const getRuntimeLogDetail = (eventId: string) =>
+  j<RuntimeLogTurnDetail>(`/api/runtime-logs/${encodeURIComponent(eventId)}`);
 
 // ---- 聊天（SSE 流式）----
 export interface ChatCallbacks {

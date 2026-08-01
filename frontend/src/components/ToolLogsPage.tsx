@@ -1,141 +1,333 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import * as api from "./../api";
 import { toast } from "./../store";
 
-// 权限等级说明（需求 8.1）：模型可建议工具，但高风险工具必须经确认才能执行。
-const RISK_LEVELS: {
-  level: string;
-  name: string;
-  policy: string;
-  color: string;
-}[] = [
-  { level: "S0", name: "安全展示", policy: "允许", color: "var(--ok)" },
-  { level: "S1", name: "本地低风险写入", policy: "允许，可撤销", color: "var(--cyan)" },
-  { level: "S2", name: "用户数据操作", policy: "需确认", color: "var(--violet-soft)" },
-  { level: "S3", name: "外部影响", policy: "必须确认", color: "var(--warn)" },
-  { level: "S4", name: "高危系统", policy: "默认禁用·长期后置", color: "var(--danger)" },
+type CategoryFilter = "all" | api.RuntimeLogCategory;
+type StatusFilter = "all" | api.RuntimeLogStatus;
+type DetailState =
+  | { status: "loading" }
+  | { status: "loaded"; value: api.RuntimeLogTurnDetail }
+  | { status: "error"; message: string };
+
+const CATEGORIES: { value: CategoryFilter; label: string; hint: string }[] = [
+  { value: "all", label: "全部", hint: "所有运行事件" },
+  { value: "model", label: "模型", hint: "对话与后台模型任务" },
+  { value: "reasoning", label: "决策", hint: "可审计的动作与理由摘要" },
+  { value: "retrieval", label: "检索", hint: "知识召回与证据选择" },
+  { value: "context", label: "上下文", hint: "预算、注入与裁剪" },
+  { value: "tool", label: "工具", hint: "工具调用及风险级别" },
+  { value: "system", label: "系统", hint: "后台状态变化" },
 ];
 
-function riskColor(level: string): string {
-  return RISK_LEVELS.find((r) => r.level === level.toUpperCase())?.color ?? "var(--text-dim)";
-}
+const STATUS_LABELS: Record<api.RuntimeLogStatus, string> = {
+  success: "成功",
+  warning: "注意",
+  error: "异常",
+  pending: "进行中",
+};
 
-// 状态着色：成功类偏绿，拒绝/失败偏红，等待/确认偏黄，其余取暗色。
-function statusColor(status: string): string {
-  const s = status.toLowerCase();
-  if (/(拒绝|禁用|失败|error|denied|blocked|fail)/.test(s)) return "var(--danger)";
-  if (/(待|确认|pending|await|confirm)/.test(s)) return "var(--warn)";
-  if (/(完成|成功|允许|ok|done|success|allow|executed)/.test(s)) return "var(--ok)";
-  return "var(--text-dim)";
-}
+const DETAIL_LABELS: Record<string, string> = {
+  model: "模型",
+  provider_id: "供应商",
+  logical_role: "逻辑角色",
+  protocol_version: "协议",
+  confidence: "置信度",
+  latency_ms: "耗时",
+  input_tokens: "输入 Token",
+  output_tokens: "输出 Token",
+  prompt_tokens: "提示 Token",
+  completion_tokens: "生成 Token",
+  candidate_count: "候选数",
+  eligible_count: "合格候选",
+  injected_count: "注入数",
+  retrieval_mode: "检索方式",
+  vector_available: "向量可用",
+  context_window_tokens: "上下文窗口",
+  output_reserve_tokens: "输出预留",
+  trimmed_messages: "裁剪消息",
+  trimmed_rounds: "裁剪轮次",
+  input_count: "本轮输入数",
+  risk_level: "风险等级",
+  error_code: "错误码",
+  fallback_used: "使用降级",
+  reason_codes: "理由码",
+  warning_codes: "警告码",
+  component_tokens: "组件预算",
+  source_type_counts: "来源计数",
+};
 
 function fmtTime(sec: number): string {
-  try {
-    return new Date(sec * 1000).toLocaleString("zh-CN", {
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return "";
-  }
+  return new Date(sec * 1000).toLocaleString("zh-CN", {
+    month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit",
+  });
+}
+
+function fmtDetail(key: string, value: unknown): string {
+  if (key === "latency_ms" && typeof value === "number") return `${value} ms`;
+  if (typeof value === "boolean") return value ? "是" : "否";
+  if (typeof value === "object") return JSON.stringify(value, null, 2);
+  return String(value);
 }
 
 export function ToolLogsPage() {
-  const [logs, setLogs] = useState<api.ToolLog[]>([]);
+  const [feed, setFeed] = useState<api.RuntimeLogFeed | null>(null);
+  const [category, setCategory] = useState<CategoryFilter>("all");
+  const [status, setStatus] = useState<StatusFilter>("all");
+  const [search, setSearch] = useState("");
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [details, setDetails] = useState<Record<string, DetailState>>({});
+  const [autoRefresh, setAutoRefresh] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = () => {
-    setLoading(true);
-    setError(null);
-    api
-      .listToolLogs()
-      .then((rows) => setLogs(rows))
-      .catch((e) => {
-        setError(e?.message || "加载失败");
-        toast("加载工具记录失败");
-      })
-      .finally(() => setLoading(false));
+  const load = useCallback((quiet = false) => {
+    if (!quiet) setLoading(true);
+    api.listRuntimeLogs({
+      category: category === "all" ? undefined : category,
+      status: status === "all" ? undefined : status,
+      limit: 300,
+    }).then((next) => {
+      setFeed(next);
+      setError(null);
+    }).catch((reason) => {
+      setError(reason?.message || "加载失败");
+      if (!quiet) toast("加载运行日志失败");
+    }).finally(() => {
+      if (!quiet) setLoading(false);
+    });
+  }, [category, status]);
+
+  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const timer = window.setInterval(() => load(true), 5000);
+    return () => window.clearInterval(timer);
+  }, [autoRefresh, load]);
+
+  const items = useMemo(() => {
+    const needle = search.trim().toLocaleLowerCase();
+    if (!needle) return feed?.items ?? [];
+    return (feed?.items ?? []).filter((item) =>
+      `${item.title} ${item.summary} ${item.status} ${JSON.stringify(item.details)}`
+        .toLocaleLowerCase().includes(needle),
+    );
+  }, [feed, search]);
+
+  const toggleExpanded = (item: api.RuntimeLogItem) => {
+    if (expanded === item.id) {
+      setExpanded(null);
+      return;
+    }
+    setExpanded(item.id);
+    const currentDetail = details[item.id];
+    if (!item.detail_available || currentDetail?.status === "loading" || currentDetail?.status === "loaded") return;
+    setDetails((current) => ({ ...current, [item.id]: { status: "loading" } }));
+    api.getRuntimeLogDetail(item.id).then((value) => {
+      setDetails((current) => ({ ...current, [item.id]: { status: "loaded", value } }));
+    }).catch((reason) => {
+      const message = reason instanceof api.ApiError && reason.status === 404
+        ? "原始对话已删除或不可用"
+        : reason?.message || "本轮详情加载失败";
+      setDetails((current) => ({ ...current, [item.id]: { status: "error", message } }));
+    });
   };
 
-  useEffect(load, []);
+  const copyText = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast("已复制");
+    } catch {
+      toast("复制失败");
+    }
+  };
 
   return (
-    <div className="page">
-      <h1>工具记录</h1>
-      <div className="sub">只读审计视图 · 每一次影响文件、外部消息或系统的动作都有据可查</div>
-
-      {/* 权限等级说明（需求 8.1） */}
-      <div className="card tool" style={{ marginBottom: 18 }}>
-        <div className="card-title">权限等级与默认策略</div>
-        <div className="card-hint" style={{ marginBottom: 12 }}>
-          遐蝶可以<strong>建议</strong>工具，但不会悄悄执行高风险工具。所有影响文件 /
-          外部消息 / 系统的动作，都会先弹出确认卡，并留下审计记录。
+    <div className="page runtime-logs-page">
+      <header className="page-header compact-page-header runtime-log-header">
+        <div>
+          <p className="page-eyebrow">RUNTIME OBSERVABILITY</p>
+          <h1>运行日志</h1>
+          <p>模型、决策、检索、上下文与工具调用的本地只读审计视图。</p>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {RISK_LEVELS.map((r) => (
-            <div className="row" key={r.level} style={{ alignItems: "center" }}>
-              <span
-                className="chip"
-                style={{
-                  color: r.color,
-                  borderColor: r.color,
-                  minWidth: 30,
-                  textAlign: "center",
-                }}
-              >
-                {r.level}
-              </span>
-              <span style={{ flex: 1 }}>{r.name}</span>
-              <span style={{ color: r.color, fontSize: 12 }}>{r.policy}</span>
-            </div>
+        <div className="runtime-log-actions">
+          <label className="runtime-auto-refresh">
+            <input
+              type="checkbox"
+              checked={autoRefresh}
+              onChange={(event) => setAutoRefresh(event.target.checked)}
+            />
+            <span>自动刷新</span>
+          </label>
+          <button className="btn ghost" onClick={() => load()} disabled={loading}>刷新</button>
+        </div>
+      </header>
+
+      <div className="runtime-privacy-note">
+        <span className="runtime-privacy-icon">i</span>
+        <span>{feed?.privacy_notice || "本页会展示本地对话输入与最终回复；不展示系统提示词、隐藏思维链、密钥、知识正文或记忆正文。"}</span>
+      </div>
+      <div className="runtime-representation-note">
+        聊天详情是持久化输入与最终回复，不是逐 chunk 回放；不能单独证明首 Token、展示节奏或取消瞬间行为。
+      </div>
+      {error && feed ? <div className="runtime-refresh-warning">刷新失败：{error}，已保留上一次结果。</div> : null}
+
+      <section className="runtime-summary-grid">
+        {CATEGORIES.slice(1).map((item) => (
+          <button
+            key={item.value}
+            className={`runtime-summary-card ${category === item.value ? "active" : ""}`}
+            onClick={() => setCategory(category === item.value ? "all" : item.value)}
+            title={item.hint}
+          >
+            <span className={`runtime-category-dot ${item.value}`} />
+            <strong>{feed?.counts[item.value as api.RuntimeLogCategory] ?? 0}</strong>
+            <small>{item.label}</small>
+          </button>
+        ))}
+      </section>
+
+      <div className="runtime-log-toolbar">
+        <div className="runtime-category-tabs">
+          {CATEGORIES.map((item) => (
+            <button
+              key={item.value}
+              className={category === item.value ? "active" : ""}
+              onClick={() => setCategory(item.value)}
+            >
+              {item.label}
+            </button>
           ))}
         </div>
+        <select value={status} onChange={(event) => setStatus(event.target.value as StatusFilter)}>
+          <option value="all">全部状态</option>
+          <option value="success">成功</option>
+          <option value="warning">注意</option>
+          <option value="error">异常</option>
+          <option value="pending">进行中</option>
+        </select>
+        <input
+          className="runtime-log-search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="搜索模型、错误码或理由…"
+        />
       </div>
 
-      <div className="section-label" style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <span style={{ flex: 1 }}>调用记录</span>
-        <button className="btn ghost" style={{ padding: "4px 12px" }} onClick={load}>
-          刷新
-        </button>
-      </div>
-
-      {loading ? (
-        <div className="empty">正在加载工具记录…</div>
-      ) : error ? (
+      {loading && !feed ? (
+        <div className="empty">正在汇总运行日志…</div>
+      ) : error && !feed ? (
         <div className="empty">加载失败：{error}</div>
-      ) : logs.length === 0 ? (
-        <div className="empty">还没有工具调用记录</div>
+      ) : items.length === 0 ? (
+        <div className="empty">当前筛选条件下没有日志</div>
       ) : (
-        logs.map((log) => (
-          <div className="list-row" key={log.id}>
-            <span
-              className="chip"
-              style={{
-                color: riskColor(log.risk_level),
-                borderColor: riskColor(log.risk_level),
-                minWidth: 30,
-                textAlign: "center",
-              }}
-              title={
-                RISK_LEVELS.find((r) => r.level === log.risk_level.toUpperCase())?.name || ""
-              }
-            >
-              {log.risk_level}
-            </span>
-            <span style={{ fontWeight: 600, minWidth: 96 }}>{log.tool}</span>
-            <span style={{ color: statusColor(log.status), fontSize: 12, minWidth: 56 }}>
-              {log.status}
-            </span>
-            <span style={{ flex: 1, color: "var(--text-dim)" }}>{log.summary}</span>
-            <span style={{ color: "var(--text-faint)", fontSize: 12, whiteSpace: "nowrap" }}>
-              {fmtTime(log.created_at)}
-            </span>
-          </div>
-        ))
+        <div className="runtime-log-list">
+          {items.map((item) => {
+            const isOpen = expanded === item.id;
+            const detail = details[item.id];
+            return (
+              <article className={`runtime-log-row ${isOpen ? "expanded" : ""}`} key={item.id}>
+                <button className="runtime-log-main" onClick={() => toggleExpanded(item)}>
+                  <span className={`runtime-category-dot ${item.category}`} />
+                  <span className="runtime-log-copy">
+                    <span className="runtime-log-title-line">
+                      <strong>{item.title}</strong>
+                      {item.source === "chat" && item.details.model ? (
+                        <span className="runtime-model-chip">{String(item.details.model)}</span>
+                      ) : null}
+                      {item.source === "chat" && typeof item.details.input_count === "number" ? (
+                        <span className="runtime-input-count-chip">{item.details.input_count} 条输入</span>
+                      ) : null}
+                      {item.category === "tool" && item.details.risk_level ? (
+                        <span className="runtime-risk-chip">{String(item.details.risk_level)}</span>
+                      ) : null}
+                    </span>
+                    <small>{item.summary || "没有附加摘要"}</small>
+                  </span>
+                  <span className={`runtime-status ${item.status_group}`}>
+                    {STATUS_LABELS[item.status_group]}
+                  </span>
+                  <time>{fmtTime(item.created_at)}</time>
+                  <span className="runtime-expand-mark">{isOpen ? "−" : "+"}</span>
+                </button>
+                {isOpen ? (
+                  <div className="runtime-log-details">
+                    {item.detail_available ? (
+                      <RuntimeTurnDetail state={detail} onCopy={copyText} />
+                    ) : (
+                      <RuntimeMetadata item={item} />
+                    )}
+                    <div className="runtime-log-footnote">
+                      来源：{item.source} · 原始状态：{item.status} · 事件：{item.id}
+                    </div>
+                  </div>
+                ) : null}
+              </article>
+            );
+          })}
+        </div>
       )}
+    </div>
+  );
+}
+
+function RuntimeMetadata({ item }: { item: api.RuntimeLogItem }) {
+  return (
+    <div className="runtime-detail-grid">
+      {Object.entries(item.details).map(([key, value]) => (
+        <div className="runtime-detail" key={key}>
+          <span>{DETAIL_LABELS[key] || key}</span>
+          <code>{fmtDetail(key, value)}</code>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RuntimeTurnDetail({ state, onCopy }: {
+  state: DetailState | undefined;
+  onCopy: (text: string) => void;
+}) {
+  if (!state || state.status === "loading") {
+    return <div className="runtime-detail-state">正在加载本轮详情…</div>;
+  }
+  if (state.status === "error") {
+    return <div className="runtime-detail-state error">{state.message}</div>;
+  }
+  const detail = state.value;
+  return (
+    <div className="runtime-turn-detail">
+      <section>
+        <h2>本轮输入 <span>{detail.inputs.length} 条</span></h2>
+        {detail.inputs.length === 0 ? (
+          <div className="runtime-detail-state">本轮没有前置用户输入，可能是主动陪伴消息。</div>
+        ) : (
+          <div className="runtime-turn-inputs">
+            {detail.inputs.map((input, index) => (
+              <article className="runtime-turn-body" key={input.message_id}>
+                <header>
+                  <strong>输入 {index + 1}</strong>
+                  <time>{fmtTime(input.created_at)}</time>
+                  <button onClick={() => onCopy(input.content)}>复制</button>
+                </header>
+                <pre>{input.content}</pre>
+                <small>消息：{input.message_id}</small>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+      <section>
+        <h2>最终回复 <span>{detail.assistant.model}</span></h2>
+        <article className="runtime-turn-body assistant">
+          <header>
+            <strong>持久化最终正文</strong>
+            <time>{fmtTime(detail.assistant.created_at)}</time>
+            <button onClick={() => onCopy(detail.assistant.content)}>复制</button>
+          </header>
+          <pre>{detail.assistant.content}</pre>
+          <small>消息：{detail.assistant.message_id} · 表示：{detail.representation}</small>
+        </article>
+      </section>
     </div>
   );
 }

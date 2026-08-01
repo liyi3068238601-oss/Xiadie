@@ -8,6 +8,7 @@ import {
 } from "../observerPolling.mjs";
 import { TurnIngressBuffer, buildTurnEnvelopeContent } from "../turnIngressBuffer.mjs";
 import { ReplyPresentationBuffer } from "../replyPresentation.mjs";
+import { Icon } from "./Icon";
 
 interface Props {
   sessionId: string | null;
@@ -16,6 +17,7 @@ interface Props {
   companionCluster?: string;
   onCompanionState: (state: api.CompanionState | null) => void;
   onSessionsChanged: () => void;
+  onOpenTasks: () => void;
 }
 
 interface Streaming {
@@ -64,7 +66,7 @@ const DEFAULT_PERSONA_STYLE: PersonaStyle = {
   proactivity_level: "balanced",
 };
 
-export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, onCompanionState, onSessionsChanged }: Props) {
+export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, onCompanionState, onSessionsChanged, onOpenTasks }: Props) {
   const [messages, setMessages] = useState<api.Message[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState<Streaming | null>(null);
@@ -83,8 +85,10 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
   const [ingressCount, setIngressCount] = useState(0);
   const [personaMode, setPersonaMode] = useState<PersonaMode>("companionship");
   const [personaStyle, setPersonaStyle] = useState<PersonaStyle>(DEFAULT_PERSONA_STYLE);
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const preferenceShellRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const memoryWatchId = useRef(0);
   const noticeTimer = useRef<number | null>(null);
@@ -108,6 +112,22 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
   const busy = streaming !== null || grantBusy || pendingGrant !== null || attachmentBusy;
   const composerBusy = grantBusy || pendingGrant !== null || attachmentBusy
     || (streaming !== null && !cieEnabled);
+
+  useEffect(() => {
+    if (!preferencesOpen) return;
+    const closeOnOutside = (event: MouseEvent) => {
+      if (!preferenceShellRef.current?.contains(event.target as Node)) setPreferencesOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setPreferencesOpen(false);
+    };
+    document.addEventListener("mousedown", closeOnOutside);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutside);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [preferencesOpen]);
 
   useEffect(() => {
     api.getCieSettings()
@@ -797,38 +817,38 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
     <>
       <div className="messages" ref={scrollRef}>
         {messages.length === 0 && !streaming && (
-          <div className="empty">
-            <div className="empty-greeting">
-              我是遐蝶，随时在这里。<br />
-              聊点什么，或让我帮你记一个任务、存一条记忆都可以。
-            </div>
+          <div className="empty chat-empty-state">
+            <div className="chat-ambient" aria-hidden="true"><span>◇</span></div>
+            <p className="page-eyebrow">COMPANION SPACE</p>
+            <h1>随便聊聊，我在听</h1>
+            <p className="empty-greeting">聊聊今天，也可以让我帮你建立任务、整理资料或读一个文件。</p>
             <div className="chat-starters" role="list">
               <button
                 className="chat-starter-card"
                 role="listitem"
                 onClick={() => { setInput("今天想聊点什么？"); textareaRef.current?.focus(); }}
               >
-                <span className="chat-starter-emoji" aria-hidden="true">🌸</span>
-                <span className="chat-starter-text">今天想聊点什么？</span>
-                <small className="chat-starter-hint">随便聊聊</small>
+                <span className="chat-starter-icon violet" aria-hidden="true"><Icon name="chat" /></span>
+                <span className="chat-starter-text">聊聊今天</span>
+                <small className="chat-starter-hint">从此刻的心情开始</small>
               </button>
               <button
                 className="chat-starter-card"
                 role="listitem"
-                onClick={() => { setInput("帮我记一件事"); textareaRef.current?.focus(); }}
+                onClick={onOpenTasks}
               >
-                <span className="chat-starter-emoji" aria-hidden="true">📝</span>
-                <span className="chat-starter-text">帮我记一件事</span>
-                <small className="chat-starter-hint">功能引导</small>
+                <span className="chat-starter-icon cyan" aria-hidden="true"><Icon name="task" /></span>
+                <span className="chat-starter-text">建立任务</span>
+                <small className="chat-starter-hint">添加一件待办事项</small>
               </button>
               <button
                 className="chat-starter-card"
                 role="listitem"
-                onClick={() => { setInput("你在做什么呢？"); textareaRef.current?.focus(); }}
+                onClick={() => fileInputRef.current?.click()}
               >
-                <span className="chat-starter-emoji" aria-hidden="true">💭</span>
-                <span className="chat-starter-text">你在做什么呢？</span>
-                <small className="chat-starter-hint">自由陪伴</small>
+                <span className="chat-starter-icon green" aria-hidden="true"><Icon name="upload" /></span>
+                <span className="chat-starter-text">读一个文件</span>
+                <small className="chat-starter-hint">支持文档与图片</small>
               </button>
             </div>
           </div>
@@ -894,77 +914,33 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
         )}
       </div>
 
-      <div className="composer">
-        <div className="persona-controls" aria-label="遐蝶对话方式">
-          <label>
-            <span>对话方式</span>
-            <select
-              value={personaMode}
-              disabled={composerBusy}
-              onChange={(event) => setPersonaMode(event.target.value as PersonaMode)}
-            >
-              <option value="companionship">陪伴</option>
-              <option value="focused_work">技术工作</option>
-            </select>
-          </label>
-          <label>
-            <span>篇幅</span>
-            <select
+      <div className="composer" ref={preferenceShellRef}>
+        {preferencesOpen && (
+          <div className="conversation-preferences" id="conversation-preferences" role="dialog" aria-label="对话偏好">
+            <header><div><strong>对话偏好</strong><small>仅调整回复表达方式</small></div><span>本次对话</span></header>
+            <PreferenceOptions
+              label="篇幅"
               value={personaStyle.detail_level}
+              options={[["concise", "简短"], ["balanced", "适中"], ["detailed", "详细"]]}
               disabled={composerBusy}
-              onChange={(event) => setPersonaStyle((current) => ({
-                ...current, detail_level: event.target.value as PersonaStyle["detail_level"],
-              }))}
-            >
-              <option value="concise">简短</option>
-              <option value="balanced">适中</option>
-              <option value="detailed">详细</option>
-            </select>
-          </label>
-          <label>
-            <span>诗意</span>
-            <select
+              onChange={(detail_level) => setPersonaStyle((current) => ({ ...current, detail_level }))}
+            />
+            <PreferenceOptions
+              label="诗意"
               value={personaStyle.poetic_level}
+              options={[["low", "克制"], ["balanced", "适中"], ["high", "较多"]]}
               disabled={composerBusy}
-              onChange={(event) => setPersonaStyle((current) => ({
-                ...current, poetic_level: event.target.value as PersonaStyle["poetic_level"],
-              }))}
-            >
-              <option value="low">克制</option>
-              <option value="balanced">适中</option>
-              <option value="high">较多</option>
-            </select>
-          </label>
-          <label>
-            <span>主动性</span>
-            <select
+              onChange={(poetic_level) => setPersonaStyle((current) => ({ ...current, poetic_level }))}
+            />
+            <PreferenceOptions
+              label="主动性"
               value={personaStyle.proactivity_level}
+              options={[["reserved", "克制"], ["balanced", "适中"], ["engaged", "积极"]]}
               disabled={composerBusy}
-              onChange={(event) => setPersonaStyle((current) => ({
-                ...current, proactivity_level: event.target.value as PersonaStyle["proactivity_level"],
-              }))}
-            >
-              <option value="reserved">克制</option>
-              <option value="balanced">适中</option>
-              <option value="engaged">积极</option>
-            </select>
-          </label>
-          <label>
-            <span>称呼</span>
-            <select
-              value={personaStyle.address_style}
-              disabled={composerBusy}
-              onChange={(event) => setPersonaStyle((current) => ({
-                ...current, address_style: event.target.value as PersonaStyle["address_style"],
-              }))}
-            >
-              <option value="natural">自然</option>
-              <option value="ge_xia_low">低频阁下</option>
-              <option value="name_if_known">已知姓名</option>
-              <option value="none">不主动称呼</option>
-            </select>
-          </label>
-        </div>
+              onChange={(proactivity_level) => setPersonaStyle((current) => ({ ...current, proactivity_level }))}
+            />
+          </div>
+        )}
         {pendingAttachments.length > 0 && (
           <div className="attachment-chips">
             {pendingAttachments.map((a) => {
@@ -1028,7 +1004,18 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
             onClick={() => fileInputRef.current?.click()}
             title="上传文件让遐蝶阅读"
           >
-            📎
+            <Icon name="plus" />
+          </button>
+          <button
+            className={`preference-trigger${preferencesOpen ? " active" : ""}`}
+            type="button"
+            disabled={composerBusy}
+            aria-label="调整对话偏好"
+            aria-controls="conversation-preferences"
+            aria-expanded={preferencesOpen}
+            onClick={() => setPreferencesOpen((open) => !open)}
+          >
+            <Icon name="tune" />
           </button>
           <textarea
             ref={textareaRef}
@@ -1049,7 +1036,7 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
             disabled={composerBusy || (!input.trim() && !pendingAttachments.some((a) => a.status === "ready"))}
             onClick={() => void send()}
           >
-            {streaming && cieEnabled ? "补充" : ingressCount > 0 ? `➤ ${ingressCount}` : "➤"}
+            {streaming && cieEnabled ? "补充" : ingressCount > 0 ? `➤ ${ingressCount}` : <Icon name="send" />}
           </button>
           {streaming && cieEnabled && (
             <button className="send-btn" onClick={() => void stopActiveGeneration()}>停止</button>
@@ -1065,6 +1052,40 @@ export function ChatView({ sessionId, focusMessageId, onMode, companionCluster, 
         </div>
       </div>
     </>
+  );
+}
+
+function PreferenceOptions<T extends string>({
+  label,
+  value,
+  options,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: [T, string][];
+  disabled: boolean;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div className="preference-row">
+      <span>{label}</span>
+      <div className="preference-options" role="group" aria-label={label}>
+        {options.map(([option, text]) => (
+          <button
+            key={option}
+            type="button"
+            disabled={disabled}
+            className={value === option ? "active" : ""}
+            aria-pressed={value === option}
+            onClick={() => onChange(option)}
+          >
+            {text}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 

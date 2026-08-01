@@ -9,22 +9,16 @@ import { MemoriesPage } from "./components/MemoriesPage";
 import { FilesPage } from "./components/FilesPage";
 import { ToolLogsPage } from "./components/ToolLogsPage";
 import { LifePage } from "./components/LifePage";
+import { Icon, type IconName } from "./components/Icon";
 
-const MODE_LABEL: Record<Mode, string> = {
-  companion: "陪伴",
-  thinking: "思考",
-  executing: "执行",
-  resting: "休息",
-};
-
-const NAV: { view: View; ico: string; label: string }[] = [
-  { view: "chat", ico: "◈", label: "陪伴 · 对话" },
-  { view: "tasks", ico: "◷", label: "今日任务" },
-  { view: "life", ico: "☾", label: "今日生活" },
-  { view: "memories", ico: "❋", label: "记忆与关系" },
-  { view: "files", ico: "▤", label: "文件与知识" },
-  { view: "tools", ico: "⚙", label: "工具记录" },
-  { view: "settings", ico: "✦", label: "设置" },
+const NAV: { view: View; ico: IconName; label: string }[] = [
+  { view: "chat", ico: "chat", label: "陪伴 · 对话" },
+  { view: "tasks", ico: "task", label: "今日任务" },
+  { view: "life", ico: "life", label: "今日生活" },
+  { view: "memories", ico: "memory", label: "记忆与关系" },
+  { view: "files", ico: "folder", label: "文件与知识" },
+  { view: "tools", ico: "tool", label: "运行日志" },
+  { view: "settings", ico: "settings", label: "设置" },
 ];
 
 export default function App() {
@@ -151,28 +145,14 @@ export default function App() {
     <div className="app">
       {/* 顶部状态栏 */}
       <div className="topbar">
-        <span className="brand">遐蝶</span>
-        <span className="status-pill">
-          <span className="status-dot" />
-          {MODE_LABEL[mode]}中
-        </span>
-        <div className="mode-tabs no-drag">
-          {(Object.keys(MODE_LABEL) as Mode[]).map((m) => (
-            <button
-              key={m}
-              className={mode === m ? "active" : ""}
-              onClick={() => setMode(m)}
-            >
-              {MODE_LABEL[m]}
-            </button>
-          ))}
-        </div>
+        <span className="brand-mark" aria-label="遐蝶"><span aria-hidden="true">◇</span></span>
         <div className="top-spacer" />
-        <span className="model-chip no-drag">
-          {model ? `${model.provider_name} · ${model.model}` : "未连接模型"}
+        <span className={`model-chip no-drag${model ? " is-online" : " is-offline"}`}>
+          <i aria-hidden="true" />
+          <span>{model ? `${model.provider_name} · ${model.model}` : "未连接模型"}</span>
         </span>
         <button className="win-btn no-drag" title="设置" onClick={() => setView("settings")}>
-          ✦
+          <Icon name="settings" />
         </button>
         {/* 窗口控制按钮组 */}
         <span className="win-controls no-drag">
@@ -212,7 +192,7 @@ export default function App() {
         {/* 左侧栏 */}
         <div className="sidebar glass">
           <button className="new-chat" onClick={newChat}>
-            ＋ 新建对话
+            <Icon name="plus" /> <span>新建对话</span>
           </button>
           <div className="nav">
             {NAV.map((n) => (
@@ -221,8 +201,8 @@ export default function App() {
                 className={view === n.view ? "active" : ""}
                 onClick={() => setView(n.view)}
               >
-                <span className="ico">{n.ico}</span>
-                {n.label}
+                <span className="ico"><Icon name={n.ico} /></span>
+                <span className="nav-label">{n.label}</span>
               </button>
             ))}
           </div>
@@ -264,6 +244,7 @@ export default function App() {
               companionCluster={companionState?.derived.cluster}
               onCompanionState={acceptChatState}
               onSessionsChanged={refreshSessions}
+              onOpenTasks={() => setView("tasks")}
             />
           )}
           {view === "settings" && (
@@ -279,7 +260,6 @@ export default function App() {
         {/* 右侧遐蝶状态栏 */}
         <RightBar
           className="rightbar glass"
-          mode={mode}
           companionState={companionState}
           stateReason={stateReason}
           model={model}

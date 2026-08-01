@@ -26,7 +26,7 @@ from . import (
     knowledge_embeddings, knowledge_grants,
     knowledge_management, knowledge_parser, knowledge_policy, knowledge_recall, knowledge_recall_service, knowledge_search,
     knowledge_worker, kig_evidence, kig_governance, kig_maintenance, kig_pipeline, kig_sources, life_catchup, life_catchup_service, life_events, life_runtime, life_schedule, llm, lore, memory, memory_conflicts, memory_shadow_proposals,
-    personal_goals, persona, persona_output_guard, persona_v2, short_memo, worldbook_r1,
+    personal_goals, persona, persona_output_guard, persona_v2, runtime_logs, short_memo, worldbook_r1,
     saga_consolidator, saga_lifecycle, saga_summary,
     saga_summary_service, secret_store, self_timeline, slow_lifecycle, turn_ingress,
     chat_request_control, image_attachments, vision_capabilities,
@@ -3718,6 +3718,27 @@ def tool_logs() -> list[dict]:
         return [dict(r) for r in rows]
     finally:
         conn.close()
+
+
+@app.get("/api/runtime-logs")
+def read_runtime_logs(
+    category: Optional[str] = None, status: Optional[str] = None, limit: int = 200,
+) -> dict:
+    try:
+        return runtime_logs.list_feed(category=category, status=status, limit=limit)
+    except runtime_logs.RuntimeLogError as exc:
+        raise HTTPException(400, {"code": exc.code, "message": "运行日志筛选条件无效"}) from exc
+
+
+@app.get("/api/runtime-logs/{event_id}")
+def read_runtime_log_detail(event_id: str) -> dict:
+    try:
+        return runtime_logs.get_detail(event_id)
+    except runtime_logs.RuntimeLogNotFound as exc:
+        raise HTTPException(404, {
+            "code": exc.code,
+            "message": "运行日志事件不存在或原始对话已删除",
+        }) from exc
 
 
 @app.get("/api/settings/{key}")

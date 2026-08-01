@@ -147,9 +147,10 @@ export function LifePage() {
 
   return (
     <section className="page life-page" aria-labelledby="life-title">
-      <header className="page-header life-header">
+      <header className="page-header compact-page-header life-header">
         <div>
-          <h2 id="life-title">陪伴与生活</h2>
+          <p className="page-eyebrow">LIFE</p>
+          <h1 id="life-title">陪伴与生活</h1>
           <p>看看她今天大致在做什么，也可以随时暂停、关闭或整理生活记录。</p>
         </div>
         <div className={`life-mode-badge ${settings?.mode || "loading"}`}>
@@ -157,7 +158,7 @@ export function LifePage() {
         </div>
       </header>
 
-      <nav className="life-tabs" aria-label="生活页面">
+      <nav className="life-tabs content-tabs" aria-label="生活页面">
         {([['today', '今天'], ['diary', '日记'], ['dates', '重要日期'], ['goals', '个人目标'], ['settings', '设置']] as [Tab, string][]).map(([value, label]) => (
           <button key={value} className={tab === value ? "active" : ""} onClick={() => setTab(value)}>{label}</button>
         ))}

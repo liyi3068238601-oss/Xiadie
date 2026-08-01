@@ -10,8 +10,8 @@ test("LIFE2 persona mode and bounded style snapshot are sent on every chat reque
   assert.match(api, /persona_style\?:/);
   assert.match(chat, /persona_mode: personaMode/);
   assert.match(chat, /persona_style: personaStyle/);
-  assert.match(chat, /value="companionship"/);
-  assert.match(chat, /value="focused_work"/);
+  assert.match(chat, /type PersonaMode = "companionship" \| "focused_work"/);
+  assert.match(chat, /useState<PersonaMode>\("companionship"\)/);
 });
 
 test("persona preferences are session-scoped and expose no arbitrary prompt input", () => {

@@ -1,25 +1,27 @@
 import { useEffect, useState } from "react";
 import * as api from "./../api";
-import { Mode, toast, View } from "./../store";
+import { View } from "./../store";
 import { getClusterPresentation } from "./../affectPresentation.mjs";
 
 interface Props {
   className: string;
-  mode: Mode;
   companionState: api.CompanionState | null;
   stateReason: string | null;
   model: api.CurrentModel | null;
   onGo: (v: View) => void;
 }
 
-const WORK_MODE: Record<Mode, { face: string; name: string; sub: string }> = {
-  companion: { face: "🦋", name: "陪伴中", sub: "安静地待在你身边" },
-  thinking: { face: "💭", name: "思考中", sub: "正在组织回答" },
-  executing: { face: "⚡", name: "执行中", sub: "正在处理任务" },
-  resting: { face: "🌙", name: "休息中", sub: "随时可以叫我" },
+const CAPABILITY_LABEL: Record<string, string> = {
+  local: "本地运行",
+  stream: "流式回复",
+  streaming: "流式回复",
+  tools: "工具调用",
+  tool_calling: "工具调用",
+  vision: "识图",
+  reasoning: "推理",
 };
 
-export function RightBar({ className, mode, companionState, stateReason, model, onGo }: Props) {
+export function RightBar({ className, companionState, stateReason, model, onGo }: Props) {
   const [memories, setMemories] = useState<api.Memory[]>([]);
   const [tasks, setTasks] = useState<api.Task[]>([]);
 
@@ -28,7 +30,7 @@ export function RightBar({ className, mode, companionState, stateReason, model, 
       .listMemories()
       .then((m) => setMemories(m.filter((x) => x.enabled).slice(0, 3)))
       .catch(() => {});
-    api.listTasks(true).then(setTasks).catch(() => {});
+    api.listTasks(true).then((items) => setTasks(items.slice(0, 3))).catch(() => {});
   };
   useEffect(() => {
     refresh();
@@ -36,22 +38,10 @@ export function RightBar({ className, mode, companionState, stateReason, model, 
     return () => clearInterval(t);
   }, []);
 
-  const workMode = WORK_MODE[mode];
   const cluster = getClusterPresentation(companionState?.derived.cluster || "neutral");
 
   return (
     <div className={className}>
-      <div className="state-block">
-        <div className="block-title">工作模式</div>
-        <div className="mood work-mode-card">
-          <span className="face">{workMode.face}</span>
-          <div>
-            <div className="mood-name">{workMode.name}</div>
-            <div className="mood-sub">{workMode.sub}</div>
-          </div>
-        </div>
-      </div>
-
       <div className="state-block">
         <div className="block-title">当前心境</div>
         <div className="mood affect-card">
@@ -78,7 +68,7 @@ export function RightBar({ className, mode, companionState, stateReason, model, 
 
       <div className="state-block">
         <div className="block-title">最近记忆</div>
-        {memories.length === 0 && <div className="mini-item">还没有记忆</div>}
+        {memories.length === 0 && <div className="mini-item mini-empty">还没有留下记忆，聊聊天就会慢慢积累。</div>}
         {memories.map((m) => (
           <div key={m.id} className="mini-item">
             <span className="badge">[{m.layer}] </span>
@@ -89,7 +79,7 @@ export function RightBar({ className, mode, companionState, stateReason, model, 
 
       <div className="state-block">
         <div className="block-title">今日任务</div>
-        {tasks.length === 0 && <div className="mini-item">今天还没有任务</div>}
+        {tasks.length === 0 && <div className="mini-item mini-empty">今天还没有任务，要我先帮你记一个吗？</div>}
         {tasks.map((t) => (
           <div key={t.id} className="mini-item">
             {t.status === "done" ? "✓ " : "○ "}
@@ -103,7 +93,7 @@ export function RightBar({ className, mode, companionState, stateReason, model, 
         <div className="cap-tags">
           {(model?.capabilities || ["local"]).map((c) => (
             <span key={c} className="cap-tag">
-              {c}
+              {CAPABILITY_LABEL[c] || c}
             </span>
           ))}
         </div>
@@ -113,11 +103,7 @@ export function RightBar({ className, mode, companionState, stateReason, model, 
         <div className="block-title">快捷操作</div>
         <div className="quick-actions">
           <button onClick={() => onGo("memories")}>记忆库</button>
-          <button onClick={() => onGo("tasks")}>任务</button>
-          <button onClick={() => onGo("files")}>知识库</button>
           <button onClick={() => onGo("settings")}>设置</button>
-          <button onClick={() => onGo("tools")}>工具记录</button>
-          <button onClick={() => toast("导出功能开发中")}>导出</button>
         </div>
       </div>
     </div>
