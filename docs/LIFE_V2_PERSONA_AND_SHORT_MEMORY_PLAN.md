@@ -8,6 +8,7 @@
 - 人格内容逐段稿：`docs/LIFE_V2_PERSONA_CONTENT_DRAFT.md`（原始素材 `E:\Xiadie\人格.txt`；4.1～4.4、5.1～5.3 与负面行为矩阵已确认冻结）
 - WorldBook 内容逐段稿：`docs/LIFE_V2_WORLDBOOK_CONTENT_DRAFT.md`（r1 内容与治理 Review 已完成；A 级补证仍按来源审计执行，不阻塞计划范围讨论）
 - WorldBook 来源审计：`docs/LIFE_V2_WORLDBOOK_SOURCE_AUDIT.md`（当前 `verified_a=0`、`candidate_b=27`、`local_candidate=3`；B/local 仅可进入 Shadow 评测）
+- 后续实施计划：`docs/superpowers/plans/2026-08-01-persona-v2-3-implementation-plan.md`（LIFE2.7～LIFE2.11；本文件 LIFE2.0～LIFE2.6 继续作为冻结历史基线）
 
 ## 1. 结论先行
 
