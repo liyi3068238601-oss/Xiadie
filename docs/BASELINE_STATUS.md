@@ -1,5 +1,7 @@
 # 遐蝶项目基线状态
 
+> **状态提示（2026-08-08）：** 本文件顶部的 LIFE2.6/v2.2 快照已被后续 LIFE2.7～LIFE2.10 施工超越。当前真实状态、遗留、首日检查和恢复顺序以 [项目长期停工交接与恢复手册](PROJECT_PAUSE_AND_RESUME_HANDOFF_2026-08-08.md) 为准；LIFE2.11 最终冻结时再统一刷新本文历史数字。
+
 > 最近复核日期：2026-07-29
 >
 > 当前施工状态：LIFE2.0～LIFE2.6 已完成。Persona 真实聊天先后发现动作旁白，以及闲聊中虚构当前环境并混入“资料不足”审计措辞；当前 `persona-profile-v2.2` 以 `deepseek-v4-flash`、temperature=0 完成三轮 150/150 生产等价认证。`persona-natural-dialogue-guard-v2` 同时约束跨 chunk 动作旁白与无依据闲聊环境，Smart Recall/KIG 不再检索聊天邀请，问句也不会被证据门改写。模型指纹或输出门协议不匹配时仍自动回退旧 Persona。WorldBook r1、Schema 82 `short-memo-v1` 与无迁移的 `inner-state-projection-v1` 均继续 Shadow。

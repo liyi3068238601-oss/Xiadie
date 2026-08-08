@@ -1,5 +1,7 @@
 # 遐蝶 Codex 项目上下文
 
+> **长期停工恢复入口（2026-08-08）：** 当前主线已到 LIFE2.10：Persona v2.3、ShortMemo 和 InnerStateProjection 均为 Active，WorldBook r1 Off；LIFE2.11 尚未开始，专项分支尚未合并 `main`。恢复施工必须先阅读 [项目长期停工交接与恢复手册](PROJECT_PAUSE_AND_RESUME_HANDOFF_2026-08-08.md)。下方 2026-07-30 快照作为历史约束保留，不能继续当作实时发布状态。
+
 > LIFE v2 施工快照（2026-07-30）：LIFE2.0～LIFE2.6 已完成。`persona-profile-v2.2` 已收口真实聊天中的动作旁白、虚构当前天气/光线/即时活动，以及普通反问被 KIG 改写为“资料不足”的回归。Smart Recall 与 KIG 对聊天邀请确定性跳过，证据门不再把问句视为事实声明；`persona-natural-dialogue-guard-v2` 绑定 DeepSeek 三轮 150/150 生产等价证书。模型指纹或输出门协议不匹配仍 fail closed 回退旧 Persona。WorldBook r1、ShortMemo 与 InnerStateProjection 均保持 Shadow，旧 Lore 尚未替换。总体验收见 `docs/reports/life2-final-review.md`。
 
 > 状态：当前执行约束  
